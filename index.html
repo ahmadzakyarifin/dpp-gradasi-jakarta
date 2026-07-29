@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DPP GRADASI - Generasi Digital Indonesia</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Plus Jakarta Sans for classy, premium headings, Inter for body -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Lora:ital,wght@0,400;0,500;1,400;1,500&display=swap"
+        rel="stylesheet">
+
+    <!-- AOS Animation CSS -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Plus Jakarta Sans', 'sans-serif'],
+                        quote: ['Lora', 'serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a', // Dark Blue
+                            950: '#172554', // Very Dark Blue
+                        }
+                    },
+                    backgroundImage: {
+                        'texture-dots': "url(\"data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.05' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Cg/%3E%3C/svg%3E\")",
+                        'texture-grid': "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0V0zm20 20h20v20H20V20zM0 20h20v20H0V20z' fill='%23ffffff' fill-opacity='0.02' fill-rule='evenodd'/%3E%3C/svg%3E\")"
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <style>
+        body {
+            background-color: #f8fafc;
+            color: #334155;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Modern Glass Navigation */
+        .nav-scrolled {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Firm, Thin Card Design (DPD Jatim Aesthetic) */
+        .card-minimal {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            /* Sharper edges */
+            transition: all 0.3s ease;
+        }
+
+        .card-minimal:hover {
+            border-color: #94a3b8;
+            /* Sharper, darker border on hover */
+            box-shadow: none;
+            /* No shadow for a flatter, firmer look */
+            transform: translateY(-2px);
+        }
+
+        /* Smooth Image Zoom on Hover */
+        .image-zoom-container {
+            overflow: hidden;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .image-zoom-container img {
+            transition: transform 0.7s ease;
+        }
+
+        .card-minimal:hover .image-zoom-container img {
+            transform: scale(1.05);
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+
+<body class="font-sans" x-data="{ scrolled: false, mobileMenuOpen: false }"
+    @scroll.window="scrolled = (window.pageYOffset > 20)">
+
+    <!-- Navigation (Clean White, Standard Position) -->
+    <header class="fixed top-0 w-full z-50 transition-all duration-300"
+        :class="scrolled ? 'nav-scrolled py-2' : 'bg-white py-4 border-b border-slate-200'">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center">
+                <!-- Logo Branding (Standard Resmi: Logo + Title + Sub-tagline) -->
+                <a href="index.html" class="flex-shrink-0 flex items-center gap-3 group">
+                    <img src="https://gradasi.org/uploads/img/logo/1737187847.png" alt="Logo GRADASI"
+                        class="h-10 w-auto object-contain transition duration-300 group-hover:scale-105">
+                    <div class="flex flex-col leading-tight">
+                        <span
+                            class="font-heading font-extrabold text-base text-slate-900 tracking-tight group-hover:text-brand-700 transition">DPP
+                            GRADASI</span>
+                        <span class="text-[9px] font-bold text-brand-600 tracking-wider uppercase">Generasi Digital
+                            Indonesia</span>
+                    </div>
+                </a>
+
+                <!-- Desktop Menu (Sesuai Asli DPP) -->
+                <!-- Desktop Menu (Simple, Old DPP Style) -->
+                <nav class="hidden lg:flex items-center space-x-2">
+                    <a href="#"
+                        class="px-4 py-2 text-sm font-semibold text-brand-700 bg-brand-50 rounded-lg transition">Beranda</a>
+                    <a href="#tentang"
+                        class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-brand-700 hover:bg-slate-50 transition rounded-lg">Tentang
+                        Kami</a>
+                    <!-- Kegiatan Dropdown -->
+                    <div class="relative group" x-data="{ open: false }" @mouseenter="open = true"
+                        @mouseleave="open = false">
+                        <button
+                            class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-brand-700 transition flex items-center gap-1 rounded-lg hover:bg-slate-50">
+                            Kegiatan <i class="ph-bold ph-caret-down text-[10px] transition-transform duration-300"
+                                :class="{'rotate-180': open}"></i>
+                        </button>
+                        <div x-show="open" x-transition.opacity
+                            class="absolute left-0 mt-2 w-48 bg-white rounded-xl shadow-xl py-2 border border-slate-100">
+                            <a href="kegiatan.html"
+                                class="block px-4 py-2.5 text-sm font-bold text-brand-700 bg-brand-50 transition">Semua
+                                Kegiatan</a>
+                            <a href="#kegiatan"
+                                class="block px-4 py-2.5 text-sm text-slate-600 hover:bg-brand-50 hover:text-brand-700 transition">Agenda
+                                Beranda</a>
+                        </div>
+                    </div>
+
+                    <!-- Informasi Dropdown -->
+                    <div class="relative group" x-data="{ open: false }" @mouseenter="open = true"
+                        @mouseleave="open = false">
+                        <button
+                            class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-brand-700 transition flex items-center gap-1 rounded-lg hover:bg-slate-50">
+                            Informasi <i class="ph-bold ph-caret-down text-[10px] transition-transform duration-300"
+                                :class="{'rotate-180': open}"></i>
+                        </button>
+                        <div x-show="open" x-transition.opacity
+                            class="absolute left-0 mt-2 w-48 bg-white rounded-xl shadow-xl py-2 border border-slate-100">
+                            <a href="berita.html"
+                                class="block px-4 py-2.5 text-sm font-bold text-brand-700 bg-brand-50 transition">Semua
+                                Informasi</a>
+                            <a href="index.html#informasi"
+                                class="block px-4 py-2.5 text-sm text-slate-600 hover:bg-brand-50 hover:text-brand-700 transition">Informasi
+                                Agenda</a>
+                        </div>
+                    </div>
+
+                    <!-- Kepengurusan Dropdown -->
+                    <div class="relative group" x-data="{ open: false }" @mouseenter="open = true"
+                        @mouseleave="open = false">
+                        <button
+                            class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-brand-700 transition flex items-center gap-1 rounded-lg hover:bg-slate-50">
+                            Kepengurusan <i class="ph-bold ph-caret-down text-[10px] transition-transform duration-300"
+                                :class="{'rotate-180': open}"></i>
+                        </button>
+                        <div x-show="open" x-transition.opacity
+                            class="absolute left-0 mt-2 w-52 bg-white rounded-xl shadow-xl py-2 border border-slate-100">
+                            <a href="kepengurusan.html?tab=ketua"
+                                class="block px-4 py-2.5 text-sm text-slate-700 hover:bg-brand-50 hover:text-brand-700 font-medium transition">Ketua Umum</a>
+                            <a href="kepengurusan.html?tab=dpp"
+                                class="block px-4 py-2.5 text-sm text-slate-700 hover:bg-brand-50 hover:text-brand-700 font-medium transition">Pengurus
+                                Pusat (DPP)</a>
+                            <a href="kepengurusan.html?tab=dpd"
+                                class="block px-4 py-2.5 text-sm text-slate-700 hover:bg-brand-50 hover:text-brand-700 font-medium transition">Pengurus
+                                Daerah (DPD)</a>
+                            <a href="kepengurusan.html?tab=dpc"
+                                class="block px-4 py-2.5 text-sm text-slate-700 hover:bg-brand-50 hover:text-brand-700 font-medium transition">Pengurus
+                                Cabang (DPC)</a>
+                        </div>
+                    </div>
+
+                    <a href="#kontak"
+                        class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-brand-700 hover:bg-slate-50 transition rounded-lg">Kontak</a>
+                </nav>
+
+                <div class="hidden lg:flex items-center gap-3">
+                    <a href="login.html"
+                        class="bg-brand-700 hover:bg-brand-800 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition shadow-sm hover:shadow-md transform hover:-translate-y-0.5">
+                        Masuk
+                    </a>
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="lg:hidden flex items-center">
+                    <button @click="mobileMenuOpen = !mobileMenuOpen"
+                        class="text-slate-600 hover:text-brand-700 focus:outline-none p-2 bg-slate-50 rounded-lg">
+                        <i class="ph-bold text-2xl" :class="mobileMenuOpen ? 'ph-x' : 'ph-list'"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div x-show="mobileMenuOpen" x-transition
+            class="lg:hidden bg-white border-t border-slate-100 absolute w-full shadow-2xl max-h-[85vh] overflow-y-auto">
+            <div class="px-4 py-4 space-y-2">
+                <a href="#" class="block px-4 py-3 text-sm font-bold text-brand-700 bg-brand-50 rounded-lg">Beranda</a>
+                <a href="#tentang"
+                    class="block px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg">Tentang
+                    Kami</a>
+                <div x-data="{ openKegiatan: false }">
+                    <button @click="openKegiatan = !openKegiatan"
+                        class="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex justify-between items-center rounded-lg">
+                        Kegiatan <i class="ph-bold ph-caret-down transition-transform"
+                            :class="{'rotate-180': openKegiatan}"></i>
+                    </button>
+                    <div x-show="openKegiatan" class="pl-4 pb-2 space-y-1">
+                        <a href="#kegiatan"
+                            class="block px-4 py-2 text-sm text-slate-600 hover:text-brand-700">Aktivitas Terbaru</a>
+                        <a href="#" class="block px-4 py-2 text-sm text-slate-600 hover:text-brand-700">Program
+                            Kerja</a>
+                        <a href="#" class="block px-4 py-2 text-sm text-slate-600 hover:text-brand-700">Agenda</a>
+                    </div>
+                </div>
+
+                <div x-data="{ openInfo: false }">
+                    <button @click="openInfo = !openInfo"
+                        class="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex justify-between items-center rounded-lg">
+                        Informasi <i class="ph-bold ph-caret-down transition-transform"
+                            :class="{'rotate-180': openInfo}"></i>
+                    </button>
+                    <div x-show="openInfo" class="pl-4 pb-2 space-y-1">
+                        <a href="berita.html"
+                            class="block px-4 py-2 text-sm font-bold text-brand-700 hover:text-brand-800">Semua
+                            Informasi</a>
+                        <a href="index.html#informasi"
+                            class="block px-4 py-2 text-sm text-slate-600 hover:text-brand-700">Informasi Agenda</a>
+                    </div>
+                </div>
+
+                <div x-data="{ openPengurus: false }">
+                    <button @click="openPengurus = !openPengurus"
+                        class="w-full text-left px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 flex justify-between items-center rounded-lg">
+                        Kepengurusan <i class="ph-bold ph-caret-down transition-transform"
+                            :class="{'rotate-180': openPengurus}"></i>
+                    </button>
+                    <div x-show="openPengurus" class="pl-4 pb-2 space-y-1">
+                        <a href="kepengurusan.html?tab=ketua"
+                            class="block px-4 py-2 text-sm text-slate-600 hover:text-brand-700">Ketua Umum</a>
+                        <a href="kepengurusan.html?tab=dpp"
+                            class="block px-4 py-2 text-sm text-slate-600 hover:text-brand-700">Pengurus Pusat (DPP)</a>
+                        <a href="kepengurusan.html?tab=dpd"
+                            class="block px-4 py-2 text-sm text-slate-600 hover:text-brand-700">Pengurus Daerah
+                            (DPD)</a>
+                        <a href="kepengurusan.html?tab=dpc"
+                            class="block px-4 py-2 text-sm text-slate-600 hover:text-brand-700">Pengurus Cabang
+                            (DPC)</a>
+                    </div>
+                </div>
+                <a href="#kontak"
+                    class="block px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg">Kontak</a>
+                <div class="border-t border-slate-100 pt-3 mt-3">
+                    <a href="login.html"
+                        class="block px-4 py-3 text-sm font-bold text-white bg-brand-700 text-center rounded-lg">Masuk</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 1. HERO CAROUSEL / BANNER (Option 1: Modern Interactive Hero Slider) -->
+    <section
+        class="relative bg-brand-950 overflow-hidden pt-32 pb-24 md:pt-44 md:pb-28 border-b border-brand-900 min-h-screen flex items-end"
+        x-data="{
+            currentSlide: 0,
+            autoplayTimer: null,
+            slides: [
+                {
+                    title: 'Musyawarah Nasional Ke-II GRADASI',
+                    subtitle: 'Kolaborasi Membangun Negeri demi Kemandirian Digital Indonesia',
+                    tag: 'Musyawarah Nasional',
+                    img: 'https://gradasi.org/uploads/img/slider/1749385864.jpg',
+                    pos: 'center 30%'
+                },
+                {
+                    title: 'Audiensi & Sinergi Strategis Kementerian',
+                    subtitle: 'Memperkuat Kemitraan Bersama Pemangku Kepentingan Nasional',
+                    tag: 'Kemitraan Strategis',
+                    img: 'https://gradasi.org/uploads/img/slider/1746600520.png',
+                    pos: 'center 15%'
+                },
+                {
+                    title: 'Pelatihan Digital Marketing & Inklusi Masyarakat',
+                    subtitle: 'Program Transformasi Berbasis Literasi Digital di Berbagai Daerah',
+                    tag: 'Pemberdayaan Daerah',
+                    img: 'https://gradasi.org/uploads/img/slider/1746600828.jpg',
+                    pos: 'center 25%'
+                }
+            ],
+            init() {
+                this.startAutoplay();
+            },
+            startAutoplay() {
+                this.autoplayTimer = setInterval(() => {
+                    this.nextSlide();
+                }, 5000);
+            },
+            stopAutoplay() {
+                if (this.autoplayTimer) clearInterval(this.autoplayTimer);
+            },
+            nextSlide() {
+                this.currentSlide = (this.currentSlide + 1) % this.slides.length;
+            },
+            prevSlide() {
+                this.currentSlide = (this.currentSlide - 1 + this.slides.length) % this.slides.length;
+            }
+        }" @mouseenter="stopAutoplay()" @mouseleave="startAutoplay()">
+
+        <!-- SLIDES BACKGROUND IMAGES WITH DARK OVERLAY -->
+        <template x-for="(slide, index) in slides" :key="index">
+            <div x-show="currentSlide === index" x-transition:enter="transition ease-out duration-1000"
+                x-transition:enter-start="opacity-0 scale-105" x-transition:enter-end="opacity-100 scale-100"
+                x-transition:leave="transition ease-in duration-700" x-transition:leave-start="opacity-100 scale-100"
+                x-transition:leave-end="opacity-0 scale-95" class="absolute inset-0 z-0">
+                <img :src="slide.img" :alt="slide.title" class="w-full h-full object-cover transition-all duration-700"
+                    :style="{ objectPosition: slide.pos || 'center 20%' }">
+                <!-- Balanced Dark Overlay for High Contrast & Clear Image Visibility -->
+                <div class="absolute inset-0 bg-gradient-to-t from-brand-950/90 via-brand-950/40 to-brand-950/20"></div>
+                <div class="absolute inset-0 bg-texture-dots opacity-20 mix-blend-overlay"></div>
+            </div>
+        </template>
+
+        <!-- HERO CONTENT OVERLAY -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full text-left" data-aos="fade-up">
+            <div class="max-w-3xl">
+                <h1
+                    class="font-heading text-5xl md:text-7xl lg:text-8xl font-extrabold text-white tracking-tight mb-4 drop-shadow-lg">
+                    GRADASI
+                </h1>
+
+                <!-- Static Text (Old Content) in Modern Layout -->
+                <div class="min-h-[100px]">
+                    <p class="text-lg md:text-xl text-white/95 font-medium leading-relaxed drop-shadow-sm max-w-2xl">
+                        Organisasi penggerak literasi digital nasional, mandiri dan terbuka untuk umum, merujuk pada
+                        semangat kreativitas dan inovasi generasi muda dalam memaksimalkan potensinya untuk
+                        berkolaborasi membangun negeri.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- NAVIGATION ARROWS (LEFT & RIGHT) -->
+        <button @click="prevSlide()"
+            class="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-20 text-white/60 hover:text-white flex items-center justify-center transition duration-300 hover:scale-125 drop-shadow-2xl">
+            <i class="ph-bold ph-caret-left text-4xl sm:text-5xl"></i>
+        </button>
+        <button @click="nextSlide()"
+            class="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-20 text-white/60 hover:text-white flex items-center justify-center transition duration-300 hover:scale-125 drop-shadow-2xl">
+            <i class="ph-bold ph-caret-right text-4xl sm:text-5xl"></i>
+        </button>
+
+        <!-- SLIDE INDICATORS (DOTS) -->
+        <div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+            <template x-for="(slide, index) in slides" :key="index">
+                <button @click="currentSlide = index" class="h-2.5 rounded-full transition-all duration-500"
+                    :class="currentSlide === index ? 'w-8 bg-amber-400' : 'w-2.5 bg-white/40 hover:bg-white/70'">
+                </button>
+            </template>
+        </div>
+    </section>
+
+    <!-- 2. SAMBUTAN TAHUN BARU 2026 -->
+    <section class="py-16 bg-white border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="card-minimal p-6 sm:p-12 overflow-hidden relative shadow-sm border border-slate-200/80 rounded-3xl"
+                data-aos="fade-up">
+                <!-- Decorative subtle element -->
+                <div class="absolute top-0 right-0 w-40 h-40 bg-brand-50 rounded-bl-[120px] -z-10 opacity-70"></div>
+
+                <div class="flex flex-col lg:flex-row gap-10 items-start relative z-10">
+                    <!-- POSTER IMAGE (FULL DISPLAY, COMPACT & STICKY ON DESKTOP) -->
+                    <div class="w-full lg:w-5/12 lg:sticky lg:top-28">
+                        <div
+                            class="relative overflow-hidden rounded-2xl border border-slate-200 shadow-md bg-slate-900 group">
+                            <img src="https://gradasi.org/uploads/img/event-terkini/1767154211.jpg"
+                                alt="Poster Sambutan Tahun Baru 2026 DPP GRADASI"
+                                class="w-full h-auto object-contain transition duration-500 group-hover:scale-105">
+                        </div>
+                    </div>
+
+                    <!-- COMPLETE CONTENT TEXT (SUPER CLEAN & BEAUTIFUL PURE TYPOGRAPHY) -->
+                    <div class="w-full lg:w-7/12 space-y-4">
+                        <div>
+                            <span
+                                class="bg-brand-50 text-brand-700 text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-brand-100/80 inline-block mb-2">Refleksi
+                                & Sambutan Resmi</span>
+                            <h2 class="font-heading text-3xl font-extrabold text-slate-900 tracking-tight">Selamat Tahun
+                                Baru 2026</h2>
+                        </div>
+
+                        <div class="space-y-3.5 text-slate-600 text-sm leading-relaxed font-normal">
+                            <p>Dewan Pengurus Pusat Generasi Digital Indonesia (DPP GRADASI) secara resmi menyampaikan
+                                refleksi akhir tahun sekaligus pernyataan optimisme menyambut tahun baru 2026. GRADASI
+                                menegaskan komitmennya untuk tetap menjadi garda terdepan dalam memperjuangkan
+                                kedaulatan digital bangsa.</p>
+
+                            <p>Tahun 2025 yang segera berakhir dinilai sebagai sebuah perjalanan yang penuh makna,
+                                sebuah <strong>"Kisah Panjang"</strong> yang diisi dengan berbagai dinamika transformasi
+                                teknologi. Perjalanan ini merupakan bentuk dedikasi seluruh elemen organisasi dalam
+                                menghadapi tantangan era digital, baik di tingkat pusat maupun daerah.</p>
+
+                            <!-- CLEAN ELEGANT QUOTE -->
+                            <div class="border-l-4 border-brand-600 pl-4 py-1 my-4">
+                                <p class="text-slate-800 italic font-quote text-sm sm:text-base leading-relaxed">
+                                    "Tiada hadiah termahal di akhir tahun ini selain doa dan dukungan yang senantiasa
+                                    mengiringi setiap langkah perjuangan kita," <span
+                                        class="font-sans not-italic text-xs text-slate-500 font-medium">ujar perwakilan
+                                        DPP GRADASI.</span> Organisasi ini memposisikan tantangan teknologi di tahun
+                                    2025 bukan sebagai beban, melainkan sebagai proses pendewasaan yang memungkinkan
+                                    seluruh anggota untuk tetap tegak berdiri demi kemandirian digital Indonesia.
+                                </p>
+                            </div>
+
+                            <!-- PURE TEXT LIST: 4 PILAR UTAMA PERJUANGAN 2026 -->
+                            <div class="py-2">
+                                <p class="font-bold text-slate-900 text-sm mb-2">Memasuki tahun 2026, GRADASI menetapkan
+                                    tiga pilar utama perjuangan:</p>
+                                <ol class="space-y-2 text-sm text-slate-700 leading-relaxed pl-1">
+                                    <li class="flex items-start gap-2">
+                                        <span class="font-bold text-brand-700 flex-shrink-0">1.</span>
+                                        <span><strong>Kedaulatan Digital:</strong> Terus memperjuangkan agar Indonesia
+                                            mampu mandiri dan berdaulat atas ekosistem digitalnya sendiri.</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <span class="font-bold text-brand-700 flex-shrink-0">2.</span>
+                                        <span><strong>Kemandirian Generasi:</strong> Memastikan setiap pengurus dan
+                                            anggota masyarakat Indonesia memiliki kecakapan digital (<em>digital
+                                                skills</em>) untuk menjadi aktor utama di panggung global.</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <span class="font-bold text-brand-700 flex-shrink-0">3.</span>
+                                        <span><strong>Inovasi Berkelanjutan:</strong> Mengembangkan program-materi
+                                            literasi digital yang relevan dan berdampak luas bagi kemajuan
+                                            bangsa.</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <span class="font-bold text-brand-700 flex-shrink-0">4.</span>
+                                        <span>Program-program yang sudah dijalankan baik di DPP maupun DPD Gradasi
+                                            seluruh Indonesia.</span>
+                                    </li>
+                                </ol>
+                            </div>
+
+                            <p>Selamat Tahun Baru 2026. Mari kita tutup babak "Kisah Panjang" tahun ini dengan rasa
+                                syukur dan memulai lembaran baru dengan semangat kolaborasi yang lebih kuat.</p>
+                        </div>
+
+                        <!-- CLEAN SIGNATURE FOOTER -->
+                        <div
+                            class="pt-5 mt-4 border-t border-slate-100 flex flex-wrap justify-between items-center gap-4 text-xs">
+                            <div>
+                                <p class="font-bold text-brand-700 uppercase tracking-wider text-xs">Salam Kolaborasi
+                                </p>
+                                <p class="text-slate-500 font-medium text-[11px]">Generasi Membangun Negeri &bull; DPP
+                                    Generasi Digital Indonesia</p>
+                            </div>
+                            <div class="flex items-center gap-6">
+                                <div class="flex items-center gap-2.5">
+                                    <img src="https://gradasi.org/uploads/img/s-anggota/ketua/1735027418.jpg"
+                                        alt="Upi Asmaradhana"
+                                        class="w-8 h-8 rounded-full object-cover border-2 border-amber-400 shadow-sm">
+                                    <div>
+                                        <p class="font-heading font-bold text-slate-900 text-xs">Upi Asmaradhana</p>
+                                        <p class="text-[10px] text-amber-600 font-bold uppercase tracking-wider">Ketua
+                                            Umum</p>
+                                    </div>
+                                </div>
+                                <div class="h-6 w-[1px] bg-slate-200"></div>
+                                <div>
+                                    <p class="font-heading font-bold text-slate-900 text-xs">Junaidi, S.Kom</p>
+                                    <p class="text-[10px] text-teal-600 font-bold uppercase tracking-wider">Sekretaris
+                                        Jenderal</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. TENTANG KAMI -->
+    <section id="tentang" class="py-20 bg-slate-50 border-b border-slate-200" x-data="{ tab: 'selayang' }">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center md:text-left mb-10" data-aos="fade-right">
+                <span class="text-xs font-bold text-brand-600 tracking-widest uppercase mb-2 block">Profil
+                    Organisasi</span>
+                <h2 class="font-heading text-3xl font-bold text-slate-900">Tentang Kami</h2>
+            </div>
+
+            <div class="flex flex-col lg:flex-row gap-12 items-start">
+                <!-- Tabs Area -->
+                <div class="w-full lg:w-2/3" data-aos="fade-up">
+                    <!-- Tab Navigation -->
+                    <div class="flex border-b border-slate-200 mb-8 overflow-x-auto hide-scrollbar">
+                        <button @click="tab = 'selayang'"
+                            class="px-6 py-4 font-semibold text-sm transition-colors border-b-2 whitespace-nowrap"
+                            :class="tab === 'selayang' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800'">
+                            Selayang Pandang
+                        </button>
+                        <button @click="tab = 'tanggal'"
+                            class="px-6 py-4 font-semibold text-sm transition-colors border-b-2 whitespace-nowrap"
+                            :class="tab === 'tanggal' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800'">
+                            Tanggal Terbentuk
+                        </button>
+                        <button @click="tab = 'lokasi'"
+                            class="px-6 py-4 font-semibold text-sm transition-colors border-b-2 whitespace-nowrap"
+                            :class="tab === 'lokasi' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800'">
+                            Lokasi Sekretariat
+                        </button>
+                    </div>
+
+                    <!-- Tab Content -->
+                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 min-h-[240px]">
+                        <!-- SELAYANG PANDANG -->
+                        <div x-show="tab === 'selayang'" x-transition:enter="transition ease-out duration-300"
+                            x-transition:enter-start="opacity-0 transform translate-y-2"
+                            x-transition:enter-end="opacity-100 transform translate-y-0">
+                            <h3 class="font-heading text-xl font-bold text-slate-900 mb-4">Selayang Pandang</h3>
+                            <p class="text-slate-600 text-sm sm:text-base leading-relaxed mb-4">
+                                Pada tahun 2018 di Yogyakarta, atas arahan Bang Oni kepada Kang Ditu, Cak Levy, juga
+                                diajak Mas Memet dan Bang Fuad membentuk sebuah organisasi penggerak digital di
+                                Indonesia sebagai wadah perkumpulan pegiat dan penggiat digital di tingkat nasional yang
+                                terbuka untuk umum, guna melakukan pendampingan dan pemberdayaan untuk semua kalangan
+                                masyarakat.
+                            </p>
+                            <p class="text-slate-600 text-sm sm:text-base leading-relaxed">
+                                Menindaklanjuti arahan tersebut, kemudian dibentuk tim inisiator Gradasi yang terdiri
+                                dari Muhammad Sidik Kaimuddin Tomsio, Fuad Rizaldy, Memet Toto Raharjo dan beberapa
+                                kawan lain seperti Heri Safrizal, Sari Erni Agustin, serta didukung oleh Nur Alfi
+                                Khabibah, Junaidi, dan Yunita di Yogyakarta pada bulan Februari 2019 untuk mendirikan
+                                Perkumpulan Generasi Digital Indonesia (Gradasi).
+                            </p>
+                        </div>
+
+                        <!-- TANGGAL TERBENTUK -->
+                        <div x-show="tab === 'tanggal'" style="display:none;"
+                            x-transition:enter="transition ease-out duration-300"
+                            x-transition:enter-start="opacity-0 transform translate-y-2"
+                            x-transition:enter-end="opacity-100 transform translate-y-0">
+                            <h3 class="font-heading text-xl font-bold text-slate-900 mb-4">Tanggal Terbentuk</h3>
+                            <div
+                                class="flex items-start gap-4 p-5 bg-brand-50/60 rounded-xl border border-brand-100/80">
+                                <div
+                                    class="w-12 h-12 rounded-full bg-brand-600 text-white flex items-center justify-center flex-shrink-0 text-xl font-bold shadow-md">
+                                    <i class="ph-bold ph-calendar-check"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-heading font-bold text-slate-900 text-base mb-1">Pengesahan Resmi
+                                        Kemenkumham RI</h4>
+                                    <p class="text-slate-700 text-sm leading-relaxed mb-3">
+                                        Gradasi terbentuk pada tanggal <strong>4 Februari 2019</strong> dengan SK
+                                        pengesahan dari Kemenkumham RI bernomor:
+                                    </p>
+                                    <span
+                                        class="inline-block bg-white text-brand-800 font-mono font-bold text-xs px-3.5 py-1.5 rounded-lg border border-brand-200 shadow-sm">
+                                        AHU – 0000151.AH.01.07.2019
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- LOKASI -->
+                        <div x-show="tab === 'lokasi'" style="display:none;"
+                            x-transition:enter="transition ease-out duration-300"
+                            x-transition:enter-start="opacity-0 transform translate-y-2"
+                            x-transition:enter-end="opacity-100 transform translate-y-0">
+                            <h3 class="font-heading text-xl font-bold text-slate-900 mb-4">Lokasi Sekretariat</h3>
+                            <div class="flex items-start gap-4 p-5 bg-slate-50 rounded-xl border border-slate-200">
+                                <i class="ph-fill ph-map-pin text-brand-600 text-3xl flex-shrink-0 mt-1"></i>
+                                <div>
+                                    <h4 class="font-heading font-bold text-slate-900 text-base mb-1">Kantor Sekretariat
+                                        DPP GRADASI</h4>
+                                    <p class="text-slate-700 text-sm leading-relaxed">
+                                        Office Park OL3.12A, The Bellagio Mall<br>
+                                        Jl. Kawasan Mega Kuningan Kav. E.4.3, Mega Kuningan<br>
+                                        Kelurahan Kuningan Timur, Kecamatan Setiabudi, Wilayah Jakarta Selatan
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Foto Pimpinan -->
+                <div class="w-full lg:w-1/3 flex justify-center" data-aos="fade-left">
+                    <div class="text-center group">
+                        <div
+                            class="w-64 h-80 rounded-2xl overflow-hidden shadow-lg border-4 border-white mb-5 mx-auto bg-slate-100">
+                            <img src="https://gradasi.org/uploads/img/s-anggota/ketua/1735027418.jpg"
+                                alt="Upi Asmaradhana - Ketua Umum DPP GRADASI"
+                                class="w-full h-full object-cover transition duration-500 group-hover:scale-105">
+                        </div>
+                        <h4 class="font-heading font-bold text-slate-900 text-lg">Upi Asmaradhana</h4>
+                        <p class="text-[11px] text-brand-600 font-bold uppercase tracking-widest mt-1">Ketua Umum DPP
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. VISI & MISI -->
+    <section class="py-20 bg-white border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row items-center gap-16">
+                <div class="w-full md:w-1/3 flex justify-center" data-aos="zoom-in">
+                    <!-- Logo presentation without circles -->
+                    <div class="relative flex justify-center">
+                        <img src="https://gradasi.org/uploads/img/logo/1737187847.png" alt="Logo"
+                            class="w-72 h-auto object-contain relative z-10 transform transition duration-500 hover:scale-105 drop-shadow-sm">
+                    </div>
+                </div>
+                <div class="w-full md:w-2/3" data-aos="fade-up">
+                    <span class="text-xs font-bold text-brand-600 tracking-widest uppercase mb-2 block">Tujuan & Arah
+                        Organisasi</span>
+                    <h2 class="font-heading text-4xl font-bold text-slate-900 mb-6">Visi & Misi</h2>
+
+                    <!-- VISI CARD -->
+                    <div class="flex gap-4 p-6 bg-white rounded-2xl mb-8 border border-slate-100 shadow-sm">
+                        <i class="ph-fill ph-quotes text-3xl text-brand-500 flex-shrink-0 mt-0.5"></i>
+                        <div>
+                            <span
+                                class="text-[10px] font-extrabold text-brand-700 uppercase tracking-widest mb-1 block">Visi
+                                Utama</span>
+                            <p class="text-slate-800 italic text-base leading-relaxed font-quote tracking-wide">
+                                "Menjadikan GRADASI sebagai organisasi penggerak literasi digital nasional, yang hadir
+                                untuk mengedukasi masyarakat dalam percepatan transformasi literasi digital."
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 5 MISI LIST -->
+                    <div class="space-y-3">
+                        <span
+                            class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-1 block">Misi
+                            Organisasi</span>
+
+                        <div
+                            class="flex items-start gap-3.5 p-3.5 bg-white rounded-xl border border-slate-100 transition shadow-sm">
+                            <div
+                                class="w-7 h-7 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center flex-shrink-0 font-bold text-xs">
+                                1</div>
+                            <span class="text-sm text-slate-700 leading-relaxed font-medium">Menghimpun praktisi,
+                                akademisi dan penggiat digital untuk berbagi pengetahuan dan keterampilan khususnya
+                                dalam bidang literasi berbasis digital.</span>
+                        </div>
+
+                        <div
+                            class="flex items-start gap-3.5 p-3.5 bg-white rounded-xl border border-slate-100 transition shadow-sm">
+                            <div
+                                class="w-7 h-7 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center flex-shrink-0 font-bold text-xs">
+                                2</div>
+                            <span class="text-sm text-slate-700 leading-relaxed font-medium">Mengedukasi masyarakat
+                                melalui kegiatan literasi berbasis digital.</span>
+                        </div>
+
+                        <div
+                            class="flex items-start gap-3.5 p-3.5 bg-white rounded-xl border border-slate-100 transition shadow-sm">
+                            <div
+                                class="w-7 h-7 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center flex-shrink-0 font-bold text-xs">
+                                3</div>
+                            <span class="text-sm text-slate-700 leading-relaxed font-medium">Memfasilitasi kegiatan yang
+                                menunjang pengembangan SDM Indonesia khususnya dalam bidang literasi berbasis digital
+                                melalui workshop, training, seminar, bimtek dan lainnya.</span>
+                        </div>
+
+                        <div
+                            class="flex items-start gap-3.5 p-3.5 bg-white rounded-xl border border-slate-100 transition shadow-sm">
+                            <div
+                                class="w-7 h-7 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center flex-shrink-0 font-bold text-xs">
+                                4</div>
+                            <span class="text-sm text-slate-700 leading-relaxed font-medium">Bersinergi dengan
+                                stakeholder Pusat maupun Daerah dan institusi lainnya untuk menyusun konsep.</span>
+                        </div>
+
+                        <div
+                            class="flex items-start gap-3.5 p-3.5 bg-white rounded-xl border border-slate-100 transition shadow-sm">
+                            <div
+                                class="w-7 h-7 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center flex-shrink-0 font-bold text-xs">
+                                5</div>
+                            <span class="text-sm text-slate-700 leading-relaxed font-medium">Peningkatan kualitas
+                                pendidikan berbasis digital.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. BERBAGAI EVENT MENARIK -->
+    <section id="kegiatan" class="py-20 bg-slate-50 border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12" data-aos="fade-up">
+                <span class="text-xs font-bold text-brand-600 tracking-widest uppercase mb-2 block">Aktivitas
+                    Terbaru</span>
+                <h2 class="font-heading text-3xl font-bold text-slate-900">Berbagai Event Menarik</h2>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8 mb-12">
+                <div class="card-minimal overflow-hidden flex flex-col group cursor-pointer" data-aos="fade-up"
+                    data-aos-delay="100">
+                    <div class="image-zoom-container h-56 relative">
+                        <img src="https://gradasi.org/uploads/img/event/1767154719.jpg" alt="Event"
+                            class="w-full h-full object-cover">
+                        <div
+                            class="absolute top-4 left-4 bg-white/90 backdrop-blur-sm text-brand-700 text-xs font-bold px-3 py-1.5 rounded">
+                            Nasional</div>
+                    </div>
+                    <div class="p-6 flex flex-col flex-grow bg-white">
+                        <p
+                            class="text-slate-500 text-[11px] font-semibold tracking-wider uppercase mb-3 flex items-center gap-1.5">
+                            <i class="ph-bold ph-calendar-blank text-brand-500"></i> 31 December 2025
+                        </p>
+                        <a href="detail-kegiatan.html?slug=penyaluran-bantuan-kemanusiaan"
+                            class="font-heading text-lg font-bold text-slate-900 mb-2 group-hover:text-brand-600 transition line-clamp-2">
+                            Penyaluran Bantuan Kemanusiaan</a>
+                        <p class="text-slate-600 text-sm flex-grow line-clamp-3 mb-4 leading-relaxed">Dewan Pimpinan
+                            Pusat (DPP) GRADASI menyalurkan bantuan kemanusiaan kepada korban bencana b...</p>
+                        <div class="border-t border-slate-100 pt-4 flex justify-between items-center mt-auto">
+                            <button
+                                class="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-brand-600 transition group/btn">
+                                <div
+                                    class="w-7 h-7 rounded-full bg-slate-50 flex items-center justify-center group-hover/btn:bg-brand-50 transition-colors">
+                                    <i class="ph-bold ph-share-network text-sm"></i>
+                                </div>
+                                <span class="hidden sm:inline">Bagikan</span>
+                            </button>
+                            <a href="detail-kegiatan.html?slug=penyaluran-bantuan-kemanusiaan"
+                                class="flex items-center gap-1.5 text-xs font-bold text-brand-600 hover:text-brand-800 transition">
+                                Baca Selengkapnya <i class="ph-bold ph-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-minimal overflow-hidden flex flex-col group cursor-pointer" data-aos="fade-up"
+                    data-aos-delay="200">
+                    <div class="image-zoom-container h-56 relative">
+                        <img src="https://gradasi.org/uploads/img/event/1767154619.jpg" alt="Event"
+                            class="w-full h-full object-cover">
+                        <div
+                            class="absolute top-4 left-4 bg-white/90 backdrop-blur-sm text-brand-700 text-xs font-bold px-3 py-1.5 rounded">
+                            Jawa Timur</div>
+                    </div>
+                    <div class="p-6 flex flex-col flex-grow bg-white">
+                        <p
+                            class="text-slate-500 text-[11px] font-semibold tracking-wider uppercase mb-3 flex items-center gap-1.5">
+                            <i class="ph-bold ph-calendar-blank text-brand-500"></i> 31 December 2025
+                        </p>
+                        <a href="detail-kegiatan.html?slug=pelatihan-digital-marketing"
+                            class="font-heading text-lg font-bold text-slate-900 mb-2 group-hover:text-brand-600 transition line-clamp-2">
+                            Penyaluran Bantuan Kemanusiaan</a>
+                        <p class="text-slate-600 text-sm flex-grow line-clamp-3 mb-4 leading-relaxed">Dewan Pimpinan
+                            Pusat (DPP) GRADASI menyalurkan bantuan kemanusiaan kepada korban bencana b...</p>
+                        <div class="border-t border-slate-100 pt-4 flex justify-between items-center mt-auto">
+                            <button
+                                class="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-brand-600 transition group/btn">
+                                <div
+                                    class="w-7 h-7 rounded-full bg-slate-50 flex items-center justify-center group-hover/btn:bg-brand-50 transition-colors">
+                                    <i class="ph-bold ph-share-network text-sm"></i>
+                                </div>
+                                <span class="hidden sm:inline">Bagikan</span>
+                            </button>
+                            <a href="detail-kegiatan.html?slug=pelatihan-digital-marketing"
+                                class="flex items-center gap-1.5 text-xs font-bold text-brand-600 hover:text-brand-800 transition">
+                                Baca Selengkapnya <i class="ph-bold ph-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-minimal overflow-hidden flex flex-col group cursor-pointer" data-aos="fade-up"
+                    data-aos-delay="300">
+                    <div class="image-zoom-container h-56 relative">
+                        <img src="https://gradasi.org/uploads/img/event/1767154397.jpg" alt="Event"
+                            class="w-full h-full object-cover">
+                        <div
+                            class="absolute top-4 left-4 bg-white/90 backdrop-blur-sm text-brand-700 text-xs font-bold px-3 py-1.5 rounded">
+                            Lampung</div>
+                    </div>
+                    <div class="p-6 flex flex-col flex-grow bg-white">
+                        <p
+                            class="text-slate-500 text-[11px] font-semibold tracking-wider uppercase mb-3 flex items-center gap-1.5">
+                            <i class="ph-bold ph-calendar-blank text-brand-500"></i> 31 December 2025
+                        </p>
+                        <a href="detail-kegiatan.html?slug=konsolidasi-pengurus-dpp"
+                            class="font-heading text-lg font-bold text-slate-900 mb-2 group-hover:text-brand-600 transition line-clamp-2">
+                            Penyaluran Bantuan Kemanusiaan</a>
+                        <p class="text-slate-600 text-sm flex-grow line-clamp-3 mb-4 leading-relaxed">Dewan Pimpinan
+                            Pusat (DPP) GRADASI menyalurkan bantuan kemanusiaan kepada korban bencana b...</p>
+                        <div class="border-t border-slate-100 pt-4 flex justify-between items-center mt-auto">
+                            <button
+                                class="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-brand-600 transition group/btn">
+                                <div
+                                    class="w-7 h-7 rounded-full bg-slate-50 flex items-center justify-center group-hover/btn:bg-brand-50 transition-colors">
+                                    <i class="ph-bold ph-share-network text-sm"></i>
+                                </div>
+                                <span class="hidden sm:inline">Bagikan</span>
+                            </button>
+                            <a href="detail-kegiatan.html?slug=konsolidasi-pengurus-dpp"
+                                class="flex items-center gap-1.5 text-xs font-bold text-brand-600 hover:text-brand-800 transition">
+                                Baca Selengkapnya <i class="ph-bold ph-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center" data-aos="fade-up">
+                <a href="kegiatan.html"
+                    class="inline-flex items-center gap-2 bg-white border border-slate-300 hover:border-brand-500 hover:text-brand-700 text-slate-700 px-8 py-3 rounded-lg font-semibold text-sm transition shadow-sm hover:shadow">
+                    Lihat Seluruh Kegiatan <i class="ph-bold ph-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. VIDEO PROFILE (Textured Background) -->
+    <section class="py-24 bg-brand-950 border-b border-brand-900 relative overflow-hidden">
+        <div class="absolute inset-0 z-0 bg-texture-grid opacity-20"></div>
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center mb-10" data-aos="fade-up">
+                <span class="text-xs font-bold text-brand-400 tracking-widest uppercase mb-2 block">Dokumentasi
+                    Visual</span>
+                <h2 class="font-heading text-3xl font-bold text-white">Video Profile Organisasi</h2>
+            </div>
+
+            <div class="aspect-video bg-brand-900 rounded-2xl overflow-hidden shadow-2xl relative ring-1 ring-white/10"
+                data-aos="zoom-in">
+                <video id="orgVideo" class="w-full h-full object-cover" controls preload="metadata"
+                    poster="https://images.unsplash.com/photo-1475721025871-872ba5bb619a?q=80&w=2070&auto=format&fit=crop">
+                    <source src="https://gradasi.org/assets/video/gradasi.mp4" type="video/mp4">
+                    Browser Anda tidak mendukung pemutar video.
+                </video>
+            </div>
+        </div>
+    </section>
+
+    <!-- 7. BERBAGAI BERITA TERBARU -->
+    <section id="informasi" class="py-20 bg-slate-50 border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12" data-aos="fade-up">
+                <span class="text-xs font-bold text-brand-600 tracking-widest uppercase mb-2 block">Pusat
+                    Informasi</span>
+                <h2 class="font-heading text-3xl font-bold text-slate-900">Berita Terbaru</h2>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8 mb-12">
+                <!-- Similar card style but with distinct 'Berita' tags -->
+                <div class="card-minimal overflow-hidden flex flex-col group cursor-pointer" data-aos="fade-up"
+                    data-aos-delay="100">
+                    <div class="image-zoom-container h-48 relative">
+                        <img src="https://gradasi.org/uploads/img/berita/17708152730.jpg" alt="Berita"
+                            class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex flex-col flex-grow bg-white">
+                        <p class="text-brand-600 text-[11px] font-bold tracking-widest uppercase mb-3">11 February 2026
+                        </p>
+                        <a href="detail-berita.html?slug=rapat-kerja-daerah-jatim"
+                            class="font-heading text-lg font-bold text-slate-900 mb-3 group-hover:text-brand-600 transition line-clamp-2">
+                            Rapat Kerja Daerah Jatim</a>
+                        <p class="text-slate-600 text-sm flex-grow line-clamp-2 mb-4 leading-relaxed">SURABAYA, Generasi
+                            Digital Indonesia (GRADASI) Jawa Timur bersiap menggelar Rapat Kerja Da...</p>
+                        <div class="border-t border-slate-100 pt-4 flex justify-between items-center mt-auto">
+                            <button
+                                class="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-brand-600 transition group/btn">
+                                <div
+                                    class="w-7 h-7 rounded-full bg-slate-50 flex items-center justify-center group-hover/btn:bg-brand-50 transition-colors">
+                                    <i class="ph-bold ph-share-network text-sm"></i>
+                                </div>
+                                <span class="hidden sm:inline">Bagikan</span>
+                            </button>
+                            <a href="detail-berita.html?slug=rapat-kerja-daerah-jatim"
+                                class="flex items-center gap-1.5 text-xs font-bold text-brand-600 hover:text-brand-800 transition">
+                                Baca Berita <i class="ph-bold ph-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-minimal overflow-hidden flex flex-col group cursor-pointer" data-aos="fade-up"
+                    data-aos-delay="200">
+                    <div class="image-zoom-container h-48 relative">
+                        <img src="https://gradasi.org/uploads/img/berita/17620765070.jpg" alt="Berita"
+                            class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex flex-col flex-grow bg-white">
+                        <p class="text-brand-600 text-[11px] font-bold tracking-widest uppercase mb-3">2 November 2025
+                        </p>
+                        <a href="detail-berita.html?slug=peningkatan-kompetensi-sdm"
+                            class="font-heading text-lg font-bold text-slate-900 mb-3 group-hover:text-brand-600 transition line-clamp-2">
+                            Peningkatan Kompetensi SDM</a>
+                        <p class="text-slate-600 text-sm flex-grow line-clamp-2 mb-4 leading-relaxed">Inisiatif GRADASI
+                            Mendorong Peningkatan Kompetensi SDM Pendidikan dalam Memanfaatkan Kecer...</p>
+                        <div class="border-t border-slate-100 pt-4 flex justify-between items-center mt-auto">
+                            <button
+                                class="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-brand-600 transition group/btn">
+                                <div
+                                    class="w-7 h-7 rounded-full bg-slate-50 flex items-center justify-center group-hover/btn:bg-brand-50 transition-colors">
+                                    <i class="ph-bold ph-share-network text-sm"></i>
+                                </div>
+                                <span class="hidden sm:inline">Bagikan</span>
+                            </button>
+                            <a href="detail-berita.html?slug=peningkatan-kompetensi-sdm"
+                                class="flex items-center gap-1.5 text-xs font-bold text-brand-600 hover:text-brand-800 transition">
+                                Baca Berita <i class="ph-bold ph-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-minimal overflow-hidden flex flex-col group cursor-pointer" data-aos="fade-up"
+                    data-aos-delay="300">
+                    <div class="image-zoom-container h-48 relative">
+                        <img src="https://gradasi.org/uploads/img/berita/17618789900.jpg" alt="Berita"
+                            class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-6 flex flex-col flex-grow bg-white">
+                        <p class="text-brand-600 text-[11px] font-bold tracking-widest uppercase mb-3">31 October 2025
+                        </p>
+                        <a href="detail-berita.html?slug=rumusan-kunci-kebijakan"
+                            class="font-heading text-lg font-bold text-slate-900 mb-3 group-hover:text-brand-600 transition line-clamp-2">
+                            Rumusan Kunci Kebijakan</a>
+                        <p class="text-slate-600 text-sm flex-grow line-clamp-2 mb-4 leading-relaxed">#Ketua Dewan Pakar
+                            GRADASI, Damar Juniarto, Paparkan Lima Rumusan Kunci Kebijakan untuk Me...</p>
+                        <div class="border-t border-slate-100 pt-4 flex justify-between items-center mt-auto">
+                            <button
+                                class="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-brand-600 transition group/btn">
+                                <div
+                                    class="w-7 h-7 rounded-full bg-slate-50 flex items-center justify-center group-hover/btn:bg-brand-50 transition-colors">
+                                    <i class="ph-bold ph-share-network text-sm"></i>
+                                </div>
+                                <span class="hidden sm:inline">Bagikan</span>
+                            </button>
+                            <a href="detail-berita.html?slug=rumusan-kunci-kebijakan"
+                                class="flex items-center gap-1.5 text-xs font-bold text-brand-600 hover:text-brand-800 transition">
+                                Baca Berita <i class="ph-bold ph-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center" data-aos="fade-up">
+                <a href="berita.html"
+                    class="inline-flex items-center gap-2 bg-white border border-slate-300 hover:border-brand-500 hover:text-brand-700 text-slate-700 px-8 py-3 rounded-lg font-semibold text-sm transition shadow-sm hover:shadow">
+                    Informasi Lainnya <i class="ph-bold ph-newspaper"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+
+
+    <!-- 8. KONTAK (4 Cards, Map, Form) -->
+    <section id="kontak" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+
+
+
+            <!-- Map and Form Container -->
+            <div class="bg-slate-50 p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm" data-aos="fade-up">
+                <div class="grid lg:grid-cols-2 gap-10">
+                    <!-- Real Google Maps Embed -->
+                    <div
+                        class="h-[400px] relative bg-white border border-slate-200 rounded-xl overflow-hidden shadow-inner group">
+                        <iframe
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.273679234832!2d106.82496411476902!3d-6.227606695491959!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f3e46c7bc529%3A0xc3c50117462446!2sThe%20Bellagio%20Mall!5e0!3m2!1sen!2sid!4v1700000000000!5m2!1sen!2sid"
+                            width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"
+                            referrerpolicy="no-referrer-when-downgrade">
+                        </iframe>
+                    </div>
+
+                    <!-- Clean Contact Form -->
+                    <div class="flex flex-col justify-center">
+                        <div class="mb-6">
+                            <h3 class="font-heading text-2xl font-bold text-slate-900 mb-2">Kirim Pesan Langsung</h3>
+                            <p class="text-sm text-slate-500">Gunakan formulir di bawah ini untuk mengirimkan pertanyaan
+                                atau permohonan kerjasama secara resmi.</p>
+                        </div>
+                        <form class="space-y-5">
+                            <div class="grid grid-cols-2 gap-5">
+                                <div>
+                                    <label
+                                        class="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">Nama
+                                        Lengkap</label>
+                                    <input type="text"
+                                        class="w-full px-4 py-3 rounded-lg border border-slate-200 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none bg-white transition">
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">Email</label>
+                                    <input type="email"
+                                        class="w-full px-4 py-3 rounded-lg border border-slate-200 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none bg-white transition">
+                                </div>
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">Subjek
+                                    / Perihal</label>
+                                <input type="text"
+                                    class="w-full px-4 py-3 rounded-lg border border-slate-200 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none bg-white transition">
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">Pesan
+                                    Anda</label>
+                                <textarea rows="4"
+                                    class="w-full px-4 py-3 rounded-lg border border-slate-200 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none bg-white transition resize-none"></textarea>
+                            </div>
+                            <button type="button"
+                                class="bg-brand-700 hover:bg-brand-800 text-white w-full sm:w-auto px-8 py-3 rounded-lg text-sm font-semibold transition shadow-sm hover:shadow flex items-center justify-center gap-2">
+                                <i class="ph-bold ph-paper-plane-right"></i> Kirim Pesan Sekarang
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 9. FOOTER (Textured) -->
+    <footer class="bg-brand-950 border-t-4 border-brand-700 text-slate-400 text-sm relative overflow-hidden">
+        <div class="absolute inset-0 z-0 bg-texture-grid opacity-10 mix-blend-overlay"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 pt-16 pb-8">
+            <div
+                class="flex flex-col md:flex-row justify-between items-center gap-8 border-b border-brand-800/50 pb-8 mb-8">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center p-1 shadow-inner">
+                        <img src="https://gradasi.org/uploads/img/logo/1737187847.png" alt="Logo"
+                            class="w-full h-full object-contain">
+                    </div>
+                    <div>
+                        <span class="text-white font-heading font-bold text-lg block leading-tight">DPP GRADASI</span>
+                        <span class="text-[10px] tracking-widest uppercase text-brand-300 font-semibold">Generasi
+                            Digital Indonesia</span>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <a href="https://www.facebook.com/gradasiofficial.id" target="_blank"
+                        class="w-10 h-10 rounded-lg bg-brand-900/50 border border-brand-800 flex items-center justify-center hover:bg-brand-700 hover:border-brand-700 hover:text-white transition shadow-sm"><i
+                            class="ph-fill ph-facebook-logo text-lg"></i></a>
+                    <a href="https://www.instagram.com/dppgradasi" target="_blank"
+                        class="w-10 h-10 rounded-lg bg-brand-900/50 border border-brand-800 flex items-center justify-center hover:bg-brand-700 hover:border-brand-700 hover:text-white transition shadow-sm"><i
+                            class="ph-fill ph-instagram-logo text-lg"></i></a>
+                    <a href="https://www.youtube.com/channel/UCwdjB4LkqcF4Kw5-PoyOb5A" target="_blank"
+                        class="w-10 h-10 rounded-lg bg-brand-900/50 border border-brand-800 flex items-center justify-center hover:bg-brand-700 hover:border-brand-700 hover:text-white transition shadow-sm"><i
+                            class="ph-fill ph-youtube-logo text-lg"></i></a>
+                </div>
+            </div>
+
+            <div
+                class="flex flex-col md:flex-row justify-between items-center text-[13px] text-brand-200/70 border-t border-brand-800/50 pt-8 mt-8">
+                <div class="flex flex-col text-center md:text-left gap-1 mb-4 md:mb-0">
+                    <p>&copy; 2026 Perkumpulan Generasi Digital Indonesia. Dilindungi Undang-Undang.</p>
+                    <p class="text-[11px] text-brand-300/50">Office Park OL3-IZA The Bellagio Mall, Mega Kuningan,
+                        Jakarta Selatan.</p>
+                </div>
+                <div class="flex gap-6 font-medium">
+                    <a href="#" class="hover:text-white transition">Kebijakan Privasi</a>
+                    <a href="#" class="hover:text-white transition">Syarat & Ketentuan</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Floating Contact Button -->
+    <div x-data="{ open: false }" class="fixed bottom-6 right-6 z-50">
+        <div x-show="open" x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 translate-y-4 scale-95"
+            x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+            x-transition:leave-end="opacity-0 translate-y-4 scale-95"
+            class="absolute bottom-16 right-0 mb-3 space-y-3 flex flex-col items-end">
+            <a href="mailto:dpp@gradasi.org"
+                class="flex items-center gap-3 bg-white px-5 py-3 rounded-xl shadow-xl border border-slate-100 group transition hover:scale-105">
+                <span
+                    class="text-sm font-bold text-slate-700 group-hover:text-brand-600 transition">dpp@gradasi.org</span>
+                <div class="w-8 h-8 rounded-full bg-brand-50 flex items-center justify-center text-brand-600"><i
+                        class="ph-bold ph-envelope-simple text-lg"></i></div>
+            </a>
+            <a href="tel:+6285279880008" target="_blank"
+                class="flex items-center gap-3 bg-white px-5 py-3 rounded-xl shadow-xl border border-slate-100 group transition hover:scale-105">
+                <span class="text-sm font-bold text-slate-700 group-hover:text-brand-600 transition">(+62)
+                    852-7988-0008</span>
+                <div class="w-8 h-8 rounded-full bg-brand-50 flex items-center justify-center text-brand-600"><i
+                        class="ph-bold ph-phone-call text-lg"></i></div>
+            </a>
+        </div>
+        <button @click="open = !open"
+            class="w-14 h-14 bg-brand-700 text-white rounded-full shadow-[0_10px_25px_rgba(29,78,216,0.4)] flex items-center justify-center text-2xl transition-all duration-300 transform hover:bg-brand-600 hover:-translate-y-1"
+            :class="{'rotate-90 bg-slate-800 shadow-lg': open}">
+            <i class="ph-bold ph-headset" x-show="!open"></i>
+            <i class="ph-bold ph-x" x-show="open" style="display: none;"></i>
+        </button>
+    </div>
+
+    <!-- Init AOS Animation -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init({
+            once: true,
+            offset: 50,
+            duration: 800,
+            easing: 'ease-out-cubic',
+        });
+
+        // Video Autoplay on Scroll
+        document.addEventListener("DOMContentLoaded", function () {
+            const video = document.getElementById('orgVideo');
+            if (video) {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            // Coba memutar video (mungkin akan diblokir browser jika belum ada interaksi klik)
+                            let playPromise = video.play();
+                            if (playPromise !== undefined) {
+                                playPromise.catch(error => {
+                                    console.log("Autoplay dengan suara diblokir browser sampai pengguna melakukan klik di halaman.");
+                                });
+                            }
+                        } else {
+                            // Jeda (pause) otomatis jika video keluar dari layar
+                            video.pause();
+                        }
+                    });
+                }, { threshold: 0.5 }); // Aktif ketika 50% area video terlihat
+
+                observer.observe(video);
+            }
+        });
+    </script>
+</body>
+
+</html>
