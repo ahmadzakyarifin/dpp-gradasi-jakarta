@@ -212,8 +212,9 @@
 
                 <div class="hidden lg:flex items-center gap-3">
                     <a href="login.html"
-                        class="bg-brand-700 hover:bg-brand-800 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition shadow-sm hover:shadow-md transform hover:-translate-y-0.5">
-                        Masuk
+                        class="group relative inline-flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold text-white bg-brand-600 hover:bg-brand-700 rounded-xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
+                        <i class="ph-bold ph-sign-in text-lg transition-transform duration-300 group-hover:translate-x-0.5"></i>
+                        <span>Masuk</span>
                     </a>
                 </div>
 
@@ -288,7 +289,10 @@
                     class="block px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg">Kontak</a>
                 <div class="border-t border-slate-100 pt-3 mt-3">
                     <a href="login.html"
-                        class="block px-4 py-3 text-sm font-bold text-white bg-brand-700 text-center rounded-lg">Masuk</a>
+                        class="flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold text-white bg-gradient-to-r from-brand-700 to-brand-500 rounded-xl overflow-hidden shadow-[0_5px_15px_rgba(37,99,235,0.3)] hover:shadow-[0_8px_25px_rgba(37,99,235,0.5)] transition-all">
+                        <i class="ph-bold ph-sign-in text-lg"></i>
+                        Masuk
+                    </a>
                 </div>
             </div>
         </div>
@@ -296,218 +300,273 @@
 
     <!-- 1. HERO CAROUSEL / BANNER (Option 1: Modern Interactive Hero Slider) -->
     <section
-        class="relative bg-brand-950 overflow-hidden pt-32 pb-24 md:pt-44 md:pb-28 border-b border-brand-900 min-h-screen flex items-end"
+        class="relative bg-brand-950 overflow-hidden pt-28 pb-20 md:pt-40 md:pb-24 border-b border-brand-900 min-h-screen flex items-center"
         x-data="{
             currentSlide: 0,
             autoplayTimer: null,
+            progress: 0,
             slides: [
                 {
                     title: 'Musyawarah Nasional Ke-II GRADASI',
                     subtitle: 'Kolaborasi Membangun Negeri demi Kemandirian Digital Indonesia',
-                    tag: 'Musyawarah Nasional',
+                    tag: 'HEADLINE EVENT',
+                    isNew: true,
+                    date: '10 - 12 Agustus 2026',
+                    location: 'Jakarta Convention Center',
                     img: 'https://gradasi.org/uploads/img/slider/1749385864.jpg',
-                    pos: 'center 30%'
+                    link: 'detail-kegiatan.html?slug=munas-ke-ii'
                 },
                 {
-                    title: 'Audiensi & Sinergi Strategis Kementerian',
-                    subtitle: 'Memperkuat Kemitraan Bersama Pemangku Kepentingan Nasional',
-                    tag: 'Kemitraan Strategis',
-                    img: 'https://gradasi.org/uploads/img/slider/1746600520.png',
-                    pos: 'center 15%'
-                },
-                {
-                    title: 'Pelatihan Digital Marketing & Inklusi Masyarakat',
-                    subtitle: 'Program Transformasi Berbasis Literasi Digital di Berbagai Daerah',
-                    tag: 'Pemberdayaan Daerah',
+                    title: 'Pelatihan Digital Marketing UMKM',
+                    subtitle: 'Program Transformasi Berbasis Literasi Digital untuk Memajukan Ekonomi Daerah',
+                    tag: 'PELATIHAN',
+                    isNew: false,
+                    date: '15 November 2025',
+                    location: 'Online via Zoom',
                     img: 'https://gradasi.org/uploads/img/slider/1746600828.jpg',
-                    pos: 'center 25%'
+                    link: 'detail-kegiatan.html?slug=pelatihan-digital-marketing'
+                },
+                {
+                    title: 'Audiensi & Sinergi Strategis',
+                    subtitle: 'Memperkuat Kemitraan Bersama Pemangku Kepentingan Nasional',
+                    tag: 'KEMITRAAN',
+                    isNew: false,
+                    date: 'September 2025',
+                    location: 'Kementerian Kominfo',
+                    img: 'https://gradasi.org/uploads/img/slider/1746600520.png',
+                    link: '#'
                 }
             ],
             init() {
                 this.startAutoplay();
             },
             startAutoplay() {
+                this.progress = 0;
                 this.autoplayTimer = setInterval(() => {
-                    this.nextSlide();
-                }, 5000);
+                    this.progress += 2; // 50 * 2 = 100% in 5 seconds
+                    if (this.progress >= 100) {
+                        this.nextSlide();
+                    }
+                }, 100);
             },
             stopAutoplay() {
                 if (this.autoplayTimer) clearInterval(this.autoplayTimer);
+                this.progress = 0;
             },
             nextSlide() {
+                this.stopAutoplay();
                 this.currentSlide = (this.currentSlide + 1) % this.slides.length;
+                this.startAutoplay();
             },
             prevSlide() {
+                this.stopAutoplay();
                 this.currentSlide = (this.currentSlide - 1 + this.slides.length) % this.slides.length;
+                this.startAutoplay();
+            },
+            goToSlide(index) {
+                this.stopAutoplay();
+                this.currentSlide = index;
+                this.startAutoplay();
             }
         }" @mouseenter="stopAutoplay()" @mouseleave="startAutoplay()">
 
-        <!-- SLIDES BACKGROUND IMAGES WITH DARK OVERLAY -->
+        <!-- SLIDES BACKGROUND IMAGES WITH DARK OVERLAY (BLURRED FOR FLYER FOCUS) -->
         <template x-for="(slide, index) in slides" :key="index">
             <div x-show="currentSlide === index" x-transition:enter="transition ease-out duration-1000"
                 x-transition:enter-start="opacity-0 scale-105" x-transition:enter-end="opacity-100 scale-100"
                 x-transition:leave="transition ease-in duration-700" x-transition:leave-start="opacity-100 scale-100"
                 x-transition:leave-end="opacity-0 scale-95" class="absolute inset-0 z-0">
-                <img :src="slide.img" :alt="slide.title" class="w-full h-full object-cover transition-all duration-700"
-                    :style="{ objectPosition: slide.pos || 'center 20%' }">
-                <!-- Balanced Dark Overlay for High Contrast & Clear Image Visibility -->
-                <div class="absolute inset-0 bg-gradient-to-t from-brand-950/90 via-brand-950/40 to-brand-950/20"></div>
+                <img :src="slide.img" :alt="slide.title" class="w-full h-full object-cover transition-all duration-700 blur-sm scale-110 opacity-40">
+                <div class="absolute inset-0 bg-gradient-to-r from-brand-950 via-brand-950/90 to-brand-900/60"></div>
                 <div class="absolute inset-0 bg-texture-dots opacity-20 mix-blend-overlay"></div>
             </div>
         </template>
 
-        <!-- HERO CONTENT OVERLAY -->
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full text-left" data-aos="fade-up">
-            <div class="max-w-3xl">
-                <h1
-                    class="font-heading text-5xl md:text-7xl lg:text-8xl font-extrabold text-white tracking-tight mb-4 drop-shadow-lg">
-                    GRADASI
-                </h1>
+        <!-- HERO CONTENT OVERLAY (SPLIT LAYOUT FOR FLYER) -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full" data-aos="fade-up">
+            <!-- Inject Floating Animation Style -->
+            <style>
+                @keyframes float-gentle {
+                    0% { transform: translateY(0px); }
+                    50% { transform: translateY(-15px); }
+                    100% { transform: translateY(0px); }
+                }
+                .animate-float-gentle {
+                    animation: float-gentle 6s ease-in-out infinite;
+                }
+            </style>
 
-                <!-- Static Text (Old Content) in Modern Layout -->
-                <div class="min-h-[100px]">
-                    <p class="text-lg md:text-xl text-white/95 font-medium leading-relaxed drop-shadow-sm max-w-2xl">
-                        Organisasi penggerak literasi digital nasional, mandiri dan terbuka untuk umum, merujuk pada
-                        semangat kreativitas dan inovasi generasi muda dalam memaksimalkan potensinya untuk
-                        berkolaborasi membangun negeri.
-                    </p>
+            <template x-for="(slide, index) in slides" :key="'content-'+index">
+                <div x-show="currentSlide === index" 
+                     x-transition:enter="transition ease-out duration-700 delay-300"
+                     x-transition:enter-start="opacity-0 translate-y-8" 
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     class="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+                     
+                    <!-- Left: Text Information -->
+                    <div class="w-full lg:w-1/2 text-left order-2 lg:order-1">
+                        <!-- Badges -->
+                        <div class="flex flex-wrap items-center gap-3 mb-6">
+                            <span x-show="slide.isNew" class="inline-flex items-center gap-1.5 bg-gradient-to-r from-red-600 to-red-500 text-white text-[11px] font-extrabold px-4 py-1.5 rounded-full shadow-[0_0_20px_rgba(239,68,68,0.6)] animate-pulse uppercase tracking-wider border border-red-400/50">
+                                <i class="ph-fill ph-fire"></i> TERBARU
+                            </span>
+                            <span class="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/20 text-brand-100 text-[11px] font-bold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-sm">
+                                <i class="ph-bold ph-tag"></i> <span x-text="slide.tag"></span>
+                            </span>
+                        </div>
+                        
+                        <!-- Title & Subtitle -->
+                        <h1 class="font-heading text-4xl sm:text-5xl lg:text-[4rem] font-black text-white tracking-tight mb-5 drop-shadow-2xl leading-tight" x-text="slide.title"></h1>
+                        <p class="text-lg md:text-xl text-white/80 font-medium leading-relaxed mb-10 max-w-xl" x-text="slide.subtitle"></p>
+                        
+                        <!-- Event Meta (Glassmorphism Cards) -->
+                        <div class="flex flex-col sm:flex-row gap-4 mb-10">
+                            <div class="flex items-center gap-4 bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-4 pr-8 shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-transform hover:-translate-y-1 hover:bg-white/10 cursor-default">
+                                <div class="w-12 h-12 rounded-full bg-brand-500/20 flex items-center justify-center border border-brand-400/30">
+                                    <i class="ph-bold ph-calendar-blank text-xl text-amber-400"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-white/60 font-bold uppercase tracking-widest mb-0.5">Waktu Event</p>
+                                    <p class="text-sm font-bold text-white" x-text="slide.date"></p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4 bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-4 pr-8 shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-transform hover:-translate-y-1 hover:bg-white/10 cursor-default">
+                                <div class="w-12 h-12 rounded-full bg-brand-500/20 flex items-center justify-center border border-brand-400/30">
+                                    <i class="ph-bold ph-map-pin text-xl text-amber-400"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-white/60 font-bold uppercase tracking-widest mb-0.5">Lokasi</p>
+                                    <p class="text-sm font-bold text-white" x-text="slide.location"></p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- CTA -->
+                        <a :href="slide.link" class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-8 py-3.5 rounded-xl font-bold text-sm transition-all shadow-sm hover:shadow-md transform hover:-translate-y-1">
+                            Lihat Detail Event <i class="ph-bold ph-arrow-right text-lg"></i>
+                        </a>
+                    </div>
+                    
+                    <!-- Right: Actual Flyer Image (Stacked & Tilted) -->
+                    <div class="w-full lg:w-1/2 order-1 lg:order-2 flex justify-center lg:justify-end relative">
+                        <!-- Decorative Background Orbs -->
+                        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[400px] aspect-square bg-brand-500/40 blur-[120px] rounded-full pointer-events-none"></div>
+                        <div class="absolute top-1/2 left-1/2 -translate-x-1/4 -translate-y-3/4 w-3/4 max-w-[300px] aspect-square bg-amber-500/20 blur-[100px] rounded-full pointer-events-none"></div>
+                        
+                        <!-- 3D Stack Container with Floating Animation -->
+                        <div class="relative w-full max-w-sm lg:max-w-md aspect-[4/5] animate-float-gentle group" style="perspective: 1200px;">
+                            
+                            <!-- Back Frame (Tilted Left) -->
+                            <div class="absolute inset-0 bg-brand-800/40 backdrop-blur-xl border border-white/10 rounded-3xl transform -rotate-6 scale-95 transition-transform duration-700 group-hover:-rotate-12 shadow-2xl origin-bottom-left pointer-events-none"></div>
+                            
+                            <!-- Middle Frame (Tilted Right) -->
+                            <div class="absolute inset-0 bg-gradient-to-br from-brand-600/30 to-amber-500/20 backdrop-blur-md border border-white/20 rounded-3xl transform rotate-3 scale-100 transition-transform duration-700 group-hover:rotate-6 shadow-xl origin-bottom-right pointer-events-none"></div>
+
+                            <!-- Front Image -->
+                            <div class="absolute inset-0 rounded-3xl overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.6)] border-[4px] border-white/10 transform transition-transform duration-700 hover:scale-[1.03] hover:-translate-y-2 bg-brand-950">
+                                <img :src="slide.img" :alt="slide.title" class="w-full h-full object-cover">
+                                <!-- Glass Reflection -->
+                                <div class="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/30 to-white/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
                 </div>
-            </div>
+            </template>
         </div>
 
-        <!-- NAVIGATION ARROWS (LEFT & RIGHT) -->
-        <button @click="prevSlide()"
-            class="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-20 text-white/60 hover:text-white flex items-center justify-center transition duration-300 hover:scale-125 drop-shadow-2xl">
-            <i class="ph-bold ph-caret-left text-4xl sm:text-5xl"></i>
-        </button>
-        <button @click="nextSlide()"
-            class="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-20 text-white/60 hover:text-white flex items-center justify-center transition duration-300 hover:scale-125 drop-shadow-2xl">
-            <i class="ph-bold ph-caret-right text-4xl sm:text-5xl"></i>
-        </button>
-
-        <!-- SLIDE INDICATORS (DOTS) -->
-        <div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-            <template x-for="(slide, index) in slides" :key="index">
-                <button @click="currentSlide = index" class="h-2.5 rounded-full transition-all duration-500"
-                    :class="currentSlide === index ? 'w-8 bg-amber-400' : 'w-2.5 bg-white/40 hover:bg-white/70'">
-                </button>
-            </template>
+        <!-- NAVIGATION CONTROLS -->
+        <div class="absolute bottom-8 left-0 right-0 z-20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+                <!-- Arrows -->
+                <div class="flex gap-3">
+                    <button @click="prevSlide()" class="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center justify-center transition backdrop-blur-sm">
+                        <i class="ph-bold ph-caret-left text-xl"></i>
+                    </button>
+                    <button @click="nextSlide()" class="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center justify-center transition backdrop-blur-sm">
+                        <i class="ph-bold ph-caret-right text-xl"></i>
+                    </button>
+                </div>
+                
+                <!-- Dots & Progress Bar -->
+                <div class="flex flex-col items-end gap-3">
+                    <div class="flex gap-2">
+                        <template x-for="(slide, index) in slides" :key="'dot-'+index">
+                            <button @click="goToSlide(index)" class="h-2.5 rounded-full transition-all duration-500"
+                                :class="currentSlide === index ? 'w-8 bg-amber-400' : 'w-2.5 bg-white/30 hover:bg-white/60'">
+                            </button>
+                        </template>
+                    </div>
+                    <!-- Auto-play progress indicator -->
+                    <div class="w-32 h-1 bg-white/10 rounded-full overflow-hidden">
+                        <div class="h-full bg-brand-500 transition-all duration-100 ease-linear" :style="'width: ' + progress + '%'"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
     <!-- 2. SAMBUTAN TAHUN BARU 2026 -->
-    <section class="py-16 bg-white border-b border-slate-200">
+    <section class="py-24 bg-white border-b border-slate-200 relative overflow-hidden">
+        <!-- Abstract shape in bg -->
+        <div class="absolute top-0 right-0 w-1/2 h-full bg-brand-50/50 rounded-bl-[200px] -z-10"></div>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="card-minimal p-6 sm:p-12 overflow-hidden relative shadow-sm border border-slate-200/80 rounded-3xl"
-                data-aos="fade-up">
-                <!-- Decorative subtle element -->
-                <div class="absolute top-0 right-0 w-40 h-40 bg-brand-50 rounded-bl-[120px] -z-10 opacity-70"></div>
-
-                <div class="flex flex-col lg:flex-row gap-10 items-start relative z-10">
-                    <!-- POSTER IMAGE (FULL DISPLAY, COMPACT & STICKY ON DESKTOP) -->
-                    <div class="w-full lg:w-5/12 lg:sticky lg:top-28">
-                        <div
-                            class="relative overflow-hidden rounded-2xl border border-slate-200 shadow-md bg-slate-900 group">
-                            <img src="https://gradasi.org/uploads/img/event-terkini/1767154211.jpg"
-                                alt="Poster Sambutan Tahun Baru 2026 DPP GRADASI"
-                                class="w-full h-auto object-contain transition duration-500 group-hover:scale-105">
+            <div class="flex flex-col lg:flex-row gap-16 items-center">
+                
+                <!-- POSTER IMAGE (Overlapping 3D effect) -->
+                <div class="w-full lg:w-5/12 relative" data-aos="fade-right">
+                    <!-- Glow -->
+                    <div class="absolute inset-0 bg-brand-500/20 blur-[80px] rounded-full"></div>
+                    <div class="relative rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-white transform transition hover:-translate-y-2 duration-500">
+                        <img src="https://gradasi.org/uploads/img/event-terkini/1767154211.jpg"
+                            alt="Poster Sambutan Tahun Baru 2026"
+                            class="w-full h-auto object-contain">
+                    </div>
+                    <!-- Small floating badge -->
+                    <div class="absolute -bottom-6 -right-6 bg-white p-4 rounded-2xl shadow-xl border border-slate-100 flex items-center gap-4 animate-[float_4s_ease-in-out_infinite]">
+                        <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center text-amber-500 text-2xl">
+                            <i class="ph-fill ph-star"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-slate-800 text-sm">Tahun Baru 2026</p>
+                            <p class="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Resolusi & Harapan</p>
                         </div>
                     </div>
+                </div>
 
-                    <!-- COMPLETE CONTENT TEXT (SUPER CLEAN & BEAUTIFUL PURE TYPOGRAPHY) -->
-                    <div class="w-full lg:w-7/12 space-y-4">
+                <!-- CONTENT TEXT -->
+                <div class="w-full lg:w-7/12 space-y-8" data-aos="fade-left">
+                    <div>
+                        <span class="inline-flex items-center gap-2 bg-brand-50 text-brand-700 text-xs font-bold px-4 py-2 rounded-full uppercase tracking-widest mb-4 border border-brand-100">
+                            <i class="ph-fill ph-quotes"></i> Refleksi Resmi
+                        </span>
+                        <h2 class="font-heading text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+                            Memperjuangkan <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-amber-500">Kedaulatan Digital</span> Bangsa
+                        </h2>
+                    </div>
+
+                    <!-- ELEGANT QUOTE CARD -->
+                    <div class="relative bg-slate-50 rounded-2xl p-8 border border-slate-200/60 shadow-inner">
+                        <i class="ph-fill ph-quotes absolute -top-4 -left-2 text-6xl text-brand-200/50 transform -rotate-12"></i>
+                        <p class="relative z-10 text-slate-700 text-lg leading-relaxed font-quote italic">
+                            "Tiada hadiah termahal di akhir tahun ini selain doa dan dukungan yang senantiasa mengiringi setiap langkah perjuangan kita. Tantangan teknologi bukan beban, melainkan proses pendewasaan agar kita tegak berdiri."
+                        </p>
+                    </div>
+
+                    <div class="space-y-4 text-slate-600 text-sm leading-relaxed">
+                        <p>Memasuki tahun 2026, GRADASI menetapkan pilar utama perjuangan: memastikan setiap masyarakat memiliki kecakapan digital (<em>digital skills</em>), serta mengembangkan program literasi yang berdampak nyata.</p>
+                        <p>Mari kita tutup babak "Kisah Panjang" tahun ini dengan syukur dan memulai lembaran baru dengan kolaborasi yang lebih solid.</p>
+                    </div>
+
+                    <!-- SIGNATURE -->
+                    <div class="flex items-center gap-4 pt-4 border-t border-slate-100">
+                        <div class="flex -space-x-4">
+                            <img src="https://gradasi.org/uploads/img/s-anggota/ketua/1735027418.jpg" alt="Upi" class="w-12 h-12 rounded-full border-2 border-white shadow-md relative z-20">
+                            <div class="w-12 h-12 rounded-full bg-brand-100 border-2 border-white shadow-md flex items-center justify-center text-brand-700 font-bold text-xs relative z-10">JS</div>
+                        </div>
                         <div>
-                            <span
-                                class="bg-brand-50 text-brand-700 text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-brand-100/80 inline-block mb-2">Refleksi
-                                & Sambutan Resmi</span>
-                            <h2 class="font-heading text-3xl font-extrabold text-slate-900 tracking-tight">Selamat Tahun
-                                Baru 2026</h2>
-                        </div>
-
-                        <div class="space-y-3.5 text-slate-600 text-sm leading-relaxed font-normal">
-                            <p>Dewan Pengurus Pusat Generasi Digital Indonesia (DPP GRADASI) secara resmi menyampaikan
-                                refleksi akhir tahun sekaligus pernyataan optimisme menyambut tahun baru 2026. GRADASI
-                                menegaskan komitmennya untuk tetap menjadi garda terdepan dalam memperjuangkan
-                                kedaulatan digital bangsa.</p>
-
-                            <p>Tahun 2025 yang segera berakhir dinilai sebagai sebuah perjalanan yang penuh makna,
-                                sebuah <strong>"Kisah Panjang"</strong> yang diisi dengan berbagai dinamika transformasi
-                                teknologi. Perjalanan ini merupakan bentuk dedikasi seluruh elemen organisasi dalam
-                                menghadapi tantangan era digital, baik di tingkat pusat maupun daerah.</p>
-
-                            <!-- CLEAN ELEGANT QUOTE -->
-                            <div class="border-l-4 border-brand-600 pl-4 py-1 my-4">
-                                <p class="text-slate-800 italic font-quote text-sm sm:text-base leading-relaxed">
-                                    "Tiada hadiah termahal di akhir tahun ini selain doa dan dukungan yang senantiasa
-                                    mengiringi setiap langkah perjuangan kita," <span
-                                        class="font-sans not-italic text-xs text-slate-500 font-medium">ujar perwakilan
-                                        DPP GRADASI.</span> Organisasi ini memposisikan tantangan teknologi di tahun
-                                    2025 bukan sebagai beban, melainkan sebagai proses pendewasaan yang memungkinkan
-                                    seluruh anggota untuk tetap tegak berdiri demi kemandirian digital Indonesia.
-                                </p>
-                            </div>
-
-                            <!-- PURE TEXT LIST: 4 PILAR UTAMA PERJUANGAN 2026 -->
-                            <div class="py-2">
-                                <p class="font-bold text-slate-900 text-sm mb-2">Memasuki tahun 2026, GRADASI menetapkan
-                                    tiga pilar utama perjuangan:</p>
-                                <ol class="space-y-2 text-sm text-slate-700 leading-relaxed pl-1">
-                                    <li class="flex items-start gap-2">
-                                        <span class="font-bold text-brand-700 flex-shrink-0">1.</span>
-                                        <span><strong>Kedaulatan Digital:</strong> Terus memperjuangkan agar Indonesia
-                                            mampu mandiri dan berdaulat atas ekosistem digitalnya sendiri.</span>
-                                    </li>
-                                    <li class="flex items-start gap-2">
-                                        <span class="font-bold text-brand-700 flex-shrink-0">2.</span>
-                                        <span><strong>Kemandirian Generasi:</strong> Memastikan setiap pengurus dan
-                                            anggota masyarakat Indonesia memiliki kecakapan digital (<em>digital
-                                                skills</em>) untuk menjadi aktor utama di panggung global.</span>
-                                    </li>
-                                    <li class="flex items-start gap-2">
-                                        <span class="font-bold text-brand-700 flex-shrink-0">3.</span>
-                                        <span><strong>Inovasi Berkelanjutan:</strong> Mengembangkan program-materi
-                                            literasi digital yang relevan dan berdampak luas bagi kemajuan
-                                            bangsa.</span>
-                                    </li>
-                                    <li class="flex items-start gap-2">
-                                        <span class="font-bold text-brand-700 flex-shrink-0">4.</span>
-                                        <span>Program-program yang sudah dijalankan baik di DPP maupun DPD Gradasi
-                                            seluruh Indonesia.</span>
-                                    </li>
-                                </ol>
-                            </div>
-
-                            <p>Selamat Tahun Baru 2026. Mari kita tutup babak "Kisah Panjang" tahun ini dengan rasa
-                                syukur dan memulai lembaran baru dengan semangat kolaborasi yang lebih kuat.</p>
-                        </div>
-
-                        <!-- CLEAN SIGNATURE FOOTER -->
-                        <div
-                            class="pt-5 mt-4 border-t border-slate-100 flex flex-wrap justify-between items-center gap-4 text-xs">
-                            <div>
-                                <p class="font-bold text-brand-700 uppercase tracking-wider text-xs">Salam Kolaborasi
-                                </p>
-                                <p class="text-slate-500 font-medium text-[11px]">Generasi Membangun Negeri &bull; DPP
-                                    Generasi Digital Indonesia</p>
-                            </div>
-                            <div class="flex items-center gap-6">
-                                <div class="flex items-center gap-2.5">
-                                    <img src="https://gradasi.org/uploads/img/s-anggota/ketua/1735027418.jpg"
-                                        alt="Upi Asmaradhana"
-                                        class="w-8 h-8 rounded-full object-cover border-2 border-amber-400 shadow-sm">
-                                    <div>
-                                        <p class="font-heading font-bold text-slate-900 text-xs">Upi Asmaradhana</p>
-                                        <p class="text-[10px] text-amber-600 font-bold uppercase tracking-wider">Ketua
-                                            Umum</p>
-                                    </div>
-                                </div>
-                                <div class="h-6 w-[1px] bg-slate-200"></div>
-                                <div>
-                                    <p class="font-heading font-bold text-slate-900 text-xs">Junaidi, S.Kom</p>
-                                    <p class="text-[10px] text-teal-600 font-bold uppercase tracking-wider">Sekretaris
-                                        Jenderal</p>
-                                </div>
-                            </div>
+                            <p class="font-heading font-bold text-slate-900 text-sm">DPP GRADASI</p>
+                            <p class="text-xs text-brand-600 font-medium">Upi Asmaradhana & Junaidi, S.Kom</p>
                         </div>
                     </div>
                 </div>
@@ -516,210 +575,187 @@
     </section>
 
     <!-- 3. TENTANG KAMI -->
-    <section id="tentang" class="py-20 bg-slate-50 border-b border-slate-200" x-data="{ tab: 'selayang' }">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center md:text-left mb-10" data-aos="fade-right">
-                <span class="text-xs font-bold text-brand-600 tracking-widest uppercase mb-2 block">Profil
-                    Organisasi</span>
-                <h2 class="font-heading text-3xl font-bold text-slate-900">Tentang Kami</h2>
+    <section id="tentang" class="py-24 bg-slate-50 border-b border-slate-200 relative" x-data="{ tab: 'selayang' }">
+        <div class="absolute inset-0 bg-texture-dots opacity-30 mix-blend-overlay"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center mb-16" data-aos="fade-up">
+                <span class="inline-block px-4 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-bold text-brand-600 tracking-widest uppercase mb-4 shadow-sm">
+                    Profil Organisasi
+                </span>
+                <h2 class="font-heading text-4xl md:text-5xl font-black text-slate-900">Tentang Kami</h2>
             </div>
 
-            <div class="flex flex-col lg:flex-row gap-12 items-start">
+            <div class="flex flex-col lg:flex-row gap-16 items-center">
+                <!-- Foto Pimpinan (Dipindah ke kiri agar bervariasi) -->
+                <div class="w-full lg:w-1/3 flex justify-center" data-aos="fade-right">
+                    <div class="relative group">
+                        <!-- Glow behind -->
+                        <div class="absolute inset-0 bg-brand-400/20 blur-[60px] rounded-full"></div>
+                        <div class="w-72 aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl border-4 border-white mx-auto relative z-10 transform transition duration-500 group-hover:-translate-y-2">
+                            <img src="https://gradasi.org/uploads/img/s-anggota/ketua/1735027418.jpg"
+                                alt="Upi Asmaradhana - Ketua Umum"
+                                class="w-full h-full object-cover">
+                            <!-- Overlay info -->
+                            <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent p-6 pt-12 text-center transform translate-y-2 group-hover:translate-y-0 transition-transform">
+                                <h4 class="font-heading font-bold text-white text-lg">Upi Asmaradhana</h4>
+                                <p class="text-[11px] text-brand-400 font-bold uppercase tracking-widest mt-1">Ketua Umum DPP</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Tabs Area -->
-                <div class="w-full lg:w-2/3" data-aos="fade-up">
-                    <!-- Tab Navigation -->
-                    <div class="flex border-b border-slate-200 mb-8 overflow-x-auto hide-scrollbar">
+                <div class="w-full lg:w-2/3" data-aos="fade-left">
+                    <!-- PILL TABS -->
+                    <div class="inline-flex bg-white rounded-full p-1.5 shadow-sm border border-slate-200 mb-8 max-w-full overflow-x-auto hide-scrollbar">
                         <button @click="tab = 'selayang'"
-                            class="px-6 py-4 font-semibold text-sm transition-colors border-b-2 whitespace-nowrap"
-                            :class="tab === 'selayang' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800'">
+                            class="px-6 py-2.5 rounded-full font-bold text-sm transition-all whitespace-nowrap"
+                            :class="tab === 'selayang' ? 'bg-brand-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'">
                             Selayang Pandang
                         </button>
                         <button @click="tab = 'tanggal'"
-                            class="px-6 py-4 font-semibold text-sm transition-colors border-b-2 whitespace-nowrap"
-                            :class="tab === 'tanggal' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800'">
-                            Tanggal Terbentuk
+                            class="px-6 py-2.5 rounded-full font-bold text-sm transition-all whitespace-nowrap"
+                            :class="tab === 'tanggal' ? 'bg-brand-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'">
+                            Sejarah Terbentuk
                         </button>
                         <button @click="tab = 'lokasi'"
-                            class="px-6 py-4 font-semibold text-sm transition-colors border-b-2 whitespace-nowrap"
-                            :class="tab === 'lokasi' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800'">
+                            class="px-6 py-2.5 rounded-full font-bold text-sm transition-all whitespace-nowrap"
+                            :class="tab === 'lokasi' ? 'bg-brand-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'">
                             Lokasi Sekretariat
                         </button>
                     </div>
 
-                    <!-- Tab Content -->
-                    <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 min-h-[240px]">
+                    <!-- Tab Content (Glass card style) -->
+                    <div class="bg-white/80 backdrop-blur-xl p-8 sm:p-10 rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-slate-100 min-h-[300px] relative overflow-hidden">
+                        <!-- Decorative icon watermark -->
+                        <i class="ph-fill ph-info absolute -bottom-10 -right-10 text-[150px] text-slate-100/50 -rotate-12 pointer-events-none"></i>
+                        
                         <!-- SELAYANG PANDANG -->
-                        <div x-show="tab === 'selayang'" x-transition:enter="transition ease-out duration-300"
-                            x-transition:enter-start="opacity-0 transform translate-y-2"
-                            x-transition:enter-end="opacity-100 transform translate-y-0">
-                            <h3 class="font-heading text-xl font-bold text-slate-900 mb-4">Selayang Pandang</h3>
-                            <p class="text-slate-600 text-sm sm:text-base leading-relaxed mb-4">
-                                Pada tahun 2018 di Yogyakarta, atas arahan Bang Oni kepada Kang Ditu, Cak Levy, juga
-                                diajak Mas Memet dan Bang Fuad membentuk sebuah organisasi penggerak digital di
-                                Indonesia sebagai wadah perkumpulan pegiat dan penggiat digital di tingkat nasional yang
-                                terbuka untuk umum, guna melakukan pendampingan dan pemberdayaan untuk semua kalangan
-                                masyarakat.
-                            </p>
-                            <p class="text-slate-600 text-sm sm:text-base leading-relaxed">
-                                Menindaklanjuti arahan tersebut, kemudian dibentuk tim inisiator Gradasi yang terdiri
-                                dari Muhammad Sidik Kaimuddin Tomsio, Fuad Rizaldy, Memet Toto Raharjo dan beberapa
-                                kawan lain seperti Heri Safrizal, Sari Erni Agustin, serta didukung oleh Nur Alfi
-                                Khabibah, Junaidi, dan Yunita di Yogyakarta pada bulan Februari 2019 untuk mendirikan
-                                Perkumpulan Generasi Digital Indonesia (Gradasi).
-                            </p>
+                        <div x-show="tab === 'selayang'" x-transition:enter="transition ease-out duration-500"
+                            x-transition:enter-start="opacity-0 transform translate-x-8"
+                            x-transition:enter-end="opacity-100 transform translate-x-0" class="relative z-10">
+                            <h3 class="font-heading text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+                                <i class="ph-fill ph-book-open-text text-brand-500"></i> Tujuan Utama
+                            </h3>
+                            <div class="space-y-4 text-slate-600 text-sm sm:text-base leading-relaxed">
+                                <p>Pada tahun 2018 di Yogyakarta, sebuah inisiatif besar lahir untuk membentuk organisasi penggerak digital nasional. Tujuannya adalah mendampingi dan memberdayakan semua kalangan masyarakat di era transformasi digital.</p>
+                                <p>Diinisiasi oleh para pegiat teknologi, GRADASI (Generasi Digital Indonesia) didirikan sebagai wadah kolaborasi untuk meningkatkan kecakapan digital bangsa secara merata.</p>
+                            </div>
                         </div>
 
                         <!-- TANGGAL TERBENTUK -->
                         <div x-show="tab === 'tanggal'" style="display:none;"
-                            x-transition:enter="transition ease-out duration-300"
-                            x-transition:enter-start="opacity-0 transform translate-y-2"
-                            x-transition:enter-end="opacity-100 transform translate-y-0">
-                            <h3 class="font-heading text-xl font-bold text-slate-900 mb-4">Tanggal Terbentuk</h3>
-                            <div
-                                class="flex items-start gap-4 p-5 bg-brand-50/60 rounded-xl border border-brand-100/80">
-                                <div
-                                    class="w-12 h-12 rounded-full bg-brand-600 text-white flex items-center justify-center flex-shrink-0 text-xl font-bold shadow-md">
-                                    <i class="ph-bold ph-calendar-check"></i>
+                            x-transition:enter="transition ease-out duration-500"
+                            x-transition:enter-start="opacity-0 transform translate-x-8"
+                            x-transition:enter-end="opacity-100 transform translate-x-0" class="relative z-10">
+                            <h3 class="font-heading text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+                                <i class="ph-fill ph-stamp text-brand-500"></i> Legalitas Resmi
+                            </h3>
+                            <div class="bg-brand-50 rounded-2xl p-6 border border-brand-100 flex gap-5 items-start">
+                                <div class="w-14 h-14 rounded-full bg-white shadow-sm flex items-center justify-center flex-shrink-0">
+                                    <i class="ph-fill ph-calendar-check text-2xl text-brand-600"></i>
                                 </div>
                                 <div>
-                                    <h4 class="font-heading font-bold text-slate-900 text-base mb-1">Pengesahan Resmi
-                                        Kemenkumham RI</h4>
-                                    <p class="text-slate-700 text-sm leading-relaxed mb-3">
-                                        Gradasi terbentuk pada tanggal <strong>4 Februari 2019</strong> dengan SK
-                                        pengesahan dari Kemenkumham RI bernomor:
-                                    </p>
-                                    <span
-                                        class="inline-block bg-white text-brand-800 font-mono font-bold text-xs px-3.5 py-1.5 rounded-lg border border-brand-200 shadow-sm">
-                                        AHU – 0000151.AH.01.07.2019
-                                    </span>
+                                    <h4 class="font-bold text-slate-900 text-lg mb-2">4 Februari 2019</h4>
+                                    <p class="text-slate-600 text-sm leading-relaxed mb-4">Secara resmi GRADASI disahkan melalui Surat Keputusan (SK) Kementerian Hukum dan HAM Republik Indonesia.</p>
+                                    <div class="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-brand-200 shadow-sm text-xs font-mono font-bold text-brand-800">
+                                        <i class="ph-bold ph-certificate"></i> AHU – 0000151.AH.01.07.2019
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- LOKASI -->
                         <div x-show="tab === 'lokasi'" style="display:none;"
-                            x-transition:enter="transition ease-out duration-300"
-                            x-transition:enter-start="opacity-0 transform translate-y-2"
-                            x-transition:enter-end="opacity-100 transform translate-y-0">
-                            <h3 class="font-heading text-xl font-bold text-slate-900 mb-4">Lokasi Sekretariat</h3>
-                            <div class="flex items-start gap-4 p-5 bg-slate-50 rounded-xl border border-slate-200">
-                                <i class="ph-fill ph-map-pin text-brand-600 text-3xl flex-shrink-0 mt-1"></i>
-                                <div>
-                                    <h4 class="font-heading font-bold text-slate-900 text-base mb-1">Kantor Sekretariat
-                                        DPP GRADASI</h4>
-                                    <p class="text-slate-700 text-sm leading-relaxed">
+                            x-transition:enter="transition ease-out duration-500"
+                            x-transition:enter-start="opacity-0 transform translate-x-8"
+                            x-transition:enter-end="opacity-100 transform translate-x-0" class="relative z-10">
+                            <h3 class="font-heading text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+                                <i class="ph-fill ph-map-pin-line text-brand-500"></i> Markas Pusat
+                            </h3>
+                            <div class="bg-slate-50 rounded-2xl p-6 border border-slate-200">
+                                <h4 class="font-bold text-slate-900 text-base mb-3">Kantor Sekretariat DPP GRADASI</h4>
+                                <div class="flex gap-3 text-slate-600 text-sm leading-relaxed">
+                                    <i class="ph-bold ph-map-pin text-brand-600 mt-1"></i>
+                                    <p>
                                         Office Park OL3.12A, The Bellagio Mall<br>
-                                        Jl. Kawasan Mega Kuningan Kav. E.4.3, Mega Kuningan<br>
-                                        Kelurahan Kuningan Timur, Kecamatan Setiabudi, Wilayah Jakarta Selatan
+                                        Jl. Kawasan Mega Kuningan Kav. E.4.3<br>
+                                        Kelurahan Kuningan Timur, Kecamatan Setiabudi<br>
+                                        Jakarta Selatan, DKI Jakarta
                                     </p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Foto Pimpinan -->
-                <div class="w-full lg:w-1/3 flex justify-center" data-aos="fade-left">
-                    <div class="text-center group">
-                        <div
-                            class="w-64 h-80 rounded-2xl overflow-hidden shadow-lg border-4 border-white mb-5 mx-auto bg-slate-100">
-                            <img src="https://gradasi.org/uploads/img/s-anggota/ketua/1735027418.jpg"
-                                alt="Upi Asmaradhana - Ketua Umum DPP GRADASI"
-                                class="w-full h-full object-cover transition duration-500 group-hover:scale-105">
-                        </div>
-                        <h4 class="font-heading font-bold text-slate-900 text-lg">Upi Asmaradhana</h4>
-                        <p class="text-[11px] text-brand-600 font-bold uppercase tracking-widest mt-1">Ketua Umum DPP
-                        </p>
-                    </div>
-                </div>
             </div>
         </div>
     </section>
 
-    <!-- 4. VISI & MISI -->
-    <section class="py-20 bg-white border-b border-slate-200">
+    <!-- 4. VISI & MISI (Bento Box Layout) -->
+    <section class="py-24 bg-slate-50 border-b border-slate-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col md:flex-row items-center gap-16">
-                <div class="w-full md:w-1/3 flex justify-center" data-aos="zoom-in">
-                    <!-- Logo presentation without circles -->
-                    <div class="relative flex justify-center">
-                        <img src="https://gradasi.org/uploads/img/logo/1737187847.png" alt="Logo"
-                            class="w-72 h-auto object-contain relative z-10 transform transition duration-500 hover:scale-105 drop-shadow-sm">
+            <div class="text-center mb-16" data-aos="fade-up">
+                <span class="inline-block px-4 py-1.5 rounded-full bg-brand-100 border border-brand-200 text-xs font-bold text-brand-700 tracking-widest uppercase mb-4 shadow-sm">
+                    Tujuan & Arah Organisasi
+                </span>
+                <h2 class="font-heading text-4xl md:text-5xl font-black text-slate-900">Visi & Misi</h2>
+            </div>
+
+            <!-- Bento Grid Layout -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-min">
+                
+                <!-- VISI UTAMA (Featured Hero Box - Spans 2 columns on tablet+) -->
+                <div class="md:col-span-2 lg:col-span-2 bg-gradient-to-br from-brand-700 to-brand-900 rounded-3xl p-8 sm:p-10 text-white relative overflow-hidden group shadow-xl" data-aos="fade-right">
+                    <!-- Decorative BG -->
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-[50px] transform translate-x-1/2 -translate-y-1/2 transition-transform duration-700 group-hover:scale-150"></div>
+                    <i class="ph-fill ph-quotes absolute -bottom-10 -right-10 text-[180px] text-white/5 -rotate-12 pointer-events-none transition-transform duration-700 group-hover:rotate-0"></i>
+                    
+                    <div class="relative z-10 h-full flex flex-col justify-center">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/30">
+                                <i class="ph-fill ph-eye text-xl"></i>
+                            </div>
+                            <span class="text-xs font-bold uppercase tracking-widest text-brand-200">Visi Utama</span>
+                        </div>
+                        <p class="text-2xl sm:text-3xl font-heading font-bold leading-tight drop-shadow-md italic">
+                            "Menjadikan GRADASI sebagai organisasi penggerak literasi digital nasional, yang hadir untuk mengedukasi masyarakat dalam percepatan transformasi literasi digital."
+                        </p>
                     </div>
                 </div>
-                <div class="w-full md:w-2/3" data-aos="fade-up">
-                    <span class="text-xs font-bold text-brand-600 tracking-widest uppercase mb-2 block">Tujuan & Arah
-                        Organisasi</span>
-                    <h2 class="font-heading text-4xl font-bold text-slate-900 mb-6">Visi & Misi</h2>
 
-                    <!-- VISI CARD -->
-                    <div class="flex gap-4 p-6 bg-white rounded-2xl mb-8 border border-slate-100 shadow-sm">
-                        <i class="ph-fill ph-quotes text-3xl text-brand-500 flex-shrink-0 mt-0.5"></i>
-                        <div>
-                            <span
-                                class="text-[10px] font-extrabold text-brand-700 uppercase tracking-widest mb-1 block">Visi
-                                Utama</span>
-                            <p class="text-slate-800 italic text-base leading-relaxed font-quote tracking-wide">
-                                "Menjadikan GRADASI sebagai organisasi penggerak literasi digital nasional, yang hadir
-                                untuk mengedukasi masyarakat dalam percepatan transformasi literasi digital."
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- 5 MISI LIST -->
-                    <div class="space-y-3">
-                        <span
-                            class="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mb-1 block">Misi
-                            Organisasi</span>
-
-                        <div
-                            class="flex items-start gap-3.5 p-3.5 bg-white rounded-xl border border-slate-100 transition shadow-sm">
-                            <div
-                                class="w-7 h-7 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center flex-shrink-0 font-bold text-xs">
-                                1</div>
-                            <span class="text-sm text-slate-700 leading-relaxed font-medium">Menghimpun praktisi,
-                                akademisi dan penggiat digital untuk berbagi pengetahuan dan keterampilan khususnya
-                                dalam bidang literasi berbasis digital.</span>
-                        </div>
-
-                        <div
-                            class="flex items-start gap-3.5 p-3.5 bg-white rounded-xl border border-slate-100 transition shadow-sm">
-                            <div
-                                class="w-7 h-7 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center flex-shrink-0 font-bold text-xs">
-                                2</div>
-                            <span class="text-sm text-slate-700 leading-relaxed font-medium">Mengedukasi masyarakat
-                                melalui kegiatan literasi berbasis digital.</span>
-                        </div>
-
-                        <div
-                            class="flex items-start gap-3.5 p-3.5 bg-white rounded-xl border border-slate-100 transition shadow-sm">
-                            <div
-                                class="w-7 h-7 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center flex-shrink-0 font-bold text-xs">
-                                3</div>
-                            <span class="text-sm text-slate-700 leading-relaxed font-medium">Memfasilitasi kegiatan yang
-                                menunjang pengembangan SDM Indonesia khususnya dalam bidang literasi berbasis digital
-                                melalui workshop, training, seminar, bimtek dan lainnya.</span>
-                        </div>
-
-                        <div
-                            class="flex items-start gap-3.5 p-3.5 bg-white rounded-xl border border-slate-100 transition shadow-sm">
-                            <div
-                                class="w-7 h-7 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center flex-shrink-0 font-bold text-xs">
-                                4</div>
-                            <span class="text-sm text-slate-700 leading-relaxed font-medium">Bersinergi dengan
-                                stakeholder Pusat maupun Daerah dan institusi lainnya untuk menyusun konsep.</span>
-                        </div>
-
-                        <div
-                            class="flex items-start gap-3.5 p-3.5 bg-white rounded-xl border border-slate-100 transition shadow-sm">
-                            <div
-                                class="w-7 h-7 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center flex-shrink-0 font-bold text-xs">
-                                5</div>
-                            <span class="text-sm text-slate-700 leading-relaxed font-medium">Peningkatan kualitas
-                                pendidikan berbasis digital.</span>
-                        </div>
-                    </div>
+                <!-- Logo Display Box -->
+                <div class="bg-white rounded-3xl p-8 flex items-center justify-center border border-slate-100 shadow-md transform hover:-translate-y-2 transition duration-500" data-aos="fade-left">
+                    <img src="https://gradasi.org/uploads/img/logo/1737187847.png" alt="Logo" class="w-48 h-auto object-contain filter drop-shadow-lg transition-transform duration-500 hover:scale-110">
                 </div>
+
+                <!-- MISI 1 (Icon Box) -->
+                <div class="bg-white rounded-3xl p-8 border border-slate-100 shadow-md group hover:bg-blue-50 transition-colors duration-300" data-aos="fade-up" data-aos-delay="100">
+                    <div class="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-2xl mb-6 shadow-sm group-hover:scale-110 group-hover:-rotate-3 transition-transform">
+                        <i class="ph-fill ph-users-three"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-900 mb-2 font-heading">Menghimpun Praktisi</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">Menghimpun praktisi, akademisi dan penggiat digital untuk berbagi pengetahuan dan keterampilan di bidang literasi digital.</p>
+                </div>
+
+                <!-- MISI 2 -->
+                <div class="bg-white rounded-3xl p-8 border border-slate-100 shadow-md group hover:bg-teal-50 transition-colors duration-300" data-aos="fade-up" data-aos-delay="200">
+                    <div class="w-14 h-14 bg-teal-100 text-teal-600 rounded-2xl flex items-center justify-center text-2xl mb-6 shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-transform">
+                        <i class="ph-fill ph-chalkboard-teacher"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-900 mb-2 font-heading">Edukasi Masyarakat</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">Mengedukasi masyarakat melalui kegiatan literasi berbasis digital secara berkelanjutan dan merata.</p>
+                </div>
+
+                <!-- MISI 3 -->
+                <div class="bg-white rounded-3xl p-8 border border-slate-100 shadow-md group hover:bg-amber-50 transition-colors duration-300" data-aos="fade-up" data-aos-delay="300">
+                    <div class="w-14 h-14 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center text-2xl mb-6 shadow-sm group-hover:scale-110 group-hover:-rotate-3 transition-transform">
+                        <i class="ph-fill ph-handshake"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-900 mb-2 font-heading">Fasilitasi SDM & Sinergi</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">Memfasilitasi pengembangan SDM via workshop/bimtek serta bersinergi dengan stakeholder menyusun konsep pendidikan digital.</p>
+                </div>
+
             </div>
         </div>
     </section>
@@ -733,12 +769,28 @@
                 <h2 class="font-heading text-3xl font-bold text-slate-900">Berbagai Event Menarik</h2>
             </div>
 
-            <div class="grid md:grid-cols-3 gap-8 mb-12">
-                <div class="card-minimal overflow-hidden flex flex-col group cursor-pointer" data-aos="fade-up"
+            <div class="relative group" x-data="{
+                scrollPrev() { this.$refs.slider.scrollBy({ left: -380, behavior: 'smooth' }); },
+                scrollNext() { this.$refs.slider.scrollBy({ left: 380, behavior: 'smooth' }); }
+            }">
+                <button @click="scrollPrev()" class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-20 w-12 h-12 bg-white/95 backdrop-blur rounded-full shadow-[0_5px_15px_rgba(0,0,0,0.15)] border border-slate-100 text-brand-600 hover:bg-brand-50 flex items-center justify-center transition opacity-0 group-hover:opacity-100 hidden md:flex hover:scale-110">
+                    <i class="ph-bold ph-caret-left text-xl"></i>
+                </button>
+                <button @click="scrollNext()" class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-20 w-12 h-12 bg-white/95 backdrop-blur rounded-full shadow-[0_5px_15px_rgba(0,0,0,0.15)] border border-slate-100 text-brand-600 hover:bg-brand-50 flex items-center justify-center transition opacity-0 group-hover:opacity-100 hidden md:flex hover:scale-110">
+                    <i class="ph-bold ph-caret-right text-xl"></i>
+                </button>
+                <div x-ref="slider" class="flex overflow-x-auto gap-6 pb-6 px-1 snap-x snap-mandatory hide-scrollbar" style="scrollbar-width: none; -ms-overflow-style: none;">
+                    <style>
+                        .hide-scrollbar::-webkit-scrollbar { display: none; }
+                    </style>
+                <div class="w-[85vw] sm:w-[350px] flex-shrink-0 snap-center card-minimal overflow-hidden flex flex-col group cursor-pointer" data-aos="fade-up"
                     data-aos-delay="100">
                     <div class="image-zoom-container h-56 relative">
                         <img src="https://gradasi.org/uploads/img/event/1767154719.jpg" alt="Event"
                             class="w-full h-full object-cover">
+                        <div class="absolute top-4 right-4 bg-red-500 text-white text-[10px] font-extrabold px-3 py-1.5 rounded animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)] z-10 tracking-wider">
+                            <i class="ph-fill ph-fire"></i> TERBARU
+                        </div>
                         <div
                             class="absolute top-4 left-4 bg-white/90 backdrop-blur-sm text-brand-700 text-xs font-bold px-3 py-1.5 rounded">
                             Nasional</div>
@@ -770,7 +822,7 @@
                     </div>
                 </div>
 
-                <div class="card-minimal overflow-hidden flex flex-col group cursor-pointer" data-aos="fade-up"
+                <div class="w-[85vw] sm:w-[350px] flex-shrink-0 snap-center card-minimal overflow-hidden flex flex-col group cursor-pointer" data-aos="fade-up"
                     data-aos-delay="200">
                     <div class="image-zoom-container h-56 relative">
                         <img src="https://gradasi.org/uploads/img/event/1767154619.jpg" alt="Event"
@@ -806,7 +858,7 @@
                     </div>
                 </div>
 
-                <div class="card-minimal overflow-hidden flex flex-col group cursor-pointer" data-aos="fade-up"
+                <div class="w-[85vw] sm:w-[350px] flex-shrink-0 snap-center card-minimal overflow-hidden flex flex-col group cursor-pointer" data-aos="fade-up"
                     data-aos-delay="300">
                     <div class="image-zoom-container h-56 relative">
                         <img src="https://gradasi.org/uploads/img/event/1767154397.jpg" alt="Event"
@@ -841,6 +893,7 @@
                         </div>
                     </div>
                 </div>
+                </div>
             </div>
 
             <div class="text-center" data-aos="fade-up">
@@ -852,23 +905,45 @@
         </div>
     </section>
 
-    <!-- 6. VIDEO PROFILE (Textured Background) -->
-    <section class="py-24 bg-brand-950 border-b border-brand-900 relative overflow-hidden">
-        <div class="absolute inset-0 z-0 bg-texture-grid opacity-20"></div>
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div class="text-center mb-10" data-aos="fade-up">
-                <span class="text-xs font-bold text-brand-400 tracking-widest uppercase mb-2 block">Dokumentasi
-                    Visual</span>
-                <h2 class="font-heading text-3xl font-bold text-white">Video Profile Organisasi</h2>
+    <!-- 6. VIDEO PROFILE (Cinematic Style) -->
+    <section class="py-28 bg-slate-900 border-b border-slate-800 relative overflow-hidden flex items-center justify-center">
+        <!-- Cinematic dark glow -->
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 bg-brand-600/20 blur-[150px] rounded-full pointer-events-none z-0"></div>
+        <div class="absolute inset-0 z-0 bg-texture-grid opacity-10"></div>
+        
+        <div class="max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center mb-12" data-aos="fade-up">
+                <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-xs font-bold text-brand-400 tracking-widest uppercase mb-4 shadow-sm">
+                    <i class="ph-fill ph-film-strip"></i> Dokumentasi Visual
+                </span>
+                <h2 class="font-heading text-4xl md:text-5xl font-black text-white">Video Profile Organisasi</h2>
             </div>
 
-            <div class="aspect-video bg-brand-900 rounded-2xl overflow-hidden shadow-2xl relative ring-1 ring-white/10"
-                data-aos="zoom-in">
-                <video id="orgVideo" class="w-full h-full object-cover" controls preload="metadata"
-                    poster="https://images.unsplash.com/photo-1475721025871-872ba5bb619a?q=80&w=2070&auto=format&fit=crop">
-                    <source src="https://gradasi.org/assets/video/gradasi.mp4" type="video/mp4">
-                    Browser Anda tidak mendukung pemutar video.
-                </video>
+            <!-- Cinematic Video Container -->
+            <div class="relative group mx-auto" data-aos="zoom-in">
+                <!-- Glowing Border Effect -->
+                <div class="absolute -inset-1 bg-gradient-to-r from-brand-500 via-amber-400 to-brand-500 rounded-3xl blur opacity-30 group-hover:opacity-60 transition duration-1000 group-hover:duration-200 pointer-events-none"></div>
+                
+                <div class="aspect-video bg-black rounded-3xl overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.8)] relative ring-1 ring-white/10"
+                    x-data="{ playing: true }">
+                    
+                    <!-- Overlay / Custom Poster (Hanya muncul jika di pause manual) -->
+                    <div class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/60 transition-opacity duration-500 pointer-events-none"
+                        :class="playing ? 'opacity-0' : 'opacity-100'">
+                        <img src="https://images.unsplash.com/photo-1475721025871-872ba5bb619a?q=80&w=2070&auto=format&fit=crop" class="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-60">
+                        
+                        <button @click="$refs.videoEl.play(); playing = true" 
+                            class="relative z-20 w-24 h-24 bg-brand-600 hover:bg-brand-500 text-white rounded-full flex items-center justify-center text-4xl shadow-[0_0_40px_rgba(37,99,235,0.8)] transform transition-all hover:scale-110 border-4 border-white/20 pointer-events-auto">
+                            <i class="ph-fill ph-play ml-2"></i>
+                            <div class="absolute inset-0 rounded-full border border-brand-400 animate-ping opacity-75"></div>
+                        </button>
+                    </div>
+
+                    <video x-ref="videoEl" @pause="playing = false" @play="playing = true" class="w-full h-full object-cover" autoplay muted loop playsinline controls preload="metadata">
+                        <source src="https://gradasi.org/assets/video/gradasi.mp4" type="video/mp4">
+                        Browser Anda tidak mendukung pemutar video.
+                    </video>
+                </div>
             </div>
         </div>
     </section>
@@ -882,13 +957,29 @@
                 <h2 class="font-heading text-3xl font-bold text-slate-900">Berita Terbaru</h2>
             </div>
 
-            <div class="grid md:grid-cols-3 gap-8 mb-12">
+            <div class="relative group" x-data="{
+                scrollPrev() { this.$refs.slider.scrollBy({ left: -380, behavior: 'smooth' }); },
+                scrollNext() { this.$refs.slider.scrollBy({ left: 380, behavior: 'smooth' }); }
+            }">
+                <button @click="scrollPrev()" class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-20 w-12 h-12 bg-white/95 backdrop-blur rounded-full shadow-[0_5px_15px_rgba(0,0,0,0.15)] border border-slate-100 text-brand-600 hover:bg-brand-50 flex items-center justify-center transition opacity-0 group-hover:opacity-100 hidden md:flex hover:scale-110">
+                    <i class="ph-bold ph-caret-left text-xl"></i>
+                </button>
+                <button @click="scrollNext()" class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-20 w-12 h-12 bg-white/95 backdrop-blur rounded-full shadow-[0_5px_15px_rgba(0,0,0,0.15)] border border-slate-100 text-brand-600 hover:bg-brand-50 flex items-center justify-center transition opacity-0 group-hover:opacity-100 hidden md:flex hover:scale-110">
+                    <i class="ph-bold ph-caret-right text-xl"></i>
+                </button>
+                <div x-ref="slider" class="flex overflow-x-auto gap-6 pb-6 px-1 snap-x snap-mandatory hide-scrollbar" style="scrollbar-width: none; -ms-overflow-style: none;">
+                    <style>
+                        .hide-scrollbar::-webkit-scrollbar { display: none; }
+                    </style>
                 <!-- Similar card style but with distinct 'Berita' tags -->
-                <div class="card-minimal overflow-hidden flex flex-col group cursor-pointer" data-aos="fade-up"
+                <div class="w-[85vw] sm:w-[350px] flex-shrink-0 snap-center card-minimal overflow-hidden flex flex-col group cursor-pointer" data-aos="fade-up"
                     data-aos-delay="100">
                     <div class="image-zoom-container h-48 relative">
                         <img src="https://gradasi.org/uploads/img/berita/17708152730.jpg" alt="Berita"
                             class="w-full h-full object-cover">
+                        <div class="absolute top-4 right-4 bg-red-500 text-white text-[10px] font-extrabold px-3 py-1.5 rounded animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)] z-10 tracking-wider">
+                            <i class="ph-fill ph-fire"></i> TERBARU
+                        </div>
                     </div>
                     <div class="p-6 flex flex-col flex-grow bg-white">
                         <p class="text-brand-600 text-[11px] font-bold tracking-widest uppercase mb-3">11 February 2026
@@ -915,7 +1006,7 @@
                     </div>
                 </div>
 
-                <div class="card-minimal overflow-hidden flex flex-col group cursor-pointer" data-aos="fade-up"
+                <div class="w-[85vw] sm:w-[350px] flex-shrink-0 snap-center card-minimal overflow-hidden flex flex-col group cursor-pointer" data-aos="fade-up"
                     data-aos-delay="200">
                     <div class="image-zoom-container h-48 relative">
                         <img src="https://gradasi.org/uploads/img/berita/17620765070.jpg" alt="Berita"
@@ -946,7 +1037,7 @@
                     </div>
                 </div>
 
-                <div class="card-minimal overflow-hidden flex flex-col group cursor-pointer" data-aos="fade-up"
+                <div class="w-[85vw] sm:w-[350px] flex-shrink-0 snap-center card-minimal overflow-hidden flex flex-col group cursor-pointer" data-aos="fade-up"
                     data-aos-delay="300">
                     <div class="image-zoom-container h-48 relative">
                         <img src="https://gradasi.org/uploads/img/berita/17618789900.jpg" alt="Berita"
@@ -975,6 +1066,7 @@
                             </a>
                         </div>
                     </div>
+                </div>
                 </div>
             </div>
 
@@ -1047,8 +1139,9 @@
                                     class="w-full px-4 py-3 rounded-lg border border-slate-200 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none bg-white transition resize-none"></textarea>
                             </div>
                             <button type="button"
-                                class="bg-brand-700 hover:bg-brand-800 text-white w-full sm:w-auto px-8 py-3 rounded-lg text-sm font-semibold transition shadow-sm hover:shadow flex items-center justify-center gap-2">
-                                <i class="ph-bold ph-paper-plane-right"></i> Kirim Pesan Sekarang
+                                class="group relative overflow-hidden bg-brand-600 hover:bg-brand-700 text-white w-full sm:w-auto px-8 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                                <i class="ph-bold ph-paper-plane-right text-lg transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1"></i> 
+                                <span>Kirim Pesan Sekarang</span>
                             </button>
                         </form>
                     </div>
@@ -1103,35 +1196,45 @@
         </div>
     </footer>
 
-    <!-- Floating Contact Button -->
-    <div x-data="{ open: false }" class="fixed bottom-6 right-6 z-50">
-        <div x-show="open" x-transition:enter="transition ease-out duration-300"
-            x-transition:enter-start="opacity-0 translate-y-4 scale-95"
-            x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-            x-transition:leave="transition ease-in duration-200"
-            x-transition:leave-start="opacity-100 translate-y-0 scale-100"
-            x-transition:leave-end="opacity-0 translate-y-4 scale-95"
-            class="absolute bottom-16 right-0 mb-3 space-y-3 flex flex-col items-end">
+    <!-- Floating Contact Button (Modern Expandable) -->
+    <div x-data="{ open: false }" class="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+        <!-- Expandable Menu -->
+        <div x-show="open" 
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-8 scale-90"
+             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+             x-transition:leave-end="opacity-0 translate-y-8 scale-90"
+             class="mb-4 space-y-3 flex flex-col items-end origin-bottom-right" style="display: none;">
+            
+            <!-- Email -->
             <a href="mailto:dpp@gradasi.org"
-                class="flex items-center gap-3 bg-white px-5 py-3 rounded-xl shadow-xl border border-slate-100 group transition hover:scale-105">
-                <span
-                    class="text-sm font-bold text-slate-700 group-hover:text-brand-600 transition">dpp@gradasi.org</span>
-                <div class="w-8 h-8 rounded-full bg-brand-50 flex items-center justify-center text-brand-600"><i
-                        class="ph-bold ph-envelope-simple text-lg"></i></div>
+                class="flex items-center gap-4 bg-white/90 backdrop-blur-md px-5 py-3 rounded-2xl shadow-[0_10px_25px_rgba(0,0,0,0.1)] border border-white/50 group transition-all duration-300 hover:scale-105 hover:bg-white hover:shadow-[0_10px_25px_rgba(37,99,235,0.15)]">
+                <span class="text-sm font-bold text-slate-700 group-hover:text-brand-600 transition-colors">dpp@gradasi.org</span>
+                <div class="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center text-brand-600 shadow-inner group-hover:bg-brand-600 group-hover:text-white transition-colors">
+                    <i class="ph-bold ph-envelope-simple text-xl"></i>
+                </div>
             </a>
-            <a href="tel:+6285279880008" target="_blank"
-                class="flex items-center gap-3 bg-white px-5 py-3 rounded-xl shadow-xl border border-slate-100 group transition hover:scale-105">
-                <span class="text-sm font-bold text-slate-700 group-hover:text-brand-600 transition">(+62)
-                    852-7988-0008</span>
-                <div class="w-8 h-8 rounded-full bg-brand-50 flex items-center justify-center text-brand-600"><i
-                        class="ph-bold ph-phone-call text-lg"></i></div>
+            
+            <!-- Phone -->
+            <a href="tel:+6285279880008"
+                class="flex items-center gap-4 bg-white/90 backdrop-blur-md px-5 py-3 rounded-2xl shadow-[0_10px_25px_rgba(0,0,0,0.1)] border border-white/50 group transition-all duration-300 hover:scale-105 hover:bg-white hover:shadow-[0_10px_25px_rgba(37,99,235,0.15)]">
+                <span class="text-sm font-bold text-slate-700 group-hover:text-brand-600 transition-colors">(+62) 852-7988-0008</span>
+                <div class="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center text-brand-600 shadow-inner group-hover:bg-brand-600 group-hover:text-white transition-colors">
+                    <i class="ph-bold ph-phone-call text-xl"></i>
+                </div>
             </a>
         </div>
+
+        <!-- Main Toggle Button -->
         <button @click="open = !open"
-            class="w-14 h-14 bg-brand-700 text-white rounded-full shadow-[0_10px_25px_rgba(29,78,216,0.4)] flex items-center justify-center text-2xl transition-all duration-300 transform hover:bg-brand-600 hover:-translate-y-1"
-            :class="{'rotate-90 bg-slate-800 shadow-lg': open}">
-            <i class="ph-bold ph-headset" x-show="!open"></i>
-            <i class="ph-bold ph-x" x-show="open" style="display: none;"></i>
+            class="relative w-16 h-16 bg-brand-700 text-white rounded-full shadow-[0_15px_30px_rgba(29,78,216,0.4)] flex items-center justify-center text-3xl transition-all duration-300 transform hover:scale-110 hover:bg-brand-600 z-10"
+            :class="{ 'rotate-[135deg] bg-slate-800 shadow-slate-500/30': open }">
+            <i class="ph-bold ph-headset absolute transition-all duration-300" :class="{ 'opacity-0 scale-50 rotate-90': open, 'opacity-100 scale-100 rotate-0': !open }"></i>
+            <i class="ph-bold ph-plus absolute transition-all duration-300" :class="{ 'opacity-100 scale-100 rotate-0': open, 'opacity-0 scale-50 -rotate-90': !open }"></i>
+            <!-- Ping ring -->
+            <div x-show="!open" class="absolute inset-0 rounded-full border-2 border-brand-400 animate-ping opacity-50"></div>
         </button>
     </div>
 
