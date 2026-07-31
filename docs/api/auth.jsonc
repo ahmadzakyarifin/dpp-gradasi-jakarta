@@ -33,7 +33,8 @@
     "request": {
       "email": "admin@example.com",
       "password": "password123",
-      "remember_me": false
+      "remember_me": false,
+      "captcha_token": "TOKEN_VERIFIED_X8K9L"
     },
     "validation": {
       "email": [
@@ -43,6 +44,9 @@
       "password": [
         { "tag": "required", "message": "Password wajib diisi." },
         { "tag": "min", "param": "6", "message": "Password minimal 6 karakter." }
+      ],
+      "captcha_token": [
+        { "tag": "required", "message": "Kode CAPTCHA wajib diisi jika fitur aktif." }
       ]
     },
     "responses": {
@@ -77,12 +81,28 @@
           }
         }
       },
+      "400": {
+        "description": "CAPTCHA belum diisi / invalid",
+        "body": {
+          "success": false,
+          "code": "AUTH_CAPTCHA_REQUIRED",
+          "message": "Silakan selesaikan verifikasi CAPTCHA."
+        }
+      },
       "401": {
         "description": "Kredensial salah",
         "body": {
           "success": false,
           "code": "AUTH_INVALID_CREDENTIALS",
           "message": "Email atau password salah."
+        }
+      },
+      "429": {
+        "description": "Rate limit terlampaui",
+        "body": {
+          "success": false,
+          "code": "RATE_LIMIT_EXCEEDED",
+          "message": "Terlalu banyak percobaan request. Silakan coba lagi nanti."
         }
       },
       "403": {

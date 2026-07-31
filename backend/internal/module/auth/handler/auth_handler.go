@@ -35,6 +35,14 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
+	// Captcha Verification if Enabled
+	if h.cfg != nil && h.cfg.Security.CaptchaEnabled {
+		if req.CaptchaToken == "" {
+			helper.ErrorResponse(c, http.StatusBadRequest, "AUTH_CAPTCHA_REQUIRED", "Silakan selesaikan verifikasi CAPTCHA.", nil)
+			return
+		}
+	}
+
 	resp, refreshToken, maxAge, svcErr := h.svc.Login(&req)
 	if svcErr != nil {
 		var svc *helper.ServiceError

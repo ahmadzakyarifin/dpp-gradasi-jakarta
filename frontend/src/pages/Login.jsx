@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import AuthShell from '../components/auth/AuthShell'
+import CaptchaWidget from '../components/auth/CaptchaWidget'
 import { authContent } from '../content/authContent'
 import { authService } from '../services/authService'
 import { useAuthStore } from '../store/useAuthStore'
@@ -11,10 +12,14 @@ export default function Login() {
   const navigate = useNavigate()
   const login = useAuthStore((state) => state.login)
 
+  const captchaEnabled = import.meta.env.VITE_CAPTCHA_ENABLED === 'true' || import.meta.env.VITE_CAPTCHA_ENABLED === true
+
   const initialView = searchParams.get('view') === 'forgot' ? 'forgot' : 'login'
   const [view, setView] = useState(initialView)
   const [loginForm, setLoginForm] = useState({ email: '', password: '', rememberMe: false })
   const [forgotEmail, setForgotEmail] = useState('')
+  const [captchaToken, setCaptchaToken] = useState('')
+  const [captchaError, setCaptchaError] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [touched, setTouched] = useState({ email: false, password: false, forgotEmail: false })
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -53,11 +58,22 @@ export default function Login() {
     event.preventDefault()
     setTouched((prev) => ({ ...prev, email: true, password: true }))
     setNotice({ type: '', message: '' })
+    setCaptchaError(false)
+
     if (Object.keys(loginErrors).length > 0) return
+
+    if (captchaEnabled && !captchaToken) {
+      setCaptchaError(true)
+      setNotice({ type: 'error', message: 'Silakan selesaikan kode CAPTCHA dengan benar.' })
+      return
+    }
 
     setIsSubmitting(true)
     try {
-      await login(loginForm)
+      await login({
+        ...loginForm,
+        captcha_token: captchaToken
+      })
       navigate(authContent.adminPath)
     } catch (error) {
       setNotice({ type: 'error', message: error.message || 'Login gagal' })
@@ -160,6 +176,10 @@ export default function Login() {
               </div>
               {touched.password && loginErrors.password && <p className="text-red-500 text-[11px] font-bold mt-1.5 ml-1">{loginErrors.password}</p>}
             </div>
+
+            {captchaEnabled && (
+              <CaptchaWidget onVerify={(token) => setCaptchaToken(token)} hasError={captchaError} />
+            )}
 
             <label className="flex items-center gap-2 text-sm text-slate-600 font-medium">
               <input

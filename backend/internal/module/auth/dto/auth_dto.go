@@ -10,9 +10,10 @@ type RegisterRequest struct {
 
 // LoginRequest untuk login
 type LoginRequest struct {
-	Email      string `json:"email" binding:"required,email"`
-	Password   string `json:"password" binding:"required"`
-	RememberMe *bool  `json:"remember_me,omitempty"`
+	Email        string `json:"email" binding:"required,email"`
+	Password     string `json:"password" binding:"required"`
+	RememberMe   *bool  `json:"remember_me,omitempty"`
+	CaptchaToken string `json:"captcha_token,omitempty"`
 }
 
 // ForgotPasswordRequest untuk lupa password
