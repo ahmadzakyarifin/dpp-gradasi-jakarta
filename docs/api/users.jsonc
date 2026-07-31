@@ -1,0 +1,437 @@
+{
+  // =========================================================================
+  // KONTRAK API - MODUL USER (PROFIL & ADMIN SEDERHANA)
+  // Endpoint prefix: /api/v1/profile & /api/v1/admin/users
+  // Hak Akses: Bearer Access Token
+  // =========================================================================
+
+  "profile": {
+    // ======================================================
+    // GET PROFILE (Admin yang sedang login)
+    // ======================================================
+    "get": {
+      "method": "GET",
+      "endpoint": "/api/v1/profile",
+      "consumes": null,
+      "produces": "application/json",
+      "authentication": {
+        "type": "Bearer Access Token"
+      },
+      "headers": {
+        "Accept": "application/json",
+        "Authorization": "Bearer <access_token>"
+      },
+      "notes": [
+        "Mengambil data profil milik pengguna yang sedang login berdasarkan JWT Token."
+      ],
+      "responses": {
+        "200": {
+          "description": "Berhasil mengambil profil",
+          "body": {
+            "success": true,
+            "code": "PROFILE_RETRIEVED",
+            "message": "Profil berhasil diambil",
+            "data": {
+              "id": 1,
+              "role_id": 1,
+              "name": "Administrator",
+              "email": "admin@gradasi.org",
+              "photo_path": "/uploads/users/123456789.png",
+              "status": "active"
+            }
+          }
+        }
+      }
+    },
+
+    // ======================================================
+    // UPDATE PROFILE
+    // ======================================================
+    "update": {
+      "method": "PUT",
+      "endpoint": "/api/v1/profile",
+      "consumes": "multipart/form-data",
+      "produces": "application/json",
+      "authentication": {
+        "type": "Bearer Access Token"
+      },
+      "headers": {
+        "Accept": "application/json",
+        "Authorization": "Bearer <access_token>"
+      },
+      "request": {
+        "name": "Administrator Baru",
+        "email": "admin.new@gradasi.org",
+        "photo": "(binary file image/jpeg, image/png)"
+      },
+      "validation": {
+        "name": "required,min=3,max=100",
+        "email": "required,email,max=150"
+      },
+      "notes": [
+        "Update profil milik sendiri. Jika alamat email diubah, maka email di database tidak langsung berubah.",
+        "Sistem akan mengirimkan token verifikasi (6 digit) ke email baru tersebut, dan email baru akan aktif setelah verifikasi via endpoint /verify-email."
+      ],
+      "responses": {
+        "200": {
+          "description": "Profil berhasil diupdate",
+          "body": {
+            "success": true,
+            "code": "PROFILE_UPDATED",
+            "message": "Profil berhasil diperbarui. Karena Anda mengubah email, silakan periksa email baru Anda untuk kode verifikasi.",
+            "data": {
+              "id": 1,
+              "role_id": 1,
+              "name": "Administrator Baru",
+              "email": "admin@gradasi.org", // Belum berubah karena butuh verifikasi
+              "photo_path": "/uploads/users/987654321.png",
+              "status": "active"
+            }
+          }
+        }
+      }
+    },
+
+    // ======================================================
+    // VERIFY EMAIL CHANGE
+    // ======================================================
+    "verify_email": {
+      "method": "POST",
+      "endpoint": "/api/v1/profile/verify-email",
+      "consumes": "application/json",
+      "produces": "application/json",
+      "authentication": {
+        "type": "Bearer Access Token"
+      },
+      "headers": {
+        "Accept": "application/json",
+        "Authorization": "Bearer <access_token>"
+      },
+      "request": {
+        "token": "123456"
+      },
+      "validation": {
+        "token": "required"
+      },
+      "notes": [
+        "Mengecek token 6 digit dari Redis. Jika cocok, maka field email di database akan diperbarui dan email_verified_at akan diset."
+      ],
+      "responses": {
+        "200": {
+          "description": "Email berhasil diverifikasi",
+          "body": {
+            "success": true,
+            "code": "EMAIL_VERIFIED",
+            "message": "Email berhasil diverifikasi dan diperbarui"
+          }
+        }
+      }
+    },
+
+  },
+
+  "admin_management": {
+    // ======================================================
+    // GET ALL ADMINS (Hanya Super Admin)
+    // ======================================================
+    "get_all": {
+      "method": "GET",
+      "endpoint": "/api/v1/admin/users",
+      "consumes": null,
+      "produces": "application/json",
+      "authentication": {
+        "type": "Bearer Access Token"
+      },
+      "headers": {
+        "Accept": "application/json",
+        "Authorization": "Bearer <access_token>"
+      },
+      "security": {
+        "roles": ["super_admin"]
+      },
+      "notes": [
+        "Menampilkan daftar seluruh admin. Hanya user dengan role Super Admin (super_admin) yang dapat mengakses ini."
+      ],
+      "responses": {
+        "200": {
+          "description": "Berhasil mengambil daftar admin",
+          "body": {
+            "success": true,
+            "code": "ADMIN_LIST",
+            "message": "Daftar admin berhasil diambil",
+            "data": [
+              {
+                "id": 1,
+                "role_id": 1,
+                "name": "Administrator",
+                "email": "admin@gradasi.org",
+                "status": "active"
+              },
+              {
+                "id": 2,
+                "role_id": 2,
+                "name": "Admin Divisi IT",
+                "email": "it@gradasi.org",
+                "status": "active"
+              }
+            ]
+          }
+        }
+      }
+    },
+
+    // ======================================================
+    // INVITE ADMIN (Hanya Super Admin)
+    // ======================================================
+    "create": {
+      "method": "POST",
+      "endpoint": "/api/v1/admin/users",
+      "consumes": "application/json",
+      "produces": "application/json",
+      "authentication": {
+        "type": "Bearer Access Token"
+      },
+      "headers": {
+        "Accept": "application/json",
+        "Authorization": "Bearer <access_token>"
+      },
+      "request": {
+        "name": "Admin Baru",
+        "email": "baru@gradasi.org",
+        "role_id": 2
+      },
+      "validation": {
+        "name": "required,min=3,max=100",
+        "email": "required,email,max=150",
+        "role_id": "required,oneof=2 3 4"
+      },
+      "notes": [
+        "Mengundang akun admin baru. Super Admin tidak perlu menginput password.",
+        "Sistem akan membuat akun dengan status 'pending_activation' dan mengirimkan email undangan berisi link aktivasi.",
+        "Admin baru akan membuat passwordnya sendiri saat mengklik link aktivasi.",
+        "Email undangan dikirim secara sinkron: jika SMTP gagal, akun tidak jadi dibuat (rollback) dan response error MAIL_SEND_FAILED."
+      ],
+      "responses": {
+        "201": {
+          "description": "Undangan aktivasi admin berhasil dikirim",
+          "body": {
+            "success": true,
+            "code": "ADMIN_CREATED",
+            "message": "Undangan aktivasi admin berhasil dikirim ke email.",
+            "data": {
+              "id": 3,
+              "role_id": 2,
+              "name": "Admin Baru",
+              "email": "baru@gradasi.org",
+              "status": "pending_activation"
+            }
+          }
+        }
+      }
+    },
+
+    // ======================================================
+    // DELETE ADMIN (Hanya Super Admin)
+    // ======================================================
+    "delete": {
+      "method": "DELETE",
+      "endpoint": "/api/v1/admin/users/:id",
+      "consumes": null,
+      "produces": "application/json",
+      "authentication": {
+        "type": "Bearer Access Token"
+      },
+      "headers": {
+        "Accept": "application/json",
+        "Authorization": "Bearer <access_token>"
+      },
+      "notes": [
+        "Menghapus (soft delete) akun admin lain.",
+        "Admin tidak dapat menghapus akunnya sendiri ataupun akun Super Admin lainnya (role_id 1)."
+      ],
+      "responses": {
+        "200": {
+          "description": "Admin berhasil dihapus",
+          "body": {
+            "success": true,
+            "code": "ADMIN_DELETED",
+            "message": "Admin berhasil dihapus"
+          }
+        }
+      }
+    },
+
+    // ======================================================
+    // RESTORE ADMIN
+    // ======================================================
+    "restore": {
+      "method": "POST",
+      "endpoint": "/api/v1/admin/users/:id/restore",
+      "consumes": null,
+      "produces": "application/json",
+      "authentication": {
+        "type": "Bearer Access Token"
+      },
+      "headers": {
+        "Accept": "application/json",
+        "Authorization": "Bearer <access_token>"
+      },
+      "responses": {
+        "200": {
+          "description": "Admin berhasil dipulihkan",
+          "body": {
+            "success": true,
+            "code": "ADMIN_RESTORED",
+            "message": "Admin berhasil dipulihkan."
+          }
+        }
+      }
+    },
+
+    // ======================================================
+    // BULK DELETE ADMIN
+    // ======================================================
+    "bulk_delete": {
+      "method": "POST",
+      "endpoint": "/api/v1/admin/users/bulk-delete",
+      "consumes": "application/json",
+      "produces": "application/json",
+      "authentication": {
+        "type": "Bearer Access Token"
+      },
+      "headers": {
+        "Accept": "application/json",
+        "Authorization": "Bearer <access_token>"
+      },
+      "request": {
+        "ids": [1, 2, 3]
+      },
+      "responses": {
+        "200": {
+          "description": "Bulk delete berhasil",
+          "body": {
+            "success": true,
+            "code": "BULK_DELETED",
+            "message": "Data berhasil dihapus (soft delete)."
+          }
+        }
+      }
+    },
+
+    // ======================================================
+    // BULK RESTORE ADMIN
+    // ======================================================
+    "bulk_restore": {
+      "method": "POST",
+      "endpoint": "/api/v1/admin/users/bulk-restore",
+      "consumes": "application/json",
+      "produces": "application/json",
+      "authentication": {
+        "type": "Bearer Access Token"
+      },
+      "headers": {
+        "Accept": "application/json",
+        "Authorization": "Bearer <access_token>"
+      },
+      "request": {
+        "ids": [1, 2, 3]
+      },
+      "responses": {
+        "200": {
+          "description": "Bulk restore berhasil",
+          "body": {
+            "success": true,
+            "code": "BULK_RESTORED",
+            "message": "Data berhasil dipulihkan."
+          }
+        }
+      }
+    },
+
+    // ======================================================
+    // RESEND ACTIVATION (Hanya Super Admin)
+    // ======================================================
+    "resend_activation": {
+      "method": "POST",
+      "endpoint": "/api/v1/admin/users/:id/resend-activation",
+      "consumes": null,
+      "produces": "application/json",
+      "authentication": {
+        "type": "Bearer Access Token"
+      },
+      "headers": {
+        "Accept": "application/json",
+        "Authorization": "Bearer <access_token>"
+      },
+      "notes": [
+        "Mengirim ulang email undangan aktivasi ke admin berstatus 'pending_activation'.",
+        "Hanya berlaku untuk status pending_activation; selain itu error BAD_REQUEST.",
+        "Tidak berlaku untuk super_admin (role_id 1): error FORBIDDEN."
+      ],
+      "responses": {
+        "200": {
+          "description": "Undangan aktivasi dikirim ulang",
+          "body": {
+            "success": true,
+            "code": "ACTIVATION_RESENT",
+            "message": "Undangan aktivasi berhasil dikirim ulang ke email admin."
+          }
+        },
+        "400": {
+          "description": "Admin tidak dalam status pending_activation",
+          "body": {
+            "success": false,
+            "code": "BAD_REQUEST",
+            "message": "Hanya akun dengan status Menunggu Aktivasi yang bisa dikirimi undangan ulang"
+          }
+        }
+      }
+    },
+
+    // ======================================================
+    // UPDATE ADMIN STATUS (Hanya Super Admin)
+    // ======================================================
+    "update_status": {
+      "method": "PUT",
+      "endpoint": "/api/v1/admin/users/:id/status",
+      "consumes": "application/json",
+      "produces": "application/json",
+      "authentication": {
+        "type": "Bearer Access Token"
+      },
+      "headers": {
+        "Accept": "application/json",
+        "Authorization": "Bearer <access_token>"
+      },
+      "request": {
+        "status": "inactive"
+      },
+      "validation": {
+        "status": "required,oneof=active inactive"
+      },
+      "notes": [
+        "Mengubah status admin pengelola: active atau inactive (non-aktif oleh super admin).",
+        "Status 'pending_activation' TIDAK bisa diubah ke 'active' langsung — akun harus aktivasi lewat link email dulu.",
+        "Super admin (role_id 1) tidak bisa diubah statusnya: error FORBIDDEN."
+      ],
+      "responses": {
+        "200": {
+          "description": "Status admin berhasil diperbarui",
+          "body": {
+            "success": true,
+            "code": "ADMIN_STATUS_UPDATED",
+            "message": "Status admin berhasil diperbarui"
+          }
+        },
+        "400": {
+          "description": "Akun belum aktivasi",
+          "body": {
+            "success": false,
+            "code": "BAD_REQUEST",
+            "message": "Akun belum melakukan aktivasi. Kirim ulang undangan aktivasi terlebih dahulu."
+          }
+        }
+      }
+    }
+  }
+}

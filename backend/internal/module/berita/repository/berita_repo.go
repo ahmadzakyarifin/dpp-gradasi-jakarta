@@ -1,0 +1,182 @@
+package repository
+
+import (
+	"strings"
+
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/berita/dto"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/berita/model"
+	"gorm.io/gorm"
+)
+
+type BeritaRepo interface {
+	FindPublished(query dto.BeritaQuery) ([]model.Berita, int64, error)
+	FindAll(query dto.BeritaQuery) ([]model.Berita, int64, error)
+	FindBySlug(slug string) (*model.Berita, error)
+	FindByID(id uint) (*model.Berita, error)
+	Create(berita *model.Berita) error
+	Update(berita *model.Berita) error
+	SoftDelete(id uint) error
+	Restore(id uint) error
+	BulkSoftDelete(ids []uint) error
+	BulkRestore(ids []uint) error
+	IncrementViews(id uint) error
+	SaveTags(beritaID uint, tags []string) error
+}
+
+type beritaRepo struct {
+	db *gorm.DB
+}
+
+func NewBeritaRepo(db *gorm.DB) BeritaRepo {
+	return &beritaRepo{db: db}
+}
+
+func (r *beritaRepo) FindPublished(query dto.BeritaQuery) ([]model.Berita, int64, error) {
+	return r.query(true, query)
+}
+
+func (r *beritaRepo) FindAll(query dto.BeritaQuery) ([]model.Berita, int64, error) {
+	return r.query(false, query)
+}
+
+func (r *beritaRepo) query(publishedOnly bool, q dto.BeritaQuery) ([]model.Berita, int64, error) {
+	var beritas []model.Berita
+	var total int64
+
+	db := r.db.Model(&model.Berita{}).
+		Select("berita.*, users.name as author_name").
+		Joins("LEFT JOIN users ON users.id = berita.author_id")
+
+	if publishedOnly {
+		db = db.Where("is_published = ?", true)
+	}
+
+	// Filter status: published | draft | trashed | all (admin mode)
+	if !publishedOnly {
+		switch q.Status {
+		case "published":
+			db = db.Where("is_published = ? AND deleted_at IS NULL", true)
+		case "draft":
+			db = db.Where("is_published = ? AND deleted_at IS NULL", false)
+		case "trashed":
+			db = db.Unscoped().Where("deleted_at IS NOT NULL")
+		default: // "all" atau kosong
+			db = db.Where("deleted_at IS NULL")
+		}
+	} else if q.Status == "trashed" {
+		db = db.Unscoped().Where("deleted_at IS NOT NULL")
+	} else {
+		db = db.Where("deleted_at IS NULL")
+	}
+
+	if q.Search != "" {
+		search := "%" + strings.TrimSpace(q.Search) + "%"
+		db = db.Where("title LIKE ? OR content LIKE ?", search, search)
+	}
+
+	if q.Category != "" {
+		db = db.Where("category = ?", q.Category)
+	}
+
+	if q.Tag != "" {
+		db = db.Where("EXISTS (SELECT 1 FROM berita_tags WHERE berita_tags.berita_id = berita.id AND berita_tags.tag = ?)", q.Tag)
+	}
+
+	// Count total
+	db.Count(&total)
+
+	// Sort
+	switch q.Sort {
+	case "oldest":
+		db = db.Order("published_date ASC, created_at ASC")
+	case "most_viewed":
+		db = db.Order("views DESC, published_date DESC")
+	default:
+		db = db.Order("published_date DESC, created_at DESC")
+	}
+
+	// Pagination
+	page := q.Page
+	limit := q.Limit
+	if page <= 0 {
+		page = 1
+	}
+	if limit <= 0 {
+		limit = 10
+	}
+	offset := (page - 1) * limit
+
+	err := db.Preload("Tags").Limit(limit).Offset(offset).Find(&beritas).Error
+	return beritas, total, err
+}
+
+func (r *beritaRepo) FindBySlug(slug string) (*model.Berita, error) {
+	var b model.Berita
+	err := r.db.Model(&model.Berita{}).
+		Select("berita.*, users.name as author_name").
+		Joins("LEFT JOIN users ON users.id = berita.author_id").
+		Where("berita.slug = ?", slug).Preload("Tags").First(&b).Error
+	if err != nil {
+		return nil, err
+	}
+	return &b, nil
+}
+
+func (r *beritaRepo) FindByID(id uint) (*model.Berita, error) {
+	var b model.Berita
+	err := r.db.Model(&model.Berita{}).
+		Select("berita.*, users.name as author_name").
+		Joins("LEFT JOIN users ON users.id = berita.author_id").
+		Preload("Tags").First(&b, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &b, nil
+}
+
+func (r *beritaRepo) Create(berita *model.Berita) error {
+	return r.db.Create(berita).Error
+}
+
+func (r *beritaRepo) Update(berita *model.Berita) error {
+	return r.db.Save(berita).Error
+}
+
+func (r *beritaRepo) SoftDelete(id uint) error {
+	return r.db.Delete(&model.Berita{}, id).Error
+}
+
+func (r *beritaRepo) Restore(id uint) error {
+	return r.db.Unscoped().Model(&model.Berita{}).Where("id = ?", id).Update("deleted_at", nil).Error
+}
+
+func (r *beritaRepo) BulkSoftDelete(ids []uint) error {
+	return r.db.Where("id IN ?", ids).Delete(&model.Berita{}).Error
+}
+
+func (r *beritaRepo) BulkRestore(ids []uint) error {
+	return r.db.Unscoped().Model(&model.Berita{}).Where("id IN ?", ids).Update("deleted_at", nil).Error
+}
+
+func (r *beritaRepo) IncrementViews(id uint) error {
+	return r.db.Model(&model.Berita{}).Where("id = ?", id).
+		UpdateColumn("views", gorm.Expr("views + 1")).Error
+}
+
+func (r *beritaRepo) SaveTags(beritaID uint, tags []string) error {
+	// Delete existing tags
+	r.db.Where("berita_id = ?", beritaID).Delete(&model.BeritaTag{})
+
+	// Insert new tags
+	for _, tag := range tags {
+		tag = strings.TrimSpace(tag)
+		if tag == "" {
+			continue
+		}
+		r.db.Create(&model.BeritaTag{
+			BeritaID: beritaID,
+			Tag:      tag,
+		})
+	}
+	return nil
+}

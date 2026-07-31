@@ -115,7 +115,7 @@
     </style>
 </head>
 
-<body class="font-sans" x-data="{ scrolled: false, mobileMenuOpen: false }"
+<body class="font-sans" x-data="frontendData()">
     @scroll.window="scrolled = (window.pageYOffset > 20)">
 
     <!-- Navigation (Clean White, Standard Position) -->
@@ -1271,6 +1271,36 @@
 
                 observer.observe(video);
             }
+        });
+
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('frontendData', () => ({
+                scrolled: false,
+                mobileMenuOpen: false,
+                settings: {
+                    site_name: 'DPP GRADASI',
+                    tagline: 'Generasi Digital Indonesia',
+                    logo_url: '/uploads/logo.png',
+                    contact_email: 'dpp@gradasi.org',
+                    contact_phone: '+6285279880008',
+                    address: 'Jl. Jenderal Sudirman No.1, Jakarta Pusat',
+                    maps_embed_url: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d126920.24075052957!2d106.75871239853926!3d-6.22974649774619!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f3e945e34b9d%3A0x100c5e82dd4b820!2sJakarta!5e0!3m2!1sid!2sid!4v1700000000000!5m2!1sid!2sid',
+                    facebook_url: 'https://www.facebook.com/gradasiofficial.id',
+                    instagram_url: 'https://www.instagram.com/dppgradasi',
+                    youtube_url: 'https://www.youtube.com/channel/UCwdjB4LkqcF4Kw5-PoyOb5A',
+                    video_profile_url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                    history: 'Perkumpulan Generasi Digital Indonesia (GRADASI) didirikan pada tahun 2018 di Yogyakarta...',
+                    about_formation_date: '4 Februari 2019',
+                    about_no_sk: 'AHU – 0000151.AH.01.07.2019',
+                    about_vision: 'Mewujudkan masyarakat Indonesia yang cerdas dan berdaulat di era digital.',
+                    about_mission: '1. Membangun ekosistem literasi digital\n2. Meningkatkan kecakapan digital masyarakat',
+                    greeting_title: 'Tahun Baru 2026',
+                    greeting_subtitle: 'Resolusi & Harapan',
+                    greeting_date: '11 February 2026',
+                    greeting_content: 'Memasuki tahun 2026, GRADASI menetapkan pilar utama perjuangan: memastikan setiap masyarakat memiliki kecakapan digital (digital skills), serta mengembangkan program literasi yang berdampak nyata.',
+                    greeting_image_url: 'https://gradasi.org/uploads/img/event-terkini/1767154211.jpg'
+                }
+            }));
         });
     </script>
 </body>

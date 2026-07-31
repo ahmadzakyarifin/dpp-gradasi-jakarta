@@ -1,0 +1,145 @@
+{
+  // =========================================================================
+  // KONTRAK API - MODUL SETTINGS
+  // Relasi: data konfigurasi website yang biasanya hanya satu entitas (settings)
+  // =========================================================================
+
+  // ======================================================
+  // GET ALL SETTINGS (Public & Admin)
+  // ======================================================
+  "get_all": {
+    "method": "GET",
+    "endpoint": "/api/v1/settings",
+    "consumes": null,
+    "produces": "application/json",
+    "authentication": {
+      "type": "None"
+    },
+    "headers": {
+      "Accept": "application/json"
+    },
+    "notes": [
+      "Mengambil semua konfigurasi website yang diperlukan frontend.",
+      "Bisa diakses tanpa login (data publik)."
+    ],
+    "responses": {
+      "200": {
+        "description": "Berhasil mengambil konfigurasi website",
+        "body": {
+          "success": true,
+          "code": "SETTINGS_RETRIEVED",
+          "message": "Konfigurasi website berhasil diambil",
+          "data": {
+            "site_name": "DPP GRADASI",
+            "tagline": "Generasi Digital Indonesia",
+            "logo_url": "/uploads/logo.png",
+            "contact_email": "dpp@gradasi.org",
+            "contact_phone": "+628****0008",
+            "address": "Jl. Jenderal Sudirman No.1, Jakarta Pusat",
+            "maps_embed_url": "https://www.google.com/maps/embed...",
+            "facebook_url": "https://www.facebook.com/gradasiofficial.id",
+            "instagram_url": "https://www.instagram.com/dppgradasi",
+            "youtube_url": "https://www.youtube.com/channel/UCwdjB4LkqcF4Kw5-PoyOb5A",
+            "video_profile_url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+            "history": "Perkumpulan Generasi Digital Indonesia (GRADASI) didirikan...",
+            "about_tutorial": "Pada tahun 2018 di Yogyakarta...",
+            "about_formation_date": "4 Februari 2019",
+            "about_no_sk": "AHU – 0000151.AH.01.07.2019",
+            "about_vision": "Mewujudkan masyarakat Indonesia yang literasi digital.",
+            "about_mission": [
+              "Membangun ekosistem literasi digital",
+              "Meningkatkan kecakapan digital masyarakat"
+            ],
+            "greeting_title": "Tahun Baru 2026",
+            "greeting_subtitle": "Resolusi & Harapan",
+            "greeting_date": "11 February 2026",
+            "greeting_content": "Memasuki tahun 2026, GRADASI menetapkan pilar...",
+            "greeting_image_url": "https://gradasi.org/uploads/img/event-terkini/1767154211.jpg",
+            "created_at": "2026-07-30T08:00:00Z"
+          }
+        }
+      }
+    }
+  },
+
+  // ======================================================
+  // UPDATE SETTINGS (Admin Only)
+  // ======================================================
+  "update": {
+    "method": "POST",
+    "endpoint": "/api/v1/admin/settings",
+    "consumes": "application/json",
+    "produces": "application/json",
+    "authentication": {
+      "type": "Bearer Access Token"
+    },
+    "headers": {
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+      "Authorization": "Bearer <access_token>"
+    },
+    "security": {
+      "rate_limit": {
+        "enabled": true,
+        "key": "User",
+        "limit": "30 request / menit"
+      },
+      "roles": ["super_admin", "admin"]
+    },
+    "validation": {
+      "keys": {
+        "required": true,
+        "message": "Pastikan semua field yang diinginkan diperlukan."
+      }
+    },
+    "request": {
+      "keys": "required",
+      "email_fields": "email",
+      "url_fields": "url"
+    },
+    "notes": [
+      "Mengirim key-value pair yang ingin diupdate.",
+      "Key harus sesuai dengan yang ada di database (snake_case).",
+      "Field dengan akhiran _email divalidasi format emailnya.",
+      "Field dengan akhiran _url divalidasi format URL-nya.",
+      "about_mission menerima array of string atau null (disimpan sebagai JSON di DB).",
+      "Key yang tidak dikenal → 400 VALIDATION_ERROR (mis. 'siteName' salah, harus 'site_name')."
+    ],
+    "responses": {
+      "200": {
+        "description": "Konfigurasi berhasil diperbarui",
+        "body": {
+          "success": true,
+          "code": "SETTINGS_UPDATED",
+          "message": "Konfigurasi website berhasil diperbarui",
+          "data": {
+            "site_name": "DPP GRADASI",
+            "tagline": "Generasi Digital Indonesia",
+            "address": "Jl. Jenderal Sudirman No.1, Jakarta Pusat",
+            "video_profile_url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+            "history": "Perkumpulan Generasi Digital Indonesia (GRADASI) didirikan...",
+            "greeting_title": "Tahun Baru 2026",
+            "greeting_subtitle": "Resolusi & Harapan",
+            "greeting_date": "11 February 2026",
+            "greeting_content": "Memasuki tahun 2026, GRADASI menetapkan pilar...",
+            "greeting_image_url": "https://gradasi.org/uploads/img/event-terkini/1767154211.jpg",
+            "about_mission": [
+              "Membangun ekosistem literasi digital"
+            ]
+          }
+        }
+      },
+      "400": {
+        "description": "Validasi gagal (format email/url tidak valid)",
+        "body": {
+          "success": false,
+          "code": "VALIDATION_ERROR",
+          "message": "validasi gagal",
+          "errors": {
+            "contact_email": "Format email tidak valid"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="id" class="bg-gray-50 text-gray-800">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Sliders - Admin DPP GRADASI</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="font-sans antialiased overflow-hidden flex h-screen" x-data="adminData()">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-brand-900 text-white flex flex-col h-full shrink-0">
+        <div class="h-16 flex items-center px-6 border-b border-white/10">
+            <span class="font-heading font-bold text-xl tracking-wide">GRADASI<span class="text-brand-400">Admin</span></span>
+        </div>
+        <nav class="flex-1 overflow-y-auto py-4 space-y-1 px-3">
+            <a href="index.html" class="flex items-center px-3 py-2.5 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors">
+                <i class="ph ph-squares-four text-xl mr-3"></i> Dashboard
+            </a>
+            <a href="berita.html" class="flex items-center px-3 py-2.5 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors">
+                <i class="ph ph-article text-xl mr-3"></i> Berita
+            </a>
+            <a href="kegiatan.html" class="flex items-center px-3 py-2.5 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors">
+                <i class="ph ph-calendar-check text-xl mr-3"></i> Kegiatan
+            </a>
+            <a href="pengurus.html" class="flex items-center px-3 py-2.5 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors">
+                <i class="ph ph-users-three text-xl mr-3"></i> Pengurus
+            </a>
+            <a href="sliders.html" class="flex items-center px-3 py-2.5 rounded-lg bg-brand-600 text-white shadow-sm transition-colors">
+                <i class="ph ph-image text-xl mr-3"></i> Sliders
+            </a>
+            <a href="kontak.html" class="flex items-center px-3 py-2.5 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors">
+                <i class="ph ph-envelope-simple text-xl mr-3"></i> Pesan Kontak
+            </a>
+            <a href="users.html" class="flex items-center px-3 py-2.5 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors">
+                <i class="ph ph-user-gear text-xl mr-3"></i> Manajemen Admin
+            </a>
+            <a href="activity-log.html" class="flex items-center px-3 py-2.5 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors">
+                <i class="ph ph-clock-counter-clockwise text-xl mr-3"></i> Activity Log
+            </a>
+            <a href="settings.html" class="flex items-center px-3 py-2.5 rounded-lg text-white/70 hover:bg-white/10 hover:text-white transition-colors">
+                <i class="ph ph-gear text-xl mr-3"></i> Pengaturan Website
+            </a>
+        </nav>
+        <div class="p-4 border-t border-white/10">
+            <a href="../login.html" class="flex items-center px-3 py-2 rounded-lg text-red-300 hover:bg-red-500/20 transition-colors">
+                <i class="ph ph-sign-out text-xl mr-3"></i> Logout
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden bg-gray-50">
+        <!-- Header -->
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shrink-0">
+            <h1 class="font-heading font-semibold text-gray-800 text-lg">Manajemen Sliders</h1>
+            
+            <!-- Center Actions -->
+            <div class="flex-1 flex items-center justify-center px-6">
+                <div class="flex items-center gap-2 w-full max-w-2xl">
+                    <!-- Search -->
+                    <div class="relative w-full">
+                        <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" x-model="searchQuery" placeholder="Cari slider..." class="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors">
+                    </div>
+                    <!-- Filter: Status -->
+                    <select x-model="filterActive" class="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors">
+                        <option value="">Semua Status</option>
+                        <option value="active">Aktif</option>
+                        <option value="inactive">Non-aktif</option>
+                    </select>
+                    <!-- Reset Button -->
+                    <button @click="resetFilter()" class="shrink-0 bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
+                        <i class="ph ph-arrows-counter-clockwise text-lg"></i> Reset
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <div class="relative" x-data="{ userMenuOpen: false }" @click.away="userMenuOpen = false">
+                    <button @click="userMenuOpen = !userMenuOpen" class="flex items-center gap-2 hover:bg-gray-100 p-2 rounded-lg transition">
+                        <img src="https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff" class="w-8 h-8 rounded-full" alt="Admin" id="headerProfileImg">
+                        <span class="text-sm font-medium text-gray-700" id="headerProfileName">Admin</span>
+                        <i class="ph ph-caret-down text-gray-500"></i>
+                    </button>
+                    <div x-show="userMenuOpen" x-transition 
+                         class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50"
+                         style="display: none;">
+                        <a href="profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-600">
+                            <i class="ph ph-user-circle mr-2"></i> Profil Saya
+                        </a>
+                        <div class="border-t border-gray-100 my-1"></div>
+                        <a href="../login.html" onclick="localStorage.removeItem('access_token')" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                            <i class="ph ph-sign-out mr-2"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="flex-1 overflow-auto p-8">
+            <div class="max-w-7xl mx-auto space-y-6">
+
+                <!-- Header Actions -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <!-- Tabs -->
+                    <div class="flex bg-white rounded-lg p-1 border border-gray-200 shadow-sm">
+                        <button @click="currentTab = 'active'" :class="{'bg-brand-50 text-brand-600 shadow-sm font-medium': currentTab === 'active', 'text-gray-500 hover:text-gray-700': currentTab !== 'active'}" class="px-4 py-1.5 rounded-md text-sm transition-all">Daftar Aktif</button>
+                        <button @click="currentTab = 'trash'" :class="{'bg-red-50 text-red-600 shadow-sm font-medium': currentTab === 'trash', 'text-gray-500 hover:text-gray-700': currentTab !== 'trash'}" class="px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2">
+                            <i class="ph ph-trash"></i> Sampah (History)
+                        </button>
+                    </div>
+
+                    <!-- Right Actions -->
+                    <div class="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+                        <button x-show="currentTab === 'active'" @click="openFormModal()" class="shrink-0 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm">
+                            <i class="ph ph-plus-circle text-lg"></i> Tambah
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Bulk Actions Bar -->
+                <div x-show="selectedItems.length > 0" x-transition class="bg-indigo-50 border border-indigo-100 rounded-lg p-3 flex items-center justify-between shadow-sm">
+                    <span class="text-sm text-indigo-800 font-medium"><span x-text="selectedItems.length"></span> item terpilih</span>
+                    <div class="flex gap-2">
+                        <template x-if="currentTab === 'active'">
+                            <button @click="confirmAction('bulk_delete')" class="bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors">
+                                <i class="ph ph-trash"></i> Hapus Massal
+                            </button>
+                        </template>
+                        <template x-if="currentTab === 'trash'">
+                            <div class="flex gap-2">
+                                <button @click="confirmAction('bulk_restore')" class="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors">
+                                    <i class="ph ph-arrow-counter-clockwise"></i> Pulihkan Massal
+                                </button>
+                                
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Table Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                                    <th class="p-4 w-12 text-center">
+                                        <input type="checkbox" @change="toggleAll" :checked="isAllSelected" class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
+                                    </th>
+                                    <th class="p-4">Tampilan / Judul</th>
+                                    <th class="p-4 w-24">Urutan</th>
+                                    <th class="p-4">Status</th>
+                                    <th class="p-4 text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 text-sm text-gray-700">
+                                <!-- Data rows -->
+                                <template x-for="item in paginatedItems" :key="item.id">
+                                    <tr class="hover:bg-gray-50 transition-colors group">
+                                        <td class="p-4 text-center">
+                                            <input type="checkbox" :value="item.id" x-model="selectedItems" class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
+                                        </td>
+                                        <td class="p-4">
+                                            <div class="flex items-start gap-4">
+                                                <img :src="item.image" class="w-32 h-16 rounded object-cover border border-gray-200 shrink-0" alt="">
+                                                <div>
+                                                    <p class="font-medium text-gray-900 leading-snug" x-text="item.title"></p>
+                                                    <p class="text-xs text-gray-500 mt-1" x-text="item.subtitle"></p>
+                                                    <template x-if="item.isNew">
+                                                        <span class="inline-block mt-1 bg-brand-50 text-brand-600 text-[10px] px-2 py-0.5 rounded-full font-medium">NEW</span>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="p-4">
+                                            <div class="w-16">
+                                                <input type="number" x-model="item.sortOrder" class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-brand-500 focus:border-brand-500 text-center">
+                                            </div>
+                                        </td>
+                                        
+                                        <!-- Status Column -->
+                                        <td class="p-4">
+                                            <template x-if="currentTab === 'active'">
+                                                <label class="relative inline-flex items-center cursor-pointer" @click.prevent="confirmAction('toggle_publish', item.id, item.isActive)">
+                                                    <input type="checkbox" class="sr-only peer" :checked="item.isActive">
+                                                    <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-500"></div>
+                                                    <span class="ml-2 text-xs font-medium" :class="item.isActive ? 'text-brand-600' : 'text-gray-400'" x-text="item.isActive ? 'Aktif' : 'Non-aktif'"></span>
+                                                </label>
+                                            </template>
+                                            <template x-if="currentTab === 'trash'">
+                                                <span class="inline-flex items-center gap-1 bg-red-50 text-red-600 text-xs px-2 py-1 rounded-md font-medium border border-red-100">
+                                                    <i class="ph ph-trash"></i> Terhapus
+                                                </span>
+                                            </template>
+                                        </td>
+
+                                        <!-- Action Column -->
+                                        <td class="p-4 text-right">
+                                            <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <template x-if="currentTab === 'active'">
+                                                    <div class="flex gap-2">
+                                                        <button @click="openFormModal(item)" class="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded" title="Edit">
+                                                            <i class="ph ph-pencil-simple text-lg"></i>
+                                                        </button>
+                                                        <button @click="confirmAction('delete', item.id)" class="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded" title="Hapus (Soft Delete)">
+                                                            <i class="ph ph-trash text-lg"></i>
+                                                        </button>
+                                                    </div>
+                                                </template>
+                                                <template x-if="currentTab === 'trash'">
+                                                    <div class="flex gap-2">
+                                                        <button @click="confirmAction('restore', item.id)" class="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded" title="Pulihkan">
+                                                            <i class="ph ph-arrow-counter-clockwise text-lg"></i>
+                                                        </button>
+                                                        
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                        
+                        <!-- Empty State -->
+                        <div x-show="filteredItems.length === 0" class="py-12 text-center">
+                            <i class="ph ph-image text-4xl text-gray-300 mb-2"></i>
+                            <p class="text-gray-500 text-sm">Tidak ada data slider untuk ditampilkan.</p>
+                        </div>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div x-show="filteredItems.length > 0" class="bg-gray-50 border-t border-gray-200 px-4 py-3 flex items-center justify-between sm:px-6 rounded-b-xl">
+                        <div class="text-sm text-gray-500">
+                            Menampilkan <span class="font-medium text-gray-900" x-text="(currentPage - 1) * pageSize + 1"></span> sampai <span class="font-medium text-gray-900" x-text="Math.min(currentPage * pageSize, filteredItems.length)"></span> dari <span class="font-medium text-gray-900" x-text="filteredItems.length"></span> hasil
+                        </div>
+                        <div class="flex gap-1">
+                            <button @click="prevPage" :disabled="currentPage === 1" class="px-3 py-1 border border-gray-200 bg-white text-gray-500 rounded hover:bg-gray-50 disabled:opacity-50">Prev</button>
+                            
+                            <template x-for="p in totalPages" :key="p">
+                                <button @click="goToPage(p)" class="px-3 py-1 border rounded" :class="currentPage === p ? 'border-brand-500 bg-brand-50 text-brand-600 font-medium' : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'" x-text="p"></button>
+                            </template>
+
+                            <button @click="nextPage" :disabled="currentPage === totalPages" class="px-3 py-1 border border-gray-200 bg-white text-gray-500 rounded hover:bg-gray-50 disabled:opacity-50">Next</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- FORM MODAL (Create/Edit) -->
+    <div x-show="isFormOpen" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div x-show="isFormOpen" x-transition.opacity class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="isFormOpen = false"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div x-show="isFormOpen" x-transition.translate.y class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+                <div class="bg-white">
+                    <div class="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                        <h3 class="text-lg leading-6 font-heading font-semibold text-gray-900" id="modal-title" x-text="formMode === 'create' ? 'Tambah Slider' : 'Edit Slider'"></h3>
+                        <button @click="isFormOpen = false" class="text-gray-400 hover:text-gray-500"><i class="ph ph-x text-xl"></i></button>
+                    </div>
+                    <form @submit.prevent="submitForm" class="px-6 py-4 space-y-5 h-[60vh] overflow-y-auto">
+                        <!-- Consolidated Inputs -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Judul Utama *</label>
+                                <input type="text" x-model="formData.title" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm">
+                            </div>
+                            
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Sub-judul (Opsional)</label>
+                                <input type="text" x-model="formData.subtitle" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Badge Tag (Opsional)</label>
+                                <input type="text" x-model="formData.tag" placeholder="Misal: Webinar, Event" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Urutan (Sort Order) *</label>
+                                <input type="number" x-model="formData.sortOrder" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm">
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Gambar Slider (URL) *</label>
+                                <input type="url" x-model="formData.image" required placeholder="https://example.com/banner.jpg" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm">
+                                <p class="text-xs text-gray-500 mt-1">Rekomendasi ukuran: 1920x600 px (Rasio lebar)</p>
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Link URL (Jika diklik mengarah kemana)</label>
+                                <input type="url" x-model="formData.linkUrl" placeholder="https://..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Kegiatan (Opsional di slider)</label>
+                                <input type="text" x-model="formData.eventDate" placeholder="20 Okt 2024" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Lokasi (Opsional di slider)</label>
+                                <input type="text" x-model="formData.location" placeholder="Jakarta" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm">
+                            </div>
+
+                            <div class="md:col-span-2 flex gap-6">
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" x-model="formData.isNew" class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
+                                    <span class="text-sm font-medium text-gray-700">Buka link di tab baru (Target Blank)</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" x-model="formData.isActive" class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
+                                    <span class="text-sm font-medium text-gray-700">Slider Aktif</span>
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+                    <button type="button" @click="isFormOpen = false" class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">Batal</button>
+                    <button type="button" @click="submitForm" class="px-4 py-2 bg-brand-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-brand-700">Simpan Data</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONFIRMATION MODAL -->
+    <div x-show="confirm.isOpen" style="display: none;" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div x-show="confirm.isOpen" x-transition.opacity class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="confirm.isOpen = false"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div x-show="confirm.isOpen" x-transition.translate.y class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-sm sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10"
+                            :class="confirm.type.includes('delete') ? 'bg-red-100 text-red-600' : (confirm.type.includes('restore') ? 'bg-emerald-100 text-emerald-600' : 'bg-brand-100 text-brand-600')">
+                            <i class="text-2xl" :class="confirm.icon"></i>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title" x-text="confirm.title"></h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-500" x-text="confirm.message"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 flex justify-end gap-2">
+                    <button type="button" @click="confirm.isOpen = false" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Batal
+                    </button>
+                    <button type="button" @click="executeAction" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white focus:outline-none sm:w-auto sm:text-sm"
+                        :class="confirm.type.includes('delete') ? 'bg-red-600 hover:bg-red-700' : (confirm.type.includes('restore') ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-brand-600 hover:bg-brand-700')">
+                        Ya, Lanjutkan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div x-show="toast.show" x-transition.opacity.duration.300ms style="display: none;" class="fixed bottom-4 right-4 z-50 flex items-center p-4 rounded-lg shadow-lg" :class="toast.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'">
+        <i class="text-xl mr-2" :class="toast.type === 'success' ? 'ph ph-check-circle' : 'ph ph-warning-circle'"></i>
+        <span x-text="toast.message" class="text-sm font-medium"></span>
+    </div>
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('adminData', () => ({
+                currentTab: 'active',
+                currentPage: 1,
+                pageSize: 5,
+
+                searchQuery: '',
+                // Filter state
+                filterActive: '',
+                applyFilter() { this.currentPage = 1; },
+                resetFilter() {
+                    this.searchQuery = '';
+                    this.filterActive = '';
+                    this.currentPage = 1;
+                    this.showToast('Filter direset.', 'success');
+                },
+
+                get totalPages() {
+                    return Math.ceil(this.filteredItems.length / this.pageSize) || 1;
+                },
+
+                get paginatedItems() {
+                    const start = (this.currentPage - 1) * this.pageSize;
+                    return this.filteredItems.slice(start, start + this.pageSize);
+                },
+
+                nextPage() {
+                    if (this.currentPage < this.totalPages) this.currentPage++;
+                },
+
+                prevPage() {
+                    if (this.currentPage > 1) this.currentPage--;
+                },
+                
+                goToPage(p) {
+                    this.currentPage = p;
+                },
+ // active, trash
+                selectedItems: [],
+                
+                // MOCK DATA
+                allData: [
+                    { id: 1, title: 'Musyawarah Nasional Ke-II GRADASI', subtitle: 'Kolaborasi Membangun Negeri...', tag: 'HEADLINE EVENT', image: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=1920', sortOrder: 0, isActive: true, isNew: true, status: 'active', eventDate: '10 - 12 Agustus 2026', location: 'Jakarta Convention Center', linkUrl: '/kegiatan/munas-ke-ii' },
+                    { id: 2, title: 'Akselerasi Transformasi Bisnis UMKM', subtitle: 'Pemberdayaan Ekonomi Digital', tag: 'BERITA TERKINI', image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&q=80&w=1920', sortOrder: 1, isActive: true, isNew: false, status: 'active', eventDate: '', location: '', linkUrl: '' },
+                    { id: 3, title: 'Program 1 Juta Talenta Digital', subtitle: 'Menyiapkan SDM Unggul', tag: 'PROGRAM UNGGULAN', image: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&q=80&w=1920', sortOrder: 2, isActive: true, isNew: false, status: 'active', eventDate: 'Sepanjang 2026', location: 'Seluruh Indonesia', linkUrl: '#' },
+                    { id: 4, title: 'Pelatihan Instruktur IT', subtitle: 'Tingkatkan Kualitas Pengajar', tag: 'INFO KEGIATAN', image: 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&q=80&w=1920', sortOrder: 3, isActive: true, isNew: true, status: 'active', eventDate: '20 September 2026', location: 'Bandung', linkUrl: '#' },
+                    { id: 5, title: 'Kerjasama Strategis dengan Kominfo', subtitle: 'Membangun Ekosistem Inklusif', tag: 'KEMITRAAN', image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=1920', sortOrder: 4, isActive: true, isNew: false, status: 'active', eventDate: '', location: '', linkUrl: '#' },
+                    { id: 6, title: 'Gradasi Goes to School', subtitle: 'Literasi Sejak Dini', tag: 'KAMPANYE', image: 'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?auto=format&fit=crop&q=80&w=1920', sortOrder: 5, isActive: false, isNew: false, status: 'active', eventDate: '', location: '', linkUrl: '#' },
+                    { id: 7, title: 'Banner Idul Fitri 1447 H', subtitle: 'Segenap Pengurus Mengucapkan', tag: 'UCAPAN', image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&q=80&w=1920', sortOrder: 6, isActive: false, isNew: false, status: 'trash', eventDate: '', location: '', linkUrl: '#' },
+                    { id: 8, title: 'Seminar Startup Mahasiswa', subtitle: 'Peluang Bisnis di Era Digital', tag: 'EVENT', image: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80&w=1920', sortOrder: 7, isActive: true, isNew: false, status: 'active', eventDate: '15 Oktober 2026', location: 'Yogyakarta', linkUrl: '#' },
+                    { id: 9, title: 'Banner Usang (Tidak Dipakai)', subtitle: 'Pernah tampil 2023', tag: '', image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&q=80&w=1920', sortOrder: 99, isActive: false, isNew: false, status: 'trash', eventDate: '', location: '', linkUrl: '' },
+                    { id: 10, title: 'Draf Slider', subtitle: 'Belum Selesai', tag: 'DRAFT', image: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=1920', sortOrder: 100, isActive: false, isNew: true, status: 'trash', eventDate: '', location: '', linkUrl: '' }
+                ],
+
+                get filteredItems() {
+                    let items = this.allData.filter(item => {
+                        let ok = item.status === this.currentTab;
+                        
+                        if (ok && this.searchQuery) {
+                            ok = item.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                                 item.subtitle.toLowerCase().includes(this.searchQuery.toLowerCase());
+                        }
+
+                        // Filter status is_active (contract: true | false)
+                        if (ok && this.filterActive) {
+                            const wantActive = this.filterActive === 'active';
+                            if (item.isActive !== wantActive) ok = false;
+                        }
+                        return ok;
+                    });
+                    return items.sort((a, b) => a.sortOrder - b.sortOrder);
+                },
+
+                get isAllSelected() {
+                    const filtered = this.filteredItems;
+                    return filtered.length > 0 && this.selectedItems.length === filtered.length;
+                },
+
+                toggleAll() {
+                    if (this.isAllSelected) {
+                        this.selectedItems = [];
+                    } else {
+                        this.selectedItems = this.filteredItems.map(item => item.id);
+                    }
+                },
+
+                init() {
+                    this.$watch('currentTab', value => {
+                        this.currentPage = 1;
+                        this.selectedItems = [];
+                    });
+                },
+
+                // Form Modal
+                isFormOpen: false,
+                formMode: 'create',
+                formData: { id: null, title: '', subtitle: '', tag: '', image: '', linkUrl: '', sortOrder: 1, eventDate: '', location: '', isNew: false, isActive: true },
+                
+                openFormModal(item = null) {
+                    if (item) {
+                        this.formMode = 'edit';
+                        this.formData = { ...item };
+                    } else {
+                        this.formMode = 'create';
+                        this.formData = { id: null, title: '', subtitle: '', tag: '', image: '', linkUrl: '', sortOrder: this.allData.length + 1, eventDate: '', location: '', isNew: false, isActive: true };
+                    }
+                    this.isFormOpen = true;
+                },
+
+                submitForm() {
+                    this.isFormOpen = false;
+                    this.showToast('Data slider berhasil disimpan!', 'success');
+                },
+
+                // Confirm Modal
+                confirm: {
+                    isOpen: false, type: '', id: null, title: '', message: '', icon: '', actionData: null
+                },
+
+                confirmAction(type, id = null, extraData = null) {
+                    this.confirm.type = type;
+                    this.confirm.id = id;
+                    this.confirm.actionData = extraData;
+                    
+                    if (type === 'delete') {
+                        this.confirm.title = 'Hapus Slider';
+                        this.confirm.message = 'Slider ini akan dipindahkan ke Sampah.';
+                        this.confirm.icon = 'ph-trash';
+                    } else if (type === 'restore') {
+                        this.confirm.title = 'Pulihkan Slider';
+                        this.confirm.message = 'Slider ini akan dikembalikan ke daftar aktif.';
+                        this.confirm.icon = 'ph-arrow-counter-clockwise';
+                    } else if (type === 'toggle_publish') {
+                        let willPublish = !extraData;
+                        this.confirm.title = willPublish ? 'Aktifkan Slider' : 'Non-aktifkan Slider';
+                        this.confirm.message = willPublish ? 'Slider ini akan tampil di halaman utama. Lanjutkan?' : 'Slider ini akan disembunyikan dari halaman utama. Lanjutkan?';
+                        this.confirm.icon = willPublish ? 'ph-eye' : 'ph-eye-closed';
+                    } else if (type === 'bulk_delete') {
+                        this.confirm.title = 'Hapus Massal';
+                        this.confirm.message = `Anda akan memindahkan ${this.selectedItems.length} slider ke Sampah. Lanjutkan?`;
+                        this.confirm.icon = 'ph-trash';
+                    } else if (type === 'bulk_restore') {
+                        this.confirm.title = 'Pulihkan Massal';
+                        this.confirm.message = `Anda akan memulihkan ${this.selectedItems.length} slider. Lanjutkan?`;
+                        this.confirm.icon = 'ph-arrow-counter-clockwise';
+                    }
+                    
+                    this.confirm.isOpen = true;
+                },
+
+                executeAction() {
+                    this.confirm.isOpen = false;
+                    
+                    if (this.confirm.type === 'toggle_publish') {
+                        let item = this.allData.find(i => i.id === this.confirm.id);
+                        if (item) item.isActive = !item.isActive;
+                        this.showToast('Status berhasil diubah.', 'success');
+                    } else if (this.confirm.type.includes('delete') || this.confirm.type.includes('restore')) {
+                        if (this.confirm.type === 'delete') {
+                            let item = this.allData.find(i => i.id === this.confirm.id);
+                            if (item) item.status = 'trash';
+                        } else if (this.confirm.type === 'restore') {
+                            let item = this.allData.find(i => i.id === this.confirm.id);
+                            if (item) item.status = 'active';
+                        } else if (this.confirm.type === 'bulk_delete') {
+                            this.allData.forEach(item => {
+                                if (this.selectedItems.includes(item.id)) item.status = 'trash';
+                            });
+                            this.selectedItems = [];
+                        } else if (this.confirm.type === 'bulk_restore') {
+                            this.allData.forEach(item => {
+                                if (this.selectedItems.includes(item.id)) item.status = 'active';
+                            });
+                            this.selectedItems = [];
+                        }
+                        this.showToast('Aksi berhasil dilakukan.', 'success');
+                    }
+                },
+
+                // Toast
+                toast: { show: false, message: '', type: 'success' },
+                showToast(msg, type) {
+                    this.toast.message = msg;
+                    this.toast.type = type;
+                    this.toast.show = true;
+                    setTimeout(() => { this.toast.show = false; }, 3000);
+                }
+            }));
+        });
+    </script>
+</body>
+</html>

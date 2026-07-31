@@ -1,0 +1,709 @@
+{
+  // =========================================================================
+  // KONTRAK API - MODUL AUTENTIKASI
+  // Endpoint prefix: /api/v1/auth
+  // =========================================================================
+
+  // ======================================================
+  // LOGIN
+  // ======================================================
+  "login": {
+    "method": "POST",
+    "endpoint": "/api/v1/auth/login",
+    "consumes": "application/json",
+    "produces": "application/json",
+    "authentication": {
+      "type": "None"
+    },
+    "headers": {
+      "Accept": "application/json"
+    },
+    "security": {
+      "rate_limit": {
+        "enabled": true,
+        "key": "IP + Email",
+        "limit": "5 requests / minute"
+      }
+    },
+    "notes": [
+      "Refresh Token disimpan secara otomatis pada HttpOnly Cookie oleh server.",
+      "Response body hanya mengembalikan Access Token.",
+      "Field remember_me mengatur durasi Refresh Token (true = 30 hari, false = 72 jam)."
+    ],
+    "request": {
+      "email": "admin@example.com",
+      "password": "password123",
+      "remember_me": false
+    },
+    "validation": {
+      "email": [
+        { "tag": "required", "message": "Email wajib diisi." },
+        { "tag": "email", "message": "Format email tidak valid." }
+      ],
+      "password": [
+        { "tag": "required", "message": "Password wajib diisi." },
+        { "tag": "min", "param": "6", "message": "Password minimal 6 karakter." }
+      ]
+    },
+    "responses": {
+      "200": {
+        "description": "Login berhasil",
+        "body": {
+          "success": true,
+          "code": "AUTH_LOGIN_SUCCESS",
+          "message": "Login berhasil.",
+          "data": {
+            "access_token": "eyJhbG...NiIs...",
+            "user": {
+              "id": 1,
+              "name": "Administrator",
+              "email": "admin@example.com",
+              "role": {
+                "id": 1,
+                "name": "super_admin",
+                "display_name": "Super Administrator"
+              },
+              "status": "active"
+            }
+          }
+        },
+        "cookies": {
+          "refresh_token": {
+            "httpOnly": true,
+            "secure": true,
+            "sameSite": "Strict",
+            "path": "/api/v1/auth",
+            "maxAge": 259200
+          }
+        }
+      },
+      "401": {
+        "description": "Kredensial salah",
+        "body": {
+          "success": false,
+          "code": "AUTH_INVALID_CREDENTIALS",
+          "message": "Email atau password salah."
+        }
+      },
+      "403": {
+        "description": "Akun nonaktif",
+        "body": {
+          "success": false,
+          "code": "AUTH_ACCOUNT_INACTIVE",
+          "message": "Akun Anda belum aktif atau telah dinonaktifkan. Silakan hubungi Admin."
+        }
+      },
+      "422": {
+        "description": "Validasi input gagal",
+        "body": {
+          "success": false,
+          "code": "VALIDATION_ERROR",
+          "message": "Validasi gagal.",
+          "errors": [
+            {
+              "field": "email",
+              "tag": "required",
+              "param": "",
+              "message": "Email wajib diisi."
+            }
+          ]
+        }
+      },
+      "429": {
+        "description": "Rate limit terlampaui",
+        "body": {
+          "success": false,
+          "code": "AUTH_RATE_LIMIT_EXCEEDED",
+          "message": "Terlalu banyak percobaan. Silakan coba lagi nanti.",
+          "retry_after": 60
+        }
+      },
+      "500": {
+        "description": "Kesalahan server",
+        "body": {
+          "success": false,
+          "code": "SERVER_ERROR",
+          "message": "Terjadi kesalahan pada server."
+        }
+      }
+    }
+  },
+
+  // ======================================================
+  // REFRESH TOKEN
+  // ======================================================
+  "refresh": {
+    "method": "POST",
+    "endpoint": "/api/v1/auth/refresh",
+    "consumes": "application/json",
+    "produces": "application/json",
+    "authentication": {
+      "type": "Refresh Token Cookie"
+    },
+    "headers": {
+      "Accept": "application/json"
+    },
+    "security": {
+      "refresh_token": {
+        "required": true,
+        "source": "HttpOnly Cookie",
+        "rotation": true
+      }
+    },
+    "notes": [
+      "Refresh Token dikirim otomatis oleh browser melalui HttpOnly Cookie.",
+      "Client tidak perlu mengirim request body.",
+      "Refresh Token yang baru akan dikirimkan kembali melalui Set-Cookie.",
+      "Refresh Token lama akan di-invalidate setelah rotasi (one-time use)."
+    ],
+    "request": null,
+    "validation": null,
+    "responses": {
+      "200": {
+        "description": "Sesi berhasil diperbarui",
+        "body": {
+          "success": true,
+          "code": "AUTH_REFRESH_SUCCESS",
+          "message": "Sesi berhasil diperbarui.",
+          "data": {
+            "access_token": "eyJhbG...NiIs..."
+          }
+        }
+      },
+      "401": {
+        "description": "Refresh token kadaluarsa atau tidak ada",
+        "body": {
+          "success": false,
+          "code": "AUTH_SESSION_EXPIRED",
+          "message": "Sesi telah berakhir. Silakan login kembali."
+        }
+      },
+      "403": {
+        "description": "Akun telah dinonaktifkan",
+        "body": {
+          "success": false,
+          "code": "AUTH_ACCOUNT_INACTIVE",
+          "message": "Akun Anda telah dinonaktifkan. Silakan hubungi Admin."
+        }
+      },
+      "500": {
+        "description": "Kesalahan server",
+        "body": {
+          "success": false,
+          "code": "SERVER_ERROR",
+          "message": "Terjadi kesalahan pada server."
+        }
+      }
+    }
+  },
+
+  // ======================================================
+  // LOGOUT
+  // ======================================================
+  "logout": {
+    "method": "POST",
+    "endpoint": "/api/v1/auth/logout",
+    "consumes": "application/json",
+    "produces": "application/json",
+    "authentication": {
+      "type": "Bearer Access Token"
+    },
+    "headers": {
+      "Accept": "application/json",
+      "Authorization": "Bearer <access_token>"
+    },
+    "notes": [
+      "Menghapus refresh token dari database dan cookie.",
+      "Access token tetap valid sampai kadaluarsa (client harus menghapusnya)."
+    ],
+    "request": null,
+    "validation": null,
+    "responses": {
+      "200": {
+        "description": "Logout berhasil",
+        "body": {
+          "success": true,
+          "code": "AUTH_LOGOUT_SUCCESS",
+          "message": "Logout berhasil."
+        }
+      },
+      "401": {
+        "description": "Token tidak valid",
+        "body": {
+          "success": false,
+          "code": "AUTH_TOKEN_INVALID_OR_EXPIRED",
+          "message": "Token akses tidak valid atau telah kedaluwarsa."
+        }
+      },
+      "500": {
+        "description": "Kesalahan server",
+        "body": {
+          "success": false,
+          "code": "SERVER_ERROR",
+          "message": "Terjadi kesalahan pada server."
+        }
+      }
+    }
+  },
+
+  // ======================================================
+  // GET PROFILE (ME)
+  // ======================================================
+  "me": {
+    "method": "GET",
+    "endpoint": "/api/v1/auth/me",
+    "consumes": null,
+    "produces": "application/json",
+    "authentication": {
+      "type": "Bearer Access Token"
+    },
+    "headers": {
+      "Accept": "application/json",
+      "Authorization": "Bearer <access_token>"
+    },
+    "notes": [
+      "Mengambil data profile user yang sedang login.",
+      "Data mencakup role dan informasi dasar user."
+    ],
+    "request": null,
+    "validation": null,
+    "responses": {
+      "200": {
+        "description": "Profil ditemukan",
+        "body": {
+          "success": true,
+          "code": "AUTH_PROFILE",
+          "message": "Profil berhasil diambil.",
+          "data": {
+            "id": 1,
+            "name": "Administrator",
+            "email": "admin@example.com",
+            "phone": "6285279880008",
+            "photo_path": null,
+            "status": "active",
+            "role": {
+              "id": 1,
+              "name": "super_admin",
+              "display_name": "Super Administrator"
+            },
+            "created_at": "2024-01-01T00:00:00Z"
+          }
+        }
+      },
+      "401": {
+        "description": "Token tidak valid",
+        "body": {
+          "success": false,
+          "code": "AUTH_TOKEN_INVALID_OR_EXPIRED",
+          "message": "Token akses tidak valid atau telah kedaluwarsa."
+        }
+      },
+      "404": {
+        "description": "User tidak ditemukan",
+        "body": {
+          "success": false,
+          "code": "NOT_FOUND",
+          "message": "User tidak ditemukan."
+        }
+      },
+      "500": {
+        "description": "Kesalahan server",
+        "body": {
+          "success": false,
+          "code": "SERVER_ERROR",
+          "message": "Terjadi kesalahan pada server."
+        }
+      }
+    }
+  },
+
+  // ======================================================
+  // FORGOT PASSWORD
+  // ======================================================
+  "forgot_password": {
+    "method": "POST",
+    "endpoint": "/api/v1/auth/forgot-password",
+    "consumes": "application/json",
+    "produces": "application/json",
+    "authentication": {
+      "type": "None"
+    },
+    "headers": {
+      "Accept": "application/json"
+    },
+    "security": {
+      "rate_limit": {
+        "enabled": true,
+        "key": "IP + Email",
+        "limit": "3 requests / minute"
+      }
+    },
+    "notes": [
+      "Jika email terdaftar, tautan yang berisi token reset akan dikirimkan ke email tersebut.",
+      "Response selalu sukses (200) untuk mencegah enumerasi email.",
+      "Di mode DEV, link reset akan muncul di console/log terminal."
+    ],
+    "request": {
+      "email": "admin@example.com"
+    },
+    "validation": {
+      "email": [
+        { "tag": "required", "message": "Email wajib diisi." },
+        { "tag": "email", "message": "Format email tidak valid." }
+      ]
+    },
+    "responses": {
+      "200": {
+        "description": "Permintaan berhasil diproses",
+        "body": {
+          "success": true,
+          "code": "AUTH_FORGOT_PASSWORD_SUCCESS",
+          "message": "Jika email terdaftar, tautan reset password akan dikirim ke email tersebut."
+        }
+      },
+      "422": {
+        "description": "Validasi input gagal",
+        "body": {
+          "success": false,
+          "code": "VALIDATION_ERROR",
+          "message": "Validasi gagal.",
+          "errors": [
+            {
+              "field": "email",
+              "tag": "required",
+              "param": "",
+              "message": "Email wajib diisi."
+            }
+          ]
+        }
+      },
+      "429": {
+        "description": "Rate limit terlampaui",
+        "body": {
+          "success": false,
+          "code": "AUTH_RATE_LIMIT_EXCEEDED",
+          "message": "Terlalu banyak permintaan. Silakan coba lagi nanti.",
+          "retry_after": 60
+        }
+      },
+      "500": {
+        "description": "Kesalahan server",
+        "body": {
+          "success": false,
+          "code": "SERVER_ERROR",
+          "message": "Terjadi kesalahan pada server."
+        }
+      }
+    }
+  },
+
+  // ======================================================
+  // VALIDATE RESET TOKEN
+  // ======================================================
+  "validate_reset_token": {
+    "method": "GET",
+    "endpoint": "/api/v1/auth/validate-reset-token",
+    "consumes": null,
+    "produces": "application/json",
+    "authentication": {
+      "type": "Reset Token"
+    },
+    "headers": {
+      "Accept": "application/json"
+    },
+    "parameters": {
+      "query": {
+        "token": "<reset-token>"
+      }
+    },
+    "notes": [
+      "Memvalidasi apakah token reset password masih berlaku sebelum menampilkan form reset.",
+      "Dipanggil oleh frontend saat render halaman reset-password untuk cek token.",
+      "Jika token invalid, frontend menampilkan pesan error alih-alih form."
+    ],
+    "request": null,
+    "validation": null,
+    "responses": {
+      "200": {
+        "description": "Token reset valid",
+        "body": {
+          "success": true,
+          "code": "AUTH_RESET_TOKEN_VALID",
+          "message": "Token reset valid."
+        }
+      },
+      "400": {
+        "description": "Token tidak valid atau kadaluarsa",
+        "body": {
+          "success": false,
+          "code": "AUTH_TOKEN_INVALID_OR_EXPIRED",
+          "message": "Token reset password tidak valid atau telah kedaluwarsa."
+        }
+      },
+      "500": {
+        "description": "Kesalahan server",
+        "body": {
+          "success": false,
+          "code": "SERVER_ERROR",
+          "message": "Terjadi kesalahan pada server."
+        }
+      }
+    }
+  },
+
+  // ======================================================
+  // RESET PASSWORD
+  // ======================================================
+  "reset_password": {
+    "method": "POST",
+    "endpoint": "/api/v1/auth/reset-password",
+    "consumes": "application/json",
+    "produces": "application/json",
+    "authentication": {
+      "type": "Reset Token"
+    },
+    "headers": {
+      "Accept": "application/json"
+    },
+    "notes": [
+      "Membutuhkan token valid yang sebelumnya didapatkan dari proses forgot password.",
+      "Token hanya bisa digunakan satu kali dan akan dihapus setelah digunakan."
+    ],
+    "request": {
+      "token": "<reset-token>",
+      "password": "newpassword",
+      "confirm_password": "newpassword"
+    },
+    "validation": {
+      "token": [
+        { "tag": "required", "message": "Token wajib diisi." }
+      ],
+      "password": [
+        { "tag": "required", "message": "Password wajib diisi." },
+        { "tag": "min", "param": "6", "message": "Password minimal 6 karakter." }
+      ],
+      "confirm_password": [
+        { "tag": "required", "message": "Konfirmasi password wajib diisi." },
+        { "tag": "eqfield", "param": "Password", "message": "Konfirmasi password tidak sama." }
+      ]
+    },
+    "responses": {
+      "200": {
+        "description": "Password berhasil direset",
+        "body": {
+          "success": true,
+          "code": "AUTH_RESET_PASSWORD_SUCCESS",
+          "message": "Password berhasil direset, silakan login."
+        }
+      },
+      "400": {
+        "description": "Token tidak valid atau kadaluarsa",
+        "body": {
+          "success": false,
+          "code": "AUTH_TOKEN_INVALID_OR_EXPIRED",
+          "message": "Token reset password tidak valid atau telah kedaluwarsa."
+        }
+      },
+      "422": {
+        "description": "Validasi input gagal",
+        "body": {
+          "success": false,
+          "code": "VALIDATION_ERROR",
+          "message": "Validasi gagal.",
+          "errors": [
+            {
+              "field": "password",
+              "tag": "min",
+              "param": "6",
+              "message": "Password minimal 6 karakter."
+            }
+          ]
+        }
+      },
+      "500": {
+        "description": "Kesalahan server",
+        "body": {
+          "success": false,
+          "code": "SERVER_ERROR",
+          "message": "Terjadi kesalahan pada server."
+        }
+      }
+    }
+  },
+
+  // ======================================================
+  // CHANGE PASSWORD (saat sudah login)
+  // ======================================================
+  "change_password": {
+    "method": "POST",
+    "endpoint": "/api/v1/auth/change-password",
+    "consumes": "application/json",
+    "produces": "application/json",
+    "authentication": {
+      "type": "Bearer Access Token"
+    },
+    "headers": {
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+      "Authorization": "Bearer <access_token>"
+    },
+    "notes": [
+      "Mengganti password pengguna yang sudah login.",
+      "Membutuhkan current_password untuk verifikasi.",
+      "Setelah berhasil, semua refresh token sesi lain akan dihapus.",
+      "Pengguna harus login ulang di perangkat lain."
+    ],
+    "request": {
+      "current_password": "passwordlama123",
+      "password": "passwordbaru123",
+      "confirm_password": "passwordbaru123"
+    },
+    "validation": {
+      "current_password": [
+        { "tag": "required", "message": "Password saat ini wajib diisi." }
+      ],
+      "password": [
+        { "tag": "required", "message": "Password baru wajib diisi." },
+        { "tag": "min", "param": "6", "message": "Password baru minimal 6 karakter." }
+      ],
+      "confirm_password": [
+        { "tag": "required", "message": "Konfirmasi password wajib diisi." },
+        { "tag": "eqfield", "param": "Password", "message": "Konfirmasi password tidak sama." }
+      ]
+    },
+    "responses": {
+      "200": {
+        "description": "Password berhasil diperbarui",
+        "body": {
+          "success": true,
+          "code": "AUTH_CHANGE_PASSWORD_SUCCESS",
+          "message": "Password berhasil diperbarui, silakan login ulang."
+        }
+      },
+      "401": {
+        "description": "Password saat ini salah",
+        "body": {
+          "success": false,
+          "code": "AUTH_INVALID_CREDENTIALS",
+          "message": "Password saat ini salah."
+        }
+      },
+      "422": {
+        "description": "Validasi input gagal",
+        "body": {
+          "success": false,
+          "code": "VALIDATION_ERROR",
+          "message": "Validasi gagal.",
+          "errors": [
+            {
+              "field": "current_password",
+              "tag": "required",
+              "param": "",
+              "message": "Password saat ini wajib diisi."
+            }
+          ]
+        }
+      },
+      "500": {
+        "description": "Kesalahan server",
+        "body": {
+          "success": false,
+          "code": "SERVER_ERROR",
+          "message": "Terjadi kesalahan pada server."
+        }
+      }
+    }
+  },
+
+  // ======================================================
+  // VALIDATE ACTIVATION TOKEN
+  // ======================================================
+  "validate_activation_token": {
+    "method": "GET",
+    "endpoint": "/api/v1/auth/validate-activation-token",
+    "consumes": null,
+    "produces": "application/json",
+    "authentication": {
+      "type": "Activation Token"
+    },
+    "headers": {
+      "Accept": "application/json"
+    },
+    "parameters": {
+      "query": {
+        "token": "<activation-token>"
+      }
+    },
+    "notes": [
+      "Memvalidasi apakah token aktivasi akun masih berlaku (24 jam) sebelum menampilkan form aktivasi.",
+      "Dipanggil oleh frontend saat Admin baru membuka link aktivasi dari email."
+    ],
+    "responses": {
+      "200": {
+        "description": "Token aktivasi valid",
+        "body": {
+          "success": true,
+          "code": "AUTH_ACTIVATION_TOKEN_VALID",
+          "message": "Token aktivasi valid."
+        }
+      },
+      "400": {
+        "description": "Token tidak valid atau kadaluarsa",
+        "body": {
+          "success": false,
+          "code": "AUTH_TOKEN_INVALID_OR_EXPIRED",
+          "message": "Token aktivasi tidak valid atau telah kedaluwarsa."
+        }
+      }
+    }
+  },
+
+  // ======================================================
+  // ACTIVATE ACCOUNT (Buat Password Pertama)
+  // ======================================================
+  "activate_account": {
+    "method": "POST",
+    "endpoint": "/api/v1/auth/activate-account",
+    "consumes": "application/json",
+    "produces": "application/json",
+    "authentication": {
+      "type": "Activation Token"
+    },
+    "headers": {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
+    },
+    "request": {
+      "token": "<activation-token>",
+      "password": "passwordpertama123",
+      "confirm_password": "passwordpertama123"
+    },
+    "validation": {
+      "token": "required",
+      "password": "required,min=6",
+      "confirm_password": "required,eqfield=Password"
+    },
+    "notes": [
+      "Mengaktifkan akun 'pending_activation' dan menyimpan password pertama milik Admin baru.",
+      "Setelah berhasil, status akun berubah menjadi 'active' dan email_verified_at diisi."
+    ],
+    "responses": {
+      "200": {
+        "description": "Akun berhasil diaktifkan",
+        "body": {
+          "success": true,
+          "code": "AUTH_ACCOUNT_ACTIVATED",
+          "message": "Akun berhasil diaktifkan. Silakan login."
+        }
+      },
+      "400": {
+        "description": "Token tidak valid atau kadaluarsa",
+        "body": {
+          "success": false,
+          "code": "AUTH_TOKEN_INVALID_OR_EXPIRED",
+          "message": "Token aktivasi tidak valid atau telah kedaluwarsa."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,26 @@
+package kontak
+
+import (
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/middleware"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kontak/handler"
+	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
+)
+
+func RegisterRoutes(api *gin.RouterGroup, h *handler.KontakHandler, jwtSecret string, rl *redis.Client) {
+	// Publik — submit pesan
+	api.POST("/kontak", h.Submit)
+
+	// Admin — super_admin, admin
+	admin := api.Group("/admin/kontak")
+	admin.Use(middleware.AuthMiddleware(jwtSecret))
+	admin.Use(middleware.RoleMiddleware("super_admin", "admin"))
+	{
+		admin.GET("", h.List)
+		admin.GET("/:id", h.GetByID)
+		admin.POST("/bulk-delete", h.BulkDelete)
+		admin.POST("/bulk-restore", h.BulkRestore)
+		admin.DELETE("/:id", h.Delete)
+		admin.POST("/:id/restore", h.Restore)
+	}
+}

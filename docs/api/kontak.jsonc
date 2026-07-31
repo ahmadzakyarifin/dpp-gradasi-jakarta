@@ -1,0 +1,300 @@
+{
+  // =========================================================================
+  // KONTRAK API - MODUL KONTAK
+  // Endpoint prefix: /api/v1/kontak & /api/v1/admin/kontak
+  // =========================================================================
+
+  "kontak": {
+    // ======================================================
+    // SUBMIT PESAN KONTAK (Public Form)
+    // ======================================================
+    "submit": {
+      "method": "POST",
+      "endpoint": "/api/v1/kontak",
+      "consumes": "application/json",
+      "produces": "application/json",
+      "authentication": {
+        "type": "None"
+      },
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      "request": {
+        "nama": "Ahmad Zaky",
+        "email": "zaky@example.com",
+        "subjek": "Kerjasama Literasi Digital",
+        "pesan": "Halo DPP GRADASI, kami ingin mengajukan..."
+      },
+      "validation": {
+        "nama": "required,min=3,max=100",
+        "email": "required,email,max=150",
+        "subjek": "required,max=200",
+        "pesan": "required,min=10"
+      },
+      "notes": [
+        "Endpoint publik untuk pengunjung website mengirim pesan kontak.",
+        "Tidak memerlukan autentikasi."
+      ],
+      "responses": {
+        "200": {
+          "description": "Pesan berhasil dikirim",
+          "body": {
+            "success": true,
+            "code": "KONTAK_SUBMITTED",
+            "message": "Pesan Anda berhasil dikirim. Terima kasih!"
+          }
+        },
+        "400": {
+          "description": "Validasi input gagal",
+          "body": {
+            "success": false,
+            "code": "VALIDATION_ERROR",
+            "message": "validasi gagal",
+            "errors": {
+              "email": "Format email tidak valid"
+            }
+          }
+        }
+      }
+    },
+
+    // ======================================================
+    // LIST PESAN MASUK (Admin Only)
+    // ======================================================
+    "list_admin": {
+      "method": "GET",
+      "endpoint": "/api/v1/admin/kontak",
+      "consumes": null,
+      "produces": "application/json",
+      "authentication": {
+        "type": "Bearer Access Token"
+      },
+      "headers": {
+        "Accept": "application/json",
+        "Authorization": "Bearer <access_token>"
+      },
+      "security": {
+        "roles": ["super_admin", "admin"]
+      },
+      "parameters": {
+        "query": {
+          "page": "1",
+          "limit": "10",
+          "search": "kerjasama",
+          "status": "unread",
+          "sort": "newest"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Berhasil mengambil daftar pesan masuk",
+          "body": {
+            "success": true,
+            "code": "KONTAK_LIST",
+            "message": "Daftar pesan masuk berhasil diambil",
+            "data": [
+              {
+                "id": 1,
+                "nama": "Ahmad Zaky",
+                "email": "zaky@example.com",
+                "subjek": "Kerjasama",
+                "pesan": "Halo...",
+                "is_read": false,
+                "created_at": "2026-07-30T11:44:31+07:00"
+              }
+            ],
+            "meta": {
+              "current_page": 1,
+              "limit": 10,
+              "total_data": 5,
+              "total_pages": 1
+            }
+          }
+        }
+      }
+    },
+
+    // ======================================================
+    // DETAIL & TANDAI PESAN DIBACA (Admin Only)
+    // ======================================================
+    "detail_admin": {
+      "method": "GET",
+      "endpoint": "/api/v1/admin/kontak/:id",
+      "consumes": null,
+      "produces": "application/json",
+      "authentication": {
+        "type": "Bearer Access Token"
+      },
+      "headers": {
+        "Accept": "application/json",
+        "Authorization": "Bearer <access_token>"
+      },
+      "security": {
+        "roles": ["super_admin", "admin"]
+      },
+      "parameters": {
+        "path": {
+          "id": "1"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Berhasil mengambil detail pesan",
+          "body": {
+            "success": true,
+            "code": "KONTAK_DETAIL",
+            "message": "Detail pesan berhasil diambil",
+            "data": {
+              "id": 1,
+              "nama": "Ahmad Zaky",
+              "email": "zaky@example.com",
+              "subjek": "Kerjasama",
+              "pesan": "Halo DPP GRADASI, kami ingin mengajukan...",
+              "is_read": true,
+              "created_at": "2026-07-30T11:44:31+07:00"
+            }
+          }
+        },
+        "404": {
+          "description": "Pesan tidak ditemukan",
+          "body": {
+            "success": false,
+            "code": "NOT_FOUND",
+            "message": "Pesan tidak ditemukan"
+          }
+        }
+      }
+    },
+
+    // ======================================================
+    // DELETE PESAN KONTAK (Admin Only)
+    // ======================================================
+    "delete": {
+      "method": "DELETE",
+      "endpoint": "/api/v1/admin/kontak/:id",
+      "consumes": null,
+      "produces": "application/json",
+      "authentication": {
+        "type": "Bearer Access Token"
+      },
+      "headers": {
+        "Accept": "application/json",
+        "Authorization": "Bearer <access_token>"
+      },
+      "security": {
+        "roles": ["super_admin", "admin"]
+      },
+      "parameters": {
+        "path": {
+          "id": "1"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Pesan berhasil dihapus",
+          "body": {
+            "success": true,
+            "code": "KONTAK_DELETED",
+            "message": "Pesan berhasil dihapus"
+          }
+        },
+        "404": {
+          "description": "Pesan tidak ditemukan",
+          "body": {
+            "success": false,
+            "code": "NOT_FOUND",
+            "message": "Pesan tidak ditemukan"
+          }
+        }
+      }
+    }
+  },
+
+    // ======================================================
+    // RESTORE KONTAK
+    // ======================================================
+    "restore": {
+      "method": "POST",
+      "endpoint": "/api/v1/admin/kontak/:id/restore",
+      "consumes": null,
+      "produces": "application/json",
+      "authentication": {
+        "type": "Bearer Access Token"
+      },
+      "headers": {
+        "Accept": "application/json",
+        "Authorization": "Bearer <access_token>"
+      },
+      "responses": {
+        "200": {
+          "description": "Kontak berhasil dipulihkan",
+          "body": {
+            "success": true,
+            "code": "KONTAK_RESTORED",
+            "message": "Kontak berhasil dipulihkan."
+          }
+        }
+      }
+    },
+
+    // ======================================================
+    // BULK DELETE KONTAK
+    // ======================================================
+    "bulk_delete": {
+      "method": "POST",
+      "endpoint": "/api/v1/admin/kontak/bulk-delete",
+      "consumes": "application/json",
+      "produces": "application/json",
+      "authentication": {
+        "type": "Bearer Access Token"
+      },
+      "headers": {
+        "Accept": "application/json",
+        "Authorization": "Bearer <access_token>"
+      },
+      "request": {
+        "ids": [1, 2, 3]
+      },
+      "responses": {
+        "200": {
+          "description": "Bulk delete berhasil",
+          "body": {
+            "success": true,
+            "code": "BULK_DELETED",
+            "message": "Data berhasil dihapus (soft delete)."
+          }
+        }
+      }
+    },
+
+    // ======================================================
+    // BULK RESTORE KONTAK
+    // ======================================================
+    "bulk_restore": {
+      "method": "POST",
+      "endpoint": "/api/v1/admin/kontak/bulk-restore",
+      "consumes": "application/json",
+      "produces": "application/json",
+      "authentication": {
+        "type": "Bearer Access Token"
+      },
+      "headers": {
+        "Accept": "application/json",
+        "Authorization": "Bearer <access_token>"
+      },
+      "request": {
+        "ids": [1, 2, 3]
+      },
+      "responses": {
+        "200": {
+          "description": "Bulk restore berhasil",
+          "body": {
+            "success": true,
+            "code": "BULK_RESTORED",
+            "message": "Data berhasil dipulihkan."
+          }
+        }
+      }
+    }
+}

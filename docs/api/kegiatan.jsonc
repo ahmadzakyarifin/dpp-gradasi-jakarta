@@ -1,0 +1,676 @@
+{
+  // =========================================================================
+  // KONTRAK API - MODUL KEGIATAN
+  // CRUD tabel `kegiatan`, `kegiatan_tags`, dan `kegiatan_gallery`
+  // Slug dibuat otomatis dari `title` oleh backend (via gosimple/slug).
+  // Soft delete — kolom `deleted_at`.
+  // =========================================================================
+
+  // ======================================================
+  // LIST KEGIATAN (Public — hanya published)
+  // ======================================================
+  "list_public": {
+    "method": "GET",
+    "endpoint": "/api/v1/kegiatan",
+    "consumes": null,
+    "produces": "application/json",
+    "authentication": {
+      "type": "None"
+    },
+    "headers": {
+      "Accept": "application/json"
+    },
+    "parameters": {
+      "query": {
+        "page": "1",
+        "limit": "6",
+        "search": "bantuan",
+        "category": "Kegiatan",
+        "sort": "newest"           // newest | oldest | most_viewed
+      }
+    },
+    "notes": [
+      "Hanya menampilkan kegiatan yang is_published = true.",
+      "Mendukung paginasi, pencarian, dan filter kategori."
+    ],
+    "responses": {
+      "200": {
+        "description": "Berhasil mengambil daftar kegiatan",
+        "body": {
+          "success": true,
+          "code": "KEGIATAN_LIST",
+          "message": "Daftar kegiatan berhasil diambil.",
+          "data": {
+            "kegiatan": [
+              {
+                "id": 1,
+                "title": "Penyaluran Bantuan Kemanusiaan oleh DPP GRADASI",
+                "slug": "penyaluran-bantuan-kemanusiaan",
+                "category": "Kegiatan",
+                "event_date": "2025-12-31",
+                "location": "Aceh, Indonesia",
+                "organizer": "DPP GRADASI",
+                "image_url": "/uploads/event/1767154719.jpg",
+                "excerpt": "Dewan Pimpinan Pusat (DPP) GRADASI menyalurkan bantuan...",
+                "views": 80,
+                "is_published": true,
+                "gallery_count": 3,
+                "created_at": "2025-12-31T08:00:00Z",
+                "updated_at": "2025-12-31T08:00:00Z"
+              }
+            ],
+            "meta": {
+              "current_page": 1,
+              "limit": 6,
+              "total_data": 12,
+              "total_pages": 2
+            }
+          }
+        }
+      }
+    }
+  },
+
+  // ======================================================
+  // DETAIL KEGIATAN (Public — by slug)
+  // ======================================================
+  "detail_public": {
+    "method": "GET",
+    "endpoint": "/api/v1/kegiatan/:slug",
+    "consumes": null,
+    "produces": "application/json",
+    "authentication": {
+      "type": "None"
+    },
+    "headers": {
+      "Accept": "application/json"
+    },
+    "parameters": {
+      "path": {
+        "slug": "penyaluran-bantuan-kemanusiaan"
+      }
+    },
+    "notes": [
+      "Mengambil detail lengkap kegiatan termasuk gallery dan tags.",
+      "Views counter otomatis bertambah setiap kali diakses."
+    ],
+    "responses": {
+      "200": {
+        "description": "Berhasil mengambil detail kegiatan",
+        "body": {
+          "success": true,
+          "code": "KEGIATAN_DETAIL",
+          "message": "Detail kegiatan berhasil diambil.",
+          "data": {
+            "id": 1,
+            "title": "Penyaluran Bantuan Kemanusiaan oleh DPP GRADASI",
+            "slug": "penyaluran-bantuan-kemanusiaan",
+            "category": "Kegiatan",
+            "event_date": "2025-12-31",
+            "location": "Aceh, Indonesia",
+            "organizer": "DPP GRADASI",
+            "image_url": "/uploads/event/1767154719.jpg",
+            "content": "<p>Isi detail kegiatan...</p>",
+            "views": 81,
+            "is_published": true,
+            "tags": ["Kemanusiaan", "Donasi", "Aceh"],
+            "gallery": [
+              {
+                "id": 1,
+                "image_url": "/uploads/event/gallery1.jpg",
+                "caption": "Serah terima",
+                "sort_order": 0
+              }
+            ],
+            "created_at": "2025-12-31T08:00:00Z"
+          }
+        }
+      },
+      "404": {
+        "description": "Kegiatan tidak ditemukan",
+        "body": {
+          "success": false,
+          "code": "NOT_FOUND",
+          "message": "Kegiatan tidak ditemukan."
+        }
+      }
+    }
+  },
+
+  // ======================================================
+  // LIST KEGIATAN (Admin — semua status)
+  // ======================================================
+  "list_admin": {
+    "method": "GET",
+    "endpoint": "/api/v1/kegiatan/admin",
+    "consumes": null,
+    "produces": "application/json",
+    "authentication": {
+      "type": "Bearer Access Token"
+    },
+    "headers": {
+      "Accept": "application/json",
+      "Authorization": "Bearer <access_token>"
+    },
+    "security": {
+      "rate_limit": {
+        "enabled": true,
+        "key": "User",
+        "limit": "30 request / menit"
+      },
+      "roles": ["super_admin", "admin", "editor"]
+    },
+    "parameters": {
+      "query": {
+        "page": "1",
+        "limit": "10",
+        "search": "bantuan",
+        "category": "Kegiatan",
+        "status": "published",     // published | draft | trashed | all
+        "sort": "newest"           // newest | oldest | most_viewed
+      }
+    },
+    "notes": [
+      "Menampilkan semua kegiatan termasuk draft dan yang sudah dihapus (trashed).",
+      "Hanya bisa diakses oleh user dengan role super_admin, admin, atau editor."
+    ],
+    "responses": {
+      "200": {
+        "description": "Berhasil mengambil daftar kegiatan (admin)",
+        "body": {
+          "success": true,
+          "code": "KEGIATAN_LIST",
+          "message": "Daftar kegiatan berhasil diambil.",
+          "data": {
+            "kegiatan": [
+              {
+                "id": 1,
+                "title": "Penyaluran Bantuan Kemanusiaan oleh DPP GRADASI",
+                "slug": "penyaluran-bantuan-kemanusiaan",
+                "category": "Kegiatan",
+                "event_date": "2025-12-31",
+                "location": "Aceh, Indonesia",
+                "organizer": "DPP GRADASI",
+                "image_url": "/uploads/event/1767154719.jpg",
+                "excerpt": "DPP GRADASI menyalurkan bantuan...",
+                "is_published": true,
+                "views": 80,
+                "gallery_count": 3,
+                "created_at": "2025-12-31T08:00:00Z",
+                "updated_at": "2025-12-31T08:00:00Z"
+              }
+            ],
+            "meta": {
+              "current_page": 1,
+              "limit": 10,
+              "total_data": 12,
+              "total_pages": 2
+            }
+          }
+        }
+      }
+    }
+  },
+
+  // ======================================================
+  // DETAIL KEGIATAN (Admin — by ID)
+  // ======================================================
+  "detail_admin": {
+    "method": "GET",
+    "endpoint": "/api/v1/kegiatan/id/:id",
+    "consumes": null,
+    "produces": "application/json",
+    "authentication": {
+      "type": "Bearer Access Token"
+    },
+    "headers": {
+      "Accept": "application/json",
+      "Authorization": "Bearer <access_token>"
+    },
+    "security": {
+      "roles": ["super_admin", "admin", "editor"]
+    },
+    "parameters": {
+      "path": {
+        "id": "1"
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Detail kegiatan berdasarkan ID (sama struktur dengan detail_public)",
+        "body": {
+          "success": true,
+          "code": "KEGIATAN_DETAIL",
+          "message": "Detail kegiatan berhasil diambil.",
+          "data": {
+            "id": 1,
+            "title": "Penyaluran Bantuan Kemanusiaan oleh DPP GRADASI",
+            "slug": "penyaluran-bantuan-kemanusiaan",
+            "category": "Kegiatan",
+            "event_date": "2025-12-31",
+            "location": "Aceh, Indonesia",
+            "organizer": "DPP GRADASI",
+            "image_url": "/uploads/event/1767154719.jpg",
+            "content": "<p>Isi detail kegiatan...</p>",
+            "views": 81,
+            "is_published": true,
+            "tags": ["Kemanusiaan", "Donasi", "Aceh"],
+            "gallery": [
+              {
+                "id": 1,
+                "image_url": "/uploads/event/gallery1.jpg",
+                "caption": "Serah terima",
+                "sort_order": 0
+              }
+            ],
+            "created_at": "2025-12-31T08:00:00Z"
+          }
+        }
+      },
+      "404": {
+        "description": "Kegiatan tidak ditemukan",
+        "body": {
+          "success": false,
+          "code": "NOT_FOUND",
+          "message": "Kegiatan tidak ditemukan."
+        }
+      }
+    }
+  },
+
+  // ======================================================
+  // CREATE KEGIATAN (Admin/Editor)
+  // ======================================================
+  "create": {
+    "method": "POST",
+    "endpoint": "/api/v1/kegiatan",
+    "consumes": "application/json",
+    "produces": "application/json",
+    "authentication": {
+      "type": "Bearer Access Token"
+    },
+    "headers": {
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+      "Authorization": "Bearer <access_token>"
+    },
+    "security": {
+      "rate_limit": {
+        "enabled": true,
+        "key": "User",
+        "limit": "30 request / menit"
+      },
+      "roles": ["super_admin", "admin", "editor"]
+    },
+    "request": {
+      "title": "Penyaluran Bantuan Kemanusiaan",
+      "category": "Kegiatan",
+      "event_date": "2025-12-31",
+      "location": "Aceh, Indonesia",
+      "organizer": "DPP GRADASI",
+      "author_id": 1,
+      "image_url": "https://images.unsplash.com/photo-xxx",
+      "excerpt": "DPP GRADASI menyalurkan...",
+      "content": "<p>HTML content...</p>",
+      "is_published": true,
+      "tags": "Kemanusiaan,Donasi,Aceh",
+      "gallery": "[{\"image_url\":\"https://images.unsplash.com/photo-g1\",\"caption\":\"Serah terima\",\"sort_order\":0},{\"image_url\":\"https://images.unsplash.com/photo-g2\",\"caption\":\"Foto bersama\",\"sort_order\":1}]"
+    },
+    "validation": {
+      "title": [
+        { "tag": "required", "message": "Title wajib diisi, minimal 5 karakter." },
+        { "tag": "min", "message": "Title minimal 5 karakter." },
+        { "tag": "max", "message": "Title maksimal 300 karakter." }
+      ],
+      "content": [
+        { "tag": "required", "message": "Content wajib diisi." }
+      ],
+      "event_date": [
+        { "tag": "required", "message": "Event date wajib diisi." }
+      ]
+    },
+    "notes": [
+      "Slug dibuat otomatis dari title oleh backend (gosimple/slug).",
+      "author_id bersifat opsional. Jika tidak diisi, diambil otomatis dari token login.",
+      "Gallery dikirim sebagai JSON string di field `gallery`."
+    ],
+    "responses": {
+      "201": {
+        "description": "Kegiatan berhasil dibuat",
+        "body": {
+          "success": true,
+          "code": "KEGIATAN_CREATED",
+          "message": "Kegiatan berhasil ditambahkan.",
+          "data": {
+            "id": 1,
+            "title": "Penyaluran Bantuan Kemanusiaan",
+            "slug": "penyaluran-bantuan-kemanusiaan",
+            "category": "Kegiatan",
+            "event_date": "2025-12-31",
+            "location": "Aceh, Indonesia",
+            "organizer": "DPP GRADASI",
+            "image_url": "https://images.unsplash.com/photo-xxx",
+            "content": "<p>HTML content...</p>",
+            "is_published": true,
+            "tags": ["Kemanusiaan", "Donasi", "Aceh"],
+            "gallery": [
+              {
+                "id": 1,
+                "image_url": "https://images.unsplash.com/photo-g1",
+                "caption": "Serah terima",
+                "sort_order": 0
+              }
+            ],
+            "created_at": "2025-12-31T08:00:00Z"
+          }
+        }
+      },
+      "400": {
+        "description": "Validasi input gagal",
+        "body": {
+          "success": false,
+          "code": "VALIDATION_ERROR",
+          "message": "Validasi gagal.",
+          "errors": [
+            {
+              "field": "title",
+              "tag": "required",
+              "message": "Title wajib diisi, minimal 5 karakter."
+            }
+          ]
+        }
+      },
+      "401": {
+        "description": "Token tidak valid",
+        "body": {
+          "success": false,
+          "code": "AUTH_TOKEN_INVALID_OR_EXPIRED",
+          "message": "Sesi login telah berakhir. Silakan login kembali."
+        }
+      }
+    }
+  },
+
+  // ======================================================
+  // UPDATE KEGIATAN (Admin/Editor)
+  // ======================================================
+  "update": {
+    "method": "PUT",
+    "endpoint": "/api/v1/kegiatan/:id",
+    "consumes": "application/json",
+    "produces": "application/json",
+    "authentication": {
+      "type": "Bearer Access Token"
+    },
+    "headers": {
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+      "Authorization": "Bearer <access_token>"
+    },
+    "security": {
+      "rate_limit": {
+        "enabled": true,
+        "key": "User",
+        "limit": "30 request / menit"
+      },
+      "roles": ["super_admin", "admin", "editor"]
+    },
+    "parameters": {
+      "path": {
+        "id": "1"
+      }
+    },
+    "request": {
+      "title": "Penyaluran Bantuan Kemanusiaan (Updated)",
+      "category": "Kegiatan",
+      "event_date": "2025-12-31",
+      "location": "Aceh, Indonesia",
+      "organizer": "DPP GRADASI",
+      "author_id": 1,
+      "image_url": "https://images.unsplash.com/photo-yyy",
+      "excerpt": "Excerpt baru...",
+      "content": "<p>Konten baru...</p>",
+      "is_published": true,
+      "tags": "Kemanusiaan,Donasi,Aceh,Banjir",
+      "gallery": "[{\"image_url\":\"https://images.unsplash.com/photo-g1-updated\",\"caption\":\"Serah terima update\",\"sort_order\":0}]"
+    },
+    "validation": {
+      "title": [
+        { "tag": "required", "message": "Title wajib diisi, minimal 5 karakter." },
+        { "tag": "min", "message": "Title minimal 5 karakter." },
+        { "tag": "max", "message": "Title maksimal 300 karakter." }
+      ],
+      "content": [
+        { "tag": "required", "message": "Content wajib diisi." }
+      ]
+    },
+    "responses": {
+      "200": {
+        "description": "Kegiatan berhasil diperbarui",
+        "body": {
+          "success": true,
+          "code": "KEGIATAN_UPDATED",
+          "message": "Kegiatan berhasil diperbarui.",
+          "data": {
+            "id": 1,
+            "title": "Penyaluran Bantuan Kemanusiaan (Updated)",
+            "slug": "penyaluran-bantuan-kemanusiaan-updated",
+            "category": "Kegiatan",
+            "event_date": "2025-12-31",
+            "location": "Aceh, Indonesia",
+            "organizer": "DPP GRADASI",
+            "image_url": "https://images.unsplash.com/photo-yyy",
+            "content": "<p>Konten baru...</p>",
+            "is_published": true,
+            "tags": ["Kemanusiaan", "Donasi", "Aceh", "Banjir"],
+            "gallery": [
+              {
+                "id": 1,
+                "image_url": "https://images.unsplash.com/photo-g1-updated",
+                "caption": "Serah terima update",
+                "sort_order": 0
+              }
+            ],
+            "created_at": "2025-12-31T08:00:00Z"
+          }
+        }
+      },
+      "404": {
+        "description": "Kegiatan tidak ditemukan",
+        "body": {
+          "success": false,
+          "code": "NOT_FOUND",
+          "message": "Kegiatan tidak ditemukan."
+        }
+      }
+    }
+  },
+
+  // ======================================================
+  // DELETE KEGIATAN (Soft Delete — Admin/Editor)
+  // ======================================================
+  "delete": {
+    "method": "DELETE",
+    "endpoint": "/api/v1/kegiatan/:id",
+    "consumes": null,
+    "produces": "application/json",
+    "authentication": {
+      "type": "Bearer Access Token"
+    },
+    "headers": {
+      "Accept": "application/json",
+      "Authorization": "Bearer <access_token>"
+    },
+    "security": {
+      "roles": ["super_admin", "admin", "editor"]
+    },
+    "parameters": {
+      "path": {
+        "id": "1"
+      }
+    },
+    "notes": [
+      "Soft delete — kolom deleted_at diisi, data masih di DB.",
+      "Bisa dipulihkan via endpoint restore."
+    ],
+    "responses": {
+      "200": {
+        "description": "Kegiatan berhasil dihapus",
+        "body": {
+          "success": true,
+          "code": "KEGIATAN_DELETED",
+          "message": "Kegiatan berhasil dihapus."
+        }
+      },
+      "404": {
+        "description": "Kegiatan tidak ditemukan",
+        "body": {
+          "success": false,
+          "code": "NOT_FOUND",
+          "message": "Kegiatan tidak ditemukan."
+        }
+      }
+    }
+  },
+
+  // ======================================================
+  // RESTORE KEGIATAN (Admin/Editor)
+  // ======================================================
+  "restore": {
+    "method": "POST",
+    "endpoint": "/api/v1/kegiatan/:id/restore",
+    "consumes": null,
+    "produces": "application/json",
+    "authentication": {
+      "type": "Bearer Access Token"
+    },
+    "headers": {
+      "Accept": "application/json",
+      "Authorization": "Bearer <access_token>"
+    },
+    "security": {
+      "roles": ["super_admin", "admin", "editor"]
+    },
+    "parameters": {
+      "path": {
+        "id": "1"
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Kegiatan berhasil dipulihkan",
+        "body": {
+          "success": true,
+          "code": "KEGIATAN_RESTORED",
+          "message": "Kegiatan berhasil dipulihkan."
+        }
+      }
+    }
+  },
+
+  // ======================================================
+  // DELETE GALLERY IMAGE (Admin/Editor)
+  // ======================================================
+  "delete_gallery_image": {
+    "method": "DELETE",
+    "endpoint": "/api/v1/kegiatan/gallery/:gallery_id",
+    "consumes": null,
+    "produces": "application/json",
+    "authentication": {
+      "type": "Bearer Access Token"
+    },
+    "headers": {
+      "Accept": "application/json",
+      "Authorization": "Bearer <access_token>"
+    },
+    "security": {
+      "roles": ["super_admin", "admin", "editor"]
+    },
+    "parameters": {
+      "path": {
+        "gallery_id": "1"
+      }
+    },
+    "notes": [
+      "Menghapus satu foto galeri dari kegiatan."
+    ],
+    "responses": {
+      "200": {
+        "description": "Foto galeri berhasil dihapus",
+        "body": {
+          "success": true,
+          "code": "GALLERY_IMAGE_DELETED",
+          "message": "Foto galeri berhasil dihapus."
+        }
+      },
+      "404": {
+        "description": "Foto galeri tidak ditemukan",
+        "body": {
+          "success": false,
+          "code": "NOT_FOUND",
+          "message": "Foto galeri tidak ditemukan."
+        }
+      }
+    }
+  },
+
+    // ======================================================
+    // BULK DELETE KEGIATAN
+    // ======================================================
+    "bulk_delete": {
+      "method": "POST",
+      "endpoint": "/api/v1/kegiatan/bulk-delete",
+      "consumes": "application/json",
+      "produces": "application/json",
+      "authentication": {
+        "type": "Bearer Access Token"
+      },
+      "headers": {
+        "Accept": "application/json",
+        "Authorization": "Bearer <access_token>"
+      },
+      "request": {
+        "ids": [1, 2, 3]
+      },
+      "responses": {
+        "200": {
+          "description": "Bulk delete berhasil",
+          "body": {
+            "success": true,
+            "code": "BULK_DELETED",
+            "message": "Data berhasil dihapus (soft delete)."
+          }
+        }
+      }
+    },
+
+    // ======================================================
+    // BULK RESTORE KEGIATAN
+    // ======================================================
+    "bulk_restore": {
+      "method": "POST",
+      "endpoint": "/api/v1/kegiatan/bulk-restore",
+      "consumes": "application/json",
+      "produces": "application/json",
+      "authentication": {
+        "type": "Bearer Access Token"
+      },
+      "headers": {
+        "Accept": "application/json",
+        "Authorization": "Bearer <access_token>"
+      },
+      "request": {
+        "ids": [1, 2, 3]
+      },
+      "responses": {
+        "200": {
+          "description": "Bulk restore berhasil",
+          "body": {
+            "success": true,
+            "code": "BULK_RESTORED",
+            "message": "Data berhasil dipulihkan."
+          }
+        }
+      }
+    }
+}

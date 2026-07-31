@@ -1,0 +1,294 @@
+package repository
+
+import (
+	"context"
+	"strings"
+
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/dto"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/entity"
+	mapper "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/maper"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/model"
+	"gorm.io/gorm"
+)
+
+type activityLogRepository struct {
+	db *gorm.DB
+}
+
+func NewActivityLogRepository(
+	db *gorm.DB,
+) ActivityLogRepository {
+
+	return &activityLogRepository{
+		db: db,
+	}
+}
+
+// Create menyimpan activity log.
+func (r *activityLogRepository) Create(
+	ctx context.Context,
+	db *gorm.DB,
+	log *entity.ActivityLog,
+) error {
+
+	if db == nil {
+		db = r.db
+	}
+
+	modelLog := mapper.EntityToModel(log)
+
+	return db.WithContext(ctx).Create(modelLog).Error
+}
+
+// List mengambil data activity log.
+func (r *activityLogRepository) List(
+	ctx context.Context,
+	req *dto.ActivityLogQueryReq,
+) ([]entity.ActivityLog, int64, error) {
+
+	var models []model.ActivityLog
+
+	q := r.buildQuery(req)
+
+	var total int64
+	if err := q.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	page := req.Page
+	if page <= 0 {
+		page = 1
+	}
+
+	limit := req.Limit
+	if limit <= 0 {
+		limit = req.PerPage
+	}
+	if limit <= 0 {
+		limit = 10
+	}
+
+	q = q.
+		Order(sortClause(req)).
+		Limit(limit).
+		Offset((page - 1) * limit)
+
+	if err := q.Find(&models).Error; err != nil {
+		return nil, 0, err
+	}
+
+	result := make(
+		[]entity.ActivityLog,
+		len(models),
+	)
+
+	for i := range models {
+		result[i] = *mapper.ModelToEntity(&models[i])
+	}
+
+	return result, int64(total), nil
+}
+
+// buildQuery membuat query dinamis.
+func (r *activityLogRepository) buildQuery(
+	req *dto.ActivityLogQueryReq,
+) *gorm.DB {
+
+	q := r.db.
+		WithContext(context.Background()).
+		Model(&model.ActivityLog{})
+
+	action := firstNonEmpty(req.Action, "all")
+	entity := firstNonEmpty(req.Entity, req.EntityType, "all")
+	role := firstNonEmpty(req.Role, "all")
+	risk := firstNonEmpty(req.Risk, req.RiskLevel, "all")
+
+	if action != "" && action != "all" {
+		q = q.Where("action = ?", action)
+	}
+
+	if entity != "" && entity != "all" {
+		q = q.Where("entity_type = ?", entity)
+	}
+
+	if role != "" && role != "all" {
+		q = q.Where("actor_role = ?", role)
+	}
+
+	if risk != "" && risk != "all" {
+		q = q.Where("risk_level = ?", risk)
+	}
+
+	if req.ActorID != nil && *req.ActorID > 0 {
+		q = q.Where("actor_id = ?", *req.ActorID)
+	}
+
+	if req.Status != "" && req.Status != "all" {
+		q = q.Where("description LIKE ?", "%"+req.Status+"%")
+	}
+
+	if req.StartDate != "" {
+		q = q.Where("created_at >= ?", req.StartDate)
+	}
+	if req.EndDate != "" {
+		q = q.Where("created_at <= ?", req.EndDate)
+	}
+
+	if req.Search != "" {
+		search := "%" + req.Search + "%"
+		q = q.Where(
+			"(actor_name LIKE ? OR actor_role LIKE ? OR action LIKE ? OR entity_type LIKE ? OR entity_label LIKE ?)",
+			search, search, search, search, search,
+		)
+	}
+
+	return q
+}
+
+// GetSummary mengambil statistik dashboard.
+func (r *activityLogRepository) GetSummary(
+	ctx context.Context,
+	req *dto.ActivityLogQueryReq,
+) (dto.ActivityLogSummaryRes, error) {
+
+	var summary dto.ActivityLogSummaryRes
+
+	total, err := r.countQuery(ctx, r.buildQuery(req))
+	if err != nil {
+		return summary, err
+	}
+
+	summary.TotalLogs = total
+
+	highRisk, err := r.countQuery(ctx, r.buildQuery(req).
+		Where("risk_level = ?", "high"))
+	if err != nil {
+		return summary, err
+	}
+
+	summary.HighRisk = highRisk
+
+	failedLogin, err := r.countQuery(ctx, r.buildQuery(req).
+		Where("action = ?", "auth.failed_login"))
+	if err != nil {
+		return summary, err
+	}
+
+	summary.FailedLogin = failedLogin
+
+	cms, err := r.countQuery(ctx, r.buildQuery(req).
+		Where("entity_type IN ?", []string{
+			"berita",
+			"kegiatan",
+			"slider",
+			"pengurus",
+			"kontak",
+			"settings",
+		}))
+	if err != nil {
+		return summary, err
+	}
+
+	summary.CMSAction = cms
+
+	return summary, nil
+}
+
+func (r *activityLogRepository) countQuery(
+	ctx context.Context,
+	q *gorm.DB,
+) (int64, error) {
+
+	var count int64
+	if err := q.WithContext(ctx).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
+}
+
+// sortClause membangun ORDER BY dari sort_by + order (whitelist kolom aman).
+func sortClause(req *dto.ActivityLogQueryReq) string {
+	allowed := map[string]bool{
+		"created_at":  true,
+		"id":          true,
+		"actor_name":  true,
+		"action":      true,
+		"entity_type": true,
+		"risk_level":  true,
+	}
+	dir := strings.ToLower(req.Order)
+	if dir != "asc" && dir != "desc" {
+		dir = "desc"
+	}
+
+	col := req.SortBy
+	if col == "" || !allowed[col] {
+		col = "created_at"
+	}
+	return col + " " + dir + ", id DESC"
+}
+
+// FindByID mengambil detail activity log berdasarkan id.
+func (r *activityLogRepository) FindByID(
+	ctx context.Context,
+	id uint64,
+) (*entity.ActivityLog, error) {
+
+	var m model.ActivityLog
+
+	err := r.db.
+		WithContext(ctx).
+		Where("id = ?", id).
+		First(&m).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return mapper.ModelToEntity(&m), nil
+}
+
+// EntityLogs mengambil history sebuah entity.
+func (r *activityLogRepository) EntityLogs(
+	ctx context.Context,
+	entityType string,
+	entityID uint64,
+) ([]entity.ActivityLog, error) {
+
+	var models []model.ActivityLog
+
+	err := r.db.
+		WithContext(ctx).
+		Where(
+			"entity_type = ? AND entity_id = ?",
+			entityType,
+			entityID,
+		).
+		Order("created_at DESC").
+		Order("id DESC").
+		Find(&models).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(
+		[]entity.ActivityLog,
+		len(models),
+	)
+
+	for i := range models {
+		result[i] = *mapper.ModelToEntity(&models[i])
+	}
+
+	return result, nil
+}

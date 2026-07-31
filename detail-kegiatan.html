@@ -401,7 +401,7 @@
                             <h4 class="font-heading font-bold text-slate-900 text-sm mb-4 flex items-center gap-2">
                                 <i class="ph-bold ph-share-network text-brand-600"></i> Bagikan Artikel
                             </h4>
-                            <div class="grid grid-cols-3 gap-2" id="share-buttons">
+                            <div class="grid grid-cols-4 gap-2" id="share-buttons">
                                 <button onclick="shareToFacebook()"
                                     class="share-btn flex items-center justify-center w-full h-11 rounded-xl bg-[#1877F2]/10 text-[#1877F2] hover:bg-[#1877F2] hover:text-white transition"
                                     title="Facebook">
@@ -416,6 +416,11 @@
                                     class="share-btn flex items-center justify-center w-full h-11 rounded-xl bg-slate-100 text-slate-500 hover:bg-brand-600 hover:text-white transition"
                                     title="Salin Link" id="copy-link-btn">
                                     <i class="ph-bold ph-link text-lg"></i>
+                                </button>
+                                <button onclick="shareToLinkedIn()"
+                                    class="share-btn flex items-center justify-center w-full h-11 rounded-xl bg-[#0A66C2]/10 text-[#0A66C2] hover:bg-[#0A66C2] hover:text-white transition"
+                                    title="LinkedIn">
+                                    <i class="ph-fill ph-linkedin-logo text-lg"></i>
                                 </button>
                             </div>
                             <div x-show="linkCopied" x-transition
@@ -875,6 +880,10 @@
 
         function shareToWhatsApp() {
             window.open('https://wa.me/?text=' + encodeURIComponent(document.title + ' ' + window.location.href), '_blank');
+        }
+
+        function shareToLinkedIn() {
+            window.open('https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(window.location.href), '_blank');
         }
 
         function copyLink() {

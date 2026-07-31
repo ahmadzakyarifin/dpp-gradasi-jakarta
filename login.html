@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Masuk / Daftar - DPP GRADASI</title>
+    <title>Masuk - DPP GRADASI</title>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -61,14 +61,10 @@
 </head>
 
 <body class="font-sans antialiased bg-white hide-scrollbar" x-data="{ 
-    view: 'login', // 'login', 'register', 'forgot'
+    view: new URLSearchParams(window.location.search).get('view') === 'forgot' ? 'forgot' : 'login',
     login: { email: '', password: '' },
     loginTouched: { email: false, password: false },
     loginErrors: {},
-    
-    register: { name: '', email: '', password: '' },
-    registerTouched: { name: false, email: false, password: false },
-    registerErrors: {},
 
     forgot: { email: '' },
     forgotTouched: { email: false },
@@ -82,30 +78,26 @@
         return Object.keys(this.loginErrors).length === 0;
     },
 
-    submitLogin() {
+    async submitLogin() {
         this.loginTouched.email = true;
         this.loginTouched.password = true;
         if (this.validateLogin()) {
-            alert('Proses Login...');
-        }
-    },
-
-    validateRegister() {
-        this.registerErrors = {};
-        if (!this.register.name) this.registerErrors.name = 'Nama lengkap wajib diisi';
-        if (!this.register.email) this.registerErrors.email = 'Email aktif wajib diisi';
-        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.register.email)) this.registerErrors.email = 'Format email tidak valid';
-        if (!this.register.password) this.registerErrors.password = 'Password wajib diisi';
-        else if (this.register.password.length < 8) this.registerErrors.password = 'Password minimal 8 karakter';
-        return Object.keys(this.registerErrors).length === 0;
-    },
-
-    submitRegister() {
-        this.registerTouched.name = true;
-        this.registerTouched.email = true;
-        this.registerTouched.password = true;
-        if (this.validateRegister()) {
-            alert('Proses Pendaftaran...');
+            try {
+                const response = await fetch('http://127.0.0.1:8080/api/v1/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(this.login)
+                });
+                const res = await response.json();
+                if (res.success) {
+                    localStorage.setItem('access_token', res.data.access_token);
+                    window.location.href = 'admin/index.html';
+                } else {
+                    alert('Login gagal: ' + res.message);
+                }
+            } catch (error) {
+                alert('Terjadi kesalahan saat menghubungi server backend.');
+            }
         }
     },
 
@@ -178,7 +170,7 @@
         <!-- ========================================= -->
         <div class="w-full md:w-1/2 lg:w-1/2 min-h-screen flex items-center justify-center p-6 sm:p-12 lg:p-16 bg-white relative shadow-[-10px_0_30px_-15px_rgba(0,0,0,0.1)] z-10">
             
-            <!-- Mobile Back Button (Only visible on small screens) -->
+            <!-- Mobile Back Button -->
             <a href="index.html" class="md:hidden absolute top-6 left-6 inline-flex items-center gap-2 text-slate-500 hover:text-brand-600 transition group text-sm font-semibold bg-slate-50 px-4 py-2 rounded-full border border-slate-200 shadow-sm">
                 <i class="ph-bold ph-arrow-left group-hover:-translate-x-1 transition-transform"></i>
                 Beranda
@@ -194,16 +186,11 @@
                         <img src="https://gradasi.org/uploads/img/logo/1737187847.png" alt="Logo" class="w-full h-full object-contain">
                     </div>
                     
-                    <h2 class="font-heading text-3xl font-extrabold text-slate-900 mb-2 tracking-tight" x-text="view === 'login' ? 'Selamat Datang' : (view === 'register' ? 'Buat Akun Baru' : 'Lupa Password')"></h2>
-                    <p class="text-slate-500 text-sm font-medium" x-text="view === 'login' ? 'Silakan masuk dengan email terdaftar Anda.' : (view === 'register' ? 'Isi formulir di bawah ini untuk mendaftar.' : 'Masukkan email terdaftar untuk reset password.')"></p>
+                    <h2 class="font-heading text-3xl font-extrabold text-slate-900 mb-2 tracking-tight" x-text="view === 'login' ? 'Selamat Datang' : 'Lupa Password'"></h2>
+                    <p class="text-slate-500 text-sm font-medium" x-text="view === 'login' ? 'Silakan masuk dengan email terdaftar Anda.' : 'Masukkan email terdaftar untuk reset password.'"></p>
                 </div>
 
-                <!-- 
-                    Smooth Transition Wrapper 
-                    - relative position to act as anchor
-                    - fixed min-height to prevent jumping when children swap
-                -->
-                <div class="relative min-h-[380px] w-full">
+                <div class="relative min-h-[320px] w-full">
                     
                     <!-- ================= LOGIN FORM ================= -->
                     <form x-show="view === 'login'" 
@@ -252,98 +239,11 @@
                             <p x-show="loginTouched.password && loginErrors.password" x-text="loginErrors.password" x-transition class="text-red-500 text-[11px] font-bold mt-1.5 ml-1"></p>
                         </div>
 
-                        <!-- Login Button (Modernized) -->
+                        <!-- Login Button -->
                         <button type="submit" class="group relative overflow-hidden bg-brand-600 hover:bg-brand-700 text-white w-full py-3.5 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 mt-2 flex items-center justify-center gap-2">
                             <span>Masuk</span>
                             <i class="ph-bold ph-arrow-right transition-transform duration-300 group-hover:translate-x-1"></i>
                         </button>
-                        
-                        <!-- Toggle to Register -->
-                        <div class="text-center md:text-left mt-2">
-                            <p class="text-sm font-medium text-slate-500">
-                                Belum terdaftar? 
-                                <button type="button" @click="view = 'register'; registerTouched = {name: false, email: false, password: false}; registerErrors = {};" class="font-bold text-brand-600 hover:text-brand-800 transition border-b-2 border-transparent hover:border-brand-800 pb-0.5 ml-1">
-                                    Daftar sekarang
-                                </button>
-                            </p>
-                        </div>
-                    </form>
-
-                    <!-- ================= REGISTER FORM ================= -->
-                    <form x-show="view === 'register'" 
-                        style="display: none;"
-                        @submit.prevent="submitRegister()"
-                        x-transition:enter="transition ease-out duration-500 delay-100"
-                        x-transition:enter-start="opacity-0 -translate-x-8"
-                        x-transition:enter-end="opacity-100 translate-x-0"
-                        x-transition:leave="transition ease-in duration-300"
-                        x-transition:leave-start="opacity-100 translate-x-0"
-                        x-transition:leave-end="opacity-0 translate-x-8"
-                        class="absolute inset-0 w-full flex flex-col gap-4">
-                        
-                        <!-- Name Input -->
-                        <div>
-                            <label class="block text-sm font-bold text-slate-700 mb-1.5">Nama Lengkap</label>
-                            <div class="relative group">
-                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none transition-colors"
-                                    :class="(registerTouched.name && registerErrors.name) ? 'text-red-400' : 'text-slate-400 group-focus-within:text-brand-600'">
-                                    <i class="ph-bold ph-user text-lg"></i>
-                                </div>
-                                <input type="text" x-model="register.name" @input="validateRegister()" @blur="registerTouched.name = true; validateRegister()" placeholder="Nama sesuai KTP" 
-                                    class="w-full pl-11 pr-4 py-3 bg-slate-50 border rounded-xl focus:outline-none focus:bg-white transition-all text-sm font-medium shadow-sm group-hover:border-slate-300"
-                                    :class="(registerTouched.name && registerErrors.name) ? 'border-red-400 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 text-red-900 placeholder-red-300' : 'border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-slate-700 placeholder-slate-400'">
-                            </div>
-                            <p x-show="registerTouched.name && registerErrors.name" x-text="registerErrors.name" x-transition class="text-red-500 text-[11px] font-bold mt-1.5 ml-1"></p>
-                        </div>
-
-                        <!-- Email Input -->
-                        <div>
-                            <label class="block text-sm font-bold text-slate-700 mb-1.5">Email Aktif</label>
-                            <div class="relative group">
-                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none transition-colors"
-                                    :class="(registerTouched.email && registerErrors.email) ? 'text-red-400' : 'text-slate-400 group-focus-within:text-brand-600'">
-                                    <i class="ph-bold ph-envelope-simple text-lg"></i>
-                                </div>
-                                <input type="email" x-model="register.email" @input="validateRegister()" @blur="registerTouched.email = true; validateRegister()" placeholder="nama@email.com" 
-                                    class="w-full pl-11 pr-4 py-3 bg-slate-50 border rounded-xl focus:outline-none focus:bg-white transition-all text-sm font-medium shadow-sm group-hover:border-slate-300"
-                                    :class="(registerTouched.email && registerErrors.email) ? 'border-red-400 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 text-red-900 placeholder-red-300' : 'border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-slate-700 placeholder-slate-400'">
-                            </div>
-                            <p x-show="registerTouched.email && registerErrors.email" x-text="registerErrors.email" x-transition class="text-red-500 text-[11px] font-bold mt-1.5 ml-1"></p>
-                        </div>
-
-                        <!-- Password Input -->
-                        <div>
-                            <label class="block text-sm font-bold text-slate-700 mb-1.5">Buat Password</label>
-                            <div class="relative group" x-data="{ show: false }">
-                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none transition-colors"
-                                    :class="(registerTouched.password && registerErrors.password) ? 'text-red-400' : 'text-slate-400 group-focus-within:text-brand-600'">
-                                    <i class="ph-bold ph-lock-key text-lg"></i>
-                                </div>
-                                <input :type="show ? 'text' : 'password'" x-model="register.password" @input="validateRegister()" @blur="registerTouched.password = true; validateRegister()" placeholder="Minimal 8 karakter" 
-                                    class="w-full pl-11 pr-12 py-3 bg-slate-50 border rounded-xl focus:outline-none focus:bg-white transition-all text-sm font-medium shadow-sm group-hover:border-slate-300"
-                                    :class="(registerTouched.password && registerErrors.password) ? 'border-red-400 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 text-red-900 placeholder-red-300' : 'border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-slate-700 placeholder-slate-400'">
-                                <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-brand-600 transition-colors">
-                                    <i class="ph-bold text-lg" :class="show ? 'ph-eye-slash' : 'ph-eye'"></i>
-                                </button>
-                            </div>
-                            <p x-show="registerTouched.password && registerErrors.password" x-text="registerErrors.password" x-transition class="text-red-500 text-[11px] font-bold mt-1.5 ml-1"></p>
-                        </div>
-
-                        <!-- Register Button (Modernized) -->
-                        <button type="submit" class="group relative overflow-hidden bg-brand-600 hover:bg-brand-700 text-white w-full py-3.5 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 mt-2 flex items-center justify-center gap-2">
-                            <span>Daftar Sekarang</span>
-                            <i class="ph-bold ph-check-circle transition-transform duration-300 group-hover:scale-110"></i>
-                        </button>
-                        
-                        <!-- Toggle to Login -->
-                        <div class="text-center md:text-left mt-2">
-                            <p class="text-sm font-medium text-slate-500">
-                                Sudah punya akun? 
-                                <button type="button" @click="view = 'login'; loginTouched = {email: false, password: false}; loginErrors = {};" class="font-bold text-slate-900 hover:text-brand-600 transition border-b-2 border-transparent hover:border-brand-600 pb-0.5 ml-1">
-                                    Masuk di sini
-                                </button>
-                            </p>
-                        </div>
                     </form>
 
                     <!-- ================= FORGOT PASSWORD FORM ================= -->
@@ -363,18 +263,18 @@
                             <label class="block text-sm font-bold text-slate-700 mb-1.5">Email Terdaftar</label>
                             <div class="relative group">
                                 <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none transition-colors"
-                                    :class="(forgotTouched.email && forgotErrors.email) ? 'text-red-400' : 'text-slate-400 group-focus-within:text-amber-500'">
+                                    :class="(forgotTouched.email && forgotErrors.email) ? 'text-red-400' : 'text-slate-400 group-focus-within:text-brand-600'">
                                     <i class="ph-bold ph-envelope-simple text-lg"></i>
                                 </div>
                                 <input type="email" x-model="forgot.email" @input="validateForgot()" @blur="forgotTouched.email = true; validateForgot()" placeholder="nama@email.com" 
                                     class="w-full pl-11 pr-4 py-3 bg-slate-50 border rounded-xl focus:outline-none focus:bg-white transition-all text-sm font-medium shadow-sm group-hover:border-slate-300"
-                                    :class="(forgotTouched.email && forgotErrors.email) ? 'border-red-400 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 text-red-900 placeholder-red-300' : 'border-slate-200 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-slate-700 placeholder-slate-400'">
+                                    :class="(forgotTouched.email && forgotErrors.email) ? 'border-red-400 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 text-red-900 placeholder-red-300' : 'border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 text-slate-700 placeholder-slate-400'">
                             </div>
                             <p x-show="forgotTouched.email && forgotErrors.email" x-text="forgotErrors.email" x-transition class="text-red-500 text-[11px] font-bold mt-1.5 ml-1"></p>
                         </div>
 
                         <!-- Reset Button -->
-                        <button type="submit" class="group relative overflow-hidden bg-slate-800 hover:bg-slate-900 text-white w-full py-3.5 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 mt-2 flex items-center justify-center gap-2">
+                        <button type="submit" class="group relative overflow-hidden bg-brand-600 hover:bg-brand-700 text-white w-full py-3.5 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 mt-2 flex items-center justify-center gap-2">
                             <span>Kirim Link Reset</span>
                             <i class="ph-bold ph-paper-plane-right transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1"></i>
                         </button>
