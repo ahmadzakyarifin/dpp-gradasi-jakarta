@@ -94,6 +94,10 @@ build:
 run:
 	cd backend && go run ./cmd/api
 
+.PHONY: air
+air:
+	cd backend && (command -v air >/dev/null 2>&1 && air || $(shell go env GOPATH)/bin/air)
+
 .PHONY: run-local
 run-local:
 	cd backend && DB_HOST=$(DB_HOST) DB_PORT=$(DB_PORT) DB_USER=$(DB_USER) DB_PASS=$(DB_PASS) DB_NAME=$(DB_NAME) go run ./cmd/api

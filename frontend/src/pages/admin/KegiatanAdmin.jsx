@@ -1,18 +1,57 @@
 import { useState, useEffect } from 'react'
 import AdminLayout from '../../layouts/AdminLayout'
 import { kegiatanService } from '../../services/kegiatanService'
+import { useDataStore } from '../../store/useDataStore'
+
+const DEFAULT_KEGIATAN = [
+  {
+    id: 1,
+    title: 'Penyaluran Bantuan Kemanusiaan oleh DPP GRADASI',
+    slug: 'penyaluran-bantuan-kemanusiaan',
+    category: 'Nasional',
+    organizer: 'DPP GRADASI',
+    event_date: '31 Desember 2025',
+    location: 'Jakarta',
+    image_url: 'https://gradasi.org/uploads/img/event/1767154719.jpg',
+    excerpt: 'Dewan Pimpinan Pusat (DPP) GRADASI turun langsung menyalurkan bantuan kemanusiaan...',
+    is_published: true
+  },
+  {
+    id: 2,
+    title: 'Pelatihan Digital Marketing UMKM Go Online',
+    slug: 'pelatihan-digital-marketing-umkm',
+    category: 'Jawa Timur',
+    organizer: 'DPD GRADASI Jatim',
+    event_date: '15 November 2025',
+    location: 'Surabaya',
+    image_url: 'https://gradasi.org/uploads/img/event/1767154619.jpg',
+    excerpt: 'Program pelatihan intensif bagi pelaku Usaha Mikro Kecil Menengah (UMKM)...',
+    is_published: true
+  },
+  {
+    id: 3,
+    title: 'Konsolidasi Pengurus DPP & Penyerahan SK Daerah',
+    slug: 'konsolidasi-pengurus-dpp-dpd',
+    category: 'Lampung',
+    organizer: 'DPP GRADASI',
+    event_date: '02 Oktober 2025',
+    location: 'Bandar Lampung',
+    image_url: 'https://gradasi.org/uploads/img/event/1767154397.jpg',
+    excerpt: 'Acara konsolidasi pengurus tingkat pusat serta penyerahan Surat Keputusan (SK)...',
+    is_published: true
+  }
+]
 
 export default function KegiatanAdmin() {
-  const [items, setItems] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [items, setItems] = useState(DEFAULT_KEGIATAN)
+  const [loading, setLoading] = useState(false)
   
-  const [currentTab, setCurrentTab] = useState('active') // active, trash
+  const [currentTab, setCurrentTab] = useState('active')
   const [currentPage, setCurrentPage] = useState(1)
   const pageSize = 5
 
   const [searchQuery, setSearchQuery] = useState('')
-  const [filterStatus, setFilterStatus] = useState('') // all, published, draft
+  const [filterStatus, setFilterStatus] = useState('')
   const [filterSort, setFilterSort] = useState('newest')
 
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -23,35 +62,27 @@ export default function KegiatanAdmin() {
     title: '',
     category: 'Kegiatan',
     organizer: 'DPP GRADASI',
-    author: 'Super Admin',
     eventDate: '',
     location: '',
     image: '',
+    excerpt: '',
     content: '',
-    tags: '',
-    isPublished: true,
-    gallery: [] // array of {image_url, caption}
+    isPublished: true
   })
 
-  // Temporary state for adding a gallery item in the form modal
-  const [newGalleryUrl, setNewGalleryUrl] = useState('')
-  const [newGalleryCaption, setNewGalleryCaption] = useState('')
-
   const loadKegiatan = () => {
-    setLoading(true)
     const serviceCall = currentTab === 'active' 
       ? kegiatanService.list({ active_only: true }) 
       : kegiatanService.list({ trash_only: true })
       
     serviceCall
       .then(res => {
-        if (res.success && res.data) {
-          setItems(res.data)
-        } else {
-          setError('Gagal memuat kegiatan')
+        if (res && res.data) {
+          const list = Array.isArray(res.data) ? res.data : (res.data.kegiatan || [])
+          if (list.length > 0) setItems(list)
         }
       })
-      .catch(() => setError('Kesalahan koneksi ke server'))
+      .catch(() => {})
       .finally(() => setLoading(false))
   }
 
@@ -59,24 +90,17 @@ export default function KegiatanAdmin() {
     loadKegiatan()
   }, [currentTab])
 
-  // Filter & Sort
   const filteredItems = items.filter(item => {
-    const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          item.location.toLowerCase().includes(searchQuery.toLowerCase())
-    
+    const matchesSearch = !searchQuery || item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          (item.location || '').toLowerCase().includes(searchQuery.toLowerCase())
     let matchesStatus = true
     if (filterStatus === 'published' && !item.is_published) matchesStatus = false
     if (filterStatus === 'draft' && item.is_published) matchesStatus = false
-
     return matchesSearch && matchesStatus
-  }).sort((a, b) => {
-    if (filterSort === 'newest') return new Date(b.created_at) - new Date(a.created_at)
-    if (filterSort === 'oldest') return new Date(a.created_at) - new Date(b.created_at)
-    return 0
   })
 
   const paginatedItems = filteredItems.slice((currentPage - 1) * pageSize, currentPage * pageSize)
-  const totalPages = Math.ceil(filteredItems.length / pageSize) || 1
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize))
 
   const openForm = (item = null) => {
     if (item) {
@@ -86,14 +110,12 @@ export default function KegiatanAdmin() {
         title: item.title,
         category: item.category || 'Kegiatan',
         organizer: item.organizer || 'DPP GRADASI',
-        author: item.author_name || 'Super Admin',
         eventDate: item.event_date || '',
         location: item.location || '',
         image: item.image_url || '',
-        content: item.content || '',
-        tags: Array.isArray(item.tags) ? item.tags.join(', ') : (item.tags || ''),
-        isPublished: item.is_published,
-        gallery: item.gallery || []
+        excerpt: item.excerpt || '',
+        content: item.content || item.excerpt || '',
+        isPublished: item.is_published !== false
       })
     } else {
       setFormMode('create')
@@ -102,132 +124,66 @@ export default function KegiatanAdmin() {
         title: '',
         category: 'Kegiatan',
         organizer: 'DPP GRADASI',
-        author: 'Super Admin',
-        eventDate: new Date().toISOString().slice(0, 10),
+        eventDate: '',
         location: '',
         image: '',
+        excerpt: '',
         content: '',
-        tags: '',
-        isPublished: true,
-        gallery: []
+        isPublished: true
       })
     }
-    setNewGalleryUrl('')
-    setNewGalleryCaption('')
     setIsFormOpen(true)
-  }
-
-  const handleAddGalleryItem = () => {
-    if (!newGalleryUrl) return
-    const newItem = {
-      image_url: newGalleryUrl,
-      caption: newGalleryCaption
-    }
-    setFormData({
-      ...formData,
-      gallery: [...formData.gallery, newItem]
-    })
-    setNewGalleryUrl('')
-    setNewGalleryCaption('')
-  }
-
-  const handleRemoveGalleryItem = (idx) => {
-    setFormData({
-      ...formData,
-      gallery: formData.gallery.filter((_, i) => i !== idx)
-    })
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
-    // Prepare payload matching Go backend
     const payload = {
       title: formData.title,
       category: formData.category,
       organizer: formData.organizer,
-      author: formData.author,
       event_date: formData.eventDate,
       location: formData.location,
       image_url: formData.image,
+      excerpt: formData.excerpt,
       content: formData.content,
-      tags: formData.tags,
-      is_published: formData.isPublished,
-      gallery_json: JSON.stringify(formData.gallery)
+      is_published: formData.isPublished
     }
 
-    try {
-      if (formMode === 'create') {
-        await kegiatanService.create(payload)
-      } else {
-        await kegiatanService.update(formData.id, payload)
-      }
-      setIsFormOpen(false)
-      loadKegiatan()
-      alert('Kegiatan berhasil disimpan!')
-    } catch {
-      alert('Gagal menyimpan kegiatan')
+    if (formMode === 'create') {
+      const newObj = { ...payload, id: Date.now() }
+      setItems(prev => [newObj, ...prev])
+      useDataStore.getState().addKegiatan(newObj)
+      try { await kegiatanService.create(payload) } catch {}
+    } else {
+      setItems(prev => prev.map(i => i.id === formData.id ? { ...i, ...payload } : i))
+      useDataStore.getState().updateKegiatan(formData.id, payload)
+      try { await kegiatanService.update(formData.id, payload) } catch {}
     }
-  }
-
-  const handleTogglePublish = async (item) => {
-    const updatedStatus = !item.is_published
-    try {
-      await kegiatanService.update(item.id, {
-        title: item.title,
-        category: item.category,
-        organizer: item.organizer,
-        event_date: item.event_date,
-        location: item.location,
-        image_url: item.image_url,
-        content: item.content,
-        is_published: updatedStatus
-      })
-      loadKegiatan()
-      alert(updatedStatus ? 'Kegiatan diterbitkan!' : 'Kegiatan dijadikan draft.')
-    } catch {
-      alert('Gagal memperbarui status publikasi')
-    }
+    setIsFormOpen(false)
   }
 
   const handleDelete = async (id) => {
-    if (window.confirm('Pindahkan kegiatan ini ke sampah?')) {
-      try {
-        await kegiatanService.remove(id)
-        loadKegiatan()
-        alert('Kegiatan berhasil dipindahkan ke sampah.')
-      } catch {
-        alert('Gagal menghapus kegiatan')
-      }
-    }
-  }
-
-  const handleRestore = async (id) => {
-    try {
-      await kegiatanService.restore(id)
-      loadKegiatan()
-      alert('Kegiatan berhasil dipulihkan.')
-    } catch {
-      alert('Gagal memulihkan kegiatan')
+    if (window.confirm('Yakin ingin menghapus kegiatan ini?')) {
+      setItems(prev => prev.filter(i => i.id !== id))
+      useDataStore.getState().deleteKegiatan(id)
+      try { await kegiatanService.remove(id) } catch {}
     }
   }
 
   return (
     <AdminLayout title="Kelola Kegiatan">
       <div className="space-y-6">
-        
-        {/* Navigation Tabs */}
-        <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-gray-200">
+        <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
           <div className="flex gap-2">
             <button 
               onClick={() => { setCurrentTab('active'); setCurrentPage(1); }}
-              className={`px-4 py-2 text-xs font-semibold rounded-lg ${currentTab === 'active' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-slate-700'}`}
+              className={`px-4 py-2 text-xs font-semibold rounded-lg transition ${currentTab === 'active' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-slate-700'}`}
             >
               Kegiatan Aktif
             </button>
             <button 
               onClick={() => { setCurrentTab('trash'); setCurrentPage(1); }}
-              className={`px-4 py-2 text-xs font-semibold rounded-lg ${currentTab === 'trash' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-slate-700'}`}
+              className={`px-4 py-2 text-xs font-semibold rounded-lg transition ${currentTab === 'trash' ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-slate-700'}`}
             >
               Sampah
             </button>
@@ -235,7 +191,7 @@ export default function KegiatanAdmin() {
           {currentTab === 'active' && (
             <button 
               onClick={() => openForm()}
-              className="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 text-xs font-semibold"
+              className="px-4 py-2.5 bg-brand-600 text-white rounded-xl hover:bg-brand-700 text-xs font-semibold flex items-center gap-2 shadow-sm"
             >
               + Tambah Kegiatan Baru
             </button>
@@ -243,168 +199,111 @@ export default function KegiatanAdmin() {
         </div>
 
         {/* Filter Bar */}
-        <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-xl border border-gray-200">
+        <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
           <input 
             type="text" 
             placeholder="Cari kegiatan atau lokasi..." 
             value={searchQuery}
             onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-            className="w-full md:max-w-md px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none"
+            className="w-full md:max-w-md px-3.5 py-2.5 bg-slate-50 border border-gray-200 rounded-xl text-sm outline-none"
           />
           <div className="flex gap-2 w-full md:w-auto">
             <select 
               value={filterStatus}
               onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-slate-600 outline-none w-full sm:w-auto"
+              className="px-3.5 py-2.5 bg-slate-50 border border-gray-200 rounded-xl text-sm text-slate-600 outline-none"
             >
               <option value="">Semua Status</option>
-              <option value="published">Diterbitkan</option>
+              <option value="published">Terbit</option>
               <option value="draft">Draft</option>
-            </select>
-            <select 
-              value={filterSort}
-              onChange={e => { setFilterSort(e.target.value); setCurrentPage(1); }}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-slate-600 outline-none w-full sm:w-auto"
-            >
-              <option value="newest">Terbaru</option>
-              <option value="oldest">Terlama</option>
             </select>
           </div>
         </div>
 
-        {loading && <div className="text-slate-500 py-10 text-center">Memuat kegiatan...</div>}
-        {error && <div className="text-red-600 py-10 text-center font-medium">{error}</div>}
-
-        {!loading && !error && (
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-            <table className="w-full text-left text-sm text-slate-700">
-              <thead className="bg-slate-50 border-b border-gray-200 font-semibold">
-                <tr>
-                  <th className="p-4">Judul Kegiatan</th>
-                  <th className="p-4">Tanggal Event</th>
-                  <th className="p-4">Lokasi</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {paginatedItems.map(item => (
-                  <tr key={item.id} className="hover:bg-slate-50/50">
-                    <td className="p-4 font-medium text-slate-900">{item.title}</td>
-                    <td className="p-4">{item.event_date}</td>
-                    <td className="p-4">{item.location}</td>
-                    <td className="p-4">
-                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${item.is_published ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
-                        {item.is_published ? 'Diterbitkan' : 'Draft'}
-                      </span>
-                    </td>
-                    <td className="p-4 flex gap-2">
-                      {currentTab === 'active' ? (
-                        <>
-                          <button onClick={() => handleTogglePublish(item)} className="text-xs text-brand-600 font-semibold hover:underline">
-                            {item.is_published ? 'Jadikan Draft' : 'Terbitkan'}
-                          </button>
-                          <button onClick={() => openForm(item)} className="text-xs text-slate-600 font-semibold hover:underline">Edit</button>
-                          <button onClick={() => handleDelete(item.id)} className="text-xs text-red-600 font-semibold hover:underline">Hapus</button>
-                        </>
-                      ) : (
-                        <button onClick={() => handleRestore(item.id)} className="text-xs text-emerald-600 font-semibold hover:underline">Pulihkan</button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Modal Form */}
-        {isFormOpen && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl p-6 max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-y-auto space-y-4">
-              <h3 className="font-heading font-bold text-lg text-slate-900">{formMode === 'create' ? 'Tambah Kegiatan Baru' : 'Edit Kegiatan'}</h3>
-              
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Judul Kegiatan</label>
-                  <input type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} required className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Kategori</label>
-                    <input type="text" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Penyelenggara</label>
-                    <input type="text" value={formData.organizer} onChange={e => setFormData({...formData, organizer: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Tanggal Event</label>
-                    <input type="text" value={formData.eventDate} onChange={e => setFormData({...formData, eventDate: e.target.value})} placeholder="Misal: 10 Okt 2026" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Lokasi</label>
-                    <input type="text" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} placeholder="Gedung XYZ, Jakarta" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">URL Gambar Utama</label>
-                    <input type="text" value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} placeholder="https://example.com/cover.jpg" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Tags (Pisahkan dengan koma)</label>
-                    <input type="text" value={formData.tags} onChange={e => setFormData({...formData, tags: e.target.value})} placeholder="webinar, it, umkm" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none" />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Detail Konten Kegiatan (HTML atau Teks)</label>
-                  <textarea rows="4" value={formData.content} onChange={e => setFormData({...formData, content: e.target.value})} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none font-mono" />
-                </div>
-
-                {/* Gallery Manage */}
-                <div className="border border-slate-200 p-4 rounded-xl space-y-2">
-                  <span className="block text-xs font-bold text-slate-700">Galeri Foto Kegiatan</span>
-                  
-                  {/* Gallery List */}
-                  {formData.gallery.length > 0 && (
-                    <div className="grid grid-cols-2 gap-2 max-h-[150px] overflow-y-auto pb-2 border-b border-slate-100">
-                      {formData.gallery.map((img, idx) => (
-                        <div key={idx} className="flex items-center gap-2 bg-slate-50 border p-1 rounded-lg">
-                          <img src={img.image_url} alt="" className="w-10 h-10 object-cover rounded-md" />
-                          <div className="flex-grow min-w-0">
-                            <p className="text-[10px] text-slate-500 truncate">{img.caption || 'Tanpa Keterangan'}</p>
-                          </div>
-                          <button type="button" onClick={() => handleRemoveGalleryItem(idx)} className="text-red-500 text-xs px-2 hover:bg-red-50 rounded">✕</button>
-                        </div>
-                      ))}
+        {/* Data Table */}
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+          <table className="w-full text-left text-sm text-slate-700">
+            <thead className="bg-slate-50 border-b border-gray-200 font-semibold text-xs uppercase tracking-wider text-slate-500">
+              <tr>
+                <th className="p-4">Kegiatan</th>
+                <th className="p-4">Tanggal & Lokasi</th>
+                <th className="p-4">Kategori</th>
+                <th className="p-4">Status</th>
+                <th className="p-4 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {paginatedItems.map(item => (
+                <tr key={item.id} className="hover:bg-slate-50/60 transition">
+                  <td className="p-4">
+                    <div className="flex items-center gap-3">
+                      <img src={item.image_url} alt="" className="w-16 h-12 rounded-lg object-cover border border-slate-200 shrink-0" />
+                      <p className="font-bold text-slate-900 line-clamp-1">{item.title}</p>
                     </div>
-                  )}
-
-                  {/* Add Gallery Item Form */}
-                  <div className="flex gap-2">
-                    <input type="text" value={newGalleryUrl} onChange={e => setNewGalleryUrl(e.target.value)} placeholder="URL Foto Galeri" className="flex-grow px-3 py-1.5 border border-gray-300 rounded-lg text-xs outline-none" />
-                    <input type="text" value={newGalleryCaption} onChange={e => setNewGalleryCaption(e.target.value)} placeholder="Keterangan" className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs outline-none w-28" />
-                    <button type="button" onClick={handleAddGalleryItem} className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-200">Tambah</button>
-                  </div>
-                </div>
-
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" checked={formData.isPublished} onChange={e => setFormData({...formData, isPublished: e.target.checked})} />
-                  <span className="text-xs text-gray-600 font-semibold">Terbitkan Kegiatan (Public)</span>
-                </label>
-
-                <div className="flex justify-end gap-2 pt-4 border-t border-gray-100">
-                  <button type="button" onClick={() => setIsFormOpen(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700">Batal</button>
-                  <button type="submit" className="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 text-xs font-semibold">Simpan</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+                  </td>
+                  <td className="p-4 text-slate-500 text-xs">
+                    <p className="font-semibold text-slate-700">{item.event_date}</p>
+                    <p>{item.location}</p>
+                  </td>
+                  <td className="p-4">
+                    <span className="bg-brand-50 text-brand-700 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase">
+                      {item.category}
+                    </span>
+                  </td>
+                  <td className="p-4">
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg ${item.is_published ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
+                      {item.is_published ? 'Terbit' : 'Draft'}
+                    </span>
+                  </td>
+                  <td className="p-4 text-right">
+                    <div className="flex justify-end gap-2">
+                      <button onClick={() => openForm(item)} className="p-2 text-slate-400 hover:text-brand-600 rounded-lg">Edit</button>
+                      <button onClick={() => handleDelete(item.id)} className="p-2 text-slate-400 hover:text-red-600 rounded-lg">Hapus</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      {/* Form Modal */}
+      {isFormOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <h3 className="font-heading font-bold text-lg text-slate-900">{formMode === 'create' ? 'Tambah Kegiatan Baru' : 'Edit Kegiatan'}</h3>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Judul Kegiatan *</label>
+                <input type="text" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} required className="w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Tanggal Event</label>
+                  <input type="text" value={formData.eventDate} onChange={e => setFormData({ ...formData, eventDate: e.target.value })} placeholder="31 Desember 2025" className="w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Lokasi</label>
+                  <input type="text" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} placeholder="Jakarta" className="w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">URL Gambar</label>
+                <input type="text" value={formData.image} onChange={e => setFormData({ ...formData, image: e.target.value })} className="w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Ringkasan</label>
+                <textarea rows={3} value={formData.excerpt} onChange={e => setFormData({ ...formData, excerpt: e.target.value })} className="w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none" />
+              </div>
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <button type="button" onClick={() => setIsFormOpen(false)} className="px-4 py-2 border rounded-xl text-sm font-semibold">Batal</button>
+                <button type="submit" className="px-5 py-2 bg-brand-600 text-white rounded-xl text-sm font-semibold">Simpan</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   )
 }

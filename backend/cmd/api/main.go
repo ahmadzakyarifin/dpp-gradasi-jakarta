@@ -7,9 +7,13 @@ import (
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/app"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/infrastructure"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/validator"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	_ = godotenv.Load("../.env")
+	_ = godotenv.Load(".env")
+
 	cfg := config.MustLoad()
 
 	validator.RegisterValidator()

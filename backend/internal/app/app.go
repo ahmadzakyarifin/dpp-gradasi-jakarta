@@ -80,10 +80,12 @@ func NewApp(database *gorm.DB, appConfig *config.Config, redisClient *redis.Clie
 
 	// Enable CORS
 	routerEngine.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
+		AllowOriginFunc: func(origin string) bool {
+			return true
+		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"},
-		ExposeHeaders:    []string{"Content-Length"},
+		ExposeHeaders:    []string{"Content-Length", "Authorization"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
