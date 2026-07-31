@@ -441,7 +441,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_internal_helper_http",
-      "community": 6,
+      "community": 14,
       "community_name": "rate_limiter_middleware.go",
       "norm_label": "http.go"
     },
@@ -452,7 +452,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "backend_internal_helper_http_restorebody",
-      "community": 6,
+      "community": 14,
       "community_name": "rate_limiter_middleware.go",
       "norm_label": "restorebody()"
     },
@@ -463,7 +463,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_internal_helper_http_go_context",
-      "community": 6,
+      "community": 14,
       "community_name": "rate_limiter_middleware.go",
       "norm_label": "context"
     },
@@ -672,8 +672,8 @@
       "source_location": "L86",
       "_origin": "ast",
       "id": "backend_internal_helper_response_ratelimitresponse",
-      "community": 0,
-      "community_name": "ErrorResponse",
+      "community": 11,
+      "community_name": "response.go",
       "norm_label": "ratelimitresponse()"
     },
     {
@@ -738,7 +738,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_internal_helper_service_error",
-      "community": 10,
+      "community": 5,
       "community_name": "NewServiceError",
       "norm_label": "service_error.go"
     },
@@ -749,7 +749,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "helper_serviceerror",
-      "community": 10,
+      "community": 5,
       "community_name": "NewServiceError",
       "norm_label": "serviceerror"
     },
@@ -760,7 +760,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "helper_serviceerror_error",
-      "community": 10,
+      "community": 5,
       "community_name": "NewServiceError",
       "norm_label": ".error()"
     },
@@ -771,7 +771,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "backend_internal_helper_service_error_newserviceerror",
-      "community": 10,
+      "community": 5,
       "community_name": "NewServiceError",
       "norm_label": "newserviceerror()"
     },
@@ -782,7 +782,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "helper_serviceerror_unwrap",
-      "community": 10,
+      "community": 5,
       "community_name": "NewServiceError",
       "norm_label": ".unwrap()"
     },
@@ -1013,7 +1013,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_internal_middleware_auth_middleware",
-      "community": 8,
+      "community": 25,
       "community_name": "AuthMiddleware",
       "norm_label": "auth_middleware.go"
     },
@@ -1024,7 +1024,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "backend_internal_middleware_auth_middleware_authmiddleware",
-      "community": 8,
+      "community": 25,
       "community_name": "AuthMiddleware",
       "norm_label": "authmiddleware()"
     },
@@ -1035,7 +1035,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_internal_middleware_auth_middleware_go_handlerfunc",
-      "community": 8,
+      "community": 25,
       "community_name": "AuthMiddleware",
       "norm_label": "handlerfunc"
     },
@@ -1046,8 +1046,8 @@
       "source_location": "L84",
       "_origin": "ast",
       "id": "backend_internal_middleware_auth_middleware_getuserid",
-      "community": 10,
-      "community_name": "NewServiceError",
+      "community": 0,
+      "community_name": "ErrorResponse",
       "norm_label": "getuserid()"
     },
     {
@@ -1057,7 +1057,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_internal_middleware_auth_middleware_go_context",
-      "community": 8,
+      "community": 25,
       "community_name": "AuthMiddleware",
       "norm_label": "context"
     },
@@ -1068,7 +1068,7 @@
       "source_location": "L93",
       "_origin": "ast",
       "id": "backend_internal_middleware_auth_middleware_getroleid",
-      "community": 8,
+      "community": 25,
       "community_name": "AuthMiddleware",
       "norm_label": "getroleid()"
     },
@@ -1079,7 +1079,7 @@
       "source_location": "L102",
       "_origin": "ast",
       "id": "backend_internal_middleware_auth_middleware_getemail",
-      "community": 8,
+      "community": 25,
       "community_name": "AuthMiddleware",
       "norm_label": "getemail()"
     },
@@ -1090,7 +1090,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_limiter_middleware",
-      "community": 6,
+      "community": 14,
       "community_name": "rate_limiter_middleware.go",
       "norm_label": "rate_limiter_middleware.go"
     },
@@ -1101,7 +1101,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "middleware_ratelimiter",
-      "community": 6,
+      "community": 14,
       "community_name": "rate_limiter_middleware.go",
       "norm_label": "ratelimiter"
     },
@@ -1112,7 +1112,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "store",
-      "community": 6,
+      "community": 14,
       "community_name": "rate_limiter_middleware.go",
       "norm_label": "store"
     },
@@ -1124,7 +1124,7 @@
       "_origin": "ast",
       "id": "middleware_preparedrule",
       "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community_name": "Rule",
       "norm_label": "preparedrule"
     },
     {
@@ -1135,7 +1135,7 @@
       "_origin": "ast",
       "id": "limiter",
       "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community_name": "Rule",
       "norm_label": "limiter"
     },
     {
@@ -1145,7 +1145,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "middleware_requestinfo",
-      "community": 6,
+      "community": 14,
       "community_name": "rate_limiter_middleware.go",
       "norm_label": "requestinfo"
     },
@@ -1156,7 +1156,7 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_limiter_middleware_newredisratelimiter",
-      "community": 6,
+      "community": 14,
       "community_name": "rate_limiter_middleware.go",
       "norm_label": "newredisratelimiter()"
     },
@@ -1167,7 +1167,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_limiter_middleware_go_client",
-      "community": 6,
+      "community": 14,
       "community_name": "rate_limiter_middleware.go",
       "norm_label": "client"
     },
@@ -1178,7 +1178,7 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_limiter_middleware_setdefaultratelimiter",
-      "community": 6,
+      "community": 14,
       "community_name": "rate_limiter_middleware.go",
       "norm_label": "setdefaultratelimiter()"
     },
@@ -1189,8 +1189,8 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_limiter_middleware_ratelimitrules",
-      "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community": 30,
+      "community_name": "RateLimitPerUser",
       "norm_label": "ratelimitrules()"
     },
     {
@@ -1200,8 +1200,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_limiter_middleware_go_handlerfunc",
-      "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community": 30,
+      "community_name": "RateLimitPerUser",
       "norm_label": "handlerfunc"
     },
     {
@@ -1211,8 +1211,8 @@
       "source_location": "L68",
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_limiter_middleware_ratelimitermiddleware",
-      "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community": 30,
+      "community_name": "RateLimitPerUser",
       "norm_label": "ratelimitermiddleware()"
     },
     {
@@ -1222,8 +1222,8 @@
       "source_location": "L72",
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_limiter_middleware_ratelimitperuser",
-      "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community": 30,
+      "community_name": "RateLimitPerUser",
       "norm_label": "ratelimitperuser()"
     },
     {
@@ -1234,7 +1234,7 @@
       "_origin": "ast",
       "id": "middleware_ratelimiter_use",
       "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community_name": "Rule",
       "norm_label": ".use()"
     },
     {
@@ -1245,7 +1245,7 @@
       "_origin": "ast",
       "id": "middleware_ratelimiter_preparerules",
       "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community_name": "Rule",
       "norm_label": ".preparerules()"
     },
     {
@@ -1256,7 +1256,7 @@
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_limiter_middleware_normalizerule",
       "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community_name": "Rule",
       "norm_label": "normalizerule()"
     },
     {
@@ -1266,7 +1266,7 @@
       "source_location": "L169",
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_limiter_middleware_newrequestinfo",
-      "community": 6,
+      "community": 14,
       "community_name": "rate_limiter_middleware.go",
       "norm_label": "newrequestinfo()"
     },
@@ -1277,7 +1277,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_limiter_middleware_go_context",
-      "community": 6,
+      "community": 14,
       "community_name": "rate_limiter_middleware.go",
       "norm_label": "context"
     },
@@ -1288,7 +1288,7 @@
       "source_location": "L187",
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_limiter_middleware_makeratelimitkey",
-      "community": 6,
+      "community": 14,
       "community_name": "rate_limiter_middleware.go",
       "norm_label": "makeratelimitkey()"
     },
@@ -1299,7 +1299,7 @@
       "source_location": "L230",
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_limiter_middleware_ratelimitpath",
-      "community": 6,
+      "community": 14,
       "community_name": "rate_limiter_middleware.go",
       "norm_label": "ratelimitpath()"
     },
@@ -1310,7 +1310,7 @@
       "source_location": "L247",
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_limiter_middleware_emailfrombody",
-      "community": 6,
+      "community": 14,
       "community_name": "rate_limiter_middleware.go",
       "norm_label": "emailfrombody()"
     },
@@ -1321,7 +1321,7 @@
       "source_location": "L271",
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_limiter_middleware_needsemail",
-      "community": 6,
+      "community": 14,
       "community_name": "rate_limiter_middleware.go",
       "norm_label": "needsemail()"
     },
@@ -1332,7 +1332,7 @@
       "source_location": "L284",
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_limiter_middleware_getuserid",
-      "community": 6,
+      "community": 14,
       "community_name": "rate_limiter_middleware.go",
       "norm_label": "getuserid()"
     },
@@ -1344,7 +1344,7 @@
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_limiter_middleware_normalizescope",
       "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community_name": "Rule",
       "norm_label": "normalizescope()"
     },
     {
@@ -1354,7 +1354,7 @@
       "source_location": "L314",
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_limiter_middleware_hash",
-      "community": 6,
+      "community": 14,
       "community_name": "rate_limiter_middleware.go",
       "norm_label": "hash()"
     },
@@ -1366,7 +1366,7 @@
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_rules",
       "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community_name": "Rule",
       "norm_label": "rate_rules.go"
     },
     {
@@ -1377,7 +1377,7 @@
       "_origin": "ast",
       "id": "middleware_rulekind",
       "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community_name": "Rule",
       "norm_label": "rulekind"
     },
     {
@@ -1388,7 +1388,7 @@
       "_origin": "ast",
       "id": "middleware_rule",
       "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community_name": "Rule",
       "norm_label": "rule"
     },
     {
@@ -1399,7 +1399,7 @@
       "_origin": "ast",
       "id": "duration",
       "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community_name": "Rule",
       "norm_label": "duration"
     },
     {
@@ -1410,7 +1410,7 @@
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_rules_ip",
       "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community_name": "Rule",
       "norm_label": "ip()"
     },
     {
@@ -1421,7 +1421,7 @@
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_rules_email",
       "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community_name": "Rule",
       "norm_label": "email()"
     },
     {
@@ -1432,7 +1432,7 @@
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_rules_ipemail",
       "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community_name": "Rule",
       "norm_label": "ipemail()"
     },
     {
@@ -1443,7 +1443,7 @@
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_rules_user",
       "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community_name": "Rule",
       "norm_label": "user()"
     },
     {
@@ -1454,7 +1454,7 @@
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_rules_writeratelimitheaders",
       "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community_name": "Rule",
       "norm_label": "writeratelimitheaders()"
     },
     {
@@ -1465,7 +1465,7 @@
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_rules_go_context",
       "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community_name": "Rule",
       "norm_label": "context"
     },
     {
@@ -1476,7 +1476,7 @@
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_rules_abortratelimiterror",
       "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community_name": "Rule",
       "norm_label": "abortratelimiterror()"
     },
     {
@@ -1487,7 +1487,7 @@
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_rules_abortratelimitunauthorized",
       "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community_name": "Rule",
       "norm_label": "abortratelimitunauthorized()"
     },
     {
@@ -1498,7 +1498,7 @@
       "_origin": "ast",
       "id": "backend_internal_middleware_rate_rules_aborttoomanyrequests",
       "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community_name": "Rule",
       "norm_label": "aborttoomanyrequests()"
     },
     {
@@ -1509,7 +1509,7 @@
       "_origin": "ast",
       "id": "backend_internal_middleware_role_middleware",
       "community": 8,
-      "community_name": "AuthMiddleware",
+      "community_name": "RoleMiddleware",
       "norm_label": "role_middleware.go"
     },
     {
@@ -1520,7 +1520,7 @@
       "_origin": "ast",
       "id": "backend_internal_middleware_role_middleware_rolemiddleware",
       "community": 8,
-      "community_name": "AuthMiddleware",
+      "community_name": "RoleMiddleware",
       "norm_label": "rolemiddleware()"
     },
     {
@@ -1531,7 +1531,7 @@
       "_origin": "ast",
       "id": "backend_internal_middleware_role_middleware_go_handlerfunc",
       "community": 8,
-      "community_name": "AuthMiddleware",
+      "community_name": "RoleMiddleware",
       "norm_label": "handlerfunc"
     },
     {
@@ -1717,8 +1717,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "handler_activityloghandler_list",
-      "community": 11,
-      "community_name": "response.go",
+      "community": 0,
+      "community_name": "ErrorResponse",
       "norm_label": ".list()"
     },
     {
@@ -2113,8 +2113,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_internal_module_activitylog_routes",
-      "community": 8,
-      "community_name": "AuthMiddleware",
+      "community": 33,
+      "community_name": "RegisterRoutes",
       "norm_label": "activitylog/routes.go"
     },
     {
@@ -2124,8 +2124,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "backend_internal_module_activitylog_routes_registerroutes",
-      "community": 8,
-      "community_name": "AuthMiddleware",
+      "community": 33,
+      "community_name": "RegisterRoutes",
       "norm_label": "registerroutes()"
     },
     {
@@ -2135,8 +2135,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_internal_module_activitylog_routes_go_routergroup",
-      "community": 8,
-      "community_name": "AuthMiddleware",
+      "community": 33,
+      "community_name": "RegisterRoutes",
       "norm_label": "routergroup"
     },
     {
@@ -2146,8 +2146,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_internal_module_activitylog_routes_go_client",
-      "community": 8,
-      "community_name": "AuthMiddleware",
+      "community": 33,
+      "community_name": "RegisterRoutes",
       "norm_label": "client"
     },
     {
@@ -2432,8 +2432,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_internal_module_auth_handler_auth_handler",
-      "community": 24,
-      "community_name": "NewAuthHandler",
+      "community": 15,
+      "community_name": "ActivityLogService",
       "norm_label": "auth_handler.go"
     },
     {
@@ -2443,8 +2443,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "handler_authhandler",
-      "community": 10,
-      "community_name": "NewServiceError",
+      "community": 0,
+      "community_name": "ErrorResponse",
       "norm_label": "authhandler"
     },
     {
@@ -2454,8 +2454,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "backend_internal_module_auth_handler_auth_handler_newauthhandler",
-      "community": 24,
-      "community_name": "NewAuthHandler",
+      "community": 15,
+      "community_name": "ActivityLogService",
       "norm_label": "newauthhandler()"
     },
     {
@@ -2465,8 +2465,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "handler_authhandler_login",
-      "community": 10,
-      "community_name": "NewServiceError",
+      "community": 0,
+      "community_name": "ErrorResponse",
       "norm_label": ".login()"
     },
     {
@@ -2476,8 +2476,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_internal_module_auth_handler_auth_handler_go_context",
-      "community": 10,
-      "community_name": "NewServiceError",
+      "community": 0,
+      "community_name": "ErrorResponse",
       "norm_label": "context"
     },
     {
@@ -2487,8 +2487,8 @@
       "source_location": "L90",
       "_origin": "ast",
       "id": "handler_authhandler_refresh",
-      "community": 10,
-      "community_name": "NewServiceError",
+      "community": 0,
+      "community_name": "ErrorResponse",
       "norm_label": ".refresh()"
     },
     {
@@ -2498,8 +2498,8 @@
       "source_location": "L122",
       "_origin": "ast",
       "id": "handler_authhandler_logout",
-      "community": 10,
-      "community_name": "NewServiceError",
+      "community": 0,
+      "community_name": "ErrorResponse",
       "norm_label": ".logout()"
     },
     {
@@ -2509,8 +2509,8 @@
       "source_location": "L155",
       "_origin": "ast",
       "id": "handler_authhandler_forgotpassword",
-      "community": 10,
-      "community_name": "NewServiceError",
+      "community": 0,
+      "community_name": "ErrorResponse",
       "norm_label": ".forgotpassword()"
     },
     {
@@ -2520,8 +2520,8 @@
       "source_location": "L192",
       "_origin": "ast",
       "id": "handler_authhandler_validateresettoken",
-      "community": 10,
-      "community_name": "NewServiceError",
+      "community": 0,
+      "community_name": "ErrorResponse",
       "norm_label": ".validateresettoken()"
     },
     {
@@ -2531,8 +2531,8 @@
       "source_location": "L211",
       "_origin": "ast",
       "id": "handler_authhandler_resetpassword",
-      "community": 10,
-      "community_name": "NewServiceError",
+      "community": 0,
+      "community_name": "ErrorResponse",
       "norm_label": ".resetpassword()"
     },
     {
@@ -2542,8 +2542,8 @@
       "source_location": "L247",
       "_origin": "ast",
       "id": "handler_authhandler_validateactivationtoken",
-      "community": 10,
-      "community_name": "NewServiceError",
+      "community": 0,
+      "community_name": "ErrorResponse",
       "norm_label": ".validateactivationtoken()"
     },
     {
@@ -2553,8 +2553,8 @@
       "source_location": "L266",
       "_origin": "ast",
       "id": "handler_authhandler_activateaccount",
-      "community": 10,
-      "community_name": "NewServiceError",
+      "community": 0,
+      "community_name": "ErrorResponse",
       "norm_label": ".activateaccount()"
     },
     {
@@ -2564,8 +2564,8 @@
       "source_location": "L302",
       "_origin": "ast",
       "id": "handler_authhandler_changepassword",
-      "community": 10,
-      "community_name": "NewServiceError",
+      "community": 0,
+      "community_name": "ErrorResponse",
       "norm_label": ".changepassword()"
     },
     {
@@ -2575,8 +2575,8 @@
       "source_location": "L344",
       "_origin": "ast",
       "id": "handler_authhandler_me",
-      "community": 10,
-      "community_name": "NewServiceError",
+      "community": 0,
+      "community_name": "ErrorResponse",
       "norm_label": ".me()"
     },
     {
@@ -2586,8 +2586,8 @@
       "source_location": "L363",
       "_origin": "ast",
       "id": "handler_authhandler_errorcodetohttp",
-      "community": 10,
-      "community_name": "NewServiceError",
+      "community": 0,
+      "community_name": "ErrorResponse",
       "norm_label": ".errorcodetohttp()"
     },
     {
@@ -2938,8 +2938,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_internal_module_auth_routes",
-      "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community": 30,
+      "community_name": "RateLimitPerUser",
       "norm_label": "auth/routes.go"
     },
     {
@@ -2949,8 +2949,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "backend_internal_module_auth_routes_registerroutes",
-      "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community": 30,
+      "community_name": "RateLimitPerUser",
       "norm_label": "registerroutes()"
     },
     {
@@ -2960,8 +2960,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_internal_module_auth_routes_go_routergroup",
-      "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community": 30,
+      "community_name": "RateLimitPerUser",
       "norm_label": "routergroup"
     },
     {
@@ -2971,8 +2971,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_internal_module_auth_routes_go_client",
-      "community": 6,
-      "community_name": "rate_limiter_middleware.go",
+      "community": 30,
+      "community_name": "RateLimitPerUser",
       "norm_label": "client"
     },
     {
@@ -3686,7 +3686,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_internal_module_berita_routes",
-      "community": 8,
+      "community": 25,
       "community_name": "AuthMiddleware",
       "norm_label": "berita/routes.go"
     },
@@ -3697,7 +3697,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "backend_internal_module_berita_routes_registerroutes",
-      "community": 8,
+      "community": 25,
       "community_name": "AuthMiddleware",
       "norm_label": "registerroutes()"
     },
@@ -3708,7 +3708,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_internal_module_berita_routes_go_routergroup",
-      "community": 8,
+      "community": 25,
       "community_name": "AuthMiddleware",
       "norm_label": "routergroup"
     },
@@ -3719,7 +3719,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_internal_module_berita_routes_go_client",
-      "community": 8,
+      "community": 25,
       "community_name": "AuthMiddleware",
       "norm_label": "client"
     },
@@ -4556,7 +4556,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_kegiatan_routes",
       "community": 8,
-      "community_name": "AuthMiddleware",
+      "community_name": "RoleMiddleware",
       "norm_label": "kegiatan/routes.go"
     },
     {
@@ -4567,7 +4567,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_kegiatan_routes_registerroutes",
       "community": 8,
-      "community_name": "AuthMiddleware",
+      "community_name": "RoleMiddleware",
       "norm_label": "registerroutes()"
     },
     {
@@ -4578,7 +4578,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_kegiatan_routes_go_routergroup",
       "community": 8,
-      "community_name": "AuthMiddleware",
+      "community_name": "RoleMiddleware",
       "norm_label": "routergroup"
     },
     {
@@ -4589,7 +4589,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_kegiatan_routes_go_client",
       "community": 8,
-      "community_name": "AuthMiddleware",
+      "community_name": "RoleMiddleware",
       "norm_label": "client"
     },
     {
@@ -4929,8 +4929,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_internal_module_kontak_handler_kontak_handler",
-      "community": 15,
-      "community_name": "ActivityLogService",
+      "community": 16,
+      "community_name": "NewApp",
       "norm_label": "kontak_handler.go"
     },
     {
@@ -4951,8 +4951,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "backend_internal_module_kontak_handler_kontak_handler_newkontakhandler",
-      "community": 15,
-      "community_name": "ActivityLogService",
+      "community": 16,
+      "community_name": "NewApp",
       "norm_label": "newkontakhandler()"
     },
     {
@@ -5249,7 +5249,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_kontak_routes",
       "community": 8,
-      "community_name": "AuthMiddleware",
+      "community_name": "RoleMiddleware",
       "norm_label": "kontak/routes.go"
     },
     {
@@ -5260,7 +5260,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_kontak_routes_registerroutes",
       "community": 8,
-      "community_name": "AuthMiddleware",
+      "community_name": "RoleMiddleware",
       "norm_label": "registerroutes()"
     },
     {
@@ -5271,7 +5271,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_kontak_routes_go_routergroup",
       "community": 8,
-      "community_name": "AuthMiddleware",
+      "community_name": "RoleMiddleware",
       "norm_label": "routergroup"
     },
     {
@@ -5282,7 +5282,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_kontak_routes_go_client",
       "community": 8,
-      "community_name": "AuthMiddleware",
+      "community_name": "RoleMiddleware",
       "norm_label": "client"
     },
     {
@@ -5436,7 +5436,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_pengurus_dto_pengurus_dto",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": "pengurus_dto.go"
     },
     {
@@ -5447,7 +5447,7 @@
       "_origin": "ast",
       "id": "dto_pengurusrequest",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": "pengurusrequest"
     },
     {
@@ -5458,7 +5458,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_pengurus_dto_pengurus_dto_go_fileheader",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": "fileheader"
     },
     {
@@ -5469,7 +5469,7 @@
       "_origin": "ast",
       "id": "dto_pengurusresponse",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": "pengurusresponse"
     },
     {
@@ -5480,7 +5480,7 @@
       "_origin": "ast",
       "id": "dto_penguruslistresponse",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": "penguruslistresponse"
     },
     {
@@ -5491,7 +5491,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_pengurus_dto_pengurus_dto_go_paginationmeta",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": "paginationmeta"
     },
     {
@@ -5502,7 +5502,7 @@
       "_origin": "ast",
       "id": "dto_pengurusquery",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": "pengurusquery"
     },
     {
@@ -5513,7 +5513,7 @@
       "_origin": "ast",
       "id": "dto_regionsresponse",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": "regionsresponse"
     },
     {
@@ -5524,7 +5524,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_pengurus_dto_pengurus_dto_go_dto_paginationmeta",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": "paginationmeta"
     },
     {
@@ -5535,7 +5535,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_pengurus_dto_pengurus_dto_go_dto_bulkrequest",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": "bulkrequest"
     },
     {
@@ -5545,8 +5545,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_internal_module_pengurus_handler_pengurus_handler",
-      "community": 16,
-      "community_name": "NewApp",
+      "community": 15,
+      "community_name": "ActivityLogService",
       "norm_label": "pengurus_handler.go"
     },
     {
@@ -5567,8 +5567,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "backend_internal_module_pengurus_handler_pengurus_handler_newpengurushandler",
-      "community": 16,
-      "community_name": "NewApp",
+      "community": 15,
+      "community_name": "ActivityLogService",
       "norm_label": "newpengurushandler()"
     },
     {
@@ -5689,7 +5689,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_pengurus_model_pengurus_model",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": "pengurus_model.go"
     },
     {
@@ -5700,7 +5700,7 @@
       "_origin": "ast",
       "id": "model_pengurus",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": "pengurus"
     },
     {
@@ -5711,7 +5711,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_pengurus_model_pengurus_model_go_time",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": "time"
     },
     {
@@ -5722,7 +5722,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_pengurus_model_pengurus_model_go_deletedat",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": "deletedat"
     },
     {
@@ -5733,7 +5733,7 @@
       "_origin": "ast",
       "id": "model_pengurus_tablename",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": ".tablename()"
     },
     {
@@ -5744,7 +5744,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_pengurus_repository_pengurus_repo",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": "pengurus_repo.go"
     },
     {
@@ -5755,7 +5755,7 @@
       "_origin": "ast",
       "id": "repository_pengurusrepo",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": "pengurusrepo"
     },
     {
@@ -5766,7 +5766,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_pengurus_repository_pengurus_repo_go_db",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": "db"
     },
     {
@@ -5777,7 +5777,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_pengurus_repository_pengurus_repo_newpengurusrepo",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": "newpengurusrepo()"
     },
     {
@@ -5788,7 +5788,7 @@
       "_origin": "ast",
       "id": "repository_pengurusrepo_findall",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": ".findall()"
     },
     {
@@ -5799,7 +5799,7 @@
       "_origin": "ast",
       "id": "repository_pengurusrepo_getregions",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": ".getregions()"
     },
     {
@@ -5810,7 +5810,7 @@
       "_origin": "ast",
       "id": "repository_pengurusrepo_findbyid",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": ".findbyid()"
     },
     {
@@ -5821,7 +5821,7 @@
       "_origin": "ast",
       "id": "repository_pengurusrepo_create",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": ".create()"
     },
     {
@@ -5832,7 +5832,7 @@
       "_origin": "ast",
       "id": "repository_pengurusrepo_update",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": ".update()"
     },
     {
@@ -5843,7 +5843,7 @@
       "_origin": "ast",
       "id": "repository_pengurusrepo_softdelete",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": ".softdelete()"
     },
     {
@@ -5854,7 +5854,7 @@
       "_origin": "ast",
       "id": "repository_pengurusrepo_restore",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": ".restore()"
     },
     {
@@ -5865,7 +5865,7 @@
       "_origin": "ast",
       "id": "repository_pengurusrepo_bulksoftdelete",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": ".bulksoftdelete()"
     },
     {
@@ -5876,7 +5876,7 @@
       "_origin": "ast",
       "id": "repository_pengurusrepo_bulkrestore",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": ".bulkrestore()"
     },
     {
@@ -5886,8 +5886,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_internal_module_pengurus_routes",
-      "community": 8,
-      "community_name": "AuthMiddleware",
+      "community": 30,
+      "community_name": "RateLimitPerUser",
       "norm_label": "pengurus/routes.go"
     },
     {
@@ -5897,8 +5897,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "backend_internal_module_pengurus_routes_registerroutes",
-      "community": 8,
-      "community_name": "AuthMiddleware",
+      "community": 30,
+      "community_name": "RateLimitPerUser",
       "norm_label": "registerroutes()"
     },
     {
@@ -5908,8 +5908,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_internal_module_pengurus_routes_go_routergroup",
-      "community": 8,
-      "community_name": "AuthMiddleware",
+      "community": 30,
+      "community_name": "RateLimitPerUser",
       "norm_label": "routergroup"
     },
     {
@@ -5919,8 +5919,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_internal_module_pengurus_routes_go_client",
-      "community": 8,
-      "community_name": "AuthMiddleware",
+      "community": 30,
+      "community_name": "RateLimitPerUser",
       "norm_label": "client"
     },
     {
@@ -5931,7 +5931,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_pengurus_service_pengurus_service",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": "pengurus_service.go"
     },
     {
@@ -5942,7 +5942,7 @@
       "_origin": "ast",
       "id": "service_pengurusservice",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": "pengurusservice"
     },
     {
@@ -5953,7 +5953,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_pengurus_service_pengurus_service_newpengurusservice",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": "newpengurusservice()"
     },
     {
@@ -5964,7 +5964,7 @@
       "_origin": "ast",
       "id": "service_pengurusservice_getallpublic",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": ".getallpublic()"
     },
     {
@@ -5975,7 +5975,7 @@
       "_origin": "ast",
       "id": "service_pengurusservice_getalladmin",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": ".getalladmin()"
     },
     {
@@ -5986,7 +5986,7 @@
       "_origin": "ast",
       "id": "service_pengurusservice_list",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": ".list()"
     },
     {
@@ -5997,7 +5997,7 @@
       "_origin": "ast",
       "id": "service_pengurusservice_getregions",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": ".getregions()"
     },
     {
@@ -6008,7 +6008,7 @@
       "_origin": "ast",
       "id": "service_pengurusservice_getbyid",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": ".getbyid()"
     },
     {
@@ -6019,7 +6019,7 @@
       "_origin": "ast",
       "id": "service_pengurusservice_create",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": ".create()"
     },
     {
@@ -6030,7 +6030,7 @@
       "_origin": "ast",
       "id": "service_pengurusservice_update",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": ".update()"
     },
     {
@@ -6041,7 +6041,7 @@
       "_origin": "ast",
       "id": "service_pengurusservice_delete",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": ".delete()"
     },
     {
@@ -6052,7 +6052,7 @@
       "_origin": "ast",
       "id": "service_pengurusservice_restore",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": ".restore()"
     },
     {
@@ -6063,7 +6063,7 @@
       "_origin": "ast",
       "id": "service_pengurusservice_bulkdelete",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": ".bulkdelete()"
     },
     {
@@ -6074,7 +6074,7 @@
       "_origin": "ast",
       "id": "service_pengurusservice_bulkrestore",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": ".bulkrestore()"
     },
     {
@@ -6085,7 +6085,7 @@
       "_origin": "ast",
       "id": "service_pengurusservice_handleupload",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": ".handleupload()"
     },
     {
@@ -6096,7 +6096,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_pengurus_service_pengurus_service_go_fileheader",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": "fileheader"
     },
     {
@@ -6107,7 +6107,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_pengurus_service_pengurus_service_toresponse",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": "toresponse()"
     },
     {
@@ -6118,7 +6118,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_pengurus_service_pengurus_service_strptr",
       "community": 5,
-      "community_name": "PengurusService",
+      "community_name": "NewServiceError",
       "norm_label": "strptr()"
     },
     {
@@ -6227,8 +6227,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "handler_settingshandler_getsettings",
-      "community": 11,
-      "community_name": "response.go",
+      "community": 0,
+      "community_name": "ErrorResponse",
       "norm_label": ".getsettings()"
     },
     {
@@ -6238,8 +6238,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_internal_module_settings_handler_settings_handler_go_context",
-      "community": 11,
-      "community_name": "response.go",
+      "community": 0,
+      "community_name": "ErrorResponse",
       "norm_label": "context"
     },
     {
@@ -6249,8 +6249,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "handler_settingshandler_updatesettings",
-      "community": 11,
-      "community_name": "response.go",
+      "community": 0,
+      "community_name": "ErrorResponse",
       "norm_label": ".updatesettings()"
     },
     {
@@ -6349,7 +6349,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_settings_routes",
       "community": 8,
-      "community_name": "AuthMiddleware",
+      "community_name": "RoleMiddleware",
       "norm_label": "settings/routes.go"
     },
     {
@@ -6360,7 +6360,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_settings_routes_registerroutes",
       "community": 8,
-      "community_name": "AuthMiddleware",
+      "community_name": "RoleMiddleware",
       "norm_label": "registerroutes()"
     },
     {
@@ -6371,7 +6371,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_settings_routes_go_routergroup",
       "community": 8,
-      "community_name": "AuthMiddleware",
+      "community_name": "RoleMiddleware",
       "norm_label": "routergroup"
     },
     {
@@ -6382,7 +6382,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_settings_routes_go_client",
       "community": 8,
-      "community_name": "AuthMiddleware",
+      "community_name": "RoleMiddleware",
       "norm_label": "client"
     },
     {
@@ -6448,7 +6448,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_sliders_dto_sliders_dto",
       "community": 10,
-      "community_name": "NewServiceError",
+      "community_name": "SlidersRepo",
       "norm_label": "sliders_dto.go"
     },
     {
@@ -6459,7 +6459,7 @@
       "_origin": "ast",
       "id": "dto_sliderrequest",
       "community": 10,
-      "community_name": "NewServiceError",
+      "community_name": "SlidersRepo",
       "norm_label": "sliderrequest"
     },
     {
@@ -6470,7 +6470,7 @@
       "_origin": "ast",
       "id": "dto_sliderresponse",
       "community": 10,
-      "community_name": "NewServiceError",
+      "community_name": "SlidersRepo",
       "norm_label": "sliderresponse"
     },
     {
@@ -6481,7 +6481,7 @@
       "_origin": "ast",
       "id": "dto_sliderlistresponse",
       "community": 10,
-      "community_name": "NewServiceError",
+      "community_name": "SlidersRepo",
       "norm_label": "sliderlistresponse"
     },
     {
@@ -6492,7 +6492,7 @@
       "_origin": "ast",
       "id": "dto_reorderrequest",
       "community": 10,
-      "community_name": "NewServiceError",
+      "community_name": "SlidersRepo",
       "norm_label": "reorderrequest"
     },
     {
@@ -6503,7 +6503,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_sliders_dto_sliders_dto_go_dto_bulkrequest",
       "community": 10,
-      "community_name": "NewServiceError",
+      "community_name": "SlidersRepo",
       "norm_label": "bulkrequest"
     },
     {
@@ -6513,8 +6513,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_internal_module_sliders_handler_sliders_handler",
-      "community": 15,
-      "community_name": "ActivityLogService",
+      "community": 16,
+      "community_name": "NewApp",
       "norm_label": "sliders_handler.go"
     },
     {
@@ -6535,8 +6535,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "backend_internal_module_sliders_handler_sliders_handler_newslidershandler",
-      "community": 15,
-      "community_name": "ActivityLogService",
+      "community": 16,
+      "community_name": "NewApp",
       "norm_label": "newslidershandler()"
     },
     {
@@ -6667,7 +6667,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_internal_module_sliders_model_sliders_model",
-      "community": 14,
+      "community": 10,
       "community_name": "SlidersRepo",
       "norm_label": "sliders_model.go"
     },
@@ -6678,7 +6678,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "model_slider",
-      "community": 14,
+      "community": 10,
       "community_name": "SlidersRepo",
       "norm_label": "slider"
     },
@@ -6689,7 +6689,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_internal_module_sliders_model_sliders_model_go_time",
-      "community": 14,
+      "community": 10,
       "community_name": "SlidersRepo",
       "norm_label": "time"
     },
@@ -6700,7 +6700,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_internal_module_sliders_model_sliders_model_go_deletedat",
-      "community": 14,
+      "community": 10,
       "community_name": "SlidersRepo",
       "norm_label": "deletedat"
     },
@@ -6711,7 +6711,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "model_slider_tablename",
-      "community": 14,
+      "community": 10,
       "community_name": "SlidersRepo",
       "norm_label": ".tablename()"
     },
@@ -6722,7 +6722,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_internal_module_sliders_repository_sliders_repo",
-      "community": 14,
+      "community": 10,
       "community_name": "SlidersRepo",
       "norm_label": "sliders_repo.go"
     },
@@ -6733,7 +6733,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "repository_slidersrepo",
-      "community": 14,
+      "community": 10,
       "community_name": "SlidersRepo",
       "norm_label": "slidersrepo"
     },
@@ -6744,7 +6744,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_internal_module_sliders_repository_sliders_repo_go_db",
-      "community": 14,
+      "community": 10,
       "community_name": "SlidersRepo",
       "norm_label": "db"
     },
@@ -6755,7 +6755,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "backend_internal_module_sliders_repository_sliders_repo_newslidersrepo",
-      "community": 14,
+      "community": 10,
       "community_name": "SlidersRepo",
       "norm_label": "newslidersrepo()"
     },
@@ -6766,7 +6766,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "repository_slidersrepo_findall",
-      "community": 14,
+      "community": 10,
       "community_name": "SlidersRepo",
       "norm_label": ".findall()"
     },
@@ -6777,7 +6777,7 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "repository_slidersrepo_findbyid",
-      "community": 14,
+      "community": 10,
       "community_name": "SlidersRepo",
       "norm_label": ".findbyid()"
     },
@@ -6788,7 +6788,7 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "repository_slidersrepo_create",
-      "community": 14,
+      "community": 10,
       "community_name": "SlidersRepo",
       "norm_label": ".create()"
     },
@@ -6799,7 +6799,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "repository_slidersrepo_update",
-      "community": 14,
+      "community": 10,
       "community_name": "SlidersRepo",
       "norm_label": ".update()"
     },
@@ -6810,7 +6810,7 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "repository_slidersrepo_delete",
-      "community": 14,
+      "community": 10,
       "community_name": "SlidersRepo",
       "norm_label": ".delete()"
     },
@@ -6821,7 +6821,7 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "repository_slidersrepo_reorder",
-      "community": 14,
+      "community": 10,
       "community_name": "SlidersRepo",
       "norm_label": ".reorder()"
     },
@@ -6832,7 +6832,7 @@
       "source_location": "L70",
       "_origin": "ast",
       "id": "repository_slidersrepo_restore",
-      "community": 14,
+      "community": 10,
       "community_name": "SlidersRepo",
       "norm_label": ".restore()"
     },
@@ -6843,7 +6843,7 @@
       "source_location": "L74",
       "_origin": "ast",
       "id": "repository_slidersrepo_bulksoftdelete",
-      "community": 14,
+      "community": 10,
       "community_name": "SlidersRepo",
       "norm_label": ".bulksoftdelete()"
     },
@@ -6854,7 +6854,7 @@
       "source_location": "L78",
       "_origin": "ast",
       "id": "repository_slidersrepo_bulkrestore",
-      "community": 14,
+      "community": 10,
       "community_name": "SlidersRepo",
       "norm_label": ".bulkrestore()"
     },
@@ -6865,7 +6865,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_internal_module_sliders_routes",
-      "community": 8,
+      "community": 25,
       "community_name": "AuthMiddleware",
       "norm_label": "sliders/routes.go"
     },
@@ -6876,7 +6876,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "backend_internal_module_sliders_routes_registerroutes",
-      "community": 8,
+      "community": 25,
       "community_name": "AuthMiddleware",
       "norm_label": "registerroutes()"
     },
@@ -6887,7 +6887,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_internal_module_sliders_routes_go_routergroup",
-      "community": 8,
+      "community": 25,
       "community_name": "AuthMiddleware",
       "norm_label": "routergroup"
     },
@@ -6898,7 +6898,7 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_internal_module_sliders_routes_go_client",
-      "community": 8,
+      "community": 25,
       "community_name": "AuthMiddleware",
       "norm_label": "client"
     },
@@ -6910,7 +6910,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_sliders_service_sliders_service",
       "community": 10,
-      "community_name": "NewServiceError",
+      "community_name": "SlidersRepo",
       "norm_label": "sliders_service.go"
     },
     {
@@ -6921,7 +6921,7 @@
       "_origin": "ast",
       "id": "service_slidersservice",
       "community": 10,
-      "community_name": "NewServiceError",
+      "community_name": "SlidersRepo",
       "norm_label": "slidersservice"
     },
     {
@@ -6932,7 +6932,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_sliders_service_sliders_service_newslidersservice",
       "community": 10,
-      "community_name": "NewServiceError",
+      "community_name": "SlidersRepo",
       "norm_label": "newslidersservice()"
     },
     {
@@ -6943,7 +6943,7 @@
       "_origin": "ast",
       "id": "service_slidersservice_getall",
       "community": 10,
-      "community_name": "NewServiceError",
+      "community_name": "SlidersRepo",
       "norm_label": ".getall()"
     },
     {
@@ -6954,7 +6954,7 @@
       "_origin": "ast",
       "id": "service_slidersservice_getbyid",
       "community": 10,
-      "community_name": "NewServiceError",
+      "community_name": "SlidersRepo",
       "norm_label": ".getbyid()"
     },
     {
@@ -6965,7 +6965,7 @@
       "_origin": "ast",
       "id": "service_slidersservice_create",
       "community": 10,
-      "community_name": "NewServiceError",
+      "community_name": "SlidersRepo",
       "norm_label": ".create()"
     },
     {
@@ -6976,7 +6976,7 @@
       "_origin": "ast",
       "id": "service_slidersservice_update",
       "community": 10,
-      "community_name": "NewServiceError",
+      "community_name": "SlidersRepo",
       "norm_label": ".update()"
     },
     {
@@ -6987,7 +6987,7 @@
       "_origin": "ast",
       "id": "service_slidersservice_delete",
       "community": 10,
-      "community_name": "NewServiceError",
+      "community_name": "SlidersRepo",
       "norm_label": ".delete()"
     },
     {
@@ -6998,7 +6998,7 @@
       "_origin": "ast",
       "id": "service_slidersservice_reorder",
       "community": 10,
-      "community_name": "NewServiceError",
+      "community_name": "SlidersRepo",
       "norm_label": ".reorder()"
     },
     {
@@ -7009,7 +7009,7 @@
       "_origin": "ast",
       "id": "service_slidersservice_restore",
       "community": 10,
-      "community_name": "NewServiceError",
+      "community_name": "SlidersRepo",
       "norm_label": ".restore()"
     },
     {
@@ -7020,7 +7020,7 @@
       "_origin": "ast",
       "id": "service_slidersservice_bulkdelete",
       "community": 10,
-      "community_name": "NewServiceError",
+      "community_name": "SlidersRepo",
       "norm_label": ".bulkdelete()"
     },
     {
@@ -7031,7 +7031,7 @@
       "_origin": "ast",
       "id": "service_slidersservice_bulkrestore",
       "community": 10,
-      "community_name": "NewServiceError",
+      "community_name": "SlidersRepo",
       "norm_label": ".bulkrestore()"
     },
     {
@@ -7042,7 +7042,7 @@
       "_origin": "ast",
       "id": "backend_internal_module_sliders_service_sliders_service_toresponse",
       "community": 10,
-      "community_name": "NewServiceError",
+      "community_name": "SlidersRepo",
       "norm_label": "toresponse()"
     },
     {
@@ -7140,8 +7140,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_internal_module_user_handler_user_handler",
-      "community": 25,
-      "community_name": "NewUserHandler",
+      "community": 15,
+      "community_name": "ActivityLogService",
       "norm_label": "user_handler.go"
     },
     {
@@ -7162,8 +7162,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "backend_internal_module_user_handler_user_handler_newuserhandler",
-      "community": 25,
-      "community_name": "NewUserHandler",
+      "community": 15,
+      "community_name": "ActivityLogService",
       "norm_label": "newuserhandler()"
     },
     {
@@ -7503,8 +7503,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_internal_module_user_routes",
-      "community": 8,
-      "community_name": "AuthMiddleware",
+      "community": 34,
+      "community_name": "RegisterRoutes",
       "norm_label": "user/routes.go"
     },
     {
@@ -7514,8 +7514,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "backend_internal_module_user_routes_registerroutes",
-      "community": 8,
-      "community_name": "AuthMiddleware",
+      "community": 34,
+      "community_name": "RegisterRoutes",
       "norm_label": "registerroutes()"
     },
     {
@@ -7525,8 +7525,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_internal_module_user_routes_go_routergroup",
-      "community": 8,
-      "community_name": "AuthMiddleware",
+      "community": 34,
+      "community_name": "RegisterRoutes",
       "norm_label": "routergroup"
     },
     {
@@ -7536,8 +7536,8 @@
       "source_location": "",
       "_origin": "ast",
       "id": "backend_internal_module_user_routes_go_client",
-      "community": 8,
-      "community_name": "AuthMiddleware",
+      "community": 34,
+      "community_name": "RegisterRoutes",
       "norm_label": "client"
     },
     {
@@ -7767,8 +7767,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_internal_validator_messages",
-      "community": 11,
-      "community_name": "response.go",
+      "community": 31,
+      "community_name": "Errors",
       "norm_label": "messages.go"
     },
     {
@@ -7778,8 +7778,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "backend_internal_validator_messages_validationmessage",
-      "community": 11,
-      "community_name": "response.go",
+      "community": 31,
+      "community_name": "Errors",
       "norm_label": "validationmessage()"
     },
     {
@@ -7789,8 +7789,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_internal_validator_validator",
-      "community": 11,
-      "community_name": "response.go",
+      "community": 31,
+      "community_name": "Errors",
       "norm_label": "validator.go"
     },
     {
@@ -7811,8 +7811,8 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "validator_validationerroritem",
-      "community": 11,
-      "community_name": "response.go",
+      "community": 31,
+      "community_name": "Errors",
       "norm_label": "validationerroritem"
     },
     {
@@ -7822,9 +7822,372 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "backend_internal_validator_validator_errors",
-      "community": 11,
-      "community_name": "response.go",
+      "community": 31,
+      "community_name": "Errors",
       "norm_label": "errors()"
+    },
+    {
+      "label": "00001_create_roles_table.sql",
+      "file_type": "code",
+      "source_file": "backend/migrations/00001_create_roles_table.sql",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "backend_migrations_00001_create_roles_table",
+      "community": 40,
+      "community_name": "00001_create_roles_table.sql",
+      "norm_label": "00001_create_roles_table.sql"
+    },
+    {
+      "label": "roles",
+      "file_type": "code",
+      "source_file": "backend/migrations/00001_create_roles_table.sql",
+      "source_location": "L3",
+      "_origin": "ast",
+      "id": "backend_migrations_00001_create_roles_table_roles",
+      "community": 40,
+      "community_name": "00001_create_roles_table.sql",
+      "norm_label": "roles"
+    },
+    {
+      "label": "00002_create_users_table.sql",
+      "file_type": "code",
+      "source_file": "backend/migrations/00002_create_users_table.sql",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "backend_migrations_00002_create_users_table",
+      "community": 37,
+      "community_name": "users",
+      "norm_label": "00002_create_users_table.sql"
+    },
+    {
+      "label": "users",
+      "file_type": "code",
+      "source_file": "backend/migrations/00002_create_users_table.sql",
+      "source_location": "L3",
+      "_origin": "ast",
+      "id": "backend_migrations_00002_create_users_table_users",
+      "community": 37,
+      "community_name": "users",
+      "norm_label": "users"
+    },
+    {
+      "label": "roles",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "_origin": "ast",
+      "id": "roles",
+      "community": 37,
+      "community_name": "users",
+      "norm_label": "roles"
+    },
+    {
+      "label": "00003_create_auth_tokens_tables.sql",
+      "file_type": "code",
+      "source_file": "backend/migrations/00003_create_auth_tokens_tables.sql",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "backend_migrations_00003_create_auth_tokens_tables",
+      "community": 32,
+      "community_name": "00003_create_auth_tokens_tables.sql",
+      "norm_label": "00003_create_auth_tokens_tables.sql"
+    },
+    {
+      "label": "refresh_tokens",
+      "file_type": "code",
+      "source_file": "backend/migrations/00003_create_auth_tokens_tables.sql",
+      "source_location": "L3",
+      "_origin": "ast",
+      "id": "backend_migrations_00003_create_auth_tokens_tables_refresh_tokens",
+      "community": 32,
+      "community_name": "00003_create_auth_tokens_tables.sql",
+      "norm_label": "refresh_tokens"
+    },
+    {
+      "label": "users",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "_origin": "ast",
+      "id": "backend_migrations_00003_create_auth_tokens_tables_sql_users",
+      "community": 32,
+      "community_name": "00003_create_auth_tokens_tables.sql",
+      "norm_label": "users"
+    },
+    {
+      "label": "password_reset_tokens",
+      "file_type": "code",
+      "source_file": "backend/migrations/00003_create_auth_tokens_tables.sql",
+      "source_location": "L17",
+      "_origin": "ast",
+      "id": "backend_migrations_00003_create_auth_tokens_tables_password_reset_tokens",
+      "community": 32,
+      "community_name": "00003_create_auth_tokens_tables.sql",
+      "norm_label": "password_reset_tokens"
+    },
+    {
+      "label": "activation_tokens",
+      "file_type": "code",
+      "source_file": "backend/migrations/00003_create_auth_tokens_tables.sql",
+      "source_location": "L30",
+      "_origin": "ast",
+      "id": "backend_migrations_00003_create_auth_tokens_tables_activation_tokens",
+      "community": 32,
+      "community_name": "00003_create_auth_tokens_tables.sql",
+      "norm_label": "activation_tokens"
+    },
+    {
+      "label": "00004_create_sliders_table.sql",
+      "file_type": "code",
+      "source_file": "backend/migrations/00004_create_sliders_table.sql",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "backend_migrations_00004_create_sliders_table",
+      "community": 38,
+      "community_name": "sliders",
+      "norm_label": "00004_create_sliders_table.sql"
+    },
+    {
+      "label": "sliders",
+      "file_type": "code",
+      "source_file": "backend/migrations/00004_create_sliders_table.sql",
+      "source_location": "L3",
+      "_origin": "ast",
+      "id": "backend_migrations_00004_create_sliders_table_sliders",
+      "community": 38,
+      "community_name": "sliders",
+      "norm_label": "sliders"
+    },
+    {
+      "label": "users",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "_origin": "ast",
+      "id": "backend_migrations_00004_create_sliders_table_sql_users",
+      "community": 38,
+      "community_name": "sliders",
+      "norm_label": "users"
+    },
+    {
+      "label": "00005_create_berita_tables.sql",
+      "file_type": "code",
+      "source_file": "backend/migrations/00005_create_berita_tables.sql",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "backend_migrations_00005_create_berita_tables",
+      "community": 35,
+      "community_name": "berita",
+      "norm_label": "00005_create_berita_tables.sql"
+    },
+    {
+      "label": "berita",
+      "file_type": "code",
+      "source_file": "backend/migrations/00005_create_berita_tables.sql",
+      "source_location": "L3",
+      "_origin": "ast",
+      "id": "backend_migrations_00005_create_berita_tables_berita",
+      "community": 35,
+      "community_name": "berita",
+      "norm_label": "berita"
+    },
+    {
+      "label": "users",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "_origin": "ast",
+      "id": "backend_migrations_00005_create_berita_tables_sql_users",
+      "community": 35,
+      "community_name": "berita",
+      "norm_label": "users"
+    },
+    {
+      "label": "berita_tags",
+      "file_type": "code",
+      "source_file": "backend/migrations/00005_create_berita_tables.sql",
+      "source_location": "L28",
+      "_origin": "ast",
+      "id": "backend_migrations_00005_create_berita_tables_berita_tags",
+      "community": 35,
+      "community_name": "berita",
+      "norm_label": "berita_tags"
+    },
+    {
+      "label": "00006_create_kegiatan_tables.sql",
+      "file_type": "code",
+      "source_file": "backend/migrations/00006_create_kegiatan_tables.sql",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "backend_migrations_00006_create_kegiatan_tables",
+      "community": 36,
+      "community_name": "00006_create_kegiatan_tables.sql",
+      "norm_label": "00006_create_kegiatan_tables.sql"
+    },
+    {
+      "label": "kegiatan",
+      "file_type": "code",
+      "source_file": "backend/migrations/00006_create_kegiatan_tables.sql",
+      "source_location": "L3",
+      "_origin": "ast",
+      "id": "backend_migrations_00006_create_kegiatan_tables_kegiatan",
+      "community": 36,
+      "community_name": "00006_create_kegiatan_tables.sql",
+      "norm_label": "kegiatan"
+    },
+    {
+      "label": "kegiatan_tags",
+      "file_type": "code",
+      "source_file": "backend/migrations/00006_create_kegiatan_tables.sql",
+      "source_location": "L26",
+      "_origin": "ast",
+      "id": "backend_migrations_00006_create_kegiatan_tables_kegiatan_tags",
+      "community": 36,
+      "community_name": "00006_create_kegiatan_tables.sql",
+      "norm_label": "kegiatan_tags"
+    },
+    {
+      "label": "kegiatan_gallery",
+      "file_type": "code",
+      "source_file": "backend/migrations/00006_create_kegiatan_tables.sql",
+      "source_location": "L36",
+      "_origin": "ast",
+      "id": "backend_migrations_00006_create_kegiatan_tables_kegiatan_gallery",
+      "community": 36,
+      "community_name": "00006_create_kegiatan_tables.sql",
+      "norm_label": "kegiatan_gallery"
+    },
+    {
+      "label": "00007_create_pengurus_table.sql",
+      "file_type": "code",
+      "source_file": "backend/migrations/00007_create_pengurus_table.sql",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "backend_migrations_00007_create_pengurus_table",
+      "community": 41,
+      "community_name": "00007_create_pengurus_table.sql",
+      "norm_label": "00007_create_pengurus_table.sql"
+    },
+    {
+      "label": "pengurus",
+      "file_type": "code",
+      "source_file": "backend/migrations/00007_create_pengurus_table.sql",
+      "source_location": "L3",
+      "_origin": "ast",
+      "id": "backend_migrations_00007_create_pengurus_table_pengurus",
+      "community": 41,
+      "community_name": "00007_create_pengurus_table.sql",
+      "norm_label": "pengurus"
+    },
+    {
+      "label": "00008_create_pesan_kontak_table.sql",
+      "file_type": "code",
+      "source_file": "backend/migrations/00008_create_pesan_kontak_table.sql",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "backend_migrations_00008_create_pesan_kontak_table",
+      "community": 42,
+      "community_name": "00008_create_pesan_kontak_table.sql",
+      "norm_label": "00008_create_pesan_kontak_table.sql"
+    },
+    {
+      "label": "pesan_kontak",
+      "file_type": "code",
+      "source_file": "backend/migrations/00008_create_pesan_kontak_table.sql",
+      "source_location": "L3",
+      "_origin": "ast",
+      "id": "backend_migrations_00008_create_pesan_kontak_table_pesan_kontak",
+      "community": 42,
+      "community_name": "00008_create_pesan_kontak_table.sql",
+      "norm_label": "pesan_kontak"
+    },
+    {
+      "label": "00009_create_settings_table.sql",
+      "file_type": "code",
+      "source_file": "backend/migrations/00009_create_settings_table.sql",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "backend_migrations_00009_create_settings_table",
+      "community": 43,
+      "community_name": "00009_create_settings_table.sql",
+      "norm_label": "00009_create_settings_table.sql"
+    },
+    {
+      "label": "settings",
+      "file_type": "code",
+      "source_file": "backend/migrations/00009_create_settings_table.sql",
+      "source_location": "L3",
+      "_origin": "ast",
+      "id": "backend_migrations_00009_create_settings_table_settings",
+      "community": 43,
+      "community_name": "00009_create_settings_table.sql",
+      "norm_label": "settings"
+    },
+    {
+      "label": "00010_create_activity_logs_table.sql",
+      "file_type": "code",
+      "source_file": "backend/migrations/00010_create_activity_logs_table.sql",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "backend_migrations_00010_create_activity_logs_table",
+      "community": 39,
+      "community_name": "activity_logs",
+      "norm_label": "00010_create_activity_logs_table.sql"
+    },
+    {
+      "label": "activity_logs",
+      "file_type": "code",
+      "source_file": "backend/migrations/00010_create_activity_logs_table.sql",
+      "source_location": "L3",
+      "_origin": "ast",
+      "id": "backend_migrations_00010_create_activity_logs_table_activity_logs",
+      "community": 39,
+      "community_name": "activity_logs",
+      "norm_label": "activity_logs"
+    },
+    {
+      "label": "users",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "_origin": "ast",
+      "id": "backend_migrations_00010_create_activity_logs_table_sql_users",
+      "community": 39,
+      "community_name": "activity_logs",
+      "norm_label": "users"
+    },
+    {
+      "label": "00011_add_deleted_at_sliders_kontak.sql",
+      "file_type": "code",
+      "source_file": "backend/migrations/00011_add_deleted_at_sliders_kontak.sql",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "backend_migrations_00011_add_deleted_at_sliders_kontak",
+      "community": 44,
+      "community_name": "00011_add_deleted_at_sliders_kontak.sql",
+      "norm_label": "00011_add_deleted_at_sliders_kontak.sql"
+    },
+    {
+      "label": "sliders",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "_origin": "ast",
+      "id": "sliders",
+      "community": 46,
+      "community_name": "sliders",
+      "norm_label": "sliders"
+    },
+    {
+      "label": "pesan_kontak",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "_origin": "ast",
+      "id": "pesan_kontak",
+      "community": 45,
+      "community_name": "pesan_kontak",
+      "norm_label": "pesan_kontak"
     },
     {
       "label": "scratch.go",
@@ -7847,6 +8210,171 @@
       "community": 26,
       "community_name": "scratch.go",
       "norm_label": "main()"
+    },
+    {
+      "label": "schema.sql",
+      "file_type": "code",
+      "source_file": "docs/database/schema.sql",
+      "source_location": null,
+      "_origin": "ast",
+      "id": "docs_database_schema",
+      "community": 24,
+      "community_name": "schema.sql",
+      "norm_label": "schema.sql"
+    },
+    {
+      "label": "roles",
+      "file_type": "code",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L15",
+      "_origin": "ast",
+      "id": "docs_database_schema_roles",
+      "community": 24,
+      "community_name": "schema.sql",
+      "norm_label": "roles"
+    },
+    {
+      "label": "users",
+      "file_type": "code",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L36",
+      "_origin": "ast",
+      "id": "docs_database_schema_users",
+      "community": 24,
+      "community_name": "schema.sql",
+      "norm_label": "users"
+    },
+    {
+      "label": "refresh_tokens",
+      "file_type": "code",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L64",
+      "_origin": "ast",
+      "id": "docs_database_schema_refresh_tokens",
+      "community": 24,
+      "community_name": "schema.sql",
+      "norm_label": "refresh_tokens"
+    },
+    {
+      "label": "password_reset_tokens",
+      "file_type": "code",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L83",
+      "_origin": "ast",
+      "id": "docs_database_schema_password_reset_tokens",
+      "community": 24,
+      "community_name": "schema.sql",
+      "norm_label": "password_reset_tokens"
+    },
+    {
+      "label": "activation_tokens",
+      "file_type": "code",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L101",
+      "_origin": "ast",
+      "id": "docs_database_schema_activation_tokens",
+      "community": 24,
+      "community_name": "schema.sql",
+      "norm_label": "activation_tokens"
+    },
+    {
+      "label": "sliders",
+      "file_type": "code",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L118",
+      "_origin": "ast",
+      "id": "docs_database_schema_sliders",
+      "community": 24,
+      "community_name": "schema.sql",
+      "norm_label": "sliders"
+    },
+    {
+      "label": "berita",
+      "file_type": "code",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L142",
+      "_origin": "ast",
+      "id": "docs_database_schema_berita",
+      "community": 24,
+      "community_name": "schema.sql",
+      "norm_label": "berita"
+    },
+    {
+      "label": "berita_tags",
+      "file_type": "code",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L170",
+      "_origin": "ast",
+      "id": "docs_database_schema_berita_tags",
+      "community": 24,
+      "community_name": "schema.sql",
+      "norm_label": "berita_tags"
+    },
+    {
+      "label": "kegiatan",
+      "file_type": "code",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L183",
+      "_origin": "ast",
+      "id": "docs_database_schema_kegiatan",
+      "community": 24,
+      "community_name": "schema.sql",
+      "norm_label": "kegiatan"
+    },
+    {
+      "label": "kegiatan_tags",
+      "file_type": "code",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L209",
+      "_origin": "ast",
+      "id": "docs_database_schema_kegiatan_tags",
+      "community": 24,
+      "community_name": "schema.sql",
+      "norm_label": "kegiatan_tags"
+    },
+    {
+      "label": "kegiatan_gallery",
+      "file_type": "code",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L222",
+      "_origin": "ast",
+      "id": "docs_database_schema_kegiatan_gallery",
+      "community": 24,
+      "community_name": "schema.sql",
+      "norm_label": "kegiatan_gallery"
+    },
+    {
+      "label": "pengurus",
+      "file_type": "code",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L236",
+      "_origin": "ast",
+      "id": "docs_database_schema_pengurus",
+      "community": 24,
+      "community_name": "schema.sql",
+      "norm_label": "pengurus"
+    },
+    {
+      "label": "pesan_kontak",
+      "file_type": "code",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L267",
+      "_origin": "ast",
+      "id": "docs_database_schema_pesan_kontak",
+      "community": 24,
+      "community_name": "schema.sql",
+      "norm_label": "pesan_kontak"
+    },
+    {
+      "label": "settings",
+      "file_type": "code",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L285",
+      "_origin": "ast",
+      "id": "docs_database_schema_settings",
+      "community": 24,
+      "community_name": "schema.sql",
+      "norm_label": "settings"
     },
     {
       "label": "package.json",
@@ -25918,12 +26446,540 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "backend/migrations/00001_create_roles_table.sql",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_migrations_00001_create_roles_table",
+      "target": "backend_migrations_00001_create_roles_table_roles",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/migrations/00002_create_users_table.sql",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_migrations_00002_create_users_table",
+      "target": "backend_migrations_00002_create_users_table_users",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/migrations/00002_create_users_table.sql",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_migrations_00002_create_users_table_users",
+      "target": "roles",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/migrations/00003_create_auth_tokens_tables.sql",
+      "source_location": "L30",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_migrations_00003_create_auth_tokens_tables",
+      "target": "backend_migrations_00003_create_auth_tokens_tables_activation_tokens",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/migrations/00003_create_auth_tokens_tables.sql",
+      "source_location": "L17",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_migrations_00003_create_auth_tokens_tables",
+      "target": "backend_migrations_00003_create_auth_tokens_tables_password_reset_tokens",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/migrations/00003_create_auth_tokens_tables.sql",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_migrations_00003_create_auth_tokens_tables",
+      "target": "backend_migrations_00003_create_auth_tokens_tables_refresh_tokens",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/migrations/00003_create_auth_tokens_tables.sql",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_migrations_00003_create_auth_tokens_tables_refresh_tokens",
+      "target": "backend_migrations_00003_create_auth_tokens_tables_sql_users",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/migrations/00003_create_auth_tokens_tables.sql",
+      "source_location": "L30",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_migrations_00003_create_auth_tokens_tables_activation_tokens",
+      "target": "backend_migrations_00003_create_auth_tokens_tables_sql_users",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/migrations/00003_create_auth_tokens_tables.sql",
+      "source_location": "L17",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_migrations_00003_create_auth_tokens_tables_password_reset_tokens",
+      "target": "backend_migrations_00003_create_auth_tokens_tables_sql_users",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/migrations/00004_create_sliders_table.sql",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_migrations_00004_create_sliders_table",
+      "target": "backend_migrations_00004_create_sliders_table_sliders",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/migrations/00004_create_sliders_table.sql",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_migrations_00004_create_sliders_table_sliders",
+      "target": "backend_migrations_00004_create_sliders_table_sql_users",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/migrations/00005_create_berita_tables.sql",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_migrations_00005_create_berita_tables",
+      "target": "backend_migrations_00005_create_berita_tables_berita",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/migrations/00005_create_berita_tables.sql",
+      "source_location": "L28",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_migrations_00005_create_berita_tables",
+      "target": "backend_migrations_00005_create_berita_tables_berita_tags",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/migrations/00005_create_berita_tables.sql",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_migrations_00005_create_berita_tables_berita",
+      "target": "backend_migrations_00005_create_berita_tables_sql_users",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/migrations/00005_create_berita_tables.sql",
+      "source_location": "L28",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_migrations_00005_create_berita_tables_berita_tags",
+      "target": "backend_migrations_00005_create_berita_tables_berita",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/migrations/00006_create_kegiatan_tables.sql",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_migrations_00006_create_kegiatan_tables",
+      "target": "backend_migrations_00006_create_kegiatan_tables_kegiatan",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/migrations/00006_create_kegiatan_tables.sql",
+      "source_location": "L36",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_migrations_00006_create_kegiatan_tables",
+      "target": "backend_migrations_00006_create_kegiatan_tables_kegiatan_gallery",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/migrations/00006_create_kegiatan_tables.sql",
+      "source_location": "L26",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_migrations_00006_create_kegiatan_tables",
+      "target": "backend_migrations_00006_create_kegiatan_tables_kegiatan_tags",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/migrations/00006_create_kegiatan_tables.sql",
+      "source_location": "L36",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_migrations_00006_create_kegiatan_tables_kegiatan_gallery",
+      "target": "backend_migrations_00006_create_kegiatan_tables_kegiatan",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/migrations/00006_create_kegiatan_tables.sql",
+      "source_location": "L26",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_migrations_00006_create_kegiatan_tables_kegiatan_tags",
+      "target": "backend_migrations_00006_create_kegiatan_tables_kegiatan",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/migrations/00007_create_pengurus_table.sql",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_migrations_00007_create_pengurus_table",
+      "target": "backend_migrations_00007_create_pengurus_table_pengurus",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/migrations/00008_create_pesan_kontak_table.sql",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_migrations_00008_create_pesan_kontak_table",
+      "target": "backend_migrations_00008_create_pesan_kontak_table_pesan_kontak",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/migrations/00009_create_settings_table.sql",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_migrations_00009_create_settings_table",
+      "target": "backend_migrations_00009_create_settings_table_settings",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/migrations/00010_create_activity_logs_table.sql",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_migrations_00010_create_activity_logs_table",
+      "target": "backend_migrations_00010_create_activity_logs_table_activity_logs",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/migrations/00010_create_activity_logs_table.sql",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_migrations_00010_create_activity_logs_table_activity_logs",
+      "target": "backend_migrations_00010_create_activity_logs_table_sql_users",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "backend/scratch.go",
       "source_location": "L5",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_scratch",
       "target": "backend_scratch_main",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L101",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_database_schema",
+      "target": "docs_database_schema_activation_tokens",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L142",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_database_schema",
+      "target": "docs_database_schema_berita",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L170",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_database_schema",
+      "target": "docs_database_schema_berita_tags",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L183",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_database_schema",
+      "target": "docs_database_schema_kegiatan",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L222",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_database_schema",
+      "target": "docs_database_schema_kegiatan_gallery",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L209",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_database_schema",
+      "target": "docs_database_schema_kegiatan_tags",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L83",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_database_schema",
+      "target": "docs_database_schema_password_reset_tokens",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L236",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_database_schema",
+      "target": "docs_database_schema_pengurus",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L267",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_database_schema",
+      "target": "docs_database_schema_pesan_kontak",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L64",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_database_schema",
+      "target": "docs_database_schema_refresh_tokens",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L15",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_database_schema",
+      "target": "docs_database_schema_roles",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L285",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_database_schema",
+      "target": "docs_database_schema_settings",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L118",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_database_schema",
+      "target": "docs_database_schema_sliders",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L36",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_database_schema",
+      "target": "docs_database_schema_users",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L36",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_database_schema_users",
+      "target": "docs_database_schema_roles",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L101",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_database_schema_activation_tokens",
+      "target": "docs_database_schema_users",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L142",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_database_schema_berita",
+      "target": "docs_database_schema_users",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L83",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_database_schema_password_reset_tokens",
+      "target": "docs_database_schema_users",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L64",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_database_schema_refresh_tokens",
+      "target": "docs_database_schema_users",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L118",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_database_schema_sliders",
+      "target": "docs_database_schema_users",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L170",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_database_schema_berita_tags",
+      "target": "docs_database_schema_berita",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L222",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_database_schema_kegiatan_gallery",
+      "target": "docs_database_schema_kegiatan",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/database/schema.sql",
+      "source_location": "L209",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_database_schema_kegiatan_tags",
+      "target": "docs_database_schema_kegiatan",
       "confidence_score": 1.0
     },
     {

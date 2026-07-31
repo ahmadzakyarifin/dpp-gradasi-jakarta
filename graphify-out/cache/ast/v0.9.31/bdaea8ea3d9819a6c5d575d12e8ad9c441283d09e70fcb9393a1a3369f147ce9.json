@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_backend_migrations_00013_seed_roles_admin_berita_kegiatan_sql", "label": "00013_seed_roles_admin_berita_kegiatan.sql", "file_type": "code", "source_file": "backend/migrations/00013_seed_roles_admin_berita_kegiatan.sql", "source_location": null}], "edges": []}

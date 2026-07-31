@@ -5,8 +5,8 @@
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 724 nodes · 1547 edges · 30 communities (22 shown, 8 thin omitted)
-- Extraction: 75% EXTRACTED · 25% INFERRED · 0% AMBIGUOUS · INFERRED: 389 edges (avg confidence: 0.8)
+- 772 nodes · 1595 edges · 47 communities (32 shown, 15 thin omitted)
+- Extraction: 76% EXTRACTED · 24% INFERRED · 0% AMBIGUOUS · INFERRED: 389 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
@@ -20,16 +20,16 @@
 - BeritaRepo
 - UserService
 - AuthService
-- PengurusService
-- rate_limiter_middleware.go
-- activityLogRepository
-- AuthMiddleware
-- KontakRepo
 - NewServiceError
+- Rule
+- activityLogRepository
+- RoleMiddleware
+- KontakRepo
+- SlidersRepo
 - response.go
 - AuthRepo
 - Config
-- SlidersRepo
+- rate_limiter_middleware.go
 - ActivityLogService
 - NewApp
 - main
@@ -39,11 +39,27 @@
 - ActivityLog
 - scratch.js
 - worker.go
-- NewAuthHandler
-- NewUserHandler
+- schema.sql
+- AuthMiddleware
 - README.md
 - test-ui.js
 - github.com/ahmadzakyarifin/dpp-gradasi/backend
+- RateLimitPerUser
+- Errors
+- 00003_create_auth_tokens_tables.sql
+- RegisterRoutes
+- RegisterRoutes
+- berita
+- 00006_create_kegiatan_tables.sql
+- users
+- sliders
+- activity_logs
+- 00001_create_roles_table.sql
+- 00007_create_pengurus_table.sql
+- 00008_create_pesan_kontak_table.sql
+- 00009_create_settings_table.sql
+- pesan_kontak
+- sliders
 
 ## God Nodes (most connected - your core abstractions)
 1. `ErrorResponse()` - 77 edges
@@ -72,11 +88,11 @@
 ## Import Cycles
 - None detected.
 
-## Communities (30 total, 8 thin omitted)
+## Communities (47 total, 15 thin omitted)
 
 ### Community 0 - "ErrorResponse"
-Cohesion: 0.10
-Nodes (20): GetAuditMeta(), Context, ErrorResponse(), Context, RateLimitResponse(), SuccessResponse(), ValidationErrorResponse(), Context (+12 more)
+Cohesion: 0.08
+Nodes (23): GetAuditMeta(), Context, ErrorResponse(), Context, SuccessResponse(), ValidationErrorResponse(), GetUserID(), Context (+15 more)
 
 ### Community 1 - "KegiatanRepo"
 Cohesion: 0.06
@@ -94,33 +110,33 @@ Nodes (20): BulkRequest, ChangePasswordRequest, FileHeader, DeletedAt, Time, DB,
 Cohesion: 0.07
 Nodes (29): GenerateAccessToken(), GenerateRefreshToken(), RegisteredClaims, Time, ValidateToken(), CheckPassword(), HashPassword(), GenerateActivationToken() (+21 more)
 
-### Community 5 - "PengurusService"
-Cohesion: 0.08
-Nodes (20): BulkRequest, PaginationMeta, FileHeader, PaginationMeta, DeletedAt, Time, DB, NewPengurusRepo() (+12 more)
+### Community 5 - "NewServiceError"
+Cohesion: 0.07
+Nodes (22): NewServiceError(), BulkRequest, PaginationMeta, FileHeader, PaginationMeta, DeletedAt, Time, DB (+14 more)
 
-### Community 6 - "rate_limiter_middleware.go"
-Cohesion: 0.09
-Nodes (38): Context, RestoreBody(), emailFromBody(), getUserID(), Client, Context, HandlerFunc, makeRateLimitKey() (+30 more)
+### Community 6 - "Rule"
+Cohesion: 0.22
+Nodes (16): normalizeRule(), normalizeScope(), abortRateLimitError(), abortRateLimitUnauthorized(), abortTooManyRequests(), Email(), Context, IP() (+8 more)
 
 ### Community 7 - "activityLogRepository"
 Cohesion: 0.09
 Nodes (24): EntityToDetailResponse(), EntityToModel(), EntityToResponse(), ActivityLog, InputToEntity(), ModelToEntity(), ActivityLog, Context (+16 more)
 
-### Community 8 - "AuthMiddleware"
-Cohesion: 0.06
-Nodes (31): AuthMiddleware(), GetEmail(), GetRoleID(), Context, HandlerFunc, HandlerFunc, RoleMiddleware(), Client (+23 more)
+### Community 8 - "RoleMiddleware"
+Cohesion: 0.13
+Nodes (11): HandlerFunc, RoleMiddleware(), Client, RouterGroup, RegisterRoutes(), Client, RouterGroup, RegisterRoutes() (+3 more)
 
 ### Community 9 - "KontakRepo"
 Cohesion: 0.08
 Nodes (20): BulkRequest, PaginationMeta, PaginationMeta, DeletedAt, Time, DB, maxInt(), NewKontakRepo() (+12 more)
 
-### Community 10 - "NewServiceError"
-Cohesion: 0.11
-Nodes (13): NewServiceError(), GetUserID(), Context, BulkRequest, NewSlidersService(), toResponse(), ReorderRequest, SliderListResponse (+5 more)
+### Community 10 - "SlidersRepo"
+Cohesion: 0.09
+Nodes (14): BulkRequest, DeletedAt, Time, DB, NewSlidersRepo(), NewSlidersService(), toResponse(), ReorderRequest (+6 more)
 
 ### Community 11 - "response.go"
-Cohesion: 0.08
-Nodes (20): GenerateValidationMessage(), GetPaginationMeta(), IsValidEmail(), IsValidURL(), Context, NewSettingsHandler(), DB, NewSettingsRepo() (+12 more)
+Cohesion: 0.10
+Nodes (17): GenerateValidationMessage(), GetPaginationMeta(), IsValidEmail(), IsValidURL(), RateLimitResponse(), NewSettingsHandler(), DB, NewSettingsRepo() (+9 more)
 
 ### Community 12 - "AuthRepo"
 Cohesion: 0.08
@@ -130,17 +146,17 @@ Nodes (9): Time, DB, NewAuthRepo(), Time, ActivationToken, PasswordResetToken, R
 Cohesion: 0.11
 Nodes (10): MustLoad(), AppConfig, Config, CookieConfig, DatabaseConfig, DevConfig, JWTConfig, RedisConfig (+2 more)
 
-### Community 14 - "SlidersRepo"
-Cohesion: 0.17
-Nodes (6): DeletedAt, Time, DB, NewSlidersRepo(), Slider, SlidersRepo
+### Community 14 - "rate_limiter_middleware.go"
+Cohesion: 0.18
+Nodes (15): Context, RestoreBody(), emailFromBody(), getUserID(), Client, Context, makeRateLimitKey(), needsEmail() (+7 more)
 
 ### Community 15 - "ActivityLogService"
-Cohesion: 0.18
-Nodes (7): NewActivityLogHandler(), ActivityLogService, NewBeritaHandler(), NewKegiatanHandler(), NewKontakHandler(), NewSlidersHandler(), ActivityLogHandler
+Cohesion: 0.15
+Nodes (8): NewActivityLogHandler(), ActivityLogService, NewAuthHandler(), NewBeritaHandler(), NewKegiatanHandler(), NewPengurusHandler(), NewUserHandler(), ActivityLogHandler
 
 ### Community 16 - "NewApp"
-Cohesion: 0.24
-Nodes (8): App, Client, DB, NewApp(), Client, registerRoutes(), NewPengurusHandler(), Engine
+Cohesion: 0.19
+Nodes (9): App, Client, DB, NewApp(), Client, registerRoutes(), NewKontakHandler(), NewSlidersHandler() (+1 more)
 
 ### Community 17 - "main"
 Cohesion: 0.18
@@ -158,20 +174,56 @@ Nodes (3): NewMailer(), Dialer, Mailer
 Cohesion: 0.50
 Nodes (3): dependencies, puppeteer, puppeteer
 
+### Community 24 - "schema.sql"
+Cohesion: 0.22
+Nodes (14): activation_tokens, berita, berita_tags, kegiatan, kegiatan_gallery, kegiatan_tags, password_reset_tokens, pengurus (+6 more)
+
+### Community 25 - "AuthMiddleware"
+Cohesion: 0.16
+Nodes (11): AuthMiddleware(), GetEmail(), GetRoleID(), Context, HandlerFunc, Client, RouterGroup, RegisterRoutes() (+3 more)
+
+### Community 30 - "RateLimitPerUser"
+Cohesion: 0.20
+Nodes (10): HandlerFunc, RateLimiterMiddleware(), RateLimitPerUser(), RateLimitRules(), Client, RouterGroup, RegisterRoutes(), Client (+2 more)
+
+### Community 31 - "Errors"
+Cohesion: 0.50
+Nodes (3): validationMessage(), Errors(), ValidationErrorItem
+
+### Community 32 - "00003_create_auth_tokens_tables.sql"
+Cohesion: 0.60
+Nodes (4): activation_tokens, password_reset_tokens, refresh_tokens, users
+
+### Community 33 - "RegisterRoutes"
+Cohesion: 0.50
+Nodes (3): Client, RouterGroup, RegisterRoutes()
+
+### Community 34 - "RegisterRoutes"
+Cohesion: 0.50
+Nodes (3): Client, RouterGroup, RegisterRoutes()
+
+### Community 35 - "berita"
+Cohesion: 0.67
+Nodes (3): berita, berita_tags, users
+
+### Community 36 - "00006_create_kegiatan_tables.sql"
+Cohesion: 0.83
+Nodes (3): kegiatan, kegiatan_gallery, kegiatan_tags
+
 ## Knowledge Gaps
-- **23 isolated node(s):** `WorkerConfig`, `github.com/ahmadzakyarifin/dpp-gradasi/backend`, `Response`, `RegisterRequest`, `ChangePasswordRequest` (+18 more)
+- **30 isolated node(s):** `WorkerConfig`, `github.com/ahmadzakyarifin/dpp-gradasi/backend`, `Response`, `RegisterRequest`, `ChangePasswordRequest` (+25 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **8 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **15 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `NewApp()` connect `NewApp` to `KegiatanRepo`, `BeritaRepo`, `UserService`, `AuthService`, `PengurusService`, `rate_limiter_middleware.go`, `activityLogRepository`, `KontakRepo`, `NewServiceError`, `response.go`, `AuthRepo`, `Config`, `SlidersRepo`, `ActivityLogService`, `main`, `Mailer`, `NewAuthHandler`, `NewUserHandler`?**
-  _High betweenness centrality (0.343) - this node is a cross-community bridge._
-- **Why does `NewServiceError()` connect `NewServiceError` to `ErrorResponse`, `KegiatanRepo`, `BeritaRepo`, `UserService`, `AuthService`, `PengurusService`, `KontakRepo`?**
-  _High betweenness centrality (0.278) - this node is a cross-community bridge._
-- **Why does `ErrorResponse()` connect `ErrorResponse` to `AuthMiddleware`, `NewServiceError`, `response.go`, `rate_limiter_middleware.go`?**
-  _High betweenness centrality (0.100) - this node is a cross-community bridge._
+- **Why does `NewApp()` connect `NewApp` to `KegiatanRepo`, `BeritaRepo`, `UserService`, `AuthService`, `NewServiceError`, `activityLogRepository`, `KontakRepo`, `SlidersRepo`, `response.go`, `AuthRepo`, `Config`, `rate_limiter_middleware.go`, `ActivityLogService`, `main`, `Mailer`?**
+  _High betweenness centrality (0.301) - this node is a cross-community bridge._
+- **Why does `NewServiceError()` connect `NewServiceError` to `ErrorResponse`, `KegiatanRepo`, `BeritaRepo`, `UserService`, `AuthService`, `KontakRepo`, `SlidersRepo`?**
+  _High betweenness centrality (0.244) - this node is a cross-community bridge._
+- **Why does `ErrorResponse()` connect `ErrorResponse` to `RoleMiddleware`, `AuthMiddleware`, `response.go`, `Rule`?**
+  _High betweenness centrality (0.088) - this node is a cross-community bridge._
 - **Are the 75 inferred relationships involving `ErrorResponse()` (e.g. with `AuthMiddleware()` and `abortRateLimitError()`) actually correct?**
   _`ErrorResponse()` has 75 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 72 inferred relationships involving `SuccessResponse()` (e.g. with `.Detail()` and `.EntityLogs()`) actually correct?**
