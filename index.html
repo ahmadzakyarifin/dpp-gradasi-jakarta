@@ -339,6 +339,23 @@
             ],
             init() {
                 this.startAutoplay();
+                fetch('http://127.0.0.1:8080/api/v1/sliders')
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success && res.data && res.data.sliders && res.data.sliders.length > 0) {
+                        this.slides = res.data.sliders.map(s => ({
+                            title: s.title,
+                            subtitle: s.subtitle,
+                            tag: s.tag,
+                            isNew: s.is_new,
+                            date: s.event_date,
+                            location: s.location,
+                            img: s.image_url.startsWith('http') ? s.image_url : ('http://127.0.0.1:8080' + s.image_url),
+                            link: s.link_url || '#'
+                        }));
+                    }
+                })
+                .catch(() => {});
             },
             startAutoplay() {
                 this.progress = 0;
@@ -718,8 +735,7 @@
                             </div>
                             <span class="text-xs font-bold uppercase tracking-widest text-brand-200">Visi Utama</span>
                         </div>
-                        <p class="text-2xl sm:text-3xl font-heading font-bold leading-tight drop-shadow-md italic">
-                            "Menjadikan GRADASI sebagai organisasi penggerak literasi digital nasional, yang hadir untuk mengedukasi masyarakat dalam percepatan transformasi literasi digital."
+                        <p class="text-2xl sm:text-3xl font-heading font-bold leading-tight drop-shadow-md italic" x-text="'&quot;' + settings.about_vision + '&quot;'">
                         </p>
                     </div>
                 </div>
@@ -729,32 +745,31 @@
                     <img src="https://gradasi.org/uploads/img/logo/1737187847.png" alt="Logo" class="w-48 h-auto object-contain filter drop-shadow-lg transition-transform duration-500 hover:scale-110">
                 </div>
 
-                <!-- MISI 1 (Icon Box) -->
-                <div class="bg-white rounded-3xl p-8 border border-slate-100 shadow-md group hover:bg-blue-50 transition-colors duration-300" data-aos="fade-up" data-aos-delay="100">
-                    <div class="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-2xl mb-6 shadow-sm group-hover:scale-110 group-hover:-rotate-3 transition-transform">
-                        <i class="ph-fill ph-users-three"></i>
+                <!-- Dynamic Missions -->
+                <template x-for="(mission, index) in getMissions()" :key="index">
+                    <div class="bg-white rounded-3xl p-8 border border-slate-100 shadow-md group transition-colors duration-300"
+                         :class="{
+                            'hover:bg-blue-50': index % 3 === 0,
+                            'hover:bg-teal-50': index % 3 === 1,
+                            'hover:bg-amber-50': index % 3 === 2
+                         }"
+                         data-aos="fade-up" :data-aos-delay="(index + 1) * 100">
+                        <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl mb-6 shadow-sm group-hover:scale-110 transition-transform"
+                             :class="{
+                                'bg-blue-100 text-blue-600 group-hover:-rotate-3': index % 3 === 0,
+                                'bg-teal-100 text-teal-600 group-hover:rotate-3': index % 3 === 1,
+                                'bg-amber-100 text-amber-600 group-hover:-rotate-3': index % 3 === 2
+                             }">
+                            <i class="ph-fill" :class="{
+                                'ph-users-three': index % 3 === 0,
+                                'ph-chalkboard-teacher': index % 3 === 1,
+                                'ph-handshake': index % 3 === 2
+                            }"></i>
+                        </div>
+                        <h3 class="font-bold text-slate-900 mb-2 font-heading" x-text="'Misi ' + (index + 1)"></h3>
+                        <p class="text-slate-600 text-sm leading-relaxed" x-text="mission"></p>
                     </div>
-                    <h3 class="font-bold text-slate-900 mb-2 font-heading">Menghimpun Praktisi</h3>
-                    <p class="text-slate-600 text-sm leading-relaxed">Menghimpun praktisi, akademisi dan penggiat digital untuk berbagi pengetahuan dan keterampilan di bidang literasi digital.</p>
-                </div>
-
-                <!-- MISI 2 -->
-                <div class="bg-white rounded-3xl p-8 border border-slate-100 shadow-md group hover:bg-teal-50 transition-colors duration-300" data-aos="fade-up" data-aos-delay="200">
-                    <div class="w-14 h-14 bg-teal-100 text-teal-600 rounded-2xl flex items-center justify-center text-2xl mb-6 shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-transform">
-                        <i class="ph-fill ph-chalkboard-teacher"></i>
-                    </div>
-                    <h3 class="font-bold text-slate-900 mb-2 font-heading">Edukasi Masyarakat</h3>
-                    <p class="text-slate-600 text-sm leading-relaxed">Mengedukasi masyarakat melalui kegiatan literasi berbasis digital secara berkelanjutan dan merata.</p>
-                </div>
-
-                <!-- MISI 3 -->
-                <div class="bg-white rounded-3xl p-8 border border-slate-100 shadow-md group hover:bg-amber-50 transition-colors duration-300" data-aos="fade-up" data-aos-delay="300">
-                    <div class="w-14 h-14 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center text-2xl mb-6 shadow-sm group-hover:scale-110 group-hover:-rotate-3 transition-transform">
-                        <i class="ph-fill ph-handshake"></i>
-                    </div>
-                    <h3 class="font-bold text-slate-900 mb-2 font-heading">Fasilitasi SDM & Sinergi</h3>
-                    <p class="text-slate-600 text-sm leading-relaxed">Memfasilitasi pengembangan SDM via workshop/bimtek serta bersinergi dengan stakeholder menyusun konsep pendidikan digital.</p>
-                </div>
+                </template>v>
 
             </div>
         </div>
@@ -1293,12 +1308,33 @@
                     about_formation_date: '4 Februari 2019',
                     about_no_sk: 'AHU – 0000151.AH.01.07.2019',
                     about_vision: 'Mewujudkan masyarakat Indonesia yang cerdas dan berdaulat di era digital.',
-                    about_mission: '1. Membangun ekosistem literasi digital\n2. Meningkatkan kecakapan digital masyarakat',
+                    about_mission: '["Membangun ekosistem literasi digital", "Meningkatkan kecakapan digital masyarakat"]',
                     greeting_title: 'Tahun Baru 2026',
                     greeting_subtitle: 'Resolusi & Harapan',
                     greeting_date: '11 February 2026',
-                    greeting_content: 'Memasuki tahun 2026, GRADASI menetapkan pilar utama perjuangan: memastikan setiap masyarakat memiliki kecakapan digital (digital skills), serta mengembangkan program literasi yang berdampak nyata.',
+                    greeting_content: 'Memasuki tahun 2026, GRADASI menetapkan pilar utama perjuangan...',
                     greeting_image_url: 'https://gradasi.org/uploads/img/event-terkini/1767154211.jpg'
+                },
+                init() {
+                    fetch('http://127.0.0.1:8080/api/v1/settings')
+                    .then(r => r.json())
+                    .then(res => {
+                        if (res.success && res.data) {
+                            Object.assign(this.settings, res.data);
+                        }
+                    })
+                    .catch(() => {});
+                },
+                getMissions() {
+                    try {
+                        let missions = this.settings.about_mission;
+                        if (typeof missions === 'string') {
+                            return JSON.parse(missions);
+                        }
+                        return missions || [];
+                    } catch (e) {
+                        return (this.settings.about_mission || '').split('\n').map(s => s.trim()).filter(Boolean);
+                    }
                 }
             }));
         });
