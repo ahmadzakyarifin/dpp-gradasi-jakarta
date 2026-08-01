@@ -1,10 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import AuthShell from '../components/auth/AuthShell'
+import { useAuthStore } from '../store/useAuthStore'
 import CaptchaWidget from '../components/auth/CaptchaWidget'
 import { authContent } from '../content/authContent'
 import { authService } from '../services/authService'
-import { useAuthStore } from '../store/useAuthStore'
 import { validateEmail } from '../utils/validation'
 
 export default function Login() {
@@ -19,11 +19,28 @@ export default function Login() {
   const [loginForm, setLoginForm] = useState({ email: '', password: '', rememberMe: false })
   const [forgotEmail, setForgotEmail] = useState('')
   const [captchaToken, setCaptchaToken] = useState('')
+  const [forgotCaptchaToken, setForgotCaptchaToken] = useState('')
   const [captchaError, setCaptchaError] = useState(false)
+  const [forgotCaptchaError, setForgotCaptchaError] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [touched, setTouched] = useState({ email: false, password: false, forgotEmail: false })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [notice, setNotice] = useState({ type: '', message: '' })
+  const [cooldown, setCooldown] = useState(0)
+
+  // Reset form setiap kali halaman login dimuat (termasuk setelah logout)
+  useEffect(() => {
+    setLoginForm({ email: '', password: '', rememberMe: false })
+    setCaptchaToken('')
+    setCaptchaError(false)
+  }, [])
+
+  // Countdown saat rate limit (429) — tampilkan "coba lagi dalam X detik" & disable tombol
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const timer = setInterval(() => setCooldown((s) => s - 1), 1000)
+    return () => clearInterval(timer)
+  }, [cooldown > 0]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const content = view === 'forgot' ? authContent.forgot : authContent.login
 
@@ -46,12 +63,18 @@ export default function Login() {
     setView('forgot')
     setTouched({ email: false, password: false, forgotEmail: false })
     setNotice({ type: '', message: '' })
+    setCooldown(0)
+    setForgotCaptchaToken('')
+    setForgotCaptchaError(false)
   }
 
   function switchToLogin() {
     setView('login')
     setTouched({ email: false, password: false, forgotEmail: false })
     setNotice({ type: '', message: '' })
+    setCooldown(0)
+    setCaptchaToken('')
+    setCaptchaError(false)
   }
 
   async function handleLogin(event) {
@@ -62,7 +85,18 @@ export default function Login() {
 
     if (Object.keys(loginErrors).length > 0) return
 
-    if (captchaEnabled && !captchaToken) {
+    // Resolusi token CAPTCHA: state React (callback onVerify) atau fallback
+    // hidden input cf-turnstile-response yang ditulis langsung oleh Cloudflare.
+    let token = captchaToken
+    if (captchaEnabled && !token) {
+      // Tunggu widget selesai render (maks ~2 detik) — user yang klik submit
+      // terlalu cepat sebelum Turnstile selesai load akan tetap berhasil.
+      for (let i = 0; i < 10 && !token; i++) {
+        await new Promise((r) => setTimeout(r, 200))
+        token = document.querySelector('input[name="cf-turnstile-response"]')?.value || ''
+      }
+    }
+    if (captchaEnabled && !token) {
       setCaptchaError(true)
       setNotice({ type: 'error', message: 'Silakan selesaikan kode CAPTCHA dengan benar.' })
       return
@@ -72,11 +106,27 @@ export default function Login() {
     try {
       await login({
         ...loginForm,
-        captcha_token: captchaToken
+        captcha_token: token
       })
-      navigate(authContent.adminPath)
+      // Kalau user wajib ganti password default (login pertama), arahkan ke halaman profil
+      const user = useAuthStore.getState().user
+      if (user?.must_change_password) {
+        navigate('/admin/profile?force=1')
+      } else {
+        navigate(authContent.adminPath)
+      }
     } catch (error) {
-      setNotice({ type: 'error', message: error.message || 'Login gagal' })
+      if (error.retryAfter > 0) {
+        setCooldown(error.retryAfter)
+        setNotice({ type: 'error', message: 'Terlalu banyak percobaan. Silakan tunggu sebelum mencoba lagi.' })
+      } else {
+        setNotice({ type: 'error', message: error.message || 'Login gagal' })
+      }
+      // Reset inputan email & password (biar aman dari keylogger / salah input berulang)
+      setLoginForm((prev) => ({ ...prev, email: '', password: '' }))
+      setTouched({ email: false, password: false, forgotEmail: false })
+      setCaptchaToken('')
+      setCaptchaError(false)
     } finally {
       setIsSubmitting(false)
     }
@@ -86,17 +136,29 @@ export default function Login() {
     event.preventDefault()
     setTouched((prev) => ({ ...prev, forgotEmail: true }))
     setNotice({ type: '', message: '' })
+    setForgotCaptchaError(false)
     if (Object.keys(forgotErrors).length > 0) return
+
+    if (captchaEnabled && !forgotCaptchaToken) {
+      setForgotCaptchaError(true)
+      setNotice({ type: 'error', message: 'Silakan selesaikan kode CAPTCHA dengan benar.' })
+      return
+    }
 
     setIsSubmitting(true)
     try {
-      const response = await authService.forgotPassword(forgotEmail)
+      const response = await authService.forgotPassword(forgotEmail, forgotCaptchaToken)
       setNotice({
         type: 'success',
         message: response?.message || authContent.forgot.successMessage,
       })
     } catch (error) {
-      setNotice({ type: 'error', message: error.message || 'Gagal mengirim link reset password' })
+      if (error.retryAfter > 0) {
+        setCooldown(error.retryAfter)
+        setNotice({ type: 'error', message: 'Terlalu banyak permintaan. Silakan tunggu sebelum mencoba lagi.' })
+      } else {
+        setNotice({ type: 'error', message: error.message || 'Gagal mengirim link reset password' })
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -128,11 +190,16 @@ export default function Login() {
         {notice.message && (
           <div className={`mb-5 rounded-xl border px-4 py-3 text-sm font-medium ${notice.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
             {notice.message}
+            {cooldown > 0 && (
+              <span className="block mt-1 font-bold tabular-nums">
+                Coba lagi dalam {cooldown} detik.
+              </span>
+            )}
           </div>
         )}
 
         {view === 'login' ? (
-          <form onSubmit={handleLogin} className="w-full flex flex-col gap-5">
+          <form onSubmit={handleLogin} autoComplete="off" className="w-full flex flex-col gap-5">
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-1.5">{authContent.login.emailLabel}</label>
               <div className="relative group">
@@ -141,8 +208,12 @@ export default function Login() {
                 </div>
                 <input
                   type="email"
+                  autoComplete="off"
                   value={loginForm.email}
-                  onChange={(event) => setLoginForm((prev) => ({ ...prev, email: event.target.value }))}
+                  onChange={(event) => {
+                    setLoginForm((prev) => ({ ...prev, email: event.target.value }))
+                    setTouched((prev) => ({ ...prev, email: true }))
+                  }}
                   onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
                   placeholder={authContent.login.emailPlaceholder}
                   className={fieldClass(touched.email && loginErrors.email)}
@@ -164,8 +235,12 @@ export default function Login() {
                 </div>
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
                   value={loginForm.password}
-                  onChange={(event) => setLoginForm((prev) => ({ ...prev, password: event.target.value }))}
+                  onChange={(event) => {
+                    setLoginForm((prev) => ({ ...prev, password: event.target.value }))
+                    setTouched((prev) => ({ ...prev, password: true }))
+                  }}
                   onBlur={() => setTouched((prev) => ({ ...prev, password: true }))}
                   placeholder={authContent.login.passwordPlaceholder}
                   className={fieldClass(touched.password && loginErrors.password).replace('pr-4', 'pr-12')}
@@ -191,13 +266,13 @@ export default function Login() {
               Ingat saya
             </label>
 
-            <button type="submit" disabled={isSubmitting} className="group relative overflow-hidden bg-brand-600 hover:bg-brand-700 text-white w-full py-3.5 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 mt-2 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
-              <span>{isSubmitting ? authContent.login.submittingButton : authContent.login.submitButton}</span>
+            <button type="submit" disabled={isSubmitting || cooldown > 0} className="group relative overflow-hidden bg-brand-600 hover:bg-brand-700 text-white w-full py-3.5 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 mt-2 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+              <span>{isSubmitting ? authContent.login.submittingButton : cooldown > 0 ? `Tunggu ${cooldown}s` : authContent.login.submitButton}</span>
               <i className="ph-bold ph-arrow-right transition-transform duration-300 group-hover:translate-x-1" />
             </button>
           </form>
         ) : (
-          <form onSubmit={handleForgot} className="w-full flex flex-col gap-5">
+          <form onSubmit={handleForgot} autoComplete="off" className="w-full flex flex-col gap-5">
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-1.5">{authContent.forgot.emailLabel}</label>
               <div className="relative group">
@@ -206,8 +281,12 @@ export default function Login() {
                 </div>
                 <input
                   type="email"
+                  autoComplete="off"
                   value={forgotEmail}
-                  onChange={(event) => setForgotEmail(event.target.value)}
+                  onChange={(event) => {
+                    setForgotEmail(event.target.value)
+                    setTouched((prev) => ({ ...prev, forgotEmail: true }))
+                  }}
                   onBlur={() => setTouched((prev) => ({ ...prev, forgotEmail: true }))}
                   placeholder={authContent.forgot.emailPlaceholder}
                   className={fieldClass(touched.forgotEmail && forgotErrors.forgotEmail)}
@@ -216,8 +295,12 @@ export default function Login() {
               {touched.forgotEmail && forgotErrors.forgotEmail && <p className="text-red-500 text-[11px] font-bold mt-1.5 ml-1">{forgotErrors.forgotEmail}</p>}
             </div>
 
-            <button type="submit" disabled={isSubmitting} className="group relative overflow-hidden bg-brand-600 hover:bg-brand-700 text-white w-full py-3.5 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 mt-2 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
-              <span>{isSubmitting ? authContent.forgot.submittingButton : authContent.forgot.submitButton}</span>
+            {captchaEnabled && (
+              <CaptchaWidget onVerify={(token) => setForgotCaptchaToken(token)} hasError={forgotCaptchaError} />
+            )}
+
+            <button type="submit" disabled={isSubmitting || cooldown > 0} className="group relative overflow-hidden bg-brand-600 hover:bg-brand-700 text-white w-full py-3.5 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 mt-2 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+              <span>{isSubmitting ? authContent.forgot.submittingButton : cooldown > 0 ? `Tunggu ${cooldown}s` : authContent.forgot.submitButton}</span>
               <i className="ph-bold ph-paper-plane-right transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
             </button>
 

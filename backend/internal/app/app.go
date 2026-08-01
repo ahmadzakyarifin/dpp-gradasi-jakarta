@@ -94,6 +94,9 @@ func NewApp(database *gorm.DB, appConfig *config.Config, redisClient *redis.Clie
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
+	// Serve uploaded files (logo, image pengurus, foto user, dll)
+	routerEngine.Static("/uploads", "./public/uploads")
+
 	mailer := infrastructure.NewMailer(appConfig)
 
 	// Activity Log

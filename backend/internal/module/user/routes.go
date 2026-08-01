@@ -1,6 +1,8 @@
 package user
 
 import (
+	"time"
+
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/middleware"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/user/handler"
 	"github.com/gin-gonic/gin"
@@ -23,13 +25,19 @@ func RegisterRoutes(api *gin.RouterGroup, h *handler.UserHandler, jwtSecret stri
 	admin.Use(middleware.AuthMiddleware(jwtSecret))
 	admin.Use(middleware.RoleMiddleware("super_admin")) // Hanya role super_admin (ID 1) yang diizinkan
 	{
-		admin.GET("", h.GetAdmins)
-		admin.POST("", h.CreateAdmin)
+		admin.GET("", middleware.RateLimitRules("users-admin",
+			middleware.IP(30, 1*time.Minute), // 30 req/min per IP
+		), h.GetAdmins)
+		admin.POST("", middleware.RateLimitRules("users-admin-create",
+			middleware.IP(10, 1*time.Minute), // 10 req/min per IP (anti spam undangan)
+		), h.CreateAdmin)
 		admin.POST("/bulk-delete", h.BulkDeleteAdmin)
 		admin.POST("/bulk-restore", h.BulkRestoreAdmin)
 		admin.DELETE("/:id", h.DeleteAdmin)
 		admin.POST("/:id/restore", h.RestoreAdmin)
-		admin.POST("/:id/resend-activation", h.ResendActivation)
+		admin.POST("/:id/resend-activation", middleware.RateLimitRules("users-admin-resend",
+			middleware.IP(5, 1*time.Minute), // 5 req/min per IP (anti spam email)
+		), h.ResendActivation)
 		admin.PUT("/:id/status", h.SetAdminStatus)
 	}
 }

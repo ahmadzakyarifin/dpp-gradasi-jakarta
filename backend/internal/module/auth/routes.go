@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"time"
+
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/middleware"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/auth/handler"
 	"github.com/gin-gonic/gin"
@@ -17,13 +19,13 @@ func RegisterRoutes(
 	auth := api.Group("/auth")
 	{
 		auth.POST("/login", middleware.RateLimitRules("auth-login",
-			middleware.IPEmail(5, 1*60), // 5 req/min per IP+Email
+			middleware.IPEmail(5, 1*time.Minute), // 5 req/min per IP+Email
 		), authHandler.Login)
 
 		auth.POST("/refresh", authHandler.Refresh)
 
 		auth.POST("/forgot-password", middleware.RateLimitRules("auth-forgot",
-			middleware.IPEmail(3, 1*60), // 3 req/min per IP+Email
+			middleware.IPEmail(3, 1*time.Minute), // 3 req/min per IP+Email
 		), authHandler.ForgotPassword)
 
 		auth.GET("/validate-reset-token", authHandler.ValidateResetToken)

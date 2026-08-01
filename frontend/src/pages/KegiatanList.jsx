@@ -59,7 +59,7 @@ export default function KegiatanList() {
       .then(res => {
         if (res.success && res.data) {
           const list = Array.isArray(res.data) ? res.data : (res.data.kegiatan || [])
-          if (list.length > 0) setItems(list)
+          setItems(list)
         }
       })
       .catch(() => {})
@@ -84,6 +84,8 @@ export default function KegiatanList() {
 
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage) || 1
   const paginatedItems = filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+  // Panah < > hanya tampil saat minimal 3 data & lebih dari 1 halaman
+  const showArrows = totalPages > 1 && filteredItems.length >= 3
 
   const categories = [...new Set(items.map(item => item.category))].filter(Boolean)
 
@@ -200,6 +202,7 @@ export default function KegiatanList() {
               {/* PAGINATION COMPONENT */}
               <div className="mt-16 flex justify-center">
                 <nav className="flex items-center gap-2">
+                  {showArrows && (
                   <button 
                     disabled={currentPage <= 1}
                     onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
@@ -207,6 +210,7 @@ export default function KegiatanList() {
                   >
                     <i className="ph-bold ph-caret-left" />
                   </button>
+                  )}
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                     <button 
                       key={page} 
@@ -216,6 +220,7 @@ export default function KegiatanList() {
                       {page}
                     </button>
                   ))}
+                  {showArrows && (
                   <button 
                     disabled={currentPage >= totalPages}
                     onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
@@ -223,6 +228,7 @@ export default function KegiatanList() {
                   >
                     <i className="ph-bold ph-caret-right" />
                   </button>
+                  )}
                 </nav>
               </div>
             </>

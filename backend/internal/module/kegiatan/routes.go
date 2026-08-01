@@ -12,6 +12,7 @@ func RegisterRoutes(api *gin.RouterGroup, h *handler.KegiatanHandler, jwtSecret 
 	{
 		// Publik
 		kgt.GET("", h.List)
+		kgt.GET("/categories", h.GetCategories)
 		kgt.GET("/:slug", h.GetBySlug)
 	}
 

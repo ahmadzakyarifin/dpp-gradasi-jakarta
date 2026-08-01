@@ -45,14 +45,6 @@ func (m *Mailer) Send(to, subject, body string) error {
 	return nil
 }
 
-func (m *Mailer) SendAsync(to, subject, body string) {
-	go func() {
-		if err := m.Send(to, subject, body); err != nil {
-			log.Printf("gagal kirim email ke %s: %v", to, err)
-		}
-	}()
-}
-
 func (m *Mailer) DSN() string {
 	return m.fromAddr + " (via " + m.dialer.Host + ":" + strconv.Itoa(m.dialer.Port) + ")"
 }

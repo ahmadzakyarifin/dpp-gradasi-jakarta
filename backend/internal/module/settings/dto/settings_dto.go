@@ -1,6 +1,7 @@
 package dto
 
 type SettingsResponse struct {
+	ID                 uint     `json:"id"`
 	SiteName           string   `json:"site_name"`
 	Tagline            string   `json:"tagline"`
 	LogoURL            string   `json:"logo_url"`
@@ -25,4 +26,5 @@ type SettingsResponse struct {
 	GreetingImageURL   string   `json:"greeting_image_url"`
 	CreatedAt          string   `json:"created_at"`
 	UpdatedAt          string   `json:"updated_at,omitempty"`
+	UpdatedBy          *uint    `json:"updated_by,omitempty"`
 }

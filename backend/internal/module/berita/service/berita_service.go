@@ -22,6 +22,7 @@ type BeritaService interface {
 	Restore(id uint) error
 	BulkDelete(ids []uint) error
 	BulkRestore(ids []uint) error
+	GetCategories() ([]string, error)
 }
 
 type beritaService struct {
@@ -147,7 +148,7 @@ func (s *beritaService) Create(req *dto.BeritaRequest, authorID uint) (*dto.Beri
 	// Save tags
 	if req.Tags != "" {
 		tags := parseTags(req.Tags)
-		s.repo.SaveTags(b.ID, tags)
+		_ = s.repo.SaveTags(b.ID, tags)
 	}
 
 	// Reload with tags
@@ -192,7 +193,7 @@ func (s *beritaService) Update(id uint, req *dto.BeritaRequest) (*dto.BeritaDeta
 	// Save tags
 	if req.Tags != "" {
 		tags := parseTags(req.Tags)
-		s.repo.SaveTags(b.ID, tags)
+		_ = s.repo.SaveTags(b.ID, tags)
 	}
 
 	b, _ = s.repo.FindByID(b.ID)
@@ -304,8 +305,7 @@ func formatDate(v string) string {
 	if err == nil {
 		return t.Format("2006-01-02")
 	}
-	t, err = time.Parse("2006-01-02", v)
-	if err == nil {
+	if _, err = time.Parse("2006-01-02", v); err == nil {
 		return v
 	}
 	// Return as-is if can't parse (e.g. already date string)
@@ -313,4 +313,9 @@ func formatDate(v string) string {
 		return v[:10]
 	}
 	return v
+}
+
+// GetCategories mengembalikan daftar kategori unik untuk dropdown admin.
+func (s *beritaService) GetCategories() ([]string, error) {
+	return s.repo.GetCategories()
 }

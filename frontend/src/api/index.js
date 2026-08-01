@@ -27,6 +27,8 @@ export async function apiRequest(path, options = {}) {
     error.status = response.status
     error.code = data?.code
     error.data = data
+    // retry_after (detik) dari response rate limit — dipakai UI untuk countdown
+    error.retryAfter = data?.retry_after || Number(response.headers.get('Retry-After')) || 0
     throw error
   }
 

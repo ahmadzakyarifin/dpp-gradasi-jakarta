@@ -1,27 +1,26 @@
 package middleware
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/helper"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
-	"github.com/ulule/limiter/v3"
-	redisstore "github.com/ulule/limiter/v3/drivers/store/redis"
 )
 
 type RateLimiter struct {
-	store limiter.Store
+	limiter *fixedWindowLimiter
 }
 
 type preparedRule struct {
-	rule    Rule
-	limiter *limiter.Limiter
+	rule Rule
 }
 
 type requestInfo struct {
@@ -36,18 +35,8 @@ type requestInfo struct {
 var defaultRateLimiter *RateLimiter
 
 func NewRedisRateLimiter(redisClient *redis.Client) (*RateLimiter, error) {
-	store, err := redisstore.NewStoreWithOptions(
-		redisClient,
-		limiter.StoreOptions{
-			Prefix: "dppgradasi_rate_limit",
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
 	return &RateLimiter{
-		store: store,
+		limiter: newFixedWindowLimiter(redisClient),
 	}, nil
 }
 
@@ -62,7 +51,8 @@ func RateLimitRules(scope string, rules ...Rule) gin.HandlerFunc {
 		panic("rate limiter belum diinisialisasi")
 	}
 
-	return defaultRateLimiter.Use(scope, rules...)
+	handler := defaultRateLimiter.Use(scope, rules...)
+	return handler
 }
 
 func RateLimiterMiddleware(scope string, rules ...Rule) gin.HandlerFunc {
@@ -97,26 +87,19 @@ func (r *RateLimiter) Use(scope string, rules ...Rule) gin.HandlerFunc {
 				continue
 			}
 
-			info, err := item.limiter.Get(
-				c.Request.Context(),
+			blocked, retryAfter, _, err := r.limiter.check(
+				c,
 				key,
+				item.rule.Limit,
+				item.rule.Period,
 			)
 			if err != nil {
 				abortRateLimitError(c)
 				return
 			}
 
-			writeRateLimitHeaders(
-				c,
-				item.rule.Name,
-				info,
-			)
-
-			if info.Reached {
-				abortTooManyRequests(
-					c,
-					info.Reset,
-				)
+			if blocked {
+				abortTooManyRequests(c, time.Now().Add(time.Duration(retryAfter)*time.Second).Unix())
 				return
 			}
 		}
@@ -129,18 +112,9 @@ func (r *RateLimiter) prepareRules(rules []Rule) []preparedRule {
 	prepared := make([]preparedRule, 0, len(rules))
 
 	for _, rule := range rules {
-
 		rule = normalizeRule(rule)
-
 		prepared = append(prepared, preparedRule{
 			rule: rule,
-			limiter: limiter.New(
-				r.store,
-				limiter.Rate{
-					Period: rule.Period,
-					Limit:  rule.Limit,
-				},
-			),
 		})
 	}
 
@@ -253,13 +227,17 @@ func emailFromBody(
 		return ""
 	}
 
+	// Baca body lalu RESTORE agar handler tetap bisa bind normal.
+	raw, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		return ""
+	}
+	c.Request.Body = io.NopCloser(bytes.NewReader(raw))
+
 	var body struct {
 		Email string `json:"email"`
 	}
-
-	defer helper.RestoreBody(c)
-
-	if err := c.ShouldBindBodyWithJSON(&body); err != nil {
+	if err := json.Unmarshal(raw, &body); err != nil {
 		return ""
 	}
 

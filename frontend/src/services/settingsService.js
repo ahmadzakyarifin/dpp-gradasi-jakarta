@@ -15,4 +15,13 @@ export const settingsService = {
       body: JSON.stringify(payload),
     })
   },
+
+  uploadLogo(file) {
+    const formData = new FormData()
+    formData.append('logo', file)
+    return apiRequest('/admin/settings/logo', {
+      method: 'POST',
+      body: formData,
+    })
+  },
 }

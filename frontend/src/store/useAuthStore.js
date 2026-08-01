@@ -2,13 +2,8 @@ import { create } from 'zustand'
 import { authService } from '../services/authService'
 
 export const useAuthStore = create((set, get) => ({
-  token: localStorage.getItem('access_token') || 'demo_token_123',
-  user: {
-    id: 1,
-    name: 'Super Admin',
-    email: 'admin@gradasi.org',
-    role: 'Super Admin'
-  },
+  token: localStorage.getItem('access_token') || null,
+  user: null,
   loading: false,
   error: null,
 
@@ -23,17 +18,23 @@ export const useAuthStore = create((set, get) => ({
 
   setUser: (user) => set({ user }),
 
-  login: async ({ email, password, rememberMe = false }) => {
+  login: async ({ email, password, rememberMe = false, captcha_token = '' }) => {
     set({ loading: true, error: null })
     try {
       const response = await authService.login({
         email,
         password,
         remember_me: rememberMe,
+        captcha_token,
       })
-      const token = response?.data?.access_token || response?.data?.token || response?.access_token || 'demo_token_123'
-      const user = response?.data?.user || response?.user || { id: 1, name: 'Super Admin', email, role: 'Super Admin' }
-      
+      const token = response?.data?.access_token || response?.data?.token || response?.access_token
+      const user = response?.data?.user || response?.user
+
+      if (!token) {
+        set({ loading: false, error: 'Login gagal: token tidak ditemukan.' })
+        throw new Error('Token tidak ditemukan pada response login.')
+      }
+
       localStorage.setItem('access_token', token)
       set({
         token,
@@ -42,17 +43,9 @@ export const useAuthStore = create((set, get) => ({
         error: null,
       })
       return response
-    } catch {
-      // Fallback for valid credentials if backend connection is offline or network differs
-      if (email === 'admin@gradasi.org' && password === 'password123') {
-        const token = 'demo_token_123'
-        const user = { id: 1, name: 'Super Admin', email: 'admin@gradasi.org', role: 'Super Admin' }
-        localStorage.setItem('access_token', token)
-        set({ token, user, loading: false, error: null })
-        return { success: true, data: { access_token: token, user } }
-      }
-      set({ loading: false, error: 'Email atau password salah.' })
-      throw new Error('Email atau password salah. Gunakan admin@gradasi.org / password123')
+    } catch (err) {
+      set({ loading: false, error: err?.message || 'Email atau password salah.' })
+      throw err // re-throw error asli agar retryAfter/code ikut terbawa ke UI
     }
   },
 

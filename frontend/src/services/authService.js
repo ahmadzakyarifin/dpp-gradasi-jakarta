@@ -8,10 +8,10 @@ export const authService = {
     })
   },
 
-  async forgotPassword(email) {
+  async forgotPassword(email, captchaToken = '') {
     return apiRequest('/auth/forgot-password', {
       method: 'POST',
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, ...(captchaToken ? { captcha_token: captchaToken } : {}) }),
     })
   },
 

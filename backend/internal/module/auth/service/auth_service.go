@@ -103,10 +103,11 @@ func (s *authService) Login(req *dto.LoginRequest) (*dto.AuthResponse, string, i
 	resp := &dto.AuthResponse{
 		AccessToken: accessToken,
 		User: dto.AuthUserResponse{
-			ID:     user.ID,
-			Name:   user.Name,
-			Email:  user.Email,
-			Status: user.Status,
+			ID:                 user.ID,
+			Name:               user.Name,
+			Email:              user.Email,
+			Status:             user.Status,
+			MustChangePassword: user.MustChangePassword,
 			Role: dto.RoleInfo{
 				ID:          user.Role.ID,
 				Name:        user.Role.Name,
@@ -198,10 +199,25 @@ func (s *authService) ForgotPassword(req *dto.ForgotPasswordRequest, appURL stri
 	if user.Status == "inactive" {
 		subject := "Pemberitahuan Akun DPP GRADASI"
 		body := s.buildInactiveAccountEmail(user.Name)
-		s.mail.SendAsync(req.Email, subject, body)
+		if err := s.mail.Send(req.Email, subject, body); err != nil {
+			return helper.NewServiceError("EMAIL_SEND_FAILED", "Gagal mengirim email. Silakan coba lagi.", err)
+		}
 
 		if s.cfg.App.Env == "development" {
 			log.Printf("[DEV] Email akun nonaktif akan dikirim ke %s", req.Email)
+		}
+		return nil
+	}
+
+	if user.Status == "pending_activation" {
+		subject := "Pemberitahuan Akun DPP GRADASI"
+		body := s.buildPendingAccountEmail(user.Name)
+		if err := s.mail.Send(req.Email, subject, body); err != nil {
+			return helper.NewServiceError("EMAIL_SEND_FAILED", "Gagal mengirim email. Silakan coba lagi.", err)
+		}
+
+		if s.cfg.App.Env == "development" {
+			log.Printf("[DEV] Email akun belum aktif akan dikirim ke %s", req.Email)
 		}
 		return nil
 	}
@@ -228,7 +244,9 @@ func (s *authService) ForgotPassword(req *dto.ForgotPasswordRequest, appURL stri
 	subject := "Reset Password - DPP GRADASI"
 	body := s.buildResetPasswordEmail(user.Name, resetURL)
 
-	s.mail.SendAsync(req.Email, subject, body)
+	if err := s.mail.Send(req.Email, subject, body); err != nil {
+		return helper.NewServiceError("EMAIL_SEND_FAILED", "Gagal mengirim email. Silakan coba lagi.", err)
+	}
 
 	if s.cfg.App.Env == "development" {
 		log.Printf("[DEV] Forgot password link untuk %s: %s", req.Email, resetURL)
@@ -291,7 +309,9 @@ func (s *authService) ActivateAccount(req *dto.ActivateAccountRequest) error {
 	key := fmt.Sprintf("activation_token:%s", req.Token)
 	val, err := s.redis.Get(context.Background(), key).Result()
 	if err == nil && val != "" {
-		fmt.Sscanf(val, "%d", &userID)
+		if _, scanErr := fmt.Sscanf(val, "%d", &userID); scanErr != nil {
+			return helper.NewServiceError("AUTH_TOKEN_INVALID_OR_EXPIRED", "Token aktivasi tidak valid atau telah kedaluwarsa.", nil)
+		}
 	}
 
 	if userID == 0 {
@@ -353,11 +373,12 @@ func (s *authService) GetProfile(userID uint) (*dto.AuthUserResponse, error) {
 	}
 
 	return &dto.AuthUserResponse{
-		ID:        user.ID,
-		Name:      user.Name,
-		Email:     user.Email,
-		PhotoPath: user.PhotoPath,
-		Status:    user.Status,
+		ID:                 user.ID,
+		Name:               user.Name,
+		Email:              user.Email,
+		PhotoPath:          user.PhotoPath,
+		Status:             user.Status,
+		MustChangePassword: user.MustChangePassword,
 		Role: dto.RoleInfo{
 			ID:          user.Role.ID,
 			Name:        user.Role.Name,
@@ -392,6 +413,20 @@ func (s *authService) buildInactiveAccountEmail(name string) string {
 <h2 style="color: #1e3a8a;">Halo ` + name + `,</h2>
 <p style="color: #475569; line-height: 1.6;">Anda baru saja melakukan permintaan untuk mereset password. Namun, kami mendeteksi bahwa akun Anda saat ini berstatus <strong>Nonaktif</strong>.</p>
 <p style="color: #475569; line-height: 1.6;">Selama akun dalam status nonaktif, proses reset password tidak dapat dilanjutkan. Silakan hubungi <strong>Administrator Sistem</strong> atau rekan Anda yang memiliki akses Admin untuk mengaktifkan kembali akun Anda.</p>
+<p style="color: #94a3b8; font-size: 13px; margin-top: 32px;">Jika Anda tidak merasa melakukan permintaan ini, silakan abaikan email ini.</p>
+<hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
+<p style="color: #94a3b8; font-size: 12px;">DPP GRADASI — Generasi Digital Indonesia</p>
+</div></body></html>`
+}
+
+func (s *authService) buildPendingAccountEmail(name string) string {
+	return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"></head>
+<body style="font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px;">
+<div style="max-width: 600px; margin: auto; background: white; border-radius: 12px; padding: 40px; border: 1px solid #e2e8f0;">
+<h2 style="color: #1e3a8a;">Halo ` + name + `,</h2>
+<p style="color: #475569; line-height: 1.6;">Anda baru saja melakukan permintaan untuk mereset password. Namun, kami mendeteksi bahwa akun Anda belum <strong>diaktifkan</strong>.</p>
+<p style="color: #475569; line-height: 1.6;">Sebelum dapat menggunakan fitur reset password, akun Anda harus diaktifkan terlebih dahulu. Silakan hubungi <strong>Administrator Sistem</strong> atau rekan Anda yang memiliki akses Admin untuk mengirimkan kredensial aktivasi.</p>
 <p style="color: #94a3b8; font-size: 13px; margin-top: 32px;">Jika Anda tidak merasa melakukan permintaan ini, silakan abaikan email ini.</p>
 <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
 <p style="color: #94a3b8; font-size: 12px;">DPP GRADASI — Generasi Digital Indonesia</p>

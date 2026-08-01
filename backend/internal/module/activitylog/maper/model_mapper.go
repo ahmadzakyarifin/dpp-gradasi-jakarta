@@ -77,11 +77,6 @@ func EntityToModel(e *entity.ActivityLog) *model.ActivityLog {
 		return nil
 	}
 
-	metadata := e.Metadata
-	if metadata == nil {
-		metadata = map[string]any{}
-	}
-
 	m := &model.ActivityLog{
 		ID:          e.ID,
 		ActorID:     e.ActorID,

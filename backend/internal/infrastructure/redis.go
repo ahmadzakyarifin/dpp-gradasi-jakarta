@@ -2,8 +2,10 @@ package infrastructure
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/config"
@@ -13,7 +15,7 @@ import (
 func ConnectRedis(cfg *config.Config) (*redis.Client, error) {
 	addr := fmt.Sprintf("%s:%s", cfg.Redis.Host, cfg.Redis.Port)
 
-	client := redis.NewClient(&redis.Options{
+	options := &redis.Options{
 		Addr:            addr,
 		Username:        cfg.Redis.Username,
 		Password:        cfg.Redis.Pass,
@@ -27,7 +29,16 @@ func ConnectRedis(cfg *config.Config) (*redis.Client, error) {
 		PoolTimeout:     time.Duration(cfg.Redis.PoolTimeoutSecs) * time.Second,
 		ConnMaxIdleTime: time.Duration(cfg.Redis.ConnMaxIdleTimeMins) * time.Minute,
 		ConnMaxLifetime: time.Duration(cfg.Redis.ConnMaxLifetimeMins) * time.Minute,
-	})
+	}
+
+	// Redis managed (Upstash, Redis Cloud, dll) wajib TLS. Auto-detect:
+	// host non-lokal => aktifkan TLS. Host lokal (127.0.0.1/localhost) => plain.
+	host := strings.ToLower(cfg.Redis.Host)
+	if host != "127.0.0.1" && host != "localhost" && !strings.HasSuffix(host, ".local") {
+		options.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12}
+	}
+
+	client := redis.NewClient(options)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

@@ -35,10 +35,21 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// Captcha Verification if Enabled
+	// Captcha Verification if Enabled (Cloudflare Turnstile)
 	if h.cfg != nil && h.cfg.Security.CaptchaEnabled {
 		if req.CaptchaToken == "" {
 			helper.ErrorResponse(c, http.StatusBadRequest, "AUTH_CAPTCHA_REQUIRED", "Silakan selesaikan verifikasi CAPTCHA.", nil)
+			return
+		}
+		ok, err := helper.VerifyTurnstile(
+			c.Request.Context(),
+			h.cfg.Security.TurnstileSecretKey,
+			req.CaptchaToken,
+			c.ClientIP(),
+			h.cfg.Security.TurnstileVerifyURL,
+		)
+		if err != nil || !ok {
+			helper.ErrorResponse(c, http.StatusBadRequest, "AUTH_CAPTCHA_INVALID", "Verifikasi CAPTCHA gagal. Silakan coba lagi.", nil)
 			return
 		}
 	}
@@ -166,6 +177,25 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 			{Field: "email", Tag: "required", Message: "Email wajib diisi."},
 		})
 		return
+	}
+
+	// Captcha Verification if Enabled (Cloudflare Turnstile)
+	if h.cfg != nil && h.cfg.Security.CaptchaEnabled {
+		if req.CaptchaToken == "" {
+			helper.ErrorResponse(c, http.StatusBadRequest, "AUTH_CAPTCHA_REQUIRED", "Silakan selesaikan verifikasi CAPTCHA.", nil)
+			return
+		}
+		ok, err := helper.VerifyTurnstile(
+			c.Request.Context(),
+			h.cfg.Security.TurnstileSecretKey,
+			req.CaptchaToken,
+			c.ClientIP(),
+			h.cfg.Security.TurnstileVerifyURL,
+		)
+		if err != nil || !ok {
+			helper.ErrorResponse(c, http.StatusBadRequest, "AUTH_CAPTCHA_INVALID", "Verifikasi CAPTCHA gagal. Silakan coba lagi.", nil)
+			return
+		}
 	}
 
 	if err := h.svc.ForgotPassword(&req, h.cfg.App.URL); err != nil {
@@ -372,6 +402,8 @@ func (h *AuthHandler) errorCodeToHTTP(code string) int {
 	case "AUTH_INVALID_CREDENTIALS":
 		return http.StatusUnauthorized
 	case "AUTH_ACCOUNT_INACTIVE":
+		return http.StatusForbidden
+	case "AUTH_ACCOUNT_PENDING":
 		return http.StatusForbidden
 	case "AUTH_SESSION_EXPIRED":
 		return http.StatusUnauthorized

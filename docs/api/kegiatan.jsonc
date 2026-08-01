@@ -72,6 +72,40 @@
   },
 
   // ======================================================
+  // LIST KATEGORI KEGIATAN (Public — distinct categories)
+  // ======================================================
+  "list_categories": {
+    "method": "GET",
+    "endpoint": "/api/v1/kegiatan/categories",
+    "consumes": null,
+    "produces": "application/json",
+    "authentication": {
+      "type": "None"
+    },
+    "headers": {
+      "Accept": "application/json"
+    },
+    "parameters": {
+      "query": {}
+    },
+    "notes": [
+      "Mengembalikan daftar kategori unik (non-kosong) dari data kegiatan aktif (deleted_at IS NULL).",
+      "Dipakai FE untuk dropdown filter kategori & opsi '+ Buat Kategori Baru' di admin."
+    ],
+    "responses": {
+      "200": {
+        "description": "Berhasil mengambil daftar kategori",
+        "body": {
+          "success": true,
+          "code": "KEGIATAN_CATEGORIES",
+          "message": "Daftar kategori kegiatan berhasil diambil.",
+          "data": ["Jawa Timur", "Kegiatan Wilayah", "Lampung", "Nasional", "Seminar", "Workshop"]
+        }
+      }
+    }
+  },
+
+  // ======================================================
   // DETAIL KEGIATAN (Public — by slug)
   // ======================================================
   "detail_public": {

@@ -24,7 +24,6 @@ export default function UsersAdmin() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    phone: '',
     role_id: '2' // 2: Admin
   })
 
@@ -116,7 +115,7 @@ export default function UsersAdmin() {
 
   // Row Selection logic
   const selectableUsers = users.filter(
-    item => item.role !== 'Super Admin' && item.status !== 'pending_activation'
+    item => item.role !== 'super_admin' && item.status !== 'pending_activation'
   )
 
   const isAllSelected = selectableUsers.length > 0 && selectedIds.length === selectableUsers.length
@@ -141,8 +140,8 @@ export default function UsersAdmin() {
     try {
       await userService.create(formData)
       setIsFormOpen(false)
-      setFormData({ name: '', email: '', phone: '', role_id: '2' })
-      showToast('Undangan berhasil dikirim ke email admin baru!', 'success')
+      setFormData({ name: '', email: '', role_id: '2' })
+      showToast('Admin berhasil dibuat. Kredensial login dikirim ke email admin!', 'success')
       fetchUsers()
     } catch (err) {
       showToast(err.message || 'Gagal mengirim undangan admin baru.', 'error')
@@ -380,7 +379,7 @@ export default function UsersAdmin() {
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-sm text-gray-700">
                   {users.map((item) => {
-                    const isProtected = item.role === 'Super Admin' || item.role_id === 1
+                    const isProtected = item.role === 'super_admin' || item.role_id === 1
                     const isPending = item.status === 'pending_activation'
                     const canSelect = !isProtected && !isPending
 
@@ -415,8 +414,13 @@ export default function UsersAdmin() {
                             }`}
                           >
                             <i className={`ph ${isProtected ? 'ph-crown' : 'ph-shield-check'}`} />
-                            <span>{item.role || 'Admin'}</span>
+                            <span>{item.role === 'super_admin' ? 'Super Admin' : (item.role || 'Admin')}</span>
                           </span>
+                          {item.must_change_password && !isProtected && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 ml-2 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[11px] font-medium">
+                              <i className="ph ph-lock-key" /> Ganti pwd
+                            </span>
+                          )}
                         </td>
                         <td className="p-4">
                           <span
@@ -576,7 +580,7 @@ export default function UsersAdmin() {
                       required
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm"
                     />
-                    <p className="text-xs text-gray-500 mt-1">Link verifikasi dan password sementara akan dikirimkan ke email ini.</p>
+                    <p className="text-xs text-gray-500 mt-1">Kredensial login (email & password default) akan dikirim ke email ini.</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Role Akses *</label>
@@ -608,7 +612,7 @@ export default function UsersAdmin() {
                   form="createAdminForm"
                   className="px-4 py-2 bg-brand-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-brand-700 flex items-center gap-2 transition"
                 >
-                  <i className="ph ph-paper-plane-right" /> Kirim Undangan
+                  <i className="ph ph-paper-plane-right" /> Buat & Kirim Kredensial
                 </button>
               </div>
             </div>

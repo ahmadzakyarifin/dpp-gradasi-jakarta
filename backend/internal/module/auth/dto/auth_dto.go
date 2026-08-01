@@ -18,7 +18,8 @@ type LoginRequest struct {
 
 // ForgotPasswordRequest untuk lupa password
 type ForgotPasswordRequest struct {
-	Email string `json:"email" binding:"required,email"`
+	Email        string `json:"email" binding:"required,email"`
+	CaptchaToken string `json:"captcha_token,omitempty"`
 }
 
 // ResetPasswordRequest untuk reset password
@@ -49,13 +50,14 @@ type RefreshTokenResponse struct {
 
 // AuthUserResponse menampilkan data user
 type AuthUserResponse struct {
-	ID        uint     `json:"id"`
-	Name      string   `json:"name"`
-	Email     string   `json:"email"`
-	PhotoPath string   `json:"photo_path,omitempty"`
-	Status    string   `json:"status"`
-	Role      RoleInfo `json:"role"`
-	CreatedAt string   `json:"created_at"`
+	ID                 uint     `json:"id"`
+	Name               string   `json:"name"`
+	Email              string   `json:"email"`
+	PhotoPath          string   `json:"photo_path,omitempty"`
+	Status             string   `json:"status"`
+	MustChangePassword bool     `json:"must_change_password"`
+	Role               RoleInfo `json:"role"`
+	CreatedAt          string   `json:"created_at"`
 }
 
 // RoleInfo menampilkan role

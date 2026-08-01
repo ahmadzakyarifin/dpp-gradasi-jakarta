@@ -18,6 +18,10 @@ export const beritaService = {
     return apiRequest(`/berita/${encodeURIComponent(slug)}`)
   },
 
+  getCategories() {
+    return apiRequest('/berita/categories')
+  },
+
   listAdmin(params) {
     return apiRequest(`/berita/admin${toQuery(params)}`)
   },

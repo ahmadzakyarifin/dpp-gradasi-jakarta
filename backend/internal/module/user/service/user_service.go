@@ -8,8 +8,10 @@ import (
 	"io"
 	"math/big"
 	"mime/multipart"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/helper"
@@ -28,7 +30,7 @@ type UserService interface {
 	ChangePassword(userID uint, req *dto.ChangePasswordRequest) error
 
 	// Admin Management
-	GetAdmins() ([]dto.UserResponse, error)
+	GetAdmins(q dto.ListUsersQuery) (*dto.UserListResponse, error)
 	CreateAdmin(req *dto.AdminCreateRequest, appURL string) (*dto.UserResponse, error)
 	ResendActivation(adminID uint, targetID uint, appURL string) error
 	SetAdminStatus(adminID uint, targetID uint, req *dto.AdminStatusRequest) error
@@ -47,7 +49,7 @@ type userService struct {
 
 func NewUserService(repo repository.UserRepo, redis *redis.Client, mailer *infrastructure.Mailer) UserService {
 	uploadPath := "public/uploads/users"
-	os.MkdirAll(uploadPath, 0755)
+	_ = os.MkdirAll(uploadPath, 0755)
 	return &userService{
 		repo:       repo,
 		redis:      redis,
@@ -102,11 +104,13 @@ func (s *userService) UpdateProfile(userID uint, req *dto.ProfileUpdateRequest) 
 		s.redis.Set(context.Background(), key, jsonData, time.Hour)
 
 		// Send Email
-		go s.mailer.Send(
-			req.Email,
-			"Verifikasi Perubahan Email",
-			fmt.Sprintf("Kode verifikasi Anda adalah: <b>%s</b>. Kode ini berlaku selama 1 jam.", token),
-		)
+		go func() {
+			_ = s.mailer.Send(
+				req.Email,
+				"Verifikasi Perubahan Email",
+				fmt.Sprintf("Kode verifikasi Anda adalah: <b>%s</b>. Kode ini berlaku selama 1 jam.", token),
+			)
+		}()
 
 		message = "Profil berhasil diperbarui. Karena Anda mengubah email, silakan periksa email baru Anda untuk kode verifikasi."
 	} else {
@@ -129,7 +133,9 @@ func (s *userService) VerifyEmail(userID uint, req *dto.VerifyEmailRequest) erro
 	}
 
 	var data map[string]string
-	json.Unmarshal([]byte(val), &data)
+	if err := json.Unmarshal([]byte(val), &data); err != nil {
+		return helper.NewServiceError("INVALID_TOKEN", "Kode verifikasi tidak valid", err)
+	}
 
 	if data["token"] != req.Token {
 		return helper.NewServiceError("INVALID_TOKEN", "Kode verifikasi salah", nil)
@@ -171,23 +177,42 @@ func (s *userService) ChangePassword(userID uint, req *dto.ChangePasswordRequest
 	}
 
 	user.Password = string(hashed)
+	user.MustChangePassword = false // Password sudah diganti, flag reset
 	if err := s.repo.Update(user); err != nil {
 		return helper.NewServiceError("SERVER_ERROR", "Gagal menyimpan password baru", err)
 	}
 	return nil
 }
 
-func (s *userService) GetAdmins() ([]dto.UserResponse, error) {
-	users, err := s.repo.FindAllAdmins()
+func (s *userService) GetAdmins(q dto.ListUsersQuery) (*dto.UserListResponse, error) {
+	users, total, err := s.repo.FindAllAdmins(q)
 	if err != nil {
 		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil data admin", err)
 	}
 
-	var res []dto.UserResponse
-	for _, u := range users {
-		res = append(res, toResponse(u))
+	page, limit := q.Page, q.Limit
+	if page < 1 {
+		page = 1
 	}
-	return res, nil
+	if limit < 1 {
+		limit = 10
+	}
+
+	items := make([]dto.UserResponse, 0, len(users))
+	for _, u := range users {
+		items = append(items, toResponse(u))
+	}
+
+	totalPages := int((total + int64(limit) - 1) / int64(limit))
+	return &dto.UserListResponse{
+		Items: items,
+		Pagination: dto.Pagination{
+			Page:       page,
+			Limit:      limit,
+			Total:      total,
+			TotalPages: totalPages,
+		},
+	}, nil
 }
 
 func (s *userService) CreateAdmin(req *dto.AdminCreateRequest, appURL string) (*dto.UserResponse, error) {
@@ -196,57 +221,59 @@ func (s *userService) CreateAdmin(req *dto.AdminCreateRequest, appURL string) (*
 		return nil, helper.NewServiceError("EMAIL_TAKEN", "Email sudah terdaftar", nil)
 	}
 
+	// Generate password default (acak 10 karakter)
+	defaultPassword, err := generateRandomPassword(10)
+	if err != nil {
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal membuat password default", err)
+	}
+
+	hashed, err := bcrypt.GenerateFromPassword([]byte(defaultPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengenkripsi password", err)
+	}
+
 	user := &model.User{
-		Name:            req.Name,
-		Email:           req.Email,
-		RoleID:          req.RoleID,
-		Password:        "", // Belum ada password sampai aktivasi
-		Status:          "pending_activation",
-		EmailVerifiedAt: nil,
+		Name:               req.Name,
+		Email:              req.Email,
+		RoleID:             req.RoleID,
+		Password:           string(hashed),
+		Status:             "active",
+		MustChangePassword: true, // Wajib ganti password pada login pertama
+		EmailVerifiedAt:    nil,
 	}
 
 	if err := s.repo.Create(user); err != nil {
 		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal membuat admin", err)
 	}
 
-	// Generate activation token
-	rawToken, _, _, err := helper.GenerateResetToken("activation", 24*60)
-	if err != nil {
-		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal membuat token aktivasi", err)
-	}
+	// Kirim email kredensial (email + password default) secara SYNC
+	subject := "Akun Pengelola DPP GRADASI — Kredensial Login"
+	body := s.buildCredentialsEmail(user.Name, user.Email, defaultPassword)
 
-	// Simpan ke Redis (berlaku 24 jam)
-	key := fmt.Sprintf("activation_token:%s", rawToken)
-	s.redis.Set(context.Background(), key, user.ID, 24*time.Hour)
-
-	// Kirim email undangan aktivasi secara SYNC (sesuai preferensi: response langsung tahu sukses/gagal)
-	activationURL := fmt.Sprintf("%s/activate-account?token=%s&email=%s", appURL, rawToken, req.Email)
-	subject := "Undangan Aktivasi Akun Pengelola - DPP GRADASI"
-	body := s.buildInvitationEmail(user.Name, activationURL)
-
-	if err := s.mailer.Send(req.Email, subject, body); err != nil {
-		// Email gagal → hapus user + token agar tidak ada akun pending tanpa undangan
+	if err := s.mailer.Send(user.Email, subject, body); err != nil {
+		// Email gagal → hapus user agar tidak ada akun tanpa kredensial
 		_ = s.repo.Delete(user.ID)
-		s.redis.Del(context.Background(), key)
-		return nil, helper.NewServiceError("MAIL_SEND_FAILED", "Gagal mengirim email undangan. Periksa konfigurasi SMTP dan coba lagi.", err)
+		return nil, helper.NewServiceError("MAIL_SEND_FAILED", "Gagal mengirim email kredensial. Periksa konfigurasi SMTP dan coba lagi.", err)
 	}
 
 	resp := toResponse(*user)
 	return &resp, nil
 }
 
-func (s *userService) buildInvitationEmail(name, activationURL string) string {
+func (s *userService) buildCredentialsEmail(name, email, password string) string {
 	return `<!DOCTYPE html>
 <html><head><meta charset="UTF-8"></head>
 <body style="font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px;">
 <div style="max-width: 600px; margin: auto; background: white; border-radius: 12px; padding: 40px; border: 1px solid #e2e8f0;">
 <h2 style="color: #1e3a8a;">Selamat Datang, ` + name + `!</h2>
-<p style="color: #475569; line-height: 1.6;">Anda telah diundang oleh Super Admin untuk menjadi bagian dari pengelola <strong>DPP GRADASI</strong>.</p>
-<p style="color: #475569; line-height: 1.6;">Silakan klik tombol di bawah ini untuk mengaktifkan akun Anda dan membuat password pertama Anda. Tautan ini berlaku selama 24 jam.</p>
-<div style="text-align: center; margin: 32px 0;">
-<a href="` + activationURL + `" style="background: #16a34a; color: white; text-decoration: none; padding: 14px 32px; border-radius: 10px; display: inline-block; font-weight: bold; font-size: 15px;">Aktivasi Akun Saya</a>
+<p style="color: #475569; line-height: 1.6;">Anda telah didaftarkan sebagai pengelola <strong>DPP GRADASI</strong>. Berikut kredensial login Anda:</p>
+<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin: 24px 0;">
+<p style="margin: 8px 0;"><strong style="color: #1e3a8a;">Email:</strong> <span style="color: #334155;">` + email + `</span></p>
+<p style="margin: 8px 0;"><strong style="color: #1e3a8a;">Password:</strong> <span style="font-family: monospace; background: #f1f5f9; padding: 2px 8px; border-radius: 6px; color: #dc2626;">` + password + `</span></p>
 </div>
-<p style="color: #94a3b8; font-size: 13px;">Jika Anda merasa tidak mengenali undangan ini, Anda dapat mengabaikan email ini.</p>
+<p style="color: #475569; line-height: 1.6;">Silakan login di <strong>` + `, lalu <strong>segera ganti password Anda</strong> pada halaman profil.</p>
+<p style="color: #dc2626; font-size: 13px; font-weight: bold;">Demi keamanan, Anda akan diminta mengganti password ini pada login pertama.</p>
+<p style="color: #94a3b8; font-size: 13px;">Jika Anda merasa tidak mengenali email ini, Anda dapat mengabaikannya.</p>
 <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
 <p style="color: #94a3b8; font-size: 12px;">DPP GRADASI — Generasi Digital Indonesia</p>
 </div></body></html>`
@@ -258,27 +285,31 @@ func (s *userService) ResendActivation(adminID uint, targetID uint, appURL strin
 		return helper.NewServiceError("NOT_FOUND", "Admin tidak ditemukan", err)
 	}
 	if target.RoleID == 1 {
-		return helper.NewServiceError("FORBIDDEN", "Tidak bisa mengirim undangan ulang ke super_admin", nil)
-	}
-	if target.Status != "pending_activation" {
-		return helper.NewServiceError("BAD_REQUEST", "Hanya akun dengan status Menunggu Aktivasi yang bisa dikirimi undangan ulang", nil)
+		return helper.NewServiceError("FORBIDDEN", "Tidak bisa mengirim kredensial ulang ke super_admin", nil)
 	}
 
-	rawToken, _, _, err := helper.GenerateResetToken("activation", 24*60)
+	// Generate password default baru
+	defaultPassword, err := generateRandomPassword(10)
 	if err != nil {
-		return helper.NewServiceError("SERVER_ERROR", "Gagal membuat token aktivasi", err)
+		return helper.NewServiceError("SERVER_ERROR", "Gagal membuat password default", err)
 	}
 
-	key := fmt.Sprintf("activation_token:%s", rawToken)
-	s.redis.Set(context.Background(), key, target.ID, 24*time.Hour)
+	hashed, err := bcrypt.GenerateFromPassword([]byte(defaultPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return helper.NewServiceError("SERVER_ERROR", "Gagal mengenkripsi password", err)
+	}
 
-	activationURL := fmt.Sprintf("%s/activate-account?token=%s&email=%s", appURL, rawToken, target.Email)
-	subject := "Undangan Aktivasi Akun Pengelola - DPP GRADASI"
-	body := s.buildInvitationEmail(target.Name, activationURL)
+	target.Password = string(hashed)
+	target.MustChangePassword = true
+	if err := s.repo.Update(target); err != nil {
+		return helper.NewServiceError("SERVER_ERROR", "Gagal memperbarui kredensial admin", err)
+	}
+
+	subject := "Kredensial Login DPP GRADASI — Perbaruan Password"
+	body := s.buildCredentialsEmail(target.Name, target.Email, defaultPassword)
 
 	if err := s.mailer.Send(target.Email, subject, body); err != nil {
-		s.redis.Del(context.Background(), key)
-		return helper.NewServiceError("MAIL_SEND_FAILED", "Gagal mengirim email undangan. Periksa konfigurasi SMTP dan coba lagi.", err)
+		return helper.NewServiceError("MAIL_SEND_FAILED", "Gagal mengirim email kredensial. Periksa konfigurasi SMTP dan coba lagi.", err)
 	}
 	return nil
 }
@@ -290,10 +321,6 @@ func (s *userService) SetAdminStatus(adminID uint, targetID uint, req *dto.Admin
 	}
 	if target.RoleID == 1 {
 		return helper.NewServiceError("FORBIDDEN", "Tidak bisa mengubah status super_admin", nil)
-	}
-
-	if req.Status == "active" && target.Status == "pending_activation" {
-		return helper.NewServiceError("BAD_REQUEST", "Akun belum melakukan aktivasi. Kirim ulang undangan aktivasi terlebih dahulu.", nil)
 	}
 
 	target.Status = req.Status
@@ -312,23 +339,30 @@ func (s *userService) DeleteAdmin(adminID uint, targetID uint) error {
 		return helper.NewServiceError("NOT_FOUND", "Admin tidak ditemukan", err)
 	}
 	if user.RoleID == 1 {
-		return helper.NewServiceError("FORBIDDEN", "Tidak bisa menghapus sesama super_admin", nil)
+		return helper.NewServiceError("FORBIDDEN", "Tidak bisa menghapus super_admin", nil)
 	}
 	return s.repo.Delete(targetID)
 }
 
 func (s *userService) RestoreAdmin(adminID uint, targetID uint) error {
-	// Optional: can add check for super_admin
 	return s.repo.Restore(targetID)
 }
 
 func (s *userService) BulkDeleteAdmin(adminID uint, targetIDs []uint) error {
-	// Filter out the admin themselves
+	// Filter out admin sendiri + semua super_admin (role 1)
 	filtered := make([]uint, 0)
 	for _, id := range targetIDs {
-		if id != adminID {
-			filtered = append(filtered, id)
+		if id == adminID {
+			continue
 		}
+		user, err := s.repo.FindByID(id)
+		if err != nil {
+			continue // skip yang tidak ditemukan
+		}
+		if user.RoleID == 1 {
+			continue // super_admin tidak bisa dihapus
+		}
+		filtered = append(filtered, id)
 	}
 	if len(filtered) == 0 {
 		return nil
@@ -347,13 +381,46 @@ func (s *userService) handleUpload(file *multipart.FileHeader) (string, error) {
 	if file == nil {
 		return "", nil
 	}
+
+	// Limit ukuran 2MB
+	const maxSize = 2 << 20 // 2MB
+	if file.Size > maxSize {
+		return "", fmt.Errorf("file terlalu besar (maks 2MB)")
+	}
+
 	src, err := file.Open()
 	if err != nil {
 		return "", err
 	}
 	defer src.Close()
 
+	// Detect MIME dari content (bukan ekstensi)
+	buffer := make([]byte, 512)
+	n, _ := src.Read(buffer)
+	if n == 0 {
+		return "", fmt.Errorf("file kosong")
+	}
+	mimeType := http.DetectContentType(buffer[:n])
+	if !strings.HasPrefix(mimeType, "image/") {
+		return "", fmt.Errorf("file harus berupa gambar (image/*)")
+	}
+
+	// Reset reader
+	if _, err := src.Seek(0, io.SeekStart); err != nil {
+		return "", err
+	}
+
 	ext := filepath.Ext(file.Filename)
+	if ext == "" {
+		switch mimeType {
+		case "image/png":
+			ext = ".png"
+		case "image/jpeg":
+			ext = ".jpg"
+		default:
+			ext = ".png"
+		}
+	}
 	filename := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
 	dst := filepath.Join(s.uploadPath, filename)
 
@@ -370,18 +437,38 @@ func (s *userService) handleUpload(file *multipart.FileHeader) (string, error) {
 }
 
 func toResponse(u model.User) dto.UserResponse {
+	roleName := ""
+	if u.Role.Name != "" {
+		roleName = u.Role.Name
+	}
 	return dto.UserResponse{
-		ID:        u.ID,
-		RoleID:    u.RoleID,
-		Name:      u.Name,
-		Email:     u.Email,
-		PhotoPath: u.PhotoPath,
-		Status:    u.Status,
+		ID:                 u.ID,
+		RoleID:             u.RoleID,
+		RoleName:           roleName,
+		Name:               u.Name,
+		Email:              u.Email,
+		PhotoPath:          u.PhotoPath,
+		Status:             u.Status,
+		MustChangePassword: u.MustChangePassword,
 	}
 }
 
 func generateRandomNumber(length int) (string, error) {
 	const charset = "0123456789"
+	b := make([]byte, length)
+	for i := range b {
+		n, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		if err != nil {
+			return "", err
+		}
+		b[i] = charset[n.Int64()]
+	}
+	return string(b), nil
+}
+
+// generateRandomPassword membuat password acak alfanumerik (aman untuk dikirim via email).
+func generateRandomPassword(length int) (string, error) {
+	const charset = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789" // tanpa karakter ambigu (0,1,O,I,l)
 	b := make([]byte, length)
 	for i := range b {
 		n, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))

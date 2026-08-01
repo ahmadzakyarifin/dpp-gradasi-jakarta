@@ -1,6 +1,9 @@
 package repository
 
 import (
+	"strings"
+
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/user/dto"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/user/model"
 	"gorm.io/gorm"
 )
@@ -8,7 +11,7 @@ import (
 type UserRepo interface {
 	FindByID(id uint) (*model.User, error)
 	FindByEmail(email string) (*model.User, error)
-	FindAllAdmins() ([]model.User, error)
+	FindAllAdmins(q dto.ListUsersQuery) ([]model.User, int64, error)
 	Update(user *model.User) error
 	Create(user *model.User) error
 	Delete(id uint) error
@@ -27,7 +30,7 @@ func NewUserRepo(db *gorm.DB) UserRepo {
 
 func (r *userRepo) FindByID(id uint) (*model.User, error) {
 	var user model.User
-	err := r.db.First(&user, id).Error
+	err := r.db.Preload("Role").First(&user, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -36,19 +39,55 @@ func (r *userRepo) FindByID(id uint) (*model.User, error) {
 
 func (r *userRepo) FindByEmail(email string) (*model.User, error) {
 	var user model.User
-	err := r.db.Where("email = ?", email).First(&user).Error
+	err := r.db.Preload("Role").Where("email = ?", email).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
 	return &user, nil
 }
 
-func (r *userRepo) FindAllAdmins() ([]model.User, error) {
+func (r *userRepo) FindAllAdmins(q dto.ListUsersQuery) ([]model.User, int64, error) {
 	var users []model.User
-	// Ambil semua user dengan role admin pengelola (1=super_admin, 2=admin, 3=admin_berita, 4=admin_kegiatan)
-	// Gunakan NOT NULL pada role_id untuk fleksibilitas penambahan role di masa depan.
-	err := r.db.Where("role_id IN (1, 2, 3, 4)").Find(&users).Error
-	return users, err
+	var total int64
+
+	base := r.db.Model(&model.User{}).Where("role_id IN (1, 2, 3, 4)")
+
+	switch q.Tab {
+	case "pending":
+		base = base.Where("status = ?", "pending_activation")
+	case "trash":
+		base = base.Unscoped().Where("deleted_at IS NOT NULL")
+	default: // active
+		base = base.Where("status != ?", "pending_activation")
+	}
+
+	if s := strings.TrimSpace(q.Search); s != "" {
+		like := "%" + s + "%"
+		base = base.Where("name LIKE ? OR email LIKE ?", like, like)
+	}
+
+	if err := base.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	page, limit := q.Page, q.Limit
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 10
+	}
+
+	err := base.
+		Preload("Role").
+		Order("id ASC").
+		Offset((page - 1) * limit).
+		Limit(limit).
+		Find(&users).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return users, total, nil
 }
 
 func (r *userRepo) Update(user *model.User) error {

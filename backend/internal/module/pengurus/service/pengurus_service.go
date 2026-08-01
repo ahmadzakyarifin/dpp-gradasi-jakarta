@@ -35,7 +35,7 @@ type pengurusService struct {
 func NewPengurusService(repo repository.PengurusRepo) PengurusService {
 	// Create upload dir if not exists
 	uploadPath := "public/uploads/pengurus"
-	os.MkdirAll(uploadPath, 0755)
+	_ = os.MkdirAll(uploadPath, 0755)
 	return &pengurusService{repo: repo, uploadPath: uploadPath}
 }
 

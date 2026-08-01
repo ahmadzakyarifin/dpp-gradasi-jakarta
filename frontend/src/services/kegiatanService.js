@@ -18,6 +18,10 @@ export const kegiatanService = {
     return apiRequest(`/kegiatan/${encodeURIComponent(slug)}`)
   },
 
+  getCategories() {
+    return apiRequest('/kegiatan/categories')
+  },
+
   listAdmin(params) {
     return apiRequest(`/kegiatan/admin${toQuery(params)}`)
   },

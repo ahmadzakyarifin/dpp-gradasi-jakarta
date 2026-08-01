@@ -25,13 +25,10 @@ func NewUserHandler(svc service.UserService, logSvc activitylogservice.ActivityL
 }
 
 func (h *UserHandler) getAuthUserID(c *gin.Context) (uint, error) {
-	val, exists := c.Get("user_id")
-	if !exists {
+	// Baca dari request context (di-set AuthMiddleware via context.WithValue)
+	val := c.Request.Context().Value(helper.ContextUserID)
+	if val == nil {
 		return 0, helper.NewServiceError("UNAUTHORIZED", "User tidak terautentikasi", nil)
-	}
-	// Tergantung middleware, bisa float64 atau uint
-	if id, ok := val.(float64); ok {
-		return uint(id), nil
 	}
 	if id, ok := val.(uint); ok {
 		return id, nil
@@ -167,7 +164,13 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 }
 
 func (h *UserHandler) GetAdmins(c *gin.Context) {
-	resp, err := h.svc.GetAdmins()
+	var q dto.ListUsersQuery
+	if err := c.ShouldBindQuery(&q); err != nil {
+		helper.ValidationErrorResponse(c, []helper.ValidationErrorItem{{Field: "tab", Tag: "invalid", Message: "Parameter tab harus 'active', 'pending', atau 'trash'"}})
+		return
+	}
+
+	resp, err := h.svc.GetAdmins(q)
 	if err != nil {
 		svcErr, _ := err.(*helper.ServiceError)
 		helper.ErrorResponse(c, http.StatusInternalServerError, svcErr.Code, svcErr.Message, nil)
@@ -190,7 +193,7 @@ func (h *UserHandler) CreateAdmin(c *gin.Context) {
 		return
 	}
 
-	helper.SuccessResponse(c, http.StatusCreated, "ADMIN_CREATED", "Undangan aktivasi admin berhasil dikirim ke email.", resp, nil)
+	helper.SuccessResponse(c, http.StatusCreated, "ADMIN_CREATED", "Admin berhasil dibuat. Kredensial login (email & password default) telah dikirim ke email admin.", resp, nil)
 
 	actorID, actorName, actorRole, ip, ua := helper.GetAuditMeta(c.Request.Context())
 	go h.logSvc.Log(context.Background(), nil, &activitylogdto.ActivityLogInput{
@@ -231,7 +234,7 @@ func (h *UserHandler) ResendActivation(c *gin.Context) {
 		return
 	}
 
-	helper.SuccessResponse(c, http.StatusOK, "ACTIVATION_RESENT", "Undangan aktivasi berhasil dikirim ulang ke email admin.", nil, nil)
+	helper.SuccessResponse(c, http.StatusOK, "ACTIVATION_RESENT", "Kredensial login baru berhasil dikirim ulang ke email admin.", nil, nil)
 
 	actorID, actorName, actorRole, ip, ua := helper.GetAuditMeta(c.Request.Context())
 	eID := uint(targetID)

@@ -37,6 +37,16 @@ func (h *BeritaHandler) List(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "BERITA_LIST", "Daftar berita berhasil diambil.", resp, nil)
 }
 
+// GET /api/v1/berita/categories — publik (daftar kategori unik)
+func (h *BeritaHandler) GetCategories(c *gin.Context) {
+	categories, err := h.svc.GetCategories()
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusInternalServerError, "SERVER_ERROR", "Gagal mengambil daftar kategori.", nil)
+		return
+	}
+	helper.SuccessResponse(c, http.StatusOK, "BERITA_CATEGORIES", "Daftar kategori berita berhasil diambil.", categories, nil)
+}
+
 // GET /api/v1/berita/admin — admin (all status)
 func (h *BeritaHandler) ListAdmin(c *gin.Context) {
 	var q dto.BeritaQuery

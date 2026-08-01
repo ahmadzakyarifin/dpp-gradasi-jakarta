@@ -21,6 +21,7 @@ type BeritaRepo interface {
 	BulkRestore(ids []uint) error
 	IncrementViews(id uint) error
 	SaveTags(beritaID uint, tags []string) error
+	GetCategories() ([]string, error)
 }
 
 type beritaRepo struct {
@@ -43,7 +44,8 @@ func (r *beritaRepo) query(publishedOnly bool, q dto.BeritaQuery) ([]model.Berit
 	var beritas []model.Berita
 	var total int64
 
-	db := r.db.Model(&model.Berita{}).
+	// Session baru tanpa auto soft-delete: handle deleted_at manual (JOIN users bikin ambigu)
+	db := r.db.Session(&gorm.Session{}).Model(&model.Berita{}).
 		Select("berita.*, users.name as author_name").
 		Joins("LEFT JOIN users ON users.id = berita.author_id")
 
@@ -55,18 +57,18 @@ func (r *beritaRepo) query(publishedOnly bool, q dto.BeritaQuery) ([]model.Berit
 	if !publishedOnly {
 		switch q.Status {
 		case "published":
-			db = db.Where("is_published = ? AND deleted_at IS NULL", true)
+			db = db.Where("is_published = ? AND berita.deleted_at IS NULL", true)
 		case "draft":
-			db = db.Where("is_published = ? AND deleted_at IS NULL", false)
+			db = db.Where("is_published = ? AND berita.deleted_at IS NULL", false)
 		case "trashed":
-			db = db.Unscoped().Where("deleted_at IS NOT NULL")
+			db = db.Unscoped().Where("berita.deleted_at IS NOT NULL")
 		default: // "all" atau kosong
-			db = db.Where("deleted_at IS NULL")
+			db = db.Where("berita.deleted_at IS NULL")
 		}
 	} else if q.Status == "trashed" {
-		db = db.Unscoped().Where("deleted_at IS NOT NULL")
+		db = db.Unscoped().Where("berita.deleted_at IS NOT NULL")
 	} else {
-		db = db.Where("deleted_at IS NULL")
+		db = db.Where("berita.deleted_at IS NULL")
 	}
 
 	if q.Search != "" {
@@ -179,4 +181,15 @@ func (r *beritaRepo) SaveTags(beritaID uint, tags []string) error {
 		})
 	}
 	return nil
+}
+
+// GetCategories mengembalikan daftar kategori unik (non-kosong) dari data berita aktif.
+func (r *beritaRepo) GetCategories() ([]string, error) {
+	var categories []string
+	err := r.db.Model(&model.Berita{}).
+		Where("deleted_at IS NULL AND category IS NOT NULL AND category != ''").
+		Distinct().
+		Order("category ASC").
+		Pluck("category", &categories).Error
+	return categories, err
 }

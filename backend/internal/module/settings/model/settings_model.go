@@ -26,4 +26,5 @@ type Settings struct {
 	GreetingImageURL   string `gorm:"size:500" json:"greeting_image_url"`
 	CreatedAt          string `json:"created_at"`
 	UpdatedAt          string `json:"updated_at"`
+	UpdatedBy          *uint  `gorm:"column:updated_by" json:"updated_by"`
 }

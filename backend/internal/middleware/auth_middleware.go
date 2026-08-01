@@ -9,16 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const (
-	ContextUserID    = "user_id"
-	ContextRoleID    = "role_id"
-	ContextEmail     = "email"
-	ContextRoleName  = "role_name"
-	ContextUserName  = "user_name"
-	ContextIPAddress = "ip_address"
-	ContextUserAgent = "user_agent"
-)
-
 func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if c.Request.Method == http.MethodOptions {
@@ -60,21 +50,21 @@ func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
 			return
 		}
 
-		c.Set(ContextUserID, claims.UserID)
-		c.Set(ContextRoleID, claims.RoleID)
-		c.Set(ContextEmail, claims.Email)
-		c.Set(ContextUserName, claims.Name)
-		c.Set(ContextRoleName, claims.RoleName)
+		c.Set(helper.ContextUserID, claims.UserID)
+		c.Set(helper.ContextRoleID, claims.RoleID)
+		c.Set(helper.ContextEmail, claims.Email)
+		c.Set(helper.ContextUserName, claims.Name)
+		c.Set(helper.ContextRoleName, claims.RoleName)
 
-		c.Set(ContextIPAddress, c.ClientIP())
-		c.Set(ContextUserAgent, c.Request.UserAgent())
+		c.Set(helper.ContextIPAddress, c.ClientIP())
+		c.Set(helper.ContextUserAgent, c.Request.UserAgent())
 
 		ctx := c.Request.Context()
-		ctx = context.WithValue(ctx, "user_id", claims.UserID)
-		ctx = context.WithValue(ctx, "role_id", claims.RoleID)
-		ctx = context.WithValue(ctx, "email", claims.Email)
-		ctx = context.WithValue(ctx, "user_name", claims.Name)
-		ctx = context.WithValue(ctx, "role_name", claims.RoleName)
+		ctx = context.WithValue(ctx, helper.ContextUserID, claims.UserID)
+		ctx = context.WithValue(ctx, helper.ContextRoleID, claims.RoleID)
+		ctx = context.WithValue(ctx, helper.ContextEmail, claims.Email)
+		ctx = context.WithValue(ctx, helper.ContextUserName, claims.Name)
+		ctx = context.WithValue(ctx, helper.ContextRoleName, claims.RoleName)
 		c.Request = c.Request.WithContext(ctx)
 
 		c.Next()
@@ -82,7 +72,7 @@ func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
 }
 
 func GetUserID(c *gin.Context) (uint, bool) {
-	id, ok := c.Get(ContextUserID)
+	id, ok := c.Get(helper.ContextUserID)
 	if !ok {
 		return 0, false
 	}
@@ -91,7 +81,7 @@ func GetUserID(c *gin.Context) (uint, bool) {
 }
 
 func GetRoleID(c *gin.Context) (uint, bool) {
-	id, ok := c.Get(ContextRoleID)
+	id, ok := c.Get(helper.ContextRoleID)
 	if !ok {
 		return 0, false
 	}
@@ -100,7 +90,7 @@ func GetRoleID(c *gin.Context) (uint, bool) {
 }
 
 func GetEmail(c *gin.Context) (string, bool) {
-	email, ok := c.Get(ContextEmail)
+	email, ok := c.Get(helper.ContextEmail)
 	if !ok {
 		return "", false
 	}

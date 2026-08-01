@@ -18,7 +18,7 @@ func RoleMiddleware(allowedRoles ...string) gin.HandlerFunc {
 			return
 		}
 
-		roleNameRaw, exists := c.Get(ContextRoleName)
+		roleNameRaw, exists := c.Get(helper.ContextRoleName)
 		if !exists {
 			helper.ErrorResponse(c, http.StatusForbidden, "FORBIDDEN", "Anda tidak memiliki akses ke sumber daya ini.", nil)
 			c.Abort()

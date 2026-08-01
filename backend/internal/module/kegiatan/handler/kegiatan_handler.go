@@ -37,6 +37,16 @@ func (h *KegiatanHandler) List(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "KEGIATAN_LIST", "Daftar kegiatan berhasil diambil.", resp, nil)
 }
 
+// GET /api/v1/kegiatan/categories — publik (daftar kategori unik)
+func (h *KegiatanHandler) GetCategories(c *gin.Context) {
+	categories, err := h.svc.GetCategories()
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusInternalServerError, "SERVER_ERROR", "Gagal mengambil daftar kategori.", nil)
+		return
+	}
+	helper.SuccessResponse(c, http.StatusOK, "KEGIATAN_CATEGORIES", "Daftar kategori kegiatan berhasil diambil.", categories, nil)
+}
+
 // GET /api/v1/kegiatan/admin — admin (all status)
 func (h *KegiatanHandler) ListAdmin(c *gin.Context) {
 	var q dto.KegiatanQuery

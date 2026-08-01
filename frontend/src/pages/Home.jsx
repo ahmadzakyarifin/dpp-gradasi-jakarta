@@ -1,13 +1,16 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import PublicLayout from '../layouts/PublicLayout'
+import { useSettings } from '../context/SettingsContext'
+import { resolveAssetUrl } from '../utils/assetUrl'
 import { slidersService } from '../services/slidersService'
-import { settingsService } from '../services/settingsService'
 import { kegiatanService } from '../services/kegiatanService'
 import { beritaService } from '../services/beritaService'
 import { kontakService } from '../services/kontakService'
 
 export default function Home() {
+  const { settings } = useSettings()
+
   const [sliders, setSliders] = useState([
     {
       title: 'Musyawarah Nasional Ke-II GRADASI',
@@ -41,32 +44,6 @@ export default function Home() {
     }
   ])
 
-  const [settings, setSettings] = useState({
-    site_name: 'DPP GRADASI',
-    tagline: 'Generasi Digital Indonesia',
-    logo_url: 'https://gradasi.org/uploads/img/logo/1737187847.png',
-    contact_email: 'dpp@gradasi.org',
-    contact_phone: '+6285279880008',
-    address: 'Office Park OL3-IZA The Bellagio Mall, Mega Kuningan, Jakarta Selatan',
-    maps_embed_url: 'https://maps.google.com/maps?q=The%20Bellagio%20Mall%20Mega%20Kuningan%20Jakarta&t=&z=16&ie=UTF8&iwloc=&output=embed',
-    facebook_url: 'https://www.facebook.com/gradasiofficial.id',
-    instagram_url: 'https://www.instagram.com/dppgradasi',
-    youtube_url: 'https://www.youtube.com/channel/UCwdjB4LkqcF4Kw5-PoyOb5A',
-    video_profile_url: 'https://gradasi.org/assets/video/gradasi.mp4',
-    history: 'Perkumpulan Generasi Digital Indonesia (GRADASI) didirikan pada tahun 2018 di Yogyakarta oleh para pegiat teknologi sebagai wadah kolaborasi untuk meningkatkan kecakapan digital bangsa secara merata.',
-    about_tutorial: 'Pengesahan Badan Hukum Kemenkumham RI.',
-    about_formation_date: '4 Februari 2019',
-    about_no_sk: 'AHU – 0000151.AH.01.07.2019',
-    about_vision: 'Mewujudkan masyarakat Indonesia yang cerdas, kreatif, dan berdaulat di era digital.',
-    about_mission: '["Membangun ekosistem literasi digital yang inklusif di seluruh daerah Indonesia.", "Mengakselerasi transformasi digital bagi UMKM dan generasi muda.", "Mendorong inovasi dan kolaborasi antar pemangku kepentingan industri kreatif digital."]',
-    greeting_title: 'Tahun Baru 2026',
-    greeting_subtitle: 'Resolusi & Harapan',
-    greeting_date: '11 February 2026',
-    greeting_content: 'Memasuki tahun 2026, GRADASI menetapkan pilar utama perjuangan: memastikan setiap masyarakat memiliki kecakapan digital (digital skills), serta mengembangkan program literasi yang berdampak nyata bagi pertumbuhan ekonomi lokal.',
-    greeting_image_url: 'https://gradasi.org/uploads/img/event-terkini/1767154211.jpg'
-  })
-
-  // Default Fallback Kegiatan matching index.html
   const [featuredKegiatan, setFeaturedKegiatan] = useState([
     {
       id: 1,
@@ -154,21 +131,13 @@ export default function Home() {
   const kegiatanSliderRef = useRef(null)
   const beritaSliderRef = useRef(null)
 
-  useEffect(() => {
+  const loadData = useCallback(() => {
     // Load Sliders
     slidersService.list(true)
       .then(res => {
         if (res.success && res.data) {
           const list = Array.isArray(res.data) ? res.data : (res.data.sliders || [])
-          if (list.length > 0) setSliders(list)
-        }
-      }).catch(() => {})
-
-    // Load Settings
-    settingsService.get()
-      .then(res => {
-        if (res.success && res.data) {
-          setSettings(res.data)
+          setSliders(list)
         }
       }).catch(() => {})
 
@@ -177,7 +146,7 @@ export default function Home() {
       .then(res => {
         if (res.success && res.data) {
           const list = Array.isArray(res.data) ? res.data : (res.data.kegiatan || [])
-          if (list.length > 0) setFeaturedKegiatan(list)
+          setFeaturedKegiatan(list)
         }
       }).catch(() => {})
 
@@ -186,10 +155,17 @@ export default function Home() {
       .then(res => {
         if (res.success && res.data) {
           const list = Array.isArray(res.data) ? res.data : (res.data.berita || [])
-          if (list.length > 0) setRecentBerita(list)
+          setRecentBerita(list)
         }
       }).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    loadData()
+    // Re-fetch saat tab/window publik dapat fokus lagi (mis. abis ubah konten di admin)
+    window.addEventListener('focus', loadData)
+    return () => window.removeEventListener('focus', loadData)
+  }, [loadData])
 
   // Auto-play timer logic for hero slider
   useEffect(() => {
@@ -242,7 +218,7 @@ export default function Home() {
         {/* Slide Background Overlay */}
         <div className="absolute inset-0 z-0">
           <img 
-            src={activeSlide.image_url?.startsWith('http') ? activeSlide.image_url : `http://127.0.0.1:8080${activeSlide.image_url}`} 
+            src={resolveAssetUrl(activeSlide.image_url)} 
             alt={activeSlide.title} 
             className="w-full h-full object-cover transition-all duration-700 blur-sm scale-110 opacity-40"
           />
@@ -320,7 +296,7 @@ export default function Home() {
                 <div className="absolute inset-0 bg-gradient-to-br from-brand-600/30 to-amber-500/20 backdrop-blur-md border border-white/20 rounded-3xl transform rotate-3 scale-100 transition-transform duration-700 group-hover:rotate-6 shadow-xl origin-bottom-right" />
                 <div className="absolute inset-0 rounded-3xl overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.6)] border-[4px] border-white/10 transform transition-transform duration-700 hover:scale-[1.03] bg-brand-950">
                   <img 
-                    src={activeSlide.image_url?.startsWith('http') ? activeSlide.image_url : `http://127.0.0.1:8080${activeSlide.image_url}`} 
+                    src={resolveAssetUrl(activeSlide.image_url)} 
                     alt={activeSlide.title} 
                     className="w-full h-full object-cover"
                   />
@@ -376,7 +352,7 @@ export default function Home() {
               <div className="absolute inset-0 bg-brand-500/20 blur-[80px] rounded-full" />
               <div className="relative rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-white transform transition hover:-translate-y-2 duration-500">
                 <img 
-                  src={settings.greeting_image_url || 'https://gradasi.org/uploads/img/event-terkini/1767154211.jpg'}
+                  src={resolveAssetUrl(settings.greeting_image_url) || 'https://gradasi.org/uploads/img/event-terkini/1767154211.jpg'}
                   alt="Poster Sambutan"
                   className="w-full h-auto object-contain"
                 />
@@ -399,7 +375,7 @@ export default function Home() {
                   <i className="ph-fill ph-quotes" /> Refleksi Resmi
                 </span>
                 <h2 className="font-heading text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
-                  Memperjuangkan <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-amber-500">Kedaulatan Digital</span> Bangsa
+                  {settings.greeting_title || 'Memperjuangkan'} <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-amber-500">{settings.greeting_subtitle || 'Kedaulatan Digital'}</span> Bangsa
                 </h2>
               </div>
 
@@ -407,23 +383,18 @@ export default function Home() {
               <div className="relative bg-slate-50 rounded-2xl p-8 border border-slate-200/60 shadow-inner">
                 <i className="ph-fill ph-quotes absolute -top-4 -left-2 text-6xl text-brand-200/50 transform -rotate-12" />
                 <p className="relative z-10 text-slate-700 text-lg leading-relaxed font-quote italic">
-                  "Tiada hadiah termahal di akhir tahun ini selain doa dan dukungan yang senantiasa mengiringi setiap langkah perjuangan kita. Tantangan teknologi bukan beban, melainkan proses pendewasaan agar kita tegak berdiri."
+                  "{settings.greeting_content || 'Tiada hadiah termahal di akhir tahun ini selain doa dan dukungan yang senantiasa mengiringi setiap langkah perjuangan kita. Tantangan teknologi bukan beban, melainkan proses pendewasaan agar kita tegak berdiri.'}"
                 </p>
-              </div>
-
-              <div className="space-y-4 text-slate-600 text-sm leading-relaxed">
-                <p>{settings.greeting_content || 'Memasuki tahun 2026, GRADASI menetapkan pilar utama perjuangan: memastikan setiap masyarakat memiliki kecakapan digital (digital skills), serta mengembangkan program literasi yang berdampak nyata.'}</p>
-                <p>Mari kita tutup babak "Kisah Panjang" tahun ini dengan syukur dan memulai lembaran baru dengan kolaborasi yang lebih solid.</p>
               </div>
 
               {/* Signature */}
               <div className="flex items-center gap-4 pt-4 border-t border-slate-100">
                 <div className="flex -space-x-4">
-                  <img src="https://gradasi.org/uploads/img/s-anggota/ketua/1735027418.jpg" alt="Upi" className="w-12 h-12 rounded-full border-2 border-white shadow-md relative z-20" />
+                  <img src={resolveAssetUrl(settings.greeting_image_url) || "https://gradasi.org/uploads/img/s-anggota/ketua/1735027418.jpg"} alt="Upi" className="w-12 h-12 rounded-full border-2 border-white shadow-md relative z-20" />
                   <div className="w-12 h-12 rounded-full bg-brand-100 border-2 border-white shadow-md flex items-center justify-center text-brand-700 font-bold text-xs relative z-10">JS</div>
                 </div>
                 <div>
-                  <p className="font-heading font-bold text-slate-900 text-sm">DPP GRADASI</p>
+                  <p className="font-heading font-bold text-slate-900 text-sm">{settings.site_name || 'DPP GRADASI'}</p>
                   <p className="text-xs text-brand-600 font-medium">Upi Asmaradhana & Junaidi, S.Kom</p>
                 </div>
               </div>
@@ -448,7 +419,7 @@ export default function Home() {
               <div className="relative group">
                 <div className="w-72 aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl border-4 border-white mx-auto relative z-10 transform transition duration-500 group-hover:-translate-y-2">
                   <img 
-                    src="https://gradasi.org/uploads/img/s-anggota/ketua/1735027418.jpg"
+                    src={resolveAssetUrl(settings.greeting_image_url) || "https://gradasi.org/uploads/img/s-anggota/ketua/1735027418.jpg"}
                     alt="Upi Asmaradhana - Ketua Umum"
                     className="w-full h-full object-cover"
                   />
@@ -492,8 +463,8 @@ export default function Home() {
                       <i className="ph-fill ph-book-open-text text-brand-500" /> Tujuan Utama
                     </h3>
                     <div className="space-y-4 text-slate-600 text-sm sm:text-base leading-relaxed">
-                      <p>{settings.history}</p>
-                      <p>Diinisiasi oleh para pegiat teknologi, GRADASI (Generasi Digital Indonesia) didirikan sebagai wadah kolaborasi untuk meningkatkan kecakapan digital bangsa secara merata.</p>
+                      <p>{settings.history || 'Perkumpulan Generasi Digital Indonesia (GRADASI) didirikan sebagai wadah kolaborasi untuk meningkatkan kecakapan digital bangsa secara merata.'}</p>
+                      <p>{settings.about_tutorial || 'Diinisiasi oleh para pegiat teknologi, GRADASI (Generasi Digital Indonesia) didirikan sebagai wadah kolaborasi untuk meningkatkan kecakapan digital bangsa secara merata.'}</p>
                     </div>
                   </div>
                 )}
@@ -567,7 +538,7 @@ export default function Home() {
 
             {/* Logo Display Box */}
             <div className="bg-white rounded-3xl p-8 flex items-center justify-center border border-slate-100 shadow-md">
-              <img src={settings.logo_url} alt="Logo" className="w-48 h-auto object-contain filter drop-shadow-lg" />
+              <img src={resolveAssetUrl(settings.logo_url)} alt="Logo" className="w-48 h-auto object-contain filter drop-shadow-lg" />
             </div>
 
             {/* Dynamic Missions */}
@@ -618,7 +589,7 @@ export default function Home() {
                 <div key={item.id || idx} className="w-[85vw] sm:w-[350px] flex-shrink-0 snap-center card-minimal overflow-hidden flex flex-col group cursor-pointer">
                   <div className="image-zoom-container h-56 relative">
                     <img 
-                      src={item.image_url ? (item.image_url.startsWith('http') ? item.image_url : `http://127.0.0.1:8080${item.image_url}`) : 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=600'} 
+                      src={item.image_url ? resolveAssetUrl(item.image_url) : 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=600'} 
                       alt={item.title} 
                       className="w-full h-full object-cover"
                     />
@@ -697,7 +668,7 @@ export default function Home() {
                 controls 
                 preload="metadata"
               >
-                <source src={settings.video_profile_url || 'https://gradasi.org/assets/video/gradasi.mp4'} type="video/mp4" />
+                <source src={resolveAssetUrl(settings.video_profile_url) || 'https://gradasi.org/assets/video/gradasi.mp4'} type="video/mp4" />
                 Browser Anda tidak mendukung pemutar video.
               </video>
             </div>
@@ -732,7 +703,7 @@ export default function Home() {
                 <div key={item.id || idx} className="w-[85vw] sm:w-[350px] flex-shrink-0 snap-center card-minimal overflow-hidden flex flex-col group cursor-pointer">
                   <div className="image-zoom-container h-48 relative">
                     <img 
-                      src={item.image_url ? (item.image_url.startsWith('http') ? item.image_url : `http://127.0.0.1:8080${item.image_url}`) : 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=600'} 
+                      src={item.image_url ? resolveAssetUrl(item.image_url) : 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=600'} 
                       alt={item.title} 
                       className="w-full h-full object-cover"
                     />
@@ -780,7 +751,7 @@ export default function Home() {
               {/* Google Maps Embed */}
               <div className="h-[400px] relative bg-white border border-slate-200 rounded-xl overflow-hidden shadow-inner">
                 <iframe
-                  src={settings.maps_embed_url || "https://maps.google.com/maps?q=The%20Bellagio%20Mall%20Mega%20Kuningan%20Jakarta&t=&z=16&ie=UTF8&iwloc=&output=embed"}
+                  src={resolveAssetUrl(settings.maps_embed_url) || "https://maps.google.com/maps?q=The%20Bellagio%20Mall%20Mega%20Kuningan%20Jakarta&t=&z=16&ie=UTF8&iwloc=&output=embed"}
                   width="100%" 
                   height="100%" 
                   style={{ border: 0 }} 

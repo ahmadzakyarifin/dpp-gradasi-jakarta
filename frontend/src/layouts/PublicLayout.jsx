@@ -1,21 +1,23 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-
-const logoUrl = 'https://gradasi.org/uploads/img/logo/1737187847.png'
-
-const socialLinks = [
-  { label: 'Facebook', icon: 'ph-facebook-logo', url: 'https://www.facebook.com/gradasiofficial.id' },
-  { label: 'Instagram', icon: 'ph-instagram-logo', url: 'https://www.instagram.com/dppgradasi' },
-  { label: 'YouTube', icon: 'ph-youtube-logo', url: 'https://www.youtube.com/channel/UCwdjB4LkqcF4Kw5-PoyOb5A' },
-]
+import { useSettings } from '../context/SettingsContext'
+import { resolveAssetUrl } from '../utils/assetUrl'
+import NavbarBeritaSearch from '../components/NavbarBeritaSearch'
 
 export default function PublicLayout({ children }) {
+  const { settings } = useSettings()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [kegiatanDropdown, setKegiatanDropdown] = useState(false)
   const [informasiDropdown, setInformasiDropdown] = useState(false)
   const [pengurusDropdown, setPengurusDropdown] = useState(false)
 
   const location = useLocation()
+
+  const socialLinks = [
+    { label: 'Facebook', icon: 'ph-facebook-logo', url: settings.facebook_url },
+    { label: 'Instagram', icon: 'ph-instagram-logo', url: settings.instagram_url },
+    { label: 'YouTube', icon: 'ph-youtube-logo', url: settings.youtube_url },
+  ].filter((item) => item.url)
 
   return (
     <div className="font-sans bg-slate-50 min-h-screen">
@@ -25,12 +27,19 @@ export default function PublicLayout({ children }) {
           <div className="flex justify-between items-center">
             {/* Logo Branding */}
             <Link to="/" className="flex-shrink-0 flex items-center gap-3 group">
-              <img src={logoUrl} alt="Logo GRADASI" className="h-10 w-auto object-contain transition duration-300 group-hover:scale-105" />
+              <img src={resolveAssetUrl(settings.logo_url)} alt={`Logo ${settings.site_name}`} className="h-10 w-auto object-contain transition duration-300 group-hover:scale-105" />
               <div className="flex flex-col leading-tight">
-                <span className="font-heading font-extrabold text-base text-slate-900 tracking-tight group-hover:text-brand-700 transition">DPP GRADASI</span>
-                <span className="text-[9px] font-bold text-brand-600 tracking-wider uppercase">Generasi Digital Indonesia</span>
+                <span className="font-heading font-extrabold text-base text-slate-900 tracking-tight group-hover:text-brand-700 transition">{settings.site_name}</span>
+                <span className="text-[9px] font-bold text-brand-600 tracking-wider uppercase">{settings.tagline}</span>
               </div>
             </Link>
+
+            {/* Berita Search (khusus halaman /berita — tengah navbar) */}
+            {location.pathname.startsWith('/berita') && (
+              <div className="hidden lg:flex flex-1 justify-center px-4">
+                <NavbarBeritaSearch />
+              </div>
+            )}
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center space-x-1">
@@ -183,11 +192,11 @@ export default function PublicLayout({ children }) {
           <div className="flex flex-col md:flex-row justify-between items-center gap-8 border-b border-brand-800/50 pb-8 mb-8">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center p-1 shadow-inner">
-                <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                <img src={resolveAssetUrl(settings.logo_url)} alt={`Logo ${settings.site_name}`} className="w-full h-full object-contain" />
               </div>
               <div>
-                <span className="text-white font-heading font-bold text-lg block leading-tight">DPP GRADASI</span>
-                <span className="text-[10px] tracking-widest uppercase text-brand-300 font-semibold">Generasi Digital Indonesia</span>
+                <span className="text-white font-heading font-bold text-lg block leading-tight">{settings.site_name}</span>
+                <span className="text-[10px] tracking-widest uppercase text-brand-300 font-semibold">{settings.tagline}</span>
               </div>
             </div>
             <div className="flex gap-3">
@@ -200,8 +209,8 @@ export default function PublicLayout({ children }) {
           </div>
           <div className="flex flex-col md:flex-row justify-between items-center text-[13px] text-brand-200/70 border-t border-brand-800/50 pt-8 mt-8">
             <div className="flex flex-col text-center md:text-left gap-1 mb-4 md:mb-0">
-              <p>© 2026 Perkumpulan Generasi Digital Indonesia. Dilindungi Undang-Undang.</p>
-              <p className="text-[11px] text-brand-300/50">Office Park OL3-IZA The Bellagio Mall, Mega Kuningan, Jakarta Selatan.</p>
+              <p>© 2026 {settings.site_name}. Dilindungi Undang-Undang.</p>
+              <p className="text-[11px] text-brand-300/50">{settings.address}</p>
             </div>
             <div className="flex gap-6 font-medium">
               <a href="#" className="hover:text-white transition">Kebijakan Privasi</a>

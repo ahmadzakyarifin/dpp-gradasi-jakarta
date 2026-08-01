@@ -48,7 +48,7 @@ export default function Kepengurusan() {
       .then(res => {
         if (res.success && res.data) {
           const list = Array.isArray(res.data) ? res.data : (res.data.pengurus || [])
-          if (list.length > 0) setAllPengurus(list)
+          setAllPengurus(list)
         }
       })
       .catch(() => {})

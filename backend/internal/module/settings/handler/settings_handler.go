@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/helper"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/middleware"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/settings/dto"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/settings/service"
 	"github.com/gin-gonic/gin"
@@ -14,6 +15,7 @@ import (
 type SettingsHandler interface {
 	GetSettings(c *gin.Context)
 	UpdateSettings(c *gin.Context)
+	UploadLogo(c *gin.Context)
 }
 
 type settingsHandler struct {
@@ -73,7 +75,7 @@ func (h *settingsHandler) UpdateSettings(c *gin.Context) {
 		return
 	}
 
-	settings, err := h.service.UpdateSettings(requestBody)
+	settings, err := h.service.UpdateSettings(requestBody, h.getUpdatedBy(c))
 	if err != nil {
 		// Check if it's a validation error from service
 		if strings.Contains(err.Error(), "Validasi gagal:") {
@@ -85,4 +87,38 @@ func (h *settingsHandler) UpdateSettings(c *gin.Context) {
 	}
 
 	helper.SuccessResponse(c, http.StatusOK, "SETTINGS_UPDATED", "Konfigurasi website berhasil diperbarui", settings, nil)
+}
+
+// UploadLogo menerima multipart file "logo", memvalidasi ukuran & MIME type,
+// menyimpan ke public/uploads/settings, dan memperbarui logo_url di settings.
+func (h *settingsHandler) UploadLogo(c *gin.Context) {
+	file, err := c.FormFile("logo")
+	if err != nil {
+		helper.ValidationErrorResponse(c, []helper.ValidationErrorItem{
+			{Field: "logo", Tag: "required", Message: "File logo wajib diunggah."},
+		})
+		return
+	}
+
+	settings, err := h.service.UploadLogo(file, h.getUpdatedBy(c))
+	if err != nil {
+		msg := err.Error()
+		if strings.Contains(msg, "tidak valid") || strings.Contains(msg, "wajib") {
+			helper.ErrorResponse(c, http.StatusBadRequest, "INVALID_LOGO", msg, nil)
+			return
+		}
+		helper.ErrorResponse(c, http.StatusInternalServerError, "UPLOAD_LOGO_ERROR", msg, nil)
+		return
+	}
+
+	helper.SuccessResponse(c, http.StatusOK, "SETTINGS_LOGO_UPLOADED", "Logo berhasil diunggah", settings, nil)
+}
+
+// getUpdatedBy membaca user_id dari context (di-set AuthMiddleware).
+func (h *settingsHandler) getUpdatedBy(c *gin.Context) *uint {
+	userID, ok := middleware.GetUserID(c)
+	if !ok {
+		return nil
+	}
+	return &userID
 }

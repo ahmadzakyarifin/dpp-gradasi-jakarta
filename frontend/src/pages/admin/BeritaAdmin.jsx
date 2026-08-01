@@ -56,6 +56,8 @@ export default function BeritaAdmin() {
 
   const [selectedItems, setSelectedItems] = useState([])
 
+  const [categories, setCategories] = useState(beritaContent.categories)
+
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [formMode, setFormMode] = useState('create')
   const [formLoading, setFormLoading] = useState(false)
@@ -98,10 +100,8 @@ export default function BeritaAdmin() {
       const res = await beritaService.listAdmin(params)
       if (res && res.data) {
         const list = Array.isArray(res.data) ? res.data : (res.data.berita || [])
-        if (list.length > 0) {
-          setItems(list)
-          setMeta(res.data.meta || { current_page: currentPage, limit: PAGE_SIZE, total_data: list.length, total_pages: Math.ceil(list.length / PAGE_SIZE) || 1 })
-        }
+        setItems(list)
+        setMeta(res.data.meta || { current_page: currentPage, limit: PAGE_SIZE, total_data: list.length, total_pages: Math.ceil(list.length / PAGE_SIZE) || 1 })
       }
     } catch {
       // Keep existing default items gracefully
@@ -114,6 +114,16 @@ export default function BeritaAdmin() {
     loadBerita()
   }, [loadBerita])
 
+  // Ambil daftar kategori dinamis (dari data yang ada) untuk dropdown
+  useEffect(() => {
+    beritaService.getCategories()
+      .then(res => {
+        if (res && res.data && Array.isArray(res.data) && res.data.length > 0) {
+          setCategories(res.data)
+        }
+      }).catch(() => {})
+  }, [])
+
   useEffect(() => {
     setCurrentPage(1)
     setSelectedItems([])
@@ -124,21 +134,21 @@ export default function BeritaAdmin() {
       setFormMode('edit')
       setFormData({
         id: item.id,
-        title: item.title || '',
-        category: item.category || 'Berita Nasional',
-        published_date: item.published_date || new Date().toISOString().slice(0, 10),
+        title: item.title,
+        category: item.category,
+        published_date: item.published_date,
         image_url: item.image_url || '',
         excerpt: item.excerpt || '',
-        content: item.content || item.excerpt || '',
-        tags: Array.isArray(item.tags) ? item.tags.join(', ') : (item.tags || ''),
-        is_published: item.is_published !== false,
+        content: item.content || '',
+        tags: item.tags || '',
+        is_published: item.is_published,
       })
     } else {
       setFormMode('create')
       setFormData({
         id: null,
         title: '',
-        category: 'Berita Nasional',
+        category: categories[0] || 'Berita Nasional',
         published_date: new Date().toISOString().slice(0, 10),
         image_url: '',
         excerpt: '',
@@ -154,18 +164,15 @@ export default function BeritaAdmin() {
     e.preventDefault()
     setFormLoading(true)
     try {
-      const payload = { ...formData }
       if (formMode === 'create') {
-        const newObj = { ...payload, id: Date.now(), views: 0 }
-        setItems(prev => [newObj, ...prev])
-        try { await beritaService.create(payload) } catch {}
-        showToast('Berita berhasil ditambahkan!')
+        await beritaService.create(formData)
+        showToast('Berita berhasil dibuat.')
       } else {
-        setItems(prev => prev.map(i => i.id === formData.id ? { ...i, ...payload } : i))
-        try { await beritaService.update(formData.id, payload) } catch {}
-        showToast('Berita berhasil diperbarui!')
+        await beritaService.update(formData.id, formData)
+        showToast('Berita berhasil diperbarui.')
       }
       setIsFormOpen(false)
+      await loadBerita()
     } catch (err) {
       showToast(err.message || 'Gagal menyimpan berita.', 'error')
     } finally {
@@ -180,9 +187,19 @@ export default function BeritaAdmin() {
         title: 'Hapus Berita',
         message: 'Berita ini akan dipindahkan ke Sampah. Lanjutkan?',
         action: async () => {
-          setItems(prev => prev.filter(i => i.id !== id))
-          try { await beritaService.remove(id) } catch {}
+          await beritaService.remove(id)
+          await loadBerita()
           showToast('Berita berhasil dihapus.')
+        },
+      },
+      restore: {
+        type: 'info',
+        title: 'Pulihkan Berita',
+        message: 'Berita ini akan dikembalikan dari Sampah. Lanjutkan?',
+        action: async () => {
+          await beritaService.restore(id)
+          await loadBerita()
+          showToast('Berita berhasil dipulihkan.')
         },
       },
       toggle_publish: {
@@ -198,11 +215,23 @@ export default function BeritaAdmin() {
       bulk_delete: {
         type: 'danger',
         title: 'Hapus Massal',
-        message: `Anda akan memindahkan ${selectedItems.length} item. Lanjutkan?`,
+        message: `Anda akan memindahkan ${selectedItems.length} item ke Sampah. Lanjutkan?`,
         action: async () => {
-          setItems(prev => prev.filter(i => !selectedItems.includes(i.id)))
+          await beritaService.bulkDelete(selectedItems)
           setSelectedItems([])
+          await loadBerita()
           showToast('Berita berhasil dihapus secara massal.')
+        },
+      },
+      bulk_restore: {
+        type: 'info',
+        title: 'Pulihkan Massal',
+        message: `Anda akan memulihkan ${selectedItems.length} item dari Sampah. Lanjutkan?`,
+        action: async () => {
+          await beritaService.bulkRestore(selectedItems)
+          setSelectedItems([])
+          await loadBerita()
+          showToast('Berita berhasil dipulihkan secara massal.')
         },
       }
     }
@@ -213,8 +242,11 @@ export default function BeritaAdmin() {
   }
 
   async function executeConfirm() {
-    setConfirm(prev => ({ ...prev, isOpen: false }))
-    try { await confirm.action?.() } catch {}
+    const action = confirm.action
+    setConfirm(prev => ({ ...prev, isOpen: false, action: null }))
+    if (action) {
+      try { await action() } catch {}
+    }
   }
 
   const isAllSelected = items.length > 0 && selectedItems.length === items.length
@@ -241,13 +273,13 @@ export default function BeritaAdmin() {
     return matchesSearch && matchesStatus
   })
 
-  const paginatedItems = filteredItems.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
-  const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE))
+  const paginatedItems = items
+  const totalPages = meta.total_pages || 1
 
   return (
     <AdminLayout title="Kelola Berita">
       {toast.show && <ToastNotification message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
-      <ConfirmDialog {...confirm} onClose={() => setConfirm(prev => ({ ...prev, isOpen: false }))} onConfirm={executeConfirm} />
+      <ConfirmDialog {...confirm} onClose={() => setConfirm(prev => ({ ...prev, isOpen: false, action: null }))} onConfirm={executeConfirm} />
 
       <div className="space-y-5">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -308,6 +340,38 @@ export default function BeritaAdmin() {
           </div>
         </div>
 
+        {/* BULK ACTION BAR */}
+        {selectedItems.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 bg-brand-50/60 border border-brand-100 rounded-xl px-4 py-2.5">
+            <span className="text-sm font-semibold text-brand-700">
+              {selectedItems.length} dipilih
+            </span>
+            <div className="flex gap-2 ml-auto">
+              {currentTab === 'trash' ? (
+                <button
+                  onClick={() => confirmAction('bulk_restore')}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                >
+                  <i className="ph-bold ph-arrow-counter-clockwise" /> Pulihkan Massal
+                </button>
+              ) : (
+                <button
+                  onClick={() => confirmAction('bulk_delete')}
+                  className="bg-red-600 hover:bg-red-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                >
+                  <i className="ph-bold ph-trash" /> Hapus Massal
+                </button>
+              )}
+              <button
+                onClick={() => setSelectedItems([])}
+                className="bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* DATA TABLE */}
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
@@ -342,23 +406,37 @@ export default function BeritaAdmin() {
                     </td>
                     <td className="p-4 text-slate-500 text-sm whitespace-nowrap">{item.published_date}</td>
                     <td className="p-4">
-                      <button onClick={() => confirmAction('toggle_publish', item.id, item.is_published)} className="inline-flex items-center gap-2 cursor-pointer">
-                        <div className={`relative w-9 h-5 rounded-full transition-colors ${item.is_published ? 'bg-brand-500' : 'bg-slate-200'}`}>
-                          <div className={`absolute top-[2px] left-[2px] w-4 h-4 bg-white rounded-full transition-transform ${item.is_published ? 'translate-x-4' : 'translate-x-0'}`} />
-                        </div>
-                        <span className={`text-xs font-semibold ${item.is_published ? 'text-brand-600' : 'text-slate-400'}`}>
-                          {item.is_published ? 'Published' : 'Draft'}
+                      {currentTab === 'trash' ? (
+                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-500">
+                          <i className="ph-bold ph-trash" /> Di Sampah
                         </span>
-                      </button>
+                      ) : (
+                        <button onClick={() => confirmAction('toggle_publish', item.id, item.is_published)} className="inline-flex items-center gap-2 cursor-pointer">
+                          <div className={`relative w-9 h-5 rounded-full transition-colors ${item.is_published ? 'bg-brand-500' : 'bg-slate-200'}`}>
+                            <div className={`absolute top-[2px] left-[2px] w-4 h-4 bg-white rounded-full transition-transform ${item.is_published ? 'translate-x-4' : 'translate-x-0'}`} />
+                          </div>
+                          <span className={`text-xs font-semibold ${item.is_published ? 'text-brand-600' : 'text-slate-400'}`}>
+                            {item.is_published ? 'Published' : 'Draft'}
+                          </span>
+                        </button>
+                      )}
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => openForm(item)} className="p-2 text-slate-400 hover:text-brand-600 rounded-lg">
-                          <i className="ph-bold ph-pencil-simple text-base" />
-                        </button>
-                        <button onClick={() => confirmAction('delete', item.id)} className="p-2 text-slate-400 hover:text-red-600 rounded-lg">
-                          <i className="ph-bold ph-trash text-base" />
-                        </button>
+                        {currentTab === 'trash' ? (
+                          <button onClick={() => confirmAction('restore', item.id)} className="p-2 text-slate-400 hover:text-emerald-600 rounded-lg" title="Pulihkan">
+                            <i className="ph-bold ph-arrow-counter-clockwise text-base" />
+                          </button>
+                        ) : (
+                          <>
+                            <button onClick={() => openForm(item)} className="p-2 text-slate-400 hover:text-brand-600 rounded-lg">
+                              <i className="ph-bold ph-pencil-simple text-base" />
+                            </button>
+                            <button onClick={() => confirmAction('delete', item.id)} className="p-2 text-slate-400 hover:text-red-600 rounded-lg">
+                              <i className="ph-bold ph-trash text-base" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -366,6 +444,43 @@ export default function BeritaAdmin() {
               </tbody>
             </table>
           </div>
+
+          {/* PAGINATION (server-driven) */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200">
+              <span className="text-xs text-slate-500">
+                Hal {currentPage} dari {totalPages} · {meta.total_data || 0} data
+              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  disabled={currentPage <= 1}
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:border-brand-500 hover:text-brand-600 disabled:opacity-40 transition"
+                >
+                  <i className="ph-bold ph-caret-left text-sm" />
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setCurrentPage(n)}
+                    className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-semibold transition ${n === currentPage ? 'bg-brand-600 text-white' : 'border border-slate-200 text-slate-500 hover:border-brand-500 hover:text-brand-600'}`}
+                  >
+                    {n}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:border-brand-500 hover:text-brand-600 disabled:opacity-40 transition"
+                >
+                  <i className="ph-bold ph-caret-right text-sm" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -390,8 +505,26 @@ export default function BeritaAdmin() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 mb-1">Kategori</label>
-                  <select value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} className="w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none bg-white">
-                    {beritaContent.categories.map(c => <option key={c} value={c}>{c}</option>)}
+                  <select
+                    value={formData.category}
+                    onChange={e => {
+                      if (e.target.value === '__new__') {
+                        const name = window.prompt('Nama kategori baru:')
+                        if (name && name.trim()) {
+                          const clean = name.trim()
+                          if (!categories.includes(clean)) {
+                            setCategories(prev => [...prev, clean])
+                          }
+                          setFormData({ ...formData, category: clean })
+                        }
+                        return
+                      }
+                      setFormData({ ...formData, category: e.target.value })
+                    }}
+                    className="w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none bg-white"
+                  >
+                    {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                    <option value="__new__">+ Buat Kategori Baru...</option>
                   </select>
                 </div>
                 <div>

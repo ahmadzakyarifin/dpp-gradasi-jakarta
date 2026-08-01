@@ -12,6 +12,7 @@ func RegisterRoutes(api *gin.RouterGroup, h *handler.BeritaHandler, jwtSecret st
 	{
 		// Publik
 		berita.GET("", h.List)
+		berita.GET("/categories", h.GetCategories)
 		berita.GET("/:slug", h.GetBySlug)
 	}
 

@@ -23,6 +23,7 @@ type KegiatanService interface {
 	BulkDelete(ids []uint) error
 	BulkRestore(ids []uint) error
 	DeleteGalleryImage(galleryID uint) error
+	GetCategories() ([]string, error)
 }
 
 type kegiatanService struct {
@@ -56,7 +57,10 @@ func (s *kegiatanService) list(publishedOnly bool, q dto.KegiatanQuery) (*dto.Ke
 	}
 
 	page := maxInt(q.Page, 1)
-	limit := maxInt(q.Limit, 10)
+	limit := q.Limit
+	if limit <= 0 {
+		limit = 10
+	}
 	totalPages := (int(total) + limit - 1) / limit
 
 	resp := &dto.KegiatanListResponse{
@@ -311,8 +315,7 @@ func formatDate(v string) string {
 	if err == nil {
 		return t.Format("2006-01-02")
 	}
-	t, err = time.Parse("2006-01-02", v)
-	if err == nil {
+	if _, err = time.Parse("2006-01-02", v); err == nil {
 		return v
 	}
 	if len(v) >= 10 {
@@ -326,4 +329,9 @@ func maxInt(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// GetCategories mengembalikan daftar kategori unik untuk dropdown admin.
+func (s *kegiatanService) GetCategories() ([]string, error) {
+	return s.repo.GetCategories()
 }

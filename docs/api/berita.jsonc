@@ -71,6 +71,40 @@
   },
 
   // ======================================================
+  // LIST KATEGORI BERITA (Public — distinct categories)
+  // ======================================================
+  "list_categories": {
+    "method": "GET",
+    "endpoint": "/api/v1/berita/categories",
+    "consumes": null,
+    "produces": "application/json",
+    "authentication": {
+      "type": "None"
+    },
+    "headers": {
+      "Accept": "application/json"
+    },
+    "parameters": {
+      "query": {}
+    },
+    "notes": [
+      "Mengembalikan daftar kategori unik (non-kosong) dari data berita aktif (deleted_at IS NULL).",
+      "Dipakai FE untuk dropdown filter kategori & opsi '+ Buat Kategori Baru' di admin."
+    ],
+    "responses": {
+      "200": {
+        "description": "Berhasil mengambil daftar kategori",
+        "body": {
+          "success": true,
+          "code": "BERITA_CATEGORIES",
+          "message": "Daftar kategori berita berhasil diambil.",
+          "data": ["Berita Daerah", "Berita Organisasi", "Berita Utama", "Edukasi"]
+        }
+      }
+    }
+  },
+
+  // ======================================================
   // DETAIL BERITA (Public — by slug)
   // ======================================================
   "detail_public": {

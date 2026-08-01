@@ -169,7 +169,10 @@ func (r *authRepo) ActivateUser(userID uint) error {
 }
 
 func (r *authRepo) SetUserPassword(userID uint, hashedPassword string) error {
-	return r.db.Model(&usermodel.User{}).Where("id = ?", userID).Update("password", hashedPassword).Error
+	return r.db.Model(&usermodel.User{}).Where("id = ?", userID).Updates(map[string]any{
+		"password":             hashedPassword,
+		"must_change_password": false,
+	}).Error
 }
 
 func (r *authRepo) FindRoleByID(id uint) (*rolemodel.Role, error) {

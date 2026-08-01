@@ -67,7 +67,8 @@
                 "name": "super_admin",
                 "display_name": "Super Administrator"
               },
-              "status": "active"
+              "status": "active",
+              "must_change_password": false
             }
           }
         },
@@ -97,20 +98,20 @@
           "message": "Email atau password salah."
         }
       },
-      "429": {
-        "description": "Rate limit terlampaui",
-        "body": {
-          "success": false,
-          "code": "RATE_LIMIT_EXCEEDED",
-          "message": "Terlalu banyak percobaan request. Silakan coba lagi nanti."
-        }
-      },
       "403": {
-        "description": "Akun nonaktif",
+        "description": "Akun nonaktif atau pending aktivasi",
         "body": {
           "success": false,
           "code": "AUTH_ACCOUNT_INACTIVE",
           "message": "Akun Anda belum aktif atau telah dinonaktifkan. Silakan hubungi Admin."
+        }
+      },
+      "403": {
+        "description": "Akun pending aktivasi (belum diaktifkan)",
+        "body": {
+          "success": false,
+          "code": "AUTH_ACCOUNT_PENDING",
+          "message": "Akun Anda belum diaktifkan. Silakan periksa email Anda untuk mengaktifkan akun."
         }
       },
       "422": {

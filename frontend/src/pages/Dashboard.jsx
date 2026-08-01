@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AdminLayout from '../layouts/AdminLayout'
+import { useSettings } from '../context/SettingsContext'
 import { dashboardService } from '../services/dashboardService'
 
 export default function Dashboard() {
+  const { settings } = useSettings()
   const [summary, setSummary] = useState({
     total_berita: 3,
     total_kegiatan: 3,
@@ -41,7 +43,7 @@ export default function Dashboard() {
         {/* Welcome Banner */}
         <div className="bg-gradient-to-r from-brand-900 to-brand-700 rounded-2xl p-8 text-white shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
-            <h2 className="font-heading text-2xl font-bold mb-2">Selamat Datang di Panel Admin DPP GRADASI</h2>
+            <h2 className="font-heading text-2xl font-bold mb-2">Selamat Datang di Panel Admin {settings.site_name}</h2>
             <p className="text-brand-100 text-sm max-w-xl">
               Kelola seluruh informasi berita, kegiatan, susunan pengurus, dan pengaturan website secara terpusat dari satu dashboard.
             </p>

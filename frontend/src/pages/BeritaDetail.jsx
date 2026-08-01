@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import PublicLayout from '../layouts/PublicLayout'
+import { useSettings } from '../context/SettingsContext'
+import { resolveAssetUrl } from '../utils/assetUrl'
 import { beritaContent } from '../content/beritaContent'
 import { beritaService } from '../services/beritaService'
 import { formatDate } from '../utils/format'
 
 export default function BeritaDetail() {
+  const { settings } = useSettings()
   const { slug } = useParams()
   const [article, setArticle] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -97,7 +100,7 @@ export default function BeritaDetail() {
                     <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
                       <p className="text-xs font-bold text-brand-600 uppercase tracking-widest mb-3">{beritaContent.detail.authorBadge}</p>
                       <div className="flex items-center gap-4">
-                        <img src="https://gradasi.org/uploads/img/logo/1737187847.png" alt="DPP GRADASI" className="w-12 h-12 rounded-xl object-contain bg-white p-1.5 border border-slate-200 shadow-sm" />
+                        <img src={resolveAssetUrl(settings.logo_url)} alt={settings.site_name} className="w-12 h-12 rounded-xl object-contain bg-white p-1.5 border border-slate-200 shadow-sm" />
                         <div>
                           <p className="font-heading font-bold text-slate-900 text-sm">{beritaContent.detail.authorName}</p>
                           <p className="text-slate-500 text-xs font-medium">{beritaContent.detail.authorDescription}</p>

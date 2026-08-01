@@ -24,6 +24,7 @@ type KegiatanRepo interface {
 	SaveTags(kegiatanID uint, tags []string) error
 	SaveGallery(kegiatanID uint, items []dto.GalleryInput) error
 	DeleteGalleryImage(galleryID uint) error
+	GetCategories() ([]string, error)
 }
 
 type kegiatanRepo struct{ db *gorm.DB }
@@ -44,7 +45,8 @@ func (r *kegiatanRepo) query(publishedOnly bool, q dto.KegiatanQuery) ([]model.K
 	var items []model.Kegiatan
 	var total int64
 
-	db := r.db.Model(&model.Kegiatan{}).
+	// Session baru tanpa auto soft-delete: handle deleted_at manual (JOIN users bikin ambigu)
+	db := r.db.Session(&gorm.Session{}).Model(&model.Kegiatan{}).
 		Select("kegiatan.*, users.name as author_name").
 		Joins("LEFT JOIN users ON users.id = kegiatan.author_id")
 
@@ -56,18 +58,18 @@ func (r *kegiatanRepo) query(publishedOnly bool, q dto.KegiatanQuery) ([]model.K
 	if !publishedOnly {
 		switch q.Status {
 		case "published":
-			db = db.Where("is_published = ? AND deleted_at IS NULL", true)
+			db = db.Where("is_published = ? AND kegiatan.deleted_at IS NULL", true)
 		case "draft":
-			db = db.Where("is_published = ? AND deleted_at IS NULL", false)
+			db = db.Where("is_published = ? AND kegiatan.deleted_at IS NULL", false)
 		case "trashed":
-			db = db.Unscoped().Model(&model.Kegiatan{}).Where("deleted_at IS NOT NULL")
+			db = db.Unscoped().Model(&model.Kegiatan{}).Where("kegiatan.deleted_at IS NOT NULL")
 		default: // "all" atau kosong
-			db = db.Where("deleted_at IS NULL")
+			db = db.Where("kegiatan.deleted_at IS NULL")
 		}
 	} else if q.Status == "trashed" {
-		db = db.Unscoped().Model(&model.Kegiatan{}).Where("deleted_at IS NOT NULL")
+		db = db.Unscoped().Model(&model.Kegiatan{}).Where("kegiatan.deleted_at IS NOT NULL")
 	} else {
-		db = db.Where("deleted_at IS NULL")
+		db = db.Where("kegiatan.deleted_at IS NULL")
 	}
 
 	if q.Search != "" {
@@ -90,7 +92,10 @@ func (r *kegiatanRepo) query(publishedOnly bool, q dto.KegiatanQuery) ([]model.K
 	}
 
 	page := maxInt(q.Page, 1)
-	limit := maxInt(q.Limit, 10)
+	limit := q.Limit
+	if limit <= 0 {
+		limit = 10
+	}
 	offset := (page - 1) * limit
 
 	err := db.Preload("Tags").Limit(limit).Offset(offset).Find(&items).Error
@@ -185,6 +190,17 @@ func (r *kegiatanRepo) SaveGallery(kegiatanID uint, items []dto.GalleryInput) er
 
 func (r *kegiatanRepo) DeleteGalleryImage(galleryID uint) error {
 	return r.db.Delete(&model.KegiatanGallery{}, galleryID).Error
+}
+
+// GetCategories mengembalikan daftar kategori unik (non-kosong) dari data kegiatan aktif.
+func (r *kegiatanRepo) GetCategories() ([]string, error) {
+	var categories []string
+	err := r.db.Model(&model.Kegiatan{}).
+		Where("deleted_at IS NULL AND category IS NOT NULL AND category != ''").
+		Distinct().
+		Order("category ASC").
+		Pluck("category", &categories).Error
+	return categories, err
 }
 
 func maxInt(a, b int) int {

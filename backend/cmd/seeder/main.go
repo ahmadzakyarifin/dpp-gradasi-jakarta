@@ -123,7 +123,7 @@ func main() {
 		AboutFormationDate: "4 Februari 2019",
 		AboutNoSK:          "AHU-0000151.AH.01.07.2019",
 		AboutVision:        "Mewujudkan masyarakat Indonesia yang cerdas, kreatif, dan berdaulat di era digital.",
-		AboutMission:       `["Membangun ekosistem literasi digital yang inklusif di seluruh daerah Indonesia.","Mengakselerasi transformasi digital bagi UMKM dan generasi muda.","Mendorong inovasi dan kolaborasi antar pemangku kepentingan industri kreatif digital."]` ,
+		AboutMission:       `["Membangun ekosistem literasi digital yang inklusif di seluruh daerah Indonesia.","Mengakselerasi transformasi digital bagi UMKM dan generasi muda.","Mendorong inovasi dan kolaborasi antar pemangku kepentingan industri kreatif digital."]`,
 		GreetingTitle:      "Tahun Baru 2026",
 		GreetingSubtitle:   "Resolusi & Harapan",
 		GreetingDate:       "11 Februari 2026",

@@ -1,25 +1,32 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import AdminLayout from '../../layouts/AdminLayout'
 import { useAuthStore } from '../../store/useAuthStore'
+import { apiRequest } from '../../api'
+
+const apiBase = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8080/api/v1'
 
 export default function ProfileAdmin() {
-  const { token, fetchMe } = useAuthStore()
+  const { fetchMe } = useAuthStore()
+  const [searchParams] = useSearchParams()
+  const forced = searchParams.get('force') === '1'
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [photo, setPhoto] = useState(null)
   const [photoPreview, setPhotoPreview] = useState('')
-  
+
   const [oldPassword, setOldPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [loadingPwd, setLoadingPwd] = useState(false)
+  const [message, setMessage] = useState(null)
 
   useEffect(() => {
     fetchMe().then(user => {
       if (user) {
         setName(user.name)
         setEmail(user.email)
-        setPhotoPreview(user.photo_path ? `http://127.0.0.1:8080${user.photo_path}` : '')
+        setPhotoPreview(user.photo_path ? `${apiBase.replace(/\/api\/v1$/, '')}${user.photo_path}` : '')
       }
     })
   }, [fetchMe])
@@ -35,26 +42,26 @@ export default function ProfileAdmin() {
   const handleUpdateProfile = async (e) => {
     e.preventDefault()
     setLoading(true)
+    setMessage(null)
     const fd = new FormData()
     fd.append('name', name)
     fd.append('email', email)
     if (photo) fd.append('photo', photo)
 
     try {
-      const response = await fetch('http://127.0.0.1:8080/api/v1/profile', {
+      const res = await apiRequest('/profile', {
         method: 'PUT',
-        headers: { Authorization: `Bearer ${token}` },
-        body: fd
+        body: fd,
+        headers: {}, // apiRequest handles Authorization; FormData sets boundary
       })
-      const res = await response.json()
-      if (res.success) {
-        alert(res.message || 'Profil berhasil diperbarui')
-        fetchMe()
-      } else {
-        alert('Gagal: ' + res.message)
+      setMessage({ type: 'success', text: res.message || 'Profil berhasil diperbarui' })
+      if (res.data?.email && res.data.email !== email) {
+        // email berubah → perlu verifikasi
+        setMessage({ type: 'success', text: res.message })
       }
-    } catch {
-      alert('Terjadi kesalahan')
+      fetchMe()
+    } catch (err) {
+      setMessage({ type: 'error', text: err.message || 'Terjadi kesalahan' })
     } finally {
       setLoading(false)
     }
@@ -63,25 +70,17 @@ export default function ProfileAdmin() {
   const handleUpdatePassword = async (e) => {
     e.preventDefault()
     setLoadingPwd(true)
+    setMessage(null)
     try {
-      const response = await fetch('http://127.0.0.1:8080/api/v1/profile/password', {
+      const res = await apiRequest('/profile/password', {
         method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ old_password: oldPassword, new_password: newPassword })
+        body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
       })
-      const res = await response.json()
-      if (res.success) {
-        alert('Password berhasil diubah')
-        setOldPassword('')
-        setNewPassword('')
-      } else {
-        alert('Gagal: ' + res.message)
-      }
-    } catch {
-      alert('Terjadi kesalahan')
+      setMessage({ type: 'success', text: res.message || 'Password berhasil diubah' })
+      setOldPassword('')
+      setNewPassword('')
+    } catch (err) {
+      setMessage({ type: 'error', text: err.message || 'Terjadi kesalahan' })
     } finally {
       setLoadingPwd(false)
     }
@@ -90,7 +89,23 @@ export default function ProfileAdmin() {
   return (
     <AdminLayout title="Profil Saya">
       <div className="max-w-4xl mx-auto space-y-6">
-        
+
+        {forced && (
+          <div className="rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-4 text-sm font-medium text-amber-800 flex items-start gap-3">
+            <i className="ph ph-lock-key text-xl mt-0.5" />
+            <div>
+              <p className="font-bold">Anda menggunakan password default dari email.</p>
+              <p className="text-amber-700 mt-0.5">Demi keamanan, silakan ganti password Anda di bawah ini sebelum melanjutkan.</p>
+            </div>
+          </div>
+        )}
+
+        {message && (
+          <div className={`rounded-xl border px-4 py-3 text-sm font-medium ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+            {message.text}
+          </div>
+        )}
+
         {/* Profile Info Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="p-6 border-b border-gray-200">
