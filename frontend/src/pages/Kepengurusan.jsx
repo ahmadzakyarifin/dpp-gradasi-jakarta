@@ -7,35 +7,7 @@ export default function Kepengurusan() {
   const [searchParams, setSearchParams] = useSearchParams()
   const activeTab = searchParams.get('tab') || 'ketua'
   
-  const [allPengurus, setAllPengurus] = useState([
-    // KETUA UMUM
-    { id: 1, name: 'Upi Asmaradhana', role: 'Ketua Umum DPP GRADASI', level: 'ketua', is_active: true, periode: '2024 - 2029', image_url: 'https://gradasi.org/uploads/img/s-anggota/ketua/1735027418.jpg', sort_order: 1, facebook_url: 'https://facebook.com', instagram_url: 'https://instagram.com' },
-
-    // DPP
-    { id: 2, name: 'Dr. Susi Susanti, M.Pd', role: 'Wakil Ketua I', level: 'dpp', is_active: true, image_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200', sort_order: 1 },
-    { id: 3, name: 'Ir. Budi Santoso', role: 'Wakil Ketua II', level: 'dpp', is_active: true, image_url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=200', sort_order: 2 },
-    { id: 4, name: 'Junaidi, S.Kom', role: 'Sekretaris Jenderal', level: 'dpp', is_active: true, image_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200', sort_order: 3 },
-    { id: 5, name: 'Dina Mariana, S.ST', role: 'Wakil Sekjen 1', level: 'dpp', is_active: true, image_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=200', sort_order: 4 },
-    { id: 6, name: 'Sudarwati', role: 'Wakil Sekjen 2', level: 'dpp', is_active: true, image_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200', sort_order: 5 },
-    { id: 7, name: 'Rina Wijaya, M.Sc', role: 'Bendahara Umum', level: 'dpp', is_active: true, image_url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=200', sort_order: 6 },
-    { id: 8, name: 'Yoseph Budi', role: 'Wakil Bendahara', level: 'dpp', is_active: true, image_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200', sort_order: 7 },
-    { id: 9, name: 'Dwi Purnomo, S.Kom', role: 'Koordinator Dept 01 Organisasi', level: 'dpp', is_active: true, image_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200', sort_order: 8 },
-    { id: 10, name: 'Muhammad Hertiyadi Alfaqy S.Kom', role: 'Koordinator Dept 02 IT & Digital', level: 'dpp', is_active: true, image_url: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=200', sort_order: 9 },
-
-    // DPD
-    { id: 11, name: 'Drs. H. Ahmad Fauzi', role: 'Ketua DPD Jawa Barat', level: 'dpd', provinsi: 'Jawa Barat', is_active: true, image_url: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=200', sort_order: 1 },
-    { id: 12, name: 'Bambang Irawan, S.T', role: 'Ketua DPD Jawa Timur', level: 'dpd', provinsi: 'Jawa Timur', is_active: true, image_url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=200', sort_order: 2 },
-    { id: 13, name: 'Siti Aminah, M.Si', role: 'Ketua DPD Jawa Tengah', level: 'dpd', provinsi: 'Jawa Tengah', is_active: true, image_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200', sort_order: 3 },
-    { id: 14, name: 'Hendra Gunawan', role: 'Ketua DPD DKI Jakarta', level: 'dpd', provinsi: 'DKI Jakarta', is_active: true, image_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200', sort_order: 4 },
-    { id: 15, name: 'Tri Wahyudi', role: 'Ketua DPD Banten', level: 'dpd', provinsi: 'Banten', is_active: true, image_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200', sort_order: 5 },
-    { id: 16, name: 'Eko Prasetyo', role: 'Ketua DPD DI Yogyakarta', level: 'dpd', provinsi: 'DI Yogyakarta', is_active: true, image_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200', sort_order: 6 },
-
-    // DPC
-    { id: 17, name: 'Syamsul Bahri', role: 'Ketua DPC Kota Bandung', level: 'dpc', provinsi: 'Jawa Barat', kabupaten: 'Kota Bandung', is_active: true, image_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200', sort_order: 1 },
-    { id: 18, name: 'Herman Wijaya', role: 'Ketua DPC Kab. Bogor', level: 'dpc', provinsi: 'Jawa Barat', kabupaten: 'Kabupaten Bogor', is_active: true, image_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200', sort_order: 2 },
-    { id: 19, name: 'Ridwan Malik', role: 'Ketua DPC Kota Surabaya', level: 'dpc', provinsi: 'Jawa Timur', kabupaten: 'Kota Surabaya', is_active: true, image_url: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=200', sort_order: 3 },
-    { id: 20, name: 'Anita Rahayu', role: 'Ketua DPC Kab. Malang', level: 'dpc', provinsi: 'Jawa Timur', kabupaten: 'Kabupaten Malang', is_active: true, image_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200', sort_order: 4 }
-  ])
+  const [allPengurus, setAllPengurus] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedProvinsi, setSelectedProvinsi] = useState('')
@@ -44,7 +16,7 @@ export default function Kepengurusan() {
   const itemsPerPage = 4
 
   useEffect(() => {
-    pengurusService.list()
+    pengurusService.list({ limit: 100 })
       .then(res => {
         if (res.success && res.data) {
           const list = Array.isArray(res.data) ? res.data : (res.data.pengurus || [])

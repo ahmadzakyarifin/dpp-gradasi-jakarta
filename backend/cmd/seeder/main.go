@@ -318,6 +318,23 @@ func main() {
 		{Name: "Budi Pratama, S.T.", Role: "Ketua DPC Gradasi Kab. Malang", Level: "dpc", Provinsi: strPtr("Jawa Timur"), Kabupaten: strPtr("Kabupaten Malang"), ImagePath: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=200", SortOrder: 12, Periode: "2025 - 2030", IsActive: true},
 		{Name: "Siti Rahmawati", Role: "Sekretaris DPC Gradasi Kota Surabaya", Level: "dpc", Provinsi: strPtr("Jawa Timur"), Kabupaten: strPtr("Kota Surabaya"), ImagePath: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200", SortOrder: 13, Periode: "2025 - 2030", IsActive: true},
 		{Name: "Ahmad Fauzi", Role: "Ketua DPC Gradasi Kab. Bogor", Level: "dpc", Provinsi: strPtr("Jawa Barat"), Kabupaten: strPtr("Kabupaten Bogor"), ImagePath: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200", SortOrder: 14, Periode: "2025 - 2030", IsActive: true},
+		// ===== Tambahan dari dummy frontend (Kepengurusan.jsx) agar tidak ada data hilang =====
+		// DPP (lanjutan)
+		{Name: "Sudarwati", Role: "Wakil Sekjen 2", Department: strPtr("Kesekretariatan"), Level: "dpp", ImagePath: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200", SortOrder: 15, Periode: "2025 - 2030", IsActive: true},
+		{Name: "Yoseph Budi", Role: "Wakil Bendahara", Department: strPtr("Kebendaharaan"), Level: "dpp", ImagePath: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200", SortOrder: 16, Periode: "2025 - 2030", IsActive: true},
+		{Name: "Dwi Purnomo, S.Kom", Role: "Koordinator Dept 01 Organisasi", Department: strPtr("Departemen 01"), Level: "dpp", ImagePath: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200", SortOrder: 17, Periode: "2025 - 2030", IsActive: true},
+		// DPD (lanjutan)
+		{Name: "Drs. H. Ahmad Fauzi", Role: "Ketua DPD Jawa Barat", Level: "dpd", Provinsi: strPtr("Jawa Barat"), ImagePath: "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=200", SortOrder: 18, Periode: "2025 - 2030", IsActive: true},
+		{Name: "Bambang Irawan, S.T", Role: "Ketua DPD Jawa Timur", Level: "dpd", Provinsi: strPtr("Jawa Timur"), ImagePath: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=200", SortOrder: 19, Periode: "2025 - 2030", IsActive: true},
+		{Name: "Siti Aminah, M.Si", Role: "Ketua DPD Jawa Tengah", Level: "dpd", Provinsi: strPtr("Jawa Tengah"), ImagePath: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200", SortOrder: 20, Periode: "2025 - 2030", IsActive: true},
+		{Name: "Hendra Gunawan", Role: "Ketua DPD DKI Jakarta", Level: "dpd", Provinsi: strPtr("DKI Jakarta"), ImagePath: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200", SortOrder: 21, Periode: "2025 - 2030", IsActive: true},
+		{Name: "Tri Wahyudi", Role: "Ketua DPD Banten", Level: "dpd", Provinsi: strPtr("Banten"), ImagePath: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200", SortOrder: 22, Periode: "2025 - 2030", IsActive: true},
+		{Name: "Eko Prasetyo", Role: "Ketua DPD DI Yogyakarta", Level: "dpd", Provinsi: strPtr("DI Yogyakarta"), ImagePath: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200", SortOrder: 23, Periode: "2025 - 2030", IsActive: true},
+		// DPC (lanjutan)
+		{Name: "Syamsul Bahri", Role: "Ketua DPC Kota Bandung", Level: "dpc", Provinsi: strPtr("Jawa Barat"), Kabupaten: strPtr("Kota Bandung"), ImagePath: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200", SortOrder: 24, Periode: "2025 - 2030", IsActive: true},
+		{Name: "Herman Wijaya", Role: "Ketua DPC Kab. Bogor", Level: "dpc", Provinsi: strPtr("Jawa Barat"), Kabupaten: strPtr("Kabupaten Bogor"), ImagePath: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200", SortOrder: 25, Periode: "2025 - 2030", IsActive: true},
+		{Name: "Ridwan Malik", Role: "Ketua DPC Kota Surabaya", Level: "dpc", Provinsi: strPtr("Jawa Timur"), Kabupaten: strPtr("Kota Surabaya"), ImagePath: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=200", SortOrder: 26, Periode: "2025 - 2030", IsActive: true},
+		{Name: "Anita Rahayu", Role: "Ketua DPC Kab. Malang", Level: "dpc", Provinsi: strPtr("Jawa Timur"), Kabupaten: strPtr("Kabupaten Malang"), ImagePath: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200", SortOrder: 27, Periode: "2025 - 2030", IsActive: true},
 	}
 	db.Create(&pengurusList)
 

@@ -7,41 +7,7 @@ export default function KegiatanList() {
   const [searchParams] = useSearchParams()
   const categoryParam = searchParams.get('category') || ''
 
-  const [items, setItems] = useState([
-    {
-      id: 1,
-      title: 'Penyaluran Bantuan Kemanusiaan oleh DPP GRADASI',
-      slug: 'penyaluran-bantuan-kemanusiaan',
-      category: 'Nasional',
-      event_date: '31 Desember 2025',
-      location: 'Jakarta',
-      image_url: 'https://gradasi.org/uploads/img/event/1767154719.jpg',
-      excerpt: 'Dewan Pimpinan Pusat (DPP) GRADASI turun langsung menyalurkan bantuan kemanusiaan kepada masyarakat yang terdampak bencana alam sebagai wujud kepedulian sosial.',
-      is_published: true
-    },
-    {
-      id: 2,
-      title: 'Pelatihan Digital Marketing UMKM Go Online',
-      slug: 'pelatihan-digital-marketing-umkm',
-      category: 'Jawa Timur',
-      event_date: '15 November 2025',
-      location: 'Surabaya',
-      image_url: 'https://gradasi.org/uploads/img/event/1767154619.jpg',
-      excerpt: 'Program pelatihan intensif bagi pelaku Usaha Mikro Kecil Menengah (UMKM) untuk memasarkan produknya secara digital demi menjangkau pasar yang lebih luas.',
-      is_published: true
-    },
-    {
-      id: 3,
-      title: 'Konsolidasi Pengurus DPP & Penyerahan SK Daerah',
-      slug: 'konsolidasi-pengurus-dpp-dpd',
-      category: 'Lampung',
-      event_date: '02 Oktober 2025',
-      location: 'Bandar Lampung',
-      image_url: 'https://gradasi.org/uploads/img/event/1767154397.jpg',
-      excerpt: 'Acara konsolidasi pengurus tingkat pusat serta penyerahan Surat Keputusan (SK) kepada perwakilan pengurus daerah demi memperkuat struktur organisasi di seluruh nusantara.',
-      is_published: true
-    }
-  ])
+  const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
 
   const [searchQuery, setSearchQuery] = useState('')

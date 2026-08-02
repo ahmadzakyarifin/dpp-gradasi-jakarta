@@ -16,105 +16,11 @@ export default function Home() {
   const revealBerita = useReveal()
   const revealKontak = useReveal()
 
-  const [sliders, setSliders] = useState([
-    {
-      title: 'Musyawarah Nasional Ke-II GRADASI',
-      subtitle: 'Kolaborasi Membangun Negeri Menuju Indonesia Emas 2045',
-      tag: 'HEADLINE EVENT',
-      is_new: true,
-      event_date: '10 - 12 Agustus 2026',
-      location: 'Jakarta Convention Center',
-      image_url: 'https://gradasi.org/uploads/img/slider/1749385864.jpg',
-      link_url: '/kegiatan/munas-ke-ii'
-    },
-    {
-      title: 'Pelatihan Digital Marketing UMKM',
-      subtitle: 'Program Transformasi Berbasis Literasi Digital untuk Memajukan Ekonomi Daerah',
-      tag: 'PELATIHAN',
-      is_new: false,
-      event_date: '15 November 2025',
-      location: 'Online via Zoom',
-      image_url: 'https://gradasi.org/uploads/img/slider/1746600828.jpg',
-      link_url: '/kegiatan/pelatihan-digital-marketing'
-    },
-    {
-      title: 'Audiensi & Sinergi Strategis',
-      subtitle: 'Memperkuat Kemitraan Bersama Pemangku Kepentingan Nasional',
-      tag: 'KEMITRAAN',
-      is_new: false,
-      event_date: 'September 2025',
-      location: 'Kementerian Kominfo',
-      image_url: 'https://gradasi.org/uploads/img/slider/1746600520.png',
-      link_url: '#'
-    }
-  ])
+  const [sliders, setSliders] = useState([])
 
-  const [featuredKegiatan, setFeaturedKegiatan] = useState([
-    {
-      id: 1,
-      title: 'Penyaluran Bantuan Kemanusiaan',
-      slug: 'penyaluran-bantuan-kemanusiaan',
-      category: 'Nasional',
-      is_new: true,
-      event_date: '31 December 2025',
-      image_url: 'https://gradasi.org/uploads/img/event/1767154719.jpg',
-      excerpt: 'Dewan Pimpinan Pusat (DPP) GRADASI menyalurkan bantuan kemanusiaan kepada korban bencana alam...'
-    },
-    {
-      id: 2,
-      title: 'Pelatihan Digital Marketing UMKM',
-      slug: 'pelatihan-digital-marketing-umkm',
-      category: 'Jawa Timur',
-      is_new: false,
-      event_date: '31 December 2025',
-      image_url: 'https://gradasi.org/uploads/img/event/1767154619.jpg',
-      excerpt: 'Dewan Pimpinan Pusat (DPP) GRADASI menyalurkan bantuan kemanusiaan kepada korban bencana b...'
-    },
-    {
-      id: 3,
-      title: 'Konsolidasi Pengurus DPP & DPD',
-      slug: 'konsolidasi-pengurus-dpp-dpd',
-      category: 'Lampung',
-      is_new: false,
-      event_date: '31 December 2025',
-      image_url: 'https://gradasi.org/uploads/img/event/1767154397.jpg',
-      excerpt: 'Dewan Pimpinan Pusat (DPP) GRADASI menyalurkan bantuan kemanusiaan kepada korban bencana b...'
-    }
-  ])
+  const [featuredKegiatan, setFeaturedKegiatan] = useState([])
 
-  // Default Fallback Berita matching index.html
-  const [recentBerita, setRecentBerita] = useState([
-    {
-      id: 1,
-      title: 'Rapat Kerja Daerah Jatim',
-      slug: 'rapat-kerja-daerah-jatim',
-      category: 'Berita Daerah',
-      is_new: true,
-      published_date: '11 February 2026',
-      image_url: 'https://gradasi.org/uploads/img/berita/17708152730.jpg',
-      excerpt: 'SURABAYA, Generasi Digital Indonesia (GRADASI) Jawa Timur bersiap menggelar Rapat Kerja Da...'
-    },
-    {
-      id: 2,
-      title: 'Peningkatan Kompetensi SDM',
-      slug: 'peningkatan-kompetensi-sdm-pendidikan',
-      category: 'Edukasi',
-      is_new: false,
-      published_date: '2 November 2025',
-      image_url: 'https://gradasi.org/uploads/img/berita/17620765070.jpg',
-      excerpt: 'Inisiatif GRADASI Mendorong Peningkatan Kompetensi SDM Pendidikan dalam Memanfaatkan Kecer...'
-    },
-    {
-      id: 3,
-      title: 'Rumusan Kunci Kebijakan',
-      slug: 'rumusan-kunci-kebijakan-literasi-digital',
-      category: 'Berita Utama',
-      is_new: false,
-      published_date: '31 October 2025',
-      image_url: 'https://gradasi.org/uploads/img/berita/17618789900.jpg',
-      excerpt: '#Ketua Dewan Pakar GRADASI, Damar Juniarto, Paparkan Lima Rumusan Kunci Kebijakan untuk Me...'
-    }
-  ])
+  const [recentBerita, setRecentBerita] = useState([])
 
   const [currentSlide, setCurrentSlide] = useState(0)
   const [progress, setProgress] = useState(0)
@@ -241,6 +147,7 @@ export default function Home() {
   return (
     <PublicLayout>
       {/* 1. HERO CAROUSEL WITH 3D FLYER FOCUS */}
+      {activeSlide && (
       <section className="relative bg-brand-950 overflow-hidden pt-28 pb-20 md:pt-40 md:pb-24 border-b border-brand-900 min-h-screen flex items-center">
         {/* Slide Background Overlay */}
         <div className="absolute inset-0 z-0">
@@ -372,6 +279,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      )}
 
       {/* 2. SAMBUTAN KETUA UMUM */}
       <section className="py-24 bg-white border-b border-slate-200 relative overflow-hidden">
