@@ -39,7 +39,7 @@ tagline, kontak, sosial media, teks section).
     "id": 1,
     "site_name": "DPP GRADASI",
     "tagline": "Generasi Digital Indonesia",
-    "logo_url": "/uploads/settings/1737187847.png",
+    "logo_path": "/uploads/settings/1737187847.png",
     "contact_email": "dpp@gradasi.org",
     "contact_phone": "+6281234567890",
     "address": "Office Park OL3-IZA The Bellagio Mall, Mega Kuningan, Jakarta Selatan",
@@ -47,7 +47,7 @@ tagline, kontak, sosial media, teks section).
     "facebook_url": "https://www.facebook.com/gradasiofficial.id",
     "instagram_url": "https://www.instagram.com/dppgradasi",
     "youtube_url": "https://www.youtube.com/channel/UCwdjB4LkqcF4Kw5-PoyOb5A",
-    "video_profile_url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    "video_profile_path": "https://www.youtube.com/embed/dQw4w9WgXcQ",
     "history": "Perkumpulan Generasi Digital Indonesia (GRADASI) didirikan pada 4 Februari 2019...",
     "about_tutorial": "Pengesahan Badan Hukum Kemenkumham RI.",
     "about_formation_date": "4 Februari 2019",
@@ -58,7 +58,7 @@ tagline, kontak, sosial media, teks section).
     "greeting_subtitle": "Resolusi & Harapan",
     "greeting_date": "11 Februari 2026",
     "greeting_content": "Memasuki tahun 2026, GRADASI menetapkan pilar utama perjuangan...",
-    "greeting_image_url": "https://gradasi.org/uploads/img/event-terkini/1767154211.jpg",
+    "greeting_image_path": "https://gradasi.org/uploads/img/event-terkini/1767154211.jpg",
     "created_at": "2026-07-30T08:00:00Z",
     "updated_at": "2026-07-30T08:00:00Z",
     "updated_by": 1
@@ -68,7 +68,7 @@ tagline, kontak, sosial media, teks section).
 
 ### Catatan field
 - Semua field opsional untuk dirender — FE wajib punya fallback bila kosong.
-- `logo_url`, `greeting_image_url`, dan URL upload lokal memakai path relatif
+- `logo_path`, `greeting_image_path`, dan URL upload lokal memakai path relatif
   (`/uploads/...`) yang di-serve Gin; URL eksternal penuh (`https://...`) juga
   didukung. FE cukup prepend base URL bila path relatif.
 - `updated_by` = ID user admin terakhir yang mengubah settings (nullable).
@@ -137,7 +137,7 @@ tidak dikirim tidak diubah. Key yang tidak dikenal → 422.
 
 Upload file logo baru (multipart/form-data). Validasi: wajib file, size maks
 **2 MB**, MIME type **PNG/JPEG/WEBP**. File disimpan ke `public/uploads/settings/`
-dengan nama unik (`<unixnano><ext>`), lalu `logo_url` di tabel settings
+dengan nama unik (`<unixnano><ext>`), lalu `logo_path` di tabel settings
 di-update ke path relatif `/uploads/settings/<nama>`.
 
 ### Request (multipart/form-data)
@@ -153,9 +153,10 @@ logo: (binary) — wajib, maks 2MB, image/png | image/jpeg | image/webp
   "success": true,
   "code": "SETTINGS_LOGO_UPLOADED",
   "message": "Logo berhasil diunggah",
-  "data": { "logo_url": "/uploads/settings/1737187847123456789.png" }
+  "data": { "site_name": "DPP GRADASI", "logo_path": "/uploads/settings/1737187847123456789.png", "...": "seluruh field seperti GET /settings" }
 }
 ```
+> Catatan: backend mengembalikan seluruh objek settings (sama seperti GET /settings), bukan hanya `logo_path`.
 
 ### Response 400 (file salah)
 

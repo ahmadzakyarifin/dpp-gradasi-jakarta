@@ -359,15 +359,13 @@
       ],
       "content": [
         { "tag": "required", "message": "Content wajib diisi." }
-      ],
-      "event_date": [
-        { "tag": "required", "message": "Event date wajib diisi." }
       ]
     },
     "notes": [
       "Slug dibuat otomatis dari title oleh backend (gosimple/slug).",
       "author_id bersifat opsional. Jika tidak diisi, diambil otomatis dari token login.",
-      "Gallery dikirim sebagai JSON string di field `gallery`."
+      "Gallery dikirim sebagai JSON string di field `gallery`.",
+      "Hanya title (required,min=5,max=300) dan content (required) yang divalidasi backend (binding tag) — category, event_date, location, organizer, image_path, excerpt bersifat opsional walau field-nya ada."
     ],
     "responses": {
       "201": {
@@ -400,8 +398,8 @@
           }
         }
       },
-      "400": {
-        "description": "Validasi input gagal",
+      "422": {
+        "description": "Validasi input gagal (body tidak bisa di-bind / field wajib kosong)",
         "body": {
           "success": false,
           "code": "VALIDATION_ERROR",
@@ -410,7 +408,7 @@
             {
               "field": "title",
               "tag": "required",
-              "message": "Title wajib diisi, minimal 5 karakter."
+              "message": "Title dan content wajib diisi."
             }
           ]
         }
@@ -471,14 +469,16 @@
     },
     "validation": {
       "title": [
-        { "tag": "required", "message": "Title wajib diisi, minimal 5 karakter." },
-        { "tag": "min", "message": "Title minimal 5 karakter." },
+        { "tag": "omitempty", "message": "Title bersifat opsional saat update." },
+        { "tag": "min", "message": "Jika diisi, title minimal 5 karakter." },
         { "tag": "max", "message": "Title maksimal 300 karakter." }
-      ],
-      "content": [
-        { "tag": "required", "message": "Content wajib diisi." }
       ]
     },
+    "notes": [
+      "Semua field bersifat partial update — kirim hanya field yang ingin diubah.",
+      "Title (jika dikirim) divalidasi min=5,max=300, tapi tidak wajib diisi.",
+      "Berbeda dengan endpoint create, field content TIDAK divalidasi (tidak ada binding required) di endpoint update."
+    ],
     "responses": {
       "200": {
         "description": "Kegiatan berhasil diperbarui",
@@ -672,8 +672,8 @@
           "description": "Bulk delete berhasil",
           "body": {
             "success": true,
-            "code": "BULK_DELETED",
-            "message": "Data berhasil dihapus (soft delete)."
+            "code": "KEGIATAN_BULK_DELETED",
+            "message": "Kegiatan berhasil dihapus massal."
           }
         }
       }
@@ -702,8 +702,8 @@
           "description": "Bulk restore berhasil",
           "body": {
             "success": true,
-            "code": "BULK_RESTORED",
-            "message": "Data berhasil dipulihkan."
+            "code": "KEGIATAN_BULK_RESTORED",
+            "message": "Kegiatan berhasil dipulihkan massal."
           }
         }
       }

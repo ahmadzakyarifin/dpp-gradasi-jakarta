@@ -88,6 +88,25 @@
               "status": "active"
             }
           }
+        },
+        "400": {
+          "description": "Email baru sudah dipakai user lain",
+          "body": {
+            "success": false,
+            "code": "EMAIL_TAKEN",
+            "message": "Email sudah terdaftar"
+          }
+        },
+        "422": {
+          "description": "Body/form tidak valid (name atau email kosong/format salah)",
+          "body": {
+            "success": false,
+            "code": "VALIDATION_ERROR",
+            "message": "Validasi gagal.",
+            "errors": [
+              { "field": "input", "tag": "invalid", "message": "Key: 'ProfileUpdateRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag" }
+            ]
+          }
         }
       }
     },
@@ -382,8 +401,8 @@
           "description": "Bulk delete berhasil",
           "body": {
             "success": true,
-            "code": "BULK_DELETED",
-            "message": "Data berhasil dihapus (soft delete)."
+            "code": "ADMIN_BULK_DELETED",
+            "message": "Admin berhasil dihapus massal"
           }
         }
       }
@@ -412,8 +431,8 @@
           "description": "Bulk restore berhasil",
           "body": {
             "success": true,
-            "code": "BULK_RESTORED",
-            "message": "Data berhasil dipulihkan."
+            "code": "ADMIN_BULK_RESTORED",
+            "message": "Admin berhasil dipulihkan massal"
           }
         }
       }

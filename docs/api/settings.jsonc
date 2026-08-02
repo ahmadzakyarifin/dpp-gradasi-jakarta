@@ -20,7 +20,8 @@
     },
     "notes": [
       "Mengambil semua konfigurasi website yang diperlukan frontend.",
-      "Bisa diakses tanpa login (data publik)."
+      "Bisa diakses tanpa login (data publik).",
+      "updated_by berisi ID user (admin) yang terakhir mengubah settings, null jika belum pernah diubah."
     ],
     "responses": {
       "200": {
@@ -30,6 +31,7 @@
           "code": "SETTINGS_RETRIEVED",
           "message": "Konfigurasi website berhasil diambil",
           "data": {
+            "id": 1,
             "site_name": "DPP GRADASI",
             "tagline": "Generasi Digital Indonesia",
             "logo_path": "/uploads/logo.png",
@@ -55,7 +57,9 @@
             "greeting_date": "11 February 2026",
             "greeting_content": "Memasuki tahun 2026, GRADASI menetapkan pilar...",
             "greeting_image_path": "https://gradasi.org/uploads/img/event-terkini/1767154211.jpg",
-            "created_at": "2026-07-30T08:00:00Z"
+            "created_at": "2026-07-30T08:00:00Z",
+            "updated_at": "2026-08-01T09:15:00Z",
+            "updated_by": 1
           }
         }
       }
@@ -103,7 +107,8 @@
       "Field dengan akhiran _email divalidasi format emailnya.",
       "Field dengan akhiran _url divalidasi format URL-nya.",
       "about_mission menerima array of string atau null (disimpan sebagai JSON di DB).",
-      "Key yang tidak dikenal → 400 VALIDATION_ERROR (mis. 'siteName' salah, harus 'site_name')."
+      "Key yang tidak dikenal → 400 VALIDATION_ERROR (mis. 'siteName' salah, harus 'site_name').",
+      "updated_by diisi otomatis dari user_id token login (bukan dari request body) dan updated_at otomatis ke waktu saat ini."
     ],
     "responses": {
       "200": {
@@ -125,7 +130,9 @@
             "greeting_image_path": "https://gradasi.org/uploads/img/event-terkini/1767154211.jpg",
             "about_mission": [
               "Membangun ekosistem literasi digital"
-            ]
+            ],
+            "updated_at": "2026-08-02T10:30:00Z",
+            "updated_by": 1
           }
         }
       },
@@ -175,17 +182,24 @@
     "notes": [
       "Upload file logo baru (multipart/form-data, field name 'logo').",
       "File divalidasi: tipe image/* (jpeg/png/webp), ukuran maks 2MB.",
-      "Sukses: logo_path di database diperbarui ke path file baru."
+      "Sukses: logo_path di database diperbarui ke path file baru.",
+      "Response data adalah seluruh objek settings (sama seperti get_all), bukan hanya logo_path — contoh di bawah diringkas untuk keterbacaan."
     ],
     "responses": {
       "200": {
         "description": "Logo berhasil diunggah",
         "body": {
           "success": true,
-          "code": "SETTINGS_LOGO_UPDATED",
-          "message": "Logo berhasil diperbarui",
+          "code": "SETTINGS_LOGO_UPLOADED",
+          "message": "Logo berhasil diunggah",
           "data": {
-            "logo_path": "/uploads/logo/1767154211.png"
+            "site_name": "DPP GRADASI",
+            "tagline": "Generasi Digital Indonesia",
+            "logo_path": "/uploads/logo/1767154211.png",
+            "contact_email": "dpp@gradasi.org",
+            "contact_phone": "+628****0008",
+            "updated_at": "2026-08-02T10:30:00Z",
+            "updated_by": 1
           }
         }
       },
@@ -193,8 +207,19 @@
         "description": "File tidak valid (bukan gambar / terlalu besar)",
         "body": {
           "success": false,
+          "code": "INVALID_LOGO",
+          "message": "File logo tidak valid. Maksimal 2MB dengan format PNG, JPG, atau WEBP."
+        }
+      },
+      "422": {
+        "description": "File logo tidak dikirim",
+        "body": {
+          "success": false,
           "code": "VALIDATION_ERROR",
-          "message": "File harus berupa gambar (image/*) dan maksimal 2MB"
+          "message": "Validasi gagal.",
+          "errors": [
+            { "field": "logo", "tag": "required", "message": "File logo wajib diunggah." }
+          ]
         }
       }
     }

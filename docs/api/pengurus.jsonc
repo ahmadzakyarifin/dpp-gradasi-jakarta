@@ -228,22 +228,54 @@
           "message": "Pengurus berhasil ditambahkan",
           "data": {
             "id": 5,
-            "name": "Kusbeni Abdulloh, S.Kom."
+            "name": "Kusbeni Abdulloh, S.Kom.",
+            "role": "Ketua DPD Gradasi Jawa Timur",
+            "level": "dpd",
+            "provinsi": "Jawa Timur",
+            "image_path": "/uploads/pengurus/1749385864.jpg",
+            "whatsapp": "628123456789",
+            "periode": "2025 - 2030",
+            "sort_order": 1,
+            "is_active": true,
+            "created_at": "2026-07-20T09:00:00Z",
+            "updated_at": "2026-07-20T09:00:00Z"
           }
         }
       },
-      "400": {
-        "description": "Validasi input gagal",
+      "422": {
+        "description": "Validasi form-data gagal di-bind (field wajib kosong/format salah), atau file image tidak dikirim.",
         "body": {
           "success": false,
           "code": "VALIDATION_ERROR",
-          "message": "validasi gagal",
-          "errors": {
-            "name": "Nama minimal 3 karakter",
-            "provinsi": "Provinsi wajib diisi untuk level dpd/dpc",
-            "kabupaten": "Kabupaten wajib diisi untuk level dpc"
-          }
+          "message": "Validasi gagal.",
+          "errors": [
+            {
+              "field": "form",
+              "tag": "invalid",
+              "message": "Data form tidak valid atau tidak lengkap."
+            }
+          ]
+        },
+        "alt_body_missing_image": {
+          "success": false,
+          "code": "VALIDATION_ERROR",
+          "message": "Validasi gagal.",
+          "errors": [
+            { "field": "image", "tag": "required", "message": "Image wajib diunggah." }
+          ]
         }
+      },
+      "500": {
+        "description": "Validasi bisnis gagal (aturan wilayah per level, atau foto gagal diproses setelah lolos binding). CATATAN: saat ini backend mengembalikan HTTP 500 untuk kasus ini (bukan 400/422) karena handler Create/Update selalu memetakan error dari service ke StatusInternalServerError tanpa membaca svcErr.Code — perlu dikonfirmasi apakah ini perilaku yang diinginkan atau bug yang perlu diperbaiki di backend.",
+        "body": {
+          "success": false,
+          "code": "VALIDATION_ERROR",
+          "message": "validasi gagal"
+        },
+        "notes": [
+          "Dipicu saat req.ValidateRegionRules() gagal: provinsi wajib diisi untuk level dpd/dpc, kabupaten wajib diisi untuk level dpc — namun pesan detail per-field TIDAK ikut dikirim ke response, hanya message generik 'validasi gagal'.",
+          "Kode UPLOAD_FAILED (500) juga bisa muncul di body ini jika proses upload file gagal."
+        ]
       }
     }
   },
@@ -306,7 +338,21 @@
         "body": {
           "success": true,
           "code": "PENGURUS_UPDATED",
-          "message": "Data pengurus berhasil diperbarui"
+          "message": "Data pengurus berhasil diperbarui",
+          "data": {
+            "id": 5,
+            "name": "Kusbeni Abdulloh, S.Kom.",
+            "role": "Ketua DPD Gradasi Jawa Timur",
+            "level": "dpd",
+            "provinsi": "Jawa Timur",
+            "image_path": "/uploads/pengurus/1749385864.jpg",
+            "whatsapp": "628123456789",
+            "periode": "2025 - 2030",
+            "sort_order": 1,
+            "is_active": true,
+            "created_at": "2026-07-20T09:00:00Z",
+            "updated_at": "2026-08-02T09:00:00Z"
+          }
         }
       },
       "404": {
@@ -315,6 +361,25 @@
           "success": false,
           "code": "NOT_FOUND",
           "message": "Pengurus tidak ditemukan"
+        }
+      },
+      "422": {
+        "description": "Validasi form-data gagal di-bind.",
+        "body": {
+          "success": false,
+          "code": "VALIDATION_ERROR",
+          "message": "Validasi gagal.",
+          "errors": [
+            { "field": "form", "tag": "invalid", "message": "Data form tidak valid atau tidak lengkap." }
+          ]
+        }
+      },
+      "500": {
+        "description": "Validasi bisnis gagal (aturan wilayah per level). Sama seperti endpoint create, saat ini backend mengembalikan HTTP 500 untuk kasus ini, bukan 400/422.",
+        "body": {
+          "success": false,
+          "code": "VALIDATION_ERROR",
+          "message": "validasi gagal"
         }
       }
     }
@@ -415,8 +480,8 @@
           "description": "Bulk delete berhasil",
           "body": {
             "success": true,
-            "code": "BULK_DELETED",
-            "message": "Data berhasil dihapus (soft delete)."
+            "code": "PENGURUS_BULK_DELETED",
+            "message": "Pengurus berhasil dihapus massal"
           }
         }
       }
@@ -445,8 +510,8 @@
           "description": "Bulk restore berhasil",
           "body": {
             "success": true,
-            "code": "BULK_RESTORED",
-            "message": "Data berhasil dipulihkan."
+            "code": "PENGURUS_BULK_RESTORED",
+            "message": "Pengurus berhasil dipulihkan massal"
           }
         }
       }

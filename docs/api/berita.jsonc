@@ -200,7 +200,8 @@
     },
     "notes": [
       "Menampilkan semua berita termasuk draft dan yang sudah dihapus (trashed).",
-      "Hanya bisa diakses oleh user dengan role super_admin, admin, atau admin_berita."
+      "Hanya bisa diakses oleh user dengan role super_admin, admin, atau admin_berita.",
+      "PENTING: field is_published TIDAK disertakan di response list (baik public maupun admin) — backend belum mengisi field ini di list item (beda dengan modul kegiatan yang sudah menyertakannya). Gunakan parameter query 'status' untuk mengetahui kelompok data yang sedang ditampilkan, atau panggil detail_admin per item jika perlu status pasti."
     ],
     "responses": {
       "200": {
@@ -347,8 +348,8 @@
           }
         }
       },
-      "400": {
-        "description": "Validasi input gagal",
+      "422": {
+        "description": "Validasi gagal (dua kemungkinan body: error validasi field dari binding request, atau judul duplikat dari business rule).",
         "body": {
           "success": false,
           "code": "VALIDATION_ERROR",
@@ -360,11 +361,8 @@
               "message": "Title wajib diisi, minimal 5 karakter."
             }
           ]
-        }
-      },
-      "422": {
-        "description": "Judul duplikat / validasi bisnis gagal",
-        "body": {
+        },
+        "alt_body_duplicate_title": {
           "success": false,
           "code": "DUPLICATE_TITLE",
           "message": "Judul sudah digunakan, gunakan judul lain."
@@ -424,16 +422,14 @@
     },
     "validation": {
       "title": [
-        { "tag": "required", "message": "Title wajib diisi, minimal 5 karakter." },
-        { "tag": "min", "message": "Title minimal 5 karakter." },
+        { "tag": "omitempty", "message": "Title bersifat opsional saat update." },
+        { "tag": "min", "message": "Jika diisi, title minimal 5 karakter." },
         { "tag": "max", "message": "Title maksimal 300 karakter." }
-      ],
-      "content": [
-        { "tag": "required", "message": "Content wajib diisi." }
       ]
     },
     "notes": [
       "Partial update — hanya field yang dikirim yang diubah (misal toggle publish cukup kirim {\\\"is_published\\\": false}).",
+      "Title (jika dikirim) divalidasi min=5,max=300, tapi tidak wajib diisi. Field content TIDAK divalidasi (tidak ada binding required) di endpoint update, berbeda dengan create.",
       "Judul duplikat → 422 DUPLICATE_TITLE (judul berita lain).",
       "Slug TIDAK berubah saat update (link lama tidak mati)."
     ],
@@ -466,6 +462,22 @@
           "success": false,
           "code": "NOT_FOUND",
           "message": "Berita tidak ditemukan."
+        }
+      },
+      "422": {
+        "description": "Validasi gagal (dua kemungkinan body: error validasi field, atau judul duplikat).",
+        "body": {
+          "success": false,
+          "code": "VALIDATION_ERROR",
+          "message": "Validasi gagal.",
+          "errors": [
+            { "field": "title", "tag": "min", "message": "Title minimal 5 karakter." }
+          ]
+        },
+        "alt_body_duplicate_title": {
+          "success": false,
+          "code": "DUPLICATE_TITLE",
+          "message": "Judul sudah digunakan, gunakan judul lain."
         }
       }
     }
@@ -576,8 +588,8 @@
           "description": "Bulk delete berhasil",
           "body": {
             "success": true,
-            "code": "BULK_DELETED",
-            "message": "Data berhasil dihapus (soft delete)."
+            "code": "BERITA_BULK_DELETED",
+            "message": "Berita berhasil dihapus massal."
           }
         }
       }
@@ -606,8 +618,8 @@
           "description": "Bulk restore berhasil",
           "body": {
             "success": true,
-            "code": "BULK_RESTORED",
-            "message": "Data berhasil dipulihkan."
+            "code": "BERITA_BULK_RESTORED",
+            "message": "Berita berhasil dipulihkan massal."
           }
         }
       }
