@@ -50,12 +50,12 @@ export default function PublicLayout({ children }) {
                 Beranda
               </Link>
               
-              <a 
-                href="/#tentang" 
+              <Link 
+                to="/#tentang" 
                 className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-brand-700 hover:bg-slate-50 transition rounded-lg"
               >
                 Tentang Kami
-              </a>
+              </Link>
 
               {/* Kegiatan Dropdown */}
               <div 
@@ -79,13 +79,13 @@ export default function PublicLayout({ children }) {
                       >
                         <i className="ph-bold ph-squares-four mr-2" /> Semua Kegiatan
                       </Link>
-                      <a 
-                        href="/#kegiatan" 
+                      <Link 
+                        to="/#kegiatan" 
                         onClick={() => setKegiatanDropdown(false)}
                         className="block px-4 py-2.5 text-sm text-slate-600 hover:bg-brand-50 hover:text-brand-700 font-medium transition"
                       >
                         <i className="ph-bold ph-calendar-blank mr-2" /> Agenda Terkini
-                      </a>
+                      </Link>
                     </div>
                   </div>
                 )}
@@ -113,13 +113,13 @@ export default function PublicLayout({ children }) {
                       >
                         <i className="ph-bold ph-newspaper mr-2" /> Semua Informasi
                       </Link>
-                      <a 
-                        href="/#informasi" 
+                      <Link 
+                        to="/#informasi" 
                         onClick={() => setInformasiDropdown(false)}
                         className="block px-4 py-2.5 text-sm text-slate-600 hover:bg-brand-50 hover:text-brand-700 font-medium transition"
                       >
                         <i className="ph-bold ph-article mr-2" /> Berita Terkini
-                      </a>
+                      </Link>
                     </div>
                   </div>
                 )}
@@ -132,9 +132,12 @@ export default function PublicLayout({ children }) {
                 Kepengurusan
               </Link>
 
-              <a href="/#kontak" className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-brand-700 hover:bg-slate-50 transition rounded-lg">
+              <Link 
+                to="/#kontak" 
+                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-brand-700 hover:bg-slate-50 transition rounded-lg"
+              >
                 Kontak
-              </a>
+              </Link>
             </nav>
 
             {/* Login Button */}
@@ -165,11 +168,11 @@ export default function PublicLayout({ children }) {
           <div className="lg:hidden bg-white border-t border-slate-100 absolute w-full shadow-2xl max-h-[85vh] overflow-y-auto z-50">
             <div className="px-4 py-4 space-y-2">
               <Link to="/" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-sm font-bold text-brand-700 bg-brand-50 rounded-lg">Beranda</Link>
-              <a href="/#tentang" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg">Tentang Kami</a>
+              <Link to="/#tentang" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg">Tentang Kami</Link>
               <Link to="/kegiatan" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg">Kegiatan</Link>
               <Link to="/berita" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg">Informasi & Berita</Link>
               <Link to="/kepengurusan" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg">Kepengurusan</Link>
-              <a href="/#kontak" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg">Kontak</a>
+              <Link to="/#kontak" onClick={() => setMobileMenuOpen(false)} className="block px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg">Kontak</Link>
               <div className="border-t border-slate-100 pt-3 mt-3">
                 <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold text-white bg-brand-600 rounded-xl shadow-md">
                   <i className="ph-bold ph-sign-in text-lg" />

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import PublicLayout from '../layouts/PublicLayout'
 import { useSettings } from '../context/SettingsContext'
 import { resolveAssetUrl } from '../utils/assetUrl'
@@ -172,6 +172,27 @@ export default function Home() {
     window.addEventListener('focus', loadData)
     return () => window.removeEventListener('focus', loadData)
   }, [loadData])
+
+  // Scroll ke section berdasarkan hash URL (#tentang, #kegiatan, #informasi, #kontak)
+  // Dipicu saat Home mount atau hash berubah (navigasi dari navbar halaman lain).
+  const location = useLocation()
+  useEffect(() => {
+    const hash = location.hash
+    if (!hash) {
+      // Tanpa hash: kembali ke atas (perilaku standar saat buka Beranda)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
+    const id = hash.replace('#', '')
+    // Beri waktu render section & reveal animation selesai
+    const timer = setTimeout(() => {
+      const el = document.getElementById(id)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }, 60)
+    return () => clearTimeout(timer)
+  }, [location.hash])
 
   // Auto-play timer logic for hero slider
   useEffect(() => {
@@ -414,7 +435,7 @@ export default function Home() {
       </section>
 
       {/* 3. TENTANG KAMI */}
-      <section id="tentang" className="py-24 bg-slate-50 border-b border-slate-200 relative">
+      <section id="tentang" className="py-24 bg-slate-50 border-b border-slate-200 relative scroll-mt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-16">
             <span className="inline-block px-4 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-bold text-brand-600 tracking-widest uppercase mb-4 shadow-sm">
@@ -573,7 +594,7 @@ export default function Home() {
       </section>
 
       {/* 5. BERBAGAI EVENT MENARIK */}
-      <section id="kegiatan" className="py-20 bg-slate-50 border-b border-slate-200">
+      <section id="kegiatan" className="py-20 bg-slate-50 border-b border-slate-200 scroll-mt-24">
         <div ref={revealKegiatan} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 reveal">
           <div className="text-center mb-12">
             <span className="text-xs font-bold text-brand-600 tracking-widest uppercase mb-2 block">Aktivitas Terbaru</span>
@@ -687,7 +708,7 @@ export default function Home() {
       </section>
 
       {/* 7. BERITA TERBARU */}
-      <section id="informasi" className="py-20 bg-slate-50 border-b border-slate-200">
+      <section id="informasi" className="py-20 bg-slate-50 border-b border-slate-200 scroll-mt-24">
         <div ref={revealBerita} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 reveal">
           <div className="text-center mb-12">
             <span className="text-xs font-bold text-brand-600 tracking-widest uppercase mb-2 block">Pusat Informasi</span>
@@ -754,7 +775,7 @@ export default function Home() {
       </section>
 
       {/* 8. KONTAK (MAP & FORM) */}
-      <section id="kontak" className="py-20 bg-white">
+      <section id="kontak" className="py-20 bg-white scroll-mt-24">
         <div ref={revealKontak} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 reveal">
           <div className="bg-slate-50 p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm">
             <div className="grid lg:grid-cols-2 gap-10">

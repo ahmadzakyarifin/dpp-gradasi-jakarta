@@ -39,13 +39,33 @@ CREATE TABLE activity_logs (
             OR JSON_VALID(metadata)
         )
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- +goose StatementEnd
 
+-- +goose StatementBegin
 CREATE INDEX idx_activity_logs_actor_id ON activity_logs(actor_id);
+-- +goose StatementEnd
+
+-- +goose StatementBegin
 CREATE INDEX idx_activity_logs_action ON activity_logs(action);
+-- +goose StatementEnd
+
+-- +goose StatementBegin
 CREATE INDEX idx_activity_logs_entity ON activity_logs(entity_type, entity_id);
+-- +goose StatementEnd
+
+-- +goose StatementBegin
 CREATE INDEX idx_activity_logs_risk_level ON activity_logs(risk_level);
+-- +goose StatementEnd
+
+-- +goose StatementBegin
 CREATE INDEX idx_activity_logs_created_at ON activity_logs(created_at);
+-- +goose StatementEnd
+
+-- +goose StatementBegin
 CREATE INDEX idx_activity_logs_action_created_at ON activity_logs(action, created_at);
+-- +goose StatementEnd
+
+-- +goose StatementBegin
 CREATE INDEX idx_activity_logs_risk_created_at ON activity_logs(risk_level, created_at);
 -- +goose StatementEnd
 
