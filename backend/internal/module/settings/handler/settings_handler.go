@@ -27,7 +27,7 @@ func NewSettingsHandler(service service.SettingsService) SettingsHandler {
 }
 
 func (h *settingsHandler) GetSettings(c *gin.Context) {
-	settings, err := h.service.GetSettings()
+	settings, err := h.service.GetSettings(c.Request.Context())
 	if err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, "GET_SETTINGS_ERROR", err.Error(), nil)
 		return
@@ -75,7 +75,7 @@ func (h *settingsHandler) UpdateSettings(c *gin.Context) {
 		return
 	}
 
-	settings, err := h.service.UpdateSettings(requestBody, h.getUpdatedBy(c))
+	settings, err := h.service.UpdateSettings(c.Request.Context(), requestBody, h.getUpdatedBy(c))
 	if err != nil {
 		// Check if it's a validation error from service
 		if strings.Contains(err.Error(), "Validasi gagal:") {
@@ -100,7 +100,7 @@ func (h *settingsHandler) UploadLogo(c *gin.Context) {
 		return
 	}
 
-	settings, err := h.service.UploadLogo(file, h.getUpdatedBy(c))
+	settings, err := h.service.UploadLogo(c.Request.Context(), file, h.getUpdatedBy(c))
 	if err != nil {
 		msg := err.Error()
 		if strings.Contains(msg, "tidak valid") || strings.Contains(msg, "wajib") {

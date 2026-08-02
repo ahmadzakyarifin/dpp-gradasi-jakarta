@@ -153,89 +153,86 @@ export default function ActivityLogAdmin() {
     return 'bg-emerald-50 text-emerald-700 border-emerald-200'
   }
 
+  const headerContent = (
+    <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 w-full max-w-4xl animate-fade-in-up">
+      <div className="relative w-full">
+        <i className="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Cari log..."
+          className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors"
+        />
+      </div>
+      
+      <select
+        value={filterRole}
+        onChange={(e) => {
+          setFilterRole(e.target.value)
+          setPage(1)
+        }}
+        className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
+      >
+        <option value="">Semua Role</option>
+        <option value="Super Admin">Super Admin</option>
+        <option value="Admin">Admin</option>
+      </select>
+
+      <select
+        value={filterEntity}
+        onChange={(e) => {
+          setFilterEntity(e.target.value)
+          setPage(1)
+        }}
+        className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
+      >
+        <option value="">Semua Entitas</option>
+        <option value="user">User</option>
+        <option value="auth">Auth</option>
+        <option value="berita">Berita</option>
+        <option value="kegiatan">Kegiatan</option>
+        <option value="pengurus">Pengurus</option>
+        <option value="sliders">Sliders</option>
+        <option value="kontak">Kontak</option>
+        <option value="settings">Settings</option>
+        <option value="database">Database</option>
+      </select>
+
+      <select
+        value={filterRisk}
+        onChange={(e) => {
+          setFilterRisk(e.target.value)
+          setPage(1)
+        }}
+        className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
+      >
+        <option value="">Semua Risiko</option>
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
+
+      <button
+        type="submit"
+        className="bg-brand-600 hover:bg-brand-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all btn-press shrink-0"
+      >
+        Cari
+      </button>
+      <button
+        type="button"
+        onClick={handleReset}
+        className="shrink-0 bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all btn-press"
+        title="Reset Filter"
+      >
+        <i className="ph ph-arrows-counter-clockwise text-lg" />
+      </button>
+    </form>
+  )
+
   return (
-    <AdminLayout title="Activity Log">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Filter Toolbar */}
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-          <form onSubmit={handleSearchSubmit} className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
-            <div className="relative flex-1">
-              <i className="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Cari log (aktor, aktivitas, ket)..."
-                className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              <select
-                value={filterRole}
-                onChange={(e) => {
-                  setFilterRole(e.target.value)
-                  setPage(1)
-                }}
-                className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors"
-              >
-                <option value="">Semua Role</option>
-                <option value="Super Admin">Super Admin</option>
-                <option value="Admin">Admin</option>
-              </select>
-
-              <select
-                value={filterEntity}
-                onChange={(e) => {
-                  setFilterEntity(e.target.value)
-                  setPage(1)
-                }}
-                className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors"
-              >
-                <option value="">Semua Entitas</option>
-                <option value="user">User</option>
-                <option value="auth">Auth</option>
-                <option value="berita">Berita</option>
-                <option value="kegiatan">Kegiatan</option>
-                <option value="pengurus">Pengurus</option>
-                <option value="sliders">Sliders</option>
-                <option value="kontak">Kontak</option>
-                <option value="settings">Settings</option>
-                <option value="database">Database</option>
-              </select>
-
-              <select
-                value={filterRisk}
-                onChange={(e) => {
-                  setFilterRisk(e.target.value)
-                  setPage(1)
-                }}
-                className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors col-span-2 sm:col-span-1"
-              >
-                <option value="">Semua Risiko</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-              </select>
-            </div>
-
-            <div className="flex gap-2 shrink-0">
-              <button
-                type="submit"
-                className="flex-1 md:flex-none bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
-              >
-                Cari
-              </button>
-              <button
-                type="button"
-                onClick={handleReset}
-                className="bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition"
-              >
-                <i className="ph ph-arrows-counter-clockwise text-lg" /> Reset
-              </button>
-            </div>
-          </form>
-        </div>
+    <AdminLayout title="Catatan Aktivitas Sistem" headerContent={headerContent}>
+      <div className="max-w-7xl mx-auto space-y-6 animate-fade-in-up">
 
         {/* Table Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -275,7 +272,7 @@ export default function ActivityLogAdmin() {
                     const hourPart = timeParts[1] || ''
 
                     return (
-                      <tr key={log.id} className="hover:bg-gray-50 transition-colors">
+                      <tr key={log.id} className="hover:bg-gray-50 transition-colors admin-row">
                         {/* WAKTU */}
                         <td className="p-4">
                           <div className="text-gray-900 font-medium">{datePart}</div>

@@ -54,8 +54,8 @@ func (s *dashboardService) GetSummary(ctx context.Context) (*dashdto.DashboardSu
 
 	// Admin users (non-super, tidak terhapus)
 	var totalAdmin, pendingAdmin int64
-	s.db.Model(&usermodel.User{}).Where("role_id <> ? AND deleted_at IS NULL", 1).Count(&totalAdmin)
-	s.db.Model(&usermodel.User{}).Where("role_id <> ? AND deleted_at IS NULL AND status = ?", 1, "pending_activation").Count(&pendingAdmin)
+	s.db.Model(&usermodel.UserModel{}).Where("role_id <> ? AND deleted_at IS NULL", 1).Count(&totalAdmin)
+	s.db.Model(&usermodel.UserModel{}).Where("role_id <> ? AND deleted_at IS NULL AND status = ?", 1, "inactive").Count(&pendingAdmin)
 	res.TotalAdmin = totalAdmin
 	res.PendingAdmin = pendingAdmin
 
@@ -65,7 +65,7 @@ func (s *dashboardService) GetSummary(ctx context.Context) (*dashdto.DashboardSu
 		res.ActivityLogs = summary.TotalLogs
 		res.HighRiskLogs = summary.HighRisk
 		res.FailedLogin = summary.FailedLogin
-		res.CMSActions = summary.CMSAction
+		res.CMSActions = summary.FinanceAction
 	}
 
 	return res, nil

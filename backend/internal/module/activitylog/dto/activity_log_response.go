@@ -1,10 +1,10 @@
 package dto
 
 type ActivityLogSummaryRes struct {
-	TotalLogs   int64 `json:"total_logs"`
-	HighRisk    int64 `json:"high_risk"`
-	FailedLogin int64 `json:"failed_login"`
-	CMSAction   int64 `json:"cms_action"`
+	TotalLogs     int64 `json:"totalLogs"`
+	HighRisk      int64 `json:"highRisk"`
+	FailedLogin   int64 `json:"failedLogin"`
+	FinanceAction int64 `json:"financeAction"`
 }
 
 type ActivityLogPaginationRes struct {

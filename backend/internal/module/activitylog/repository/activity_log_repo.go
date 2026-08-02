@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"strings"
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/dto"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/entity"
@@ -62,14 +61,12 @@ func (r *activityLogRepository) List(
 
 	limit := req.Limit
 	if limit <= 0 {
-		limit = req.PerPage
-	}
-	if limit <= 0 {
 		limit = 10
 	}
 
 	q = q.
-		Order(sortClause(req)).
+		Order("created_at DESC").
+		Order("id DESC").
 		Limit(limit).
 		Offset((page - 1) * limit)
 
@@ -98,44 +95,46 @@ func (r *activityLogRepository) buildQuery(
 		WithContext(context.Background()).
 		Model(&model.ActivityLog{})
 
-	action := firstNonEmpty(req.Action, "all")
-	entity := firstNonEmpty(req.Entity, req.EntityType, "all")
-	role := firstNonEmpty(req.Role, "all")
-	risk := firstNonEmpty(req.Risk, req.RiskLevel, "all")
+	if req.Action != "" &&
+		req.Action != "all" {
 
-	if action != "" && action != "all" {
-		q = q.Where("action = ?", action)
+		q = q.Where(
+			"action = ?",
+			req.Action,
+		)
 	}
 
-	if entity != "" && entity != "all" {
-		q = q.Where("entity_type = ?", entity)
+	if req.Entity != "" &&
+		req.Entity != "all" {
+
+		q = q.Where(
+			"entity_type = ?",
+			req.Entity,
+		)
 	}
 
-	if role != "" && role != "all" {
-		q = q.Where("actor_role = ?", role)
+	if req.Role != "" &&
+		req.Role != "all" {
+
+		q = q.Where(
+			"actor_role = ?",
+			req.Role,
+		)
 	}
 
-	if risk != "" && risk != "all" {
-		q = q.Where("risk_level = ?", risk)
-	}
+	if req.Risk != "" &&
+		req.Risk != "all" {
 
-	if req.ActorID != nil && *req.ActorID > 0 {
-		q = q.Where("actor_id = ?", *req.ActorID)
-	}
-
-	if req.Status != "" && req.Status != "all" {
-		q = q.Where("description LIKE ?", "%"+req.Status+"%")
-	}
-
-	if req.StartDate != "" {
-		q = q.Where("created_at >= ?", req.StartDate)
-	}
-	if req.EndDate != "" {
-		q = q.Where("created_at <= ?", req.EndDate)
+		q = q.Where(
+			"risk_level = ?",
+			req.Risk,
+		)
 	}
 
 	if req.Search != "" {
+
 		search := "%" + req.Search + "%"
+
 		q = q.Where(
 			"(actor_name LIKE ? OR actor_role LIKE ? OR action LIKE ? OR entity_type LIKE ? OR entity_label LIKE ?)",
 			search, search, search, search, search,
@@ -176,20 +175,18 @@ func (r *activityLogRepository) GetSummary(
 
 	summary.FailedLogin = failedLogin
 
-	cms, err := r.countQuery(ctx, r.buildQuery(req).
+	finance, err := r.countQuery(ctx, r.buildQuery(req).
 		Where("entity_type IN ?", []string{
-			"berita",
-			"kegiatan",
-			"slider",
-			"pengurus",
-			"kontak",
-			"settings",
+			"payment",
+			"invoice",
+			"billing",
+			"payment_gateway",
 		}))
 	if err != nil {
 		return summary, err
 	}
 
-	summary.CMSAction = cms
+	summary.FinanceAction = finance
 
 	return summary, nil
 }
@@ -204,37 +201,6 @@ func (r *activityLogRepository) countQuery(
 		return 0, err
 	}
 	return count, nil
-}
-
-func firstNonEmpty(vals ...string) string {
-	for _, v := range vals {
-		if v != "" {
-			return v
-		}
-	}
-	return ""
-}
-
-// sortClause membangun ORDER BY dari sort_by + order (whitelist kolom aman).
-func sortClause(req *dto.ActivityLogQueryReq) string {
-	allowed := map[string]bool{
-		"created_at":  true,
-		"id":          true,
-		"actor_name":  true,
-		"action":      true,
-		"entity_type": true,
-		"risk_level":  true,
-	}
-	dir := strings.ToLower(req.Order)
-	if dir != "asc" && dir != "desc" {
-		dir = "desc"
-	}
-
-	col := req.SortBy
-	if col == "" || !allowed[col] {
-		col = "created_at"
-	}
-	return col + " " + dir + ", id DESC"
 }
 
 // FindByID mengambil detail activity log berdasarkan id.

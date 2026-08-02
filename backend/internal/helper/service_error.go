@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// ServiceError — error standar service layer, membawa kode untuk kontrol HTTP status.
 type ServiceError struct {
 	Code    string
 	Message string
@@ -31,6 +32,52 @@ func (e *ServiceError) Unwrap() error {
 	return e.Err
 }
 
+// ============================================================
+// Typed errors — dipakai service untuk kontrol HTTP status
+// ============================================================
+
+// ValidationError — validasi bisnis (bukan binding), HTTP 422.
+type ValidationError struct {
+	Fields map[string]string
+	Errors map[string]string
+}
+
+func NewValidationError() *ValidationError {
+	return &ValidationError{Fields: map[string]string{}, Errors: map[string]string{}}
+}
+
+func (e *ValidationError) Add(field, message string) {
+	e.Fields[field] = message
+	e.Errors[field] = message
+}
+
+func (e *ValidationError) Error() string {
+	return "validasi gagal"
+}
+
+// AuthenticationError — kredensial/sesi bermasalah, HTTP 401/403.
+type AuthenticationError struct {
+	Message string
+	Code    string
+}
+
+func (e *AuthenticationError) Error() string {
+	return e.Message
+}
+
+// NotFoundError — data tidak ditemukan, HTTP 404.
+type NotFoundError struct {
+	Message string
+}
+
+func NewNotFoundError(message string) *NotFoundError {
+	return &NotFoundError{Message: message}
+}
+
+func (e *NotFoundError) Error() string {
+	return e.Message
+}
+
 // ServiceErrorToHTTP memetakan kode error ke HTTP status code.
 // Satu sumber kebenaran untuk semua modul (sebelumnya diduplikasi per handler).
 func ServiceErrorToHTTP(code string) int {
@@ -50,18 +97,31 @@ func ServiceErrorToHTTP(code string) int {
 	}
 }
 
-// HandleServiceError menulis response error secara konsisten dari *ServiceError.
+// HandleServiceError menulis response error secara konsisten.
 // Handler cukup memanggil ini — tidak perlu mapping manual lagi.
 func HandleServiceError(c *gin.Context, err error) {
 	if err == nil {
 		return
 	}
 
-	svc, ok := err.(*ServiceError)
-	if !ok {
+	switch e := err.(type) {
+	case *ServiceError:
+		ErrorResponse(c, ServiceErrorToHTTP(e.Code), e.Code, e.Message, nil)
+	case *ValidationError:
+		items := make([]ValidationErrorItem, 0, len(e.Fields))
+		for field, msg := range e.Fields {
+			items = append(items, ValidationErrorItem{Field: field, Message: msg})
+		}
+		ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "validasi gagal", items)
+	case *AuthenticationError:
+		code := e.Code
+		if code == "" {
+			code = "AUTHENTICATION_ERROR"
+		}
+		ErrorResponse(c, ServiceErrorToHTTP(code), code, e.Message, nil)
+	case *NotFoundError:
+		ErrorResponse(c, http.StatusNotFound, "NOT_FOUND", e.Message, nil)
+	default:
 		ErrorResponse(c, http.StatusInternalServerError, "SERVER_ERROR", "Terjadi kesalahan pada server.", nil)
-		return
 	}
-
-	ErrorResponse(c, ServiceErrorToHTTP(svc.Code), svc.Code, svc.Message, nil)
 }

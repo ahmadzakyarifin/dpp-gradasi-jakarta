@@ -243,18 +243,47 @@ export default function UsersAdmin() {
     return pages
   }
 
+  const headerContent = (
+    <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 w-full max-w-2xl animate-fade-in-up">
+      <div className="relative w-full">
+        <i className="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Cari nama / email..."
+          className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors"
+        />
+      </div>
+      <button
+        type="submit"
+        className="bg-brand-600 hover:bg-brand-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all btn-press shrink-0"
+      >
+        Cari
+      </button>
+      <button
+        type="button"
+        onClick={handleReset}
+        className="shrink-0 bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all btn-press"
+        title="Reset Filter"
+      >
+        <i className="ph ph-arrows-counter-clockwise text-lg" />
+      </button>
+    </form>
+  )
+
   return (
-    <AdminLayout title="Manajemen Admin">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <AdminLayout title="Manajemen Admin" headerContent={headerContent}>
+      <div className="max-w-7xl mx-auto space-y-6 animate-fade-in-up">
         {/* Header Actions & Filter */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           {/* Tabs */}
-          <div className="flex bg-gray-100 rounded-lg p-1 border border-gray-200 shadow-sm flex-wrap sm:flex-nowrap">
+          <div className="flex bg-white rounded-lg p-1 border border-gray-200 shadow-sm flex-wrap sm:flex-nowrap">
             <button
               onClick={() => setCurrentTab('active')}
-              className={`px-4 py-1.5 rounded-md text-sm transition-all ${
+              className={`px-4 py-1.5 rounded-md text-sm transition-all duration-200 ${
                 currentTab === 'active'
-                  ? 'bg-white text-brand-600 shadow-sm font-medium'
+                  ? 'bg-brand-50 text-brand-600 shadow-sm font-medium'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -262,19 +291,19 @@ export default function UsersAdmin() {
             </button>
             <button
               onClick={() => setCurrentTab('pending')}
-              className={`px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2 ${
+              className={`px-4 py-1.5 rounded-md text-sm transition-all duration-200 flex items-center gap-2 ${
                 currentTab === 'pending'
-                  ? 'bg-white text-amber-600 shadow-sm font-medium'
+                  ? 'bg-amber-50 text-amber-600 shadow-sm font-medium'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              <i className="ph ph-clock-countdown" /> Menunggu Aktivasi
+              <i className="ph ph-clock" /> Menunggu Aktivasi
             </button>
             <button
               onClick={() => setCurrentTab('trash')}
-              className={`px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2 ${
+              className={`px-4 py-1.5 rounded-md text-sm transition-all duration-200 flex items-center gap-2 ${
                 currentTab === 'trash'
-                  ? 'bg-white text-red-600 shadow-sm font-medium'
+                  ? 'bg-red-50 text-red-600 shadow-sm font-medium'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -282,44 +311,14 @@ export default function UsersAdmin() {
             </button>
           </div>
 
-          {/* Right Actions: Search & Add */}
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 flex-1 md:flex-initial">
-              <div className="relative w-full md:w-64">
-                <i className="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Cari nama / email..."
-                  className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors"
-                />
-              </div>
-              <button
-                type="submit"
-                className="bg-brand-600 hover:bg-brand-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition"
-              >
-                Cari
-              </button>
-              <button
-                type="button"
-                onClick={handleReset}
-                className="shrink-0 bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition"
-                title="Reset Filter"
-              >
-                <i className="ph ph-arrows-counter-clockwise text-lg" />
-              </button>
-            </form>
-
-            {currentTab === 'active' && (
-              <button
-                onClick={() => setIsFormOpen(true)}
-                className="shrink-0 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm"
-              >
-                <i className="ph ph-user-plus text-lg" /> Tambah
-              </button>
-            )}
-          </div>
+          {currentTab === 'active' && (
+            <button
+              onClick={() => setIsFormOpen(true)}
+              className="shrink-0 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all btn-press shadow-sm"
+            >
+              <i className="ph ph-user-plus text-lg" /> Tambah
+            </button>
+          )}
         </div>
 
         {/* Bulk Actions Bar */}
@@ -384,7 +383,7 @@ export default function UsersAdmin() {
                     const canSelect = !isProtected && !isPending
 
                     return (
-                      <tr key={item.id} className="hover:bg-gray-50 transition-colors group">
+                      <tr key={item.id} className="hover:bg-gray-50 transition-colors group admin-row">
                         <td className="p-4 text-center">
                           <input
                             type="checkbox"

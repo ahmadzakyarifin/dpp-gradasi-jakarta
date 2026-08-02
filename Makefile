@@ -34,8 +34,6 @@ help:
 	@echo "  make build                - Build semua package Go"
 	@echo "  make run                  - Jalankan API server"
 	@echo "  make run-local            - Jalankan API server (lokal DB config)"
-	@echo "  make worker               - Jalankan background worker"
-	@echo "  make seed                 - Isi data awal"
 	@echo ""
 	@echo "Code Quality:"
 	@echo "  make fmt                  - Format kode Go"
@@ -101,14 +99,6 @@ air:
 .PHONY: run-local
 run-local:
 	cd backend && DB_HOST=$(DB_HOST) DB_PORT=$(DB_PORT) DB_USER=$(DB_USER) DB_PASS=$(DB_PASS) DB_NAME=$(DB_NAME) go run ./cmd/api
-
-.PHONY: worker
-worker:
-	cd backend && go run ./cmd/worker
-
-.PHONY: seed
-seed:
-	cd backend && go run ./cmd/seeder
 
 # ==================================================
 # CODE QUALITY

@@ -1,36 +1,31 @@
 package handler
 
 import (
-	"context"
 	"net/http"
 	"strconv"
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/helper"
-	activitylogdto "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/dto"
-	activitylogservice "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/service"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/pengurus/dto"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/pengurus/service"
 	"github.com/gin-gonic/gin"
 )
 
 type PengurusHandler struct {
-	svc    service.PengurusService
-	logSvc activitylogservice.ActivityLogService
+	svc service.PengurusService
 }
 
-func NewPengurusHandler(svc service.PengurusService, logSvc activitylogservice.ActivityLogService) *PengurusHandler {
-	return &PengurusHandler{svc: svc, logSvc: logSvc}
+func NewPengurusHandler(svc service.PengurusService) *PengurusHandler {
+	return &PengurusHandler{svc: svc}
 }
 
 // GET /api/v1/pengurus
 func (h *PengurusHandler) ListPublic(c *gin.Context) {
 	var q dto.PengurusQuery
-	c.ShouldBindQuery(&q)
+	_ = c.ShouldBindQuery(&q)
 
-	resp, err := h.svc.GetAllPublic(q)
+	resp, err := h.svc.GetAllPublic(c.Request.Context(), q)
 	if err != nil {
-		svcErr, _ := err.(*helper.ServiceError)
-		helper.ErrorResponse(c, http.StatusInternalServerError, svcErr.Code, svcErr.Message, nil)
+		helper.HandleServiceError(c, err)
 		return
 	}
 	helper.SuccessResponse(c, http.StatusOK, "PENGURUS_LIST", "Daftar pengurus berhasil diambil", resp, nil)
@@ -38,10 +33,9 @@ func (h *PengurusHandler) ListPublic(c *gin.Context) {
 
 // GET /api/v1/pengurus/regions
 func (h *PengurusHandler) Regions(c *gin.Context) {
-	resp, err := h.svc.GetRegions()
+	resp, err := h.svc.GetRegions(c.Request.Context())
 	if err != nil {
-		svcErr, _ := err.(*helper.ServiceError)
-		helper.ErrorResponse(c, http.StatusInternalServerError, svcErr.Code, svcErr.Message, nil)
+		helper.HandleServiceError(c, err)
 		return
 	}
 	helper.SuccessResponse(c, http.StatusOK, "PENGURUS_REGIONS", "Daftar wilayah berhasil diambil", resp, nil)
@@ -50,12 +44,11 @@ func (h *PengurusHandler) Regions(c *gin.Context) {
 // GET /api/v1/admin/pengurus
 func (h *PengurusHandler) ListAdmin(c *gin.Context) {
 	var q dto.PengurusQuery
-	c.ShouldBindQuery(&q)
+	_ = c.ShouldBindQuery(&q)
 
-	resp, err := h.svc.GetAllAdmin(q)
+	resp, err := h.svc.GetAllAdmin(c.Request.Context(), q)
 	if err != nil {
-		svcErr, _ := err.(*helper.ServiceError)
-		helper.ErrorResponse(c, http.StatusInternalServerError, svcErr.Code, svcErr.Message, nil)
+		helper.HandleServiceError(c, err)
 		return
 	}
 	helper.SuccessResponse(c, http.StatusOK, "PENGURUS_LIST", "Daftar pengurus berhasil diambil", resp, nil)
@@ -81,27 +74,12 @@ func (h *PengurusHandler) Create(c *gin.Context) {
 	}
 	req.Image = file
 
-	resp, err := h.svc.Create(&req)
+	resp, err := h.svc.Create(c.Request.Context(), &req)
 	if err != nil {
-		svcErr, _ := err.(*helper.ServiceError)
-		helper.ErrorResponse(c, http.StatusInternalServerError, svcErr.Code, svcErr.Message, nil)
+		helper.HandleServiceError(c, err)
 		return
 	}
 	helper.SuccessResponse(c, http.StatusCreated, "PENGURUS_CREATED", "Pengurus berhasil ditambahkan", resp, nil)
-
-	actorID, actorName, actorRole, ip, ua := helper.GetAuditMeta(c.Request.Context())
-	go h.logSvc.Log(context.Background(), nil, &activitylogdto.ActivityLogInput{
-		ActorID:     &actorID,
-		ActorName:   actorName,
-		ActorRole:   actorRole,
-		Action:      "pengurus.create",
-		EntityType:  "pengurus",
-		EntityID:    &resp.ID,
-		EntityLabel: resp.Name,
-		Description: "Menambahkan pengurus baru",
-		IPAddress:   ip,
-		UserAgent:   ua,
-	})
 }
 
 // PUT /api/v1/admin/pengurus/:id
@@ -126,31 +104,12 @@ func (h *PengurusHandler) Update(c *gin.Context) {
 		req.Image = file
 	}
 
-	resp, err := h.svc.Update(uint(id), &req)
+	resp, err := h.svc.Update(c.Request.Context(), uint(id), &req)
 	if err != nil {
-		svcErr, _ := err.(*helper.ServiceError)
-		httpCode := http.StatusInternalServerError
-		if svcErr.Code == "NOT_FOUND" {
-			httpCode = http.StatusNotFound
-		}
-		helper.ErrorResponse(c, httpCode, svcErr.Code, svcErr.Message, nil)
+		helper.HandleServiceError(c, err)
 		return
 	}
 	helper.SuccessResponse(c, http.StatusOK, "PENGURUS_UPDATED", "Data pengurus berhasil diperbarui", resp, nil)
-
-	actorID, actorName, actorRole, ip, ua := helper.GetAuditMeta(c.Request.Context())
-	go h.logSvc.Log(context.Background(), nil, &activitylogdto.ActivityLogInput{
-		ActorID:     &actorID,
-		ActorName:   actorName,
-		ActorRole:   actorRole,
-		Action:      "pengurus.update",
-		EntityType:  "pengurus",
-		EntityID:    &resp.ID,
-		EntityLabel: resp.Name,
-		Description: "Memperbarui data pengurus",
-		IPAddress:   ip,
-		UserAgent:   ua,
-	})
 }
 
 // DELETE /api/v1/admin/pengurus/:id
@@ -160,30 +119,11 @@ func (h *PengurusHandler) Delete(c *gin.Context) {
 		helper.ErrorResponse(c, http.StatusBadRequest, "INVALID_ID", "ID pengurus tidak valid.", nil)
 		return
 	}
-	if err := h.svc.Delete(uint(id)); err != nil {
-		svcErr, _ := err.(*helper.ServiceError)
-		httpCode := http.StatusInternalServerError
-		if svcErr.Code == "NOT_FOUND" {
-			httpCode = http.StatusNotFound
-		}
-		helper.ErrorResponse(c, httpCode, svcErr.Code, svcErr.Message, nil)
+	if err := h.svc.Delete(c.Request.Context(), uint(id)); err != nil {
+		helper.HandleServiceError(c, err)
 		return
 	}
 	helper.SuccessResponse(c, http.StatusOK, "PENGURUS_DELETED", "Pengurus berhasil dihapus", nil, nil)
-
-	actorID, actorName, actorRole, ip, ua := helper.GetAuditMeta(c.Request.Context())
-	eID := uint(id)
-	go h.logSvc.Log(context.Background(), nil, &activitylogdto.ActivityLogInput{
-		ActorID:     &actorID,
-		ActorName:   actorName,
-		ActorRole:   actorRole,
-		Action:      "pengurus.delete",
-		EntityType:  "pengurus",
-		EntityID:    &eID,
-		Description: "Menghapus pengurus",
-		IPAddress:   ip,
-		UserAgent:   ua,
-	})
 }
 
 // POST /api/v1/admin/pengurus/:id/restore
@@ -193,26 +133,11 @@ func (h *PengurusHandler) Restore(c *gin.Context) {
 		helper.ErrorResponse(c, http.StatusBadRequest, "INVALID_ID", "ID pengurus tidak valid.", nil)
 		return
 	}
-	if err := h.svc.Restore(uint(id)); err != nil {
-		svcErr, _ := err.(*helper.ServiceError)
-		helper.ErrorResponse(c, http.StatusInternalServerError, svcErr.Code, svcErr.Message, nil)
+	if err := h.svc.Restore(c.Request.Context(), uint(id)); err != nil {
+		helper.HandleServiceError(c, err)
 		return
 	}
 	helper.SuccessResponse(c, http.StatusOK, "PENGURUS_RESTORED", "Pengurus berhasil dipulihkan", nil, nil)
-
-	actorID, actorName, actorRole, ip, ua := helper.GetAuditMeta(c.Request.Context())
-	eID := uint(id)
-	go h.logSvc.Log(context.Background(), nil, &activitylogdto.ActivityLogInput{
-		ActorID:     &actorID,
-		ActorName:   actorName,
-		ActorRole:   actorRole,
-		Action:      "pengurus.restore",
-		EntityType:  "pengurus",
-		EntityID:    &eID,
-		Description: "Memulihkan pengurus",
-		IPAddress:   ip,
-		UserAgent:   ua,
-	})
 }
 
 // POST /api/v1/admin/pengurus/bulk-delete — admin (bulk soft delete)
@@ -224,24 +149,11 @@ func (h *PengurusHandler) BulkDelete(c *gin.Context) {
 		})
 		return
 	}
-	if err := h.svc.BulkDelete(req.IDs); err != nil {
-		svcErr, _ := err.(*helper.ServiceError)
-		helper.ErrorResponse(c, http.StatusInternalServerError, svcErr.Code, svcErr.Message, nil)
+	if err := h.svc.BulkDelete(c.Request.Context(), req.IDs); err != nil {
+		helper.HandleServiceError(c, err)
 		return
 	}
 	helper.SuccessResponse(c, http.StatusOK, "PENGURUS_BULK_DELETED", "Pengurus berhasil dihapus massal", nil, nil)
-
-	actorID, actorName, actorRole, ip, ua := helper.GetAuditMeta(c.Request.Context())
-	go h.logSvc.Log(context.Background(), nil, &activitylogdto.ActivityLogInput{
-		ActorID:     &actorID,
-		ActorName:   actorName,
-		ActorRole:   actorRole,
-		Action:      "pengurus.bulk_delete",
-		EntityType:  "pengurus",
-		Description: "Menghapus pengurus secara massal",
-		IPAddress:   ip,
-		UserAgent:   ua,
-	})
 }
 
 // POST /api/v1/admin/pengurus/bulk-restore — admin (bulk restore)
@@ -253,22 +165,9 @@ func (h *PengurusHandler) BulkRestore(c *gin.Context) {
 		})
 		return
 	}
-	if err := h.svc.BulkRestore(req.IDs); err != nil {
-		svcErr, _ := err.(*helper.ServiceError)
-		helper.ErrorResponse(c, http.StatusInternalServerError, svcErr.Code, svcErr.Message, nil)
+	if err := h.svc.BulkRestore(c.Request.Context(), req.IDs); err != nil {
+		helper.HandleServiceError(c, err)
 		return
 	}
 	helper.SuccessResponse(c, http.StatusOK, "PENGURUS_BULK_RESTORED", "Pengurus berhasil dipulihkan massal", nil, nil)
-
-	actorID, actorName, actorRole, ip, ua := helper.GetAuditMeta(c.Request.Context())
-	go h.logSvc.Log(context.Background(), nil, &activitylogdto.ActivityLogInput{
-		ActorID:     &actorID,
-		ActorName:   actorName,
-		ActorRole:   actorRole,
-		Action:      "pengurus.bulk_restore",
-		EntityType:  "pengurus",
-		Description: "Memulihkan pengurus secara massal",
-		IPAddress:   ip,
-		UserAgent:   ua,
-	})
 }

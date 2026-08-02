@@ -1,25 +1,21 @@
 package handler
 
 import (
-	"context"
 	"net/http"
 	"strconv"
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/helper"
-	activitylogdto "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/dto"
-	activitylogservice "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/service"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kontak/dto"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kontak/service"
 	"github.com/gin-gonic/gin"
 )
 
 type KontakHandler struct {
-	svc    service.KontakService
-	logSvc activitylogservice.ActivityLogService
+	svc service.KontakService
 }
 
-func NewKontakHandler(svc service.KontakService, logSvc activitylogservice.ActivityLogService) *KontakHandler {
-	return &KontakHandler{svc: svc, logSvc: logSvc}
+func NewKontakHandler(svc service.KontakService) *KontakHandler {
+	return &KontakHandler{svc: svc}
 }
 
 // POST /api/v1/kontak — publik submit
@@ -31,7 +27,7 @@ func (h *KontakHandler) Submit(c *gin.Context) {
 		})
 		return
 	}
-	if err := h.svc.Submit(&req); err != nil {
+	if err := h.svc.Submit(c.Request.Context(), &req); err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, "SERVER_ERROR", "Gagal mengirim pesan.", nil)
 		return
 	}
@@ -41,8 +37,8 @@ func (h *KontakHandler) Submit(c *gin.Context) {
 // GET /api/v1/kontak — admin list
 func (h *KontakHandler) List(c *gin.Context) {
 	var q dto.KontakQuery
-	c.ShouldBindQuery(&q)
-	resp, err := h.svc.GetAll(q)
+	_ = c.ShouldBindQuery(&q)
+	resp, err := h.svc.GetAll(c.Request.Context(), q)
 	if err != nil {
 		svcErr, _ := err.(*helper.ServiceError)
 		helper.ErrorResponse(c, http.StatusInternalServerError, svcErr.Code, svcErr.Message, nil)
@@ -58,7 +54,7 @@ func (h *KontakHandler) GetByID(c *gin.Context) {
 		helper.ErrorResponse(c, http.StatusBadRequest, "INVALID_ID", "ID tidak valid.", nil)
 		return
 	}
-	resp, err := h.svc.GetByID(uint(id))
+	resp, err := h.svc.GetByID(c.Request.Context(), uint(id))
 	if err != nil {
 		svcErr, _ := err.(*helper.ServiceError)
 		code := http.StatusInternalServerError
@@ -78,7 +74,7 @@ func (h *KontakHandler) Delete(c *gin.Context) {
 		helper.ErrorResponse(c, http.StatusBadRequest, "INVALID_ID", "ID tidak valid.", nil)
 		return
 	}
-	if err := h.svc.Delete(uint(id)); err != nil {
+	if err := h.svc.Delete(c.Request.Context(), uint(id)); err != nil {
 		svcErr, _ := err.(*helper.ServiceError)
 		code := http.StatusInternalServerError
 		if svcErr.Code == "NOT_FOUND" {
@@ -88,20 +84,6 @@ func (h *KontakHandler) Delete(c *gin.Context) {
 		return
 	}
 	helper.SuccessResponse(c, http.StatusOK, "KONTAK_DELETED", "Pesan berhasil dihapus.", nil, nil)
-
-	actorID, actorName, actorRole, ip, ua := helper.GetAuditMeta(c.Request.Context())
-	eID := uint(id)
-	go h.logSvc.Log(context.Background(), nil, &activitylogdto.ActivityLogInput{
-		ActorID:     &actorID,
-		ActorName:   actorName,
-		ActorRole:   actorRole,
-		Action:      "kontak.delete",
-		EntityType:  "kontak",
-		EntityID:    &eID,
-		Description: "Menghapus pesan kontak",
-		IPAddress:   ip,
-		UserAgent:   ua,
-	})
 }
 
 // POST /api/v1/admin/kontak/:id/restore — admin
@@ -111,26 +93,12 @@ func (h *KontakHandler) Restore(c *gin.Context) {
 		helper.ErrorResponse(c, http.StatusBadRequest, "INVALID_ID", "ID tidak valid.", nil)
 		return
 	}
-	if err := h.svc.Restore(uint(id)); err != nil {
+	if err := h.svc.Restore(c.Request.Context(), uint(id)); err != nil {
 		svcErr, _ := err.(*helper.ServiceError)
 		helper.ErrorResponse(c, http.StatusInternalServerError, svcErr.Code, svcErr.Message, nil)
 		return
 	}
 	helper.SuccessResponse(c, http.StatusOK, "KONTAK_RESTORED", "Pesan berhasil dipulihkan.", nil, nil)
-
-	actorID, actorName, actorRole, ip, ua := helper.GetAuditMeta(c.Request.Context())
-	eID := uint(id)
-	go h.logSvc.Log(context.Background(), nil, &activitylogdto.ActivityLogInput{
-		ActorID:     &actorID,
-		ActorName:   actorName,
-		ActorRole:   actorRole,
-		Action:      "kontak.restore",
-		EntityType:  "kontak",
-		EntityID:    &eID,
-		Description: "Memulihkan pesan kontak",
-		IPAddress:   ip,
-		UserAgent:   ua,
-	})
 }
 
 // POST /api/v1/admin/kontak/bulk-delete — admin
@@ -142,24 +110,12 @@ func (h *KontakHandler) BulkDelete(c *gin.Context) {
 		})
 		return
 	}
-	if err := h.svc.BulkDelete(req.IDs); err != nil {
+	if err := h.svc.BulkDelete(c.Request.Context(), req.IDs); err != nil {
 		svcErr, _ := err.(*helper.ServiceError)
 		helper.ErrorResponse(c, http.StatusInternalServerError, svcErr.Code, svcErr.Message, nil)
 		return
 	}
 	helper.SuccessResponse(c, http.StatusOK, "KONTAK_BULK_DELETED", "Pesan berhasil dihapus massal.", nil, nil)
-
-	actorID, actorName, actorRole, ip, ua := helper.GetAuditMeta(c.Request.Context())
-	go h.logSvc.Log(context.Background(), nil, &activitylogdto.ActivityLogInput{
-		ActorID:     &actorID,
-		ActorName:   actorName,
-		ActorRole:   actorRole,
-		Action:      "kontak.bulk_delete",
-		EntityType:  "kontak",
-		Description: "Menghapus pesan kontak secara massal",
-		IPAddress:   ip,
-		UserAgent:   ua,
-	})
 }
 
 // POST /api/v1/admin/kontak/bulk-restore — admin
@@ -171,22 +127,10 @@ func (h *KontakHandler) BulkRestore(c *gin.Context) {
 		})
 		return
 	}
-	if err := h.svc.BulkRestore(req.IDs); err != nil {
+	if err := h.svc.BulkRestore(c.Request.Context(), req.IDs); err != nil {
 		svcErr, _ := err.(*helper.ServiceError)
 		helper.ErrorResponse(c, http.StatusInternalServerError, svcErr.Code, svcErr.Message, nil)
 		return
 	}
 	helper.SuccessResponse(c, http.StatusOK, "KONTAK_BULK_RESTORED", "Pesan berhasil dipulihkan massal.", nil, nil)
-
-	actorID, actorName, actorRole, ip, ua := helper.GetAuditMeta(c.Request.Context())
-	go h.logSvc.Log(context.Background(), nil, &activitylogdto.ActivityLogInput{
-		ActorID:     &actorID,
-		ActorName:   actorName,
-		ActorRole:   actorRole,
-		Action:      "kontak.bulk_restore",
-		EntityType:  "kontak",
-		Description: "Memulihkan pesan kontak secara massal",
-		IPAddress:   ip,
-		UserAgent:   ua,
-	})
 }

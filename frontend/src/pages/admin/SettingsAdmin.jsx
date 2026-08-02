@@ -130,21 +130,21 @@ export default function SettingsAdmin() {
 
   return (
     <AdminLayout title="Pengaturan Website">
-      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 animate-fade-in-up">
 
         {saved && (
           <div className={`md:col-span-4 px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-2 ${saved.isError ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
-            <i className={`ph-bold ${saved.isError ? 'ph-warning-circle' : 'ph-check-circle'} text-lg`} /> {saved.msg}
+            <i className={`ph ${saved.isError ? 'ph-warning-circle' : 'ph-check-circle'} text-lg`} /> {saved.msg}
           </div>
         )}
 
         {/* Navigation Tabs */}
-        <div className="md:col-span-1 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col gap-1">
-          <button onClick={() => setCurrentTab('profil')} className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition ${currentTab === 'profil' ? 'bg-brand-50 text-brand-600' : 'text-slate-600 hover:bg-slate-50'}`}>Profil & Sejarah</button>
-          <button onClick={() => setCurrentTab('sambutan')} className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition ${currentTab === 'sambutan' ? 'bg-brand-50 text-brand-600' : 'text-slate-600 hover:bg-slate-50'}`}>Sambutan Depan</button>
-          <button onClick={() => setCurrentTab('kontak')} className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition ${currentTab === 'kontak' ? 'bg-brand-50 text-brand-600' : 'text-slate-600 hover:bg-slate-50'}`}>Informasi Kontak</button>
-          <button onClick={() => setCurrentTab('sosmed')} className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition ${currentTab === 'sosmed' ? 'bg-brand-50 text-brand-600' : 'text-slate-600 hover:bg-slate-50'}`}>Media Sosial</button>
-          <button onClick={() => setCurrentTab('logo')} className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition ${currentTab === 'logo' ? 'bg-brand-50 text-brand-600' : 'text-slate-600 hover:bg-slate-50'}`}>Logo Website</button>
+        <div className="md:col-span-1 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col gap-1 h-fit">
+          <button onClick={() => setCurrentTab('profil')} className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition-all duration-200 btn-press ${currentTab === 'profil' ? 'bg-brand-50 text-brand-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}>Profil & Sejarah</button>
+          <button onClick={() => setCurrentTab('sambutan')} className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition-all duration-200 btn-press ${currentTab === 'sambutan' ? 'bg-brand-50 text-brand-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}>Sambutan Depan</button>
+          <button onClick={() => setCurrentTab('kontak')} className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition-all duration-200 btn-press ${currentTab === 'kontak' ? 'bg-brand-50 text-brand-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}>Informasi Kontak</button>
+          <button onClick={() => setCurrentTab('sosmed')} className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition-all duration-200 btn-press ${currentTab === 'sosmed' ? 'bg-brand-50 text-brand-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}>Media Sosial</button>
+          <button onClick={() => setCurrentTab('logo')} className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition-all duration-200 btn-press ${currentTab === 'logo' ? 'bg-brand-50 text-brand-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}>Logo Website</button>
         </div>
 
         {/* Form Area */}

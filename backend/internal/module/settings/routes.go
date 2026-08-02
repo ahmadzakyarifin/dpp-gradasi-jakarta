@@ -4,10 +4,9 @@ import (
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/middleware"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/settings/handler"
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
 )
 
-func RegisterRoutes(api *gin.RouterGroup, handler handler.SettingsHandler, jwtSecret string, redisClient *redis.Client) {
+func RegisterRoutes(api *gin.RouterGroup, handler handler.SettingsHandler, jwtSecret string) {
 	settings := api.Group("/settings")
 	{
 		settings.GET("", handler.GetSettings)

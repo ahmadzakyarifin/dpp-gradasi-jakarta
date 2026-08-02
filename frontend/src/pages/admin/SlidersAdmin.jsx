@@ -240,63 +240,64 @@ export default function SlidersAdmin() {
     }
   }
 
+  const headerContent = (
+    <div className="flex items-center gap-2 w-full max-w-2xl animate-fade-in-up">
+      <div className="relative w-full">
+        <i className="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          placeholder="Cari slider..."
+          className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors"
+        />
+      </div>
+      <select
+        value={filterActive}
+        onChange={e => setFilterActive(e.target.value)}
+        className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
+      >
+        <option value="">Semua Status</option>
+        <option value="active">Aktif</option>
+        <option value="inactive">Non-aktif</option>
+      </select>
+      <button
+        onClick={resetFilter}
+        className="shrink-0 bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all btn-press"
+      >
+        <i className="ph ph-arrows-counter-clockwise text-lg" /> Reset
+      </button>
+    </div>
+  )
+
   return (
-    <AdminLayout title="Manajemen Sliders">
+    <AdminLayout title="Manajemen Sliders" headerContent={headerContent}>
       <ConfirmDialog {...confirm} onClose={() => setConfirm(prev => ({ ...prev, isOpen: false, action: null }))} onConfirm={executeConfirm} />
       <ToastNotification show={toast.show} message={toast.message} type={toast.type} />
 
-      <div className="space-y-6">
-        {/* Search + Filter + Reset */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1 max-w-2xl">
-            <i className="ph-bold ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Cari slider..."
-              className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors"
-            />
-          </div>
-          <select
-            value={filterActive}
-            onChange={e => setFilterActive(e.target.value)}
-            className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors"
-          >
-            <option value="">Semua Status</option>
-            <option value="active">Aktif</option>
-            <option value="inactive">Non-aktif</option>
-          </select>
-          <button
-            onClick={resetFilter}
-            className="shrink-0 bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
-          >
-            <i className="ph-bold ph-arrows-counter-clockwise text-lg" /> Reset
-          </button>
-        </div>
-
+      <div className="space-y-6 animate-fade-in-up">
         {/* Tabs + Tambah */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex bg-white rounded-lg p-1 border border-gray-200 shadow-sm">
             <button
               onClick={() => setCurrentTab('active')}
-              className={`px-4 py-1.5 rounded-md text-sm transition-all ${currentTab === 'active' ? 'bg-brand-50 text-brand-600 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`px-4 py-1.5 rounded-md text-sm transition-all duration-200 ${currentTab === 'active' ? 'bg-brand-50 text-brand-600 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Daftar Aktif
             </button>
             <button
               onClick={() => setCurrentTab('trash')}
-              className={`px-4 py-1.5 rounded-md text-sm transition-all flex items-center gap-2 ${currentTab === 'trash' ? 'bg-red-50 text-red-600 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`px-4 py-1.5 rounded-md text-sm transition-all duration-200 flex items-center gap-2 ${currentTab === 'trash' ? 'bg-red-50 text-red-600 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'}`}
             >
-              <i className="ph-bold ph-trash" /> Sampah (History)
+              <i className="ph ph-trash" /> Sampah (History)
             </button>
           </div>
           {currentTab === 'active' && (
             <button
               onClick={() => openForm()}
-              className="shrink-0 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm"
+              className="shrink-0 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all btn-press shadow-sm"
             >
-              <i className="ph-bold ph-plus-circle text-lg" /> Tambah
+              <i className="ph ph-plus-circle text-lg" /> Tambah
             </button>
           )}
         </div>
@@ -345,7 +346,7 @@ export default function SlidersAdmin() {
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-sm text-gray-700">
                   {paginatedItems.map(item => (
-                    <tr key={item.id} className="hover:bg-gray-50 transition-colors group">
+                    <tr key={item.id} className="hover:bg-gray-50 transition-colors group admin-row">
                       <td className="p-4 text-center">
                         <input
                           type="checkbox"
@@ -360,7 +361,7 @@ export default function SlidersAdmin() {
                             <img src={resolveAssetUrl(item.image_url)} alt={item.title} className="w-32 h-16 rounded object-cover border border-gray-200 shrink-0" />
                           ) : (
                             <div className="w-32 h-16 rounded bg-gray-100 border border-gray-200 shrink-0 flex items-center justify-center">
-                              <i className="ph-bold ph-image text-gray-300" />
+                              <i className="ph ph-image text-gray-300 text-2xl" />
                             </div>
                           )}
                           <div>
@@ -399,7 +400,7 @@ export default function SlidersAdmin() {
                           </button>
                         ) : (
                           <span className="inline-flex items-center gap-1 bg-red-50 text-red-600 text-xs px-2 py-1 rounded-md font-medium border border-red-100">
-                            <i className="ph-bold ph-trash" /> Terhapus
+                            <i className="ph ph-trash" /> Terhapus
                           </span>
                         )}
                       </td>
@@ -408,15 +409,15 @@ export default function SlidersAdmin() {
                           {currentTab === 'active' ? (
                             <>
                               <button onClick={() => openForm(item)} className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded" title="Edit">
-                                <i className="ph-bold ph-pencil-simple text-lg" />
+                                <i className="ph ph-pencil-simple text-lg" />
                               </button>
                               <button onClick={() => confirmAction('delete', item)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded" title="Hapus (Soft Delete)">
-                                <i className="ph-bold ph-trash text-lg" />
+                                <i className="ph ph-trash text-lg" />
                               </button>
                             </>
                           ) : (
                             <button onClick={() => confirmAction('restore', item)} className="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded" title="Pulihkan">
-                              <i className="ph-bold ph-arrow-counter-clockwise text-lg" />
+                              <i className="ph ph-arrow-counter-clockwise text-lg" />
                             </button>
                           )}
                         </div>
@@ -425,11 +426,11 @@ export default function SlidersAdmin() {
                   ))}
                 </tbody>
               </table>
-
+ 
               {/* Empty State */}
               {filteredItems.length === 0 && (
                 <div className="py-12 text-center">
-                  <i className="ph-bold ph-image text-4xl text-gray-300 mb-2" />
+                  <i className="ph ph-image text-4xl text-gray-300 mb-2" />
                   <p className="text-gray-500 text-sm">Tidak ada data slider untuk ditampilkan.</p>
                 </div>
               )}

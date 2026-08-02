@@ -1,9 +1,0 @@
-Halo {{.Name}}
-
-Kode verifikasi Anda untuk mengubah kontak akun SchoolPay adalah:
-
-{{.OTP}}
-
-Kode ini berlaku selama 5 menit. Jangan bagikan kode ini kepada siapa pun.
-
-Jika Anda tidak merasa meminta perubahan kontak, abaikan pesan ini dan hubungi admin sekolah Anda.

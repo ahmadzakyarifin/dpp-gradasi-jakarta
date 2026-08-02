@@ -1,48 +1,79 @@
 package service
 
 import (
+	"context"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/helper"
+	activitylogdto "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/dto"
+	activitylogservice "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/service"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kegiatan/dto"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kegiatan/model"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kegiatan/repository"
 	"github.com/gosimple/slug"
+	"gorm.io/gorm"
 )
 
 type KegiatanService interface {
-	GetPublished(q dto.KegiatanQuery) (*dto.KegiatanListResponse, error)
-	GetAll(q dto.KegiatanQuery) (*dto.KegiatanListResponse, error)
-	GetBySlug(slug string) (*dto.KegiatanDetailResponse, error)
-	GetByID(id uint) (*dto.KegiatanDetailResponse, error)
-	Create(req *dto.KegiatanCreateRequest, authorID uint) (*dto.KegiatanDetailResponse, error)
-	Update(id uint, req *dto.KegiatanUpdateRequest) (*dto.KegiatanDetailResponse, error)
-	Delete(id uint) error
-	Restore(id uint) error
-	BulkDelete(ids []uint) error
-	BulkRestore(ids []uint) error
-	DeleteGalleryImage(galleryID uint) error
-	GetCategories() ([]string, error)
+	GetPublished(ctx context.Context, q dto.KegiatanQuery) (*dto.KegiatanListResponse, error)
+	GetAll(ctx context.Context, q dto.KegiatanQuery) (*dto.KegiatanListResponse, error)
+	GetBySlug(ctx context.Context, slug string) (*dto.KegiatanDetailResponse, error)
+	GetByID(ctx context.Context, id uint) (*dto.KegiatanDetailResponse, error)
+	Create(ctx context.Context, req *dto.KegiatanCreateRequest, authorID uint) (*dto.KegiatanDetailResponse, error)
+	Update(ctx context.Context, id uint, req *dto.KegiatanUpdateRequest) (*dto.KegiatanDetailResponse, error)
+	Delete(ctx context.Context, id uint) error
+	Restore(ctx context.Context, id uint) error
+	BulkDelete(ctx context.Context, ids []uint) error
+	BulkRestore(ctx context.Context, ids []uint) error
+	DeleteGalleryImage(ctx context.Context, galleryID uint) error
+	GetCategories(ctx context.Context) ([]string, error)
 }
 
 type kegiatanService struct {
-	repo repository.KegiatanRepo
+	db    *gorm.DB
+	repo  repository.KegiatanRepo
+	audit activitylogservice.ActivityLogService
 }
 
-func NewKegiatanService(repo repository.KegiatanRepo) KegiatanService {
-	return &kegiatanService{repo: repo}
+func NewKegiatanService(db *gorm.DB, repo repository.KegiatanRepo, audit activitylogservice.ActivityLogService) KegiatanService {
+	return &kegiatanService{db: db, repo: repo, audit: audit}
 }
 
-func (s *kegiatanService) GetPublished(q dto.KegiatanQuery) (*dto.KegiatanListResponse, error) {
-	return s.list(true, q)
+func (s *kegiatanService) log(ctx context.Context, input *activitylogdto.ActivityLogInput) {
+	if s.audit == nil {
+		return
+	}
+	userID, userName, role, ipAddress, userAgent := helper.GetAuditMeta(ctx)
+	if input.ActorID == nil && userID > 0 {
+		input.ActorID = &userID
+	}
+	if input.ActorName == "" {
+		input.ActorName = userName
+	}
+	if input.ActorRole == "" {
+		input.ActorRole = role
+	}
+	if input.IPAddress == "" {
+		input.IPAddress = ipAddress
+	}
+	if input.UserAgent == "" {
+		input.UserAgent = userAgent
+	}
+
+	_ = s.audit.Log(ctx, s.db, input)
 }
 
-func (s *kegiatanService) GetAll(q dto.KegiatanQuery) (*dto.KegiatanListResponse, error) {
-	return s.list(false, q)
+func (s *kegiatanService) GetPublished(ctx context.Context, q dto.KegiatanQuery) (*dto.KegiatanListResponse, error) {
+	return s.list(ctx, true, q)
 }
 
-func (s *kegiatanService) list(publishedOnly bool, q dto.KegiatanQuery) (*dto.KegiatanListResponse, error) {
+func (s *kegiatanService) GetAll(ctx context.Context, q dto.KegiatanQuery) (*dto.KegiatanListResponse, error) {
+	return s.list(ctx, false, q)
+}
+
+func (s *kegiatanService) list(ctx context.Context, publishedOnly bool, q dto.KegiatanQuery) (*dto.KegiatanListResponse, error) {
 	var items []model.Kegiatan
 	var total int64
 	var err error
@@ -78,7 +109,7 @@ func (s *kegiatanService) list(publishedOnly bool, q dto.KegiatanQuery) (*dto.Ke
 	return resp, nil
 }
 
-func (s *kegiatanService) GetBySlug(slug string) (*dto.KegiatanDetailResponse, error) {
+func (s *kegiatanService) GetBySlug(ctx context.Context, slug string) (*dto.KegiatanDetailResponse, error) {
 	k, err := s.repo.FindBySlug(slug)
 	if err != nil {
 		return nil, helper.NewServiceError("NOT_FOUND", "Kegiatan tidak ditemukan.", err)
@@ -89,7 +120,7 @@ func (s *kegiatanService) GetBySlug(slug string) (*dto.KegiatanDetailResponse, e
 	return &resp, nil
 }
 
-func (s *kegiatanService) GetByID(id uint) (*dto.KegiatanDetailResponse, error) {
+func (s *kegiatanService) GetByID(ctx context.Context, id uint) (*dto.KegiatanDetailResponse, error) {
 	k, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, helper.NewServiceError("NOT_FOUND", "Kegiatan tidak ditemukan.", err)
@@ -98,7 +129,7 @@ func (s *kegiatanService) GetByID(id uint) (*dto.KegiatanDetailResponse, error) 
 	return &resp, nil
 }
 
-func (s *kegiatanService) Create(req *dto.KegiatanCreateRequest, authorID uint) (*dto.KegiatanDetailResponse, error) {
+func (s *kegiatanService) Create(ctx context.Context, req *dto.KegiatanCreateRequest, authorID uint) (*dto.KegiatanDetailResponse, error) {
 	cat := strings.TrimSpace(req.Category)
 	if cat == "" {
 		cat = "Kegiatan"
@@ -153,12 +184,24 @@ func (s *kegiatanService) Create(req *dto.KegiatanCreateRequest, authorID uint) 
 		}
 	}
 
+	s.log(ctx, &activitylogdto.ActivityLogInput{
+		Action:      "kegiatan.create",
+		EntityType:  "kegiatan",
+		EntityID:    &k.ID,
+		EntityLabel: k.Title,
+		Description: "Membuat kegiatan baru: " + k.Title,
+		Metadata: map[string]any{
+			"slug":     k.Slug,
+			"category": k.Category,
+		},
+	})
+
 	k, _ = s.repo.FindByID(k.ID)
 	resp := toDetail(*k)
 	return &resp, nil
 }
 
-func (s *kegiatanService) Update(id uint, req *dto.KegiatanUpdateRequest) (*dto.KegiatanDetailResponse, error) {
+func (s *kegiatanService) Update(ctx context.Context, id uint, req *dto.KegiatanUpdateRequest) (*dto.KegiatanDetailResponse, error) {
 	k, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, helper.NewServiceError("NOT_FOUND", "Kegiatan tidak ditemukan.", err)
@@ -228,38 +271,98 @@ func (s *kegiatanService) Update(id uint, req *dto.KegiatanUpdateRequest) (*dto.
 		}
 	}
 
+	s.log(ctx, &activitylogdto.ActivityLogInput{
+		Action:      "kegiatan.update",
+		EntityType:  "kegiatan",
+		EntityID:    &k.ID,
+		EntityLabel: k.Title,
+		Description: "Memperbarui kegiatan: " + k.Title,
+		Metadata: map[string]any{
+			"slug": k.Slug,
+		},
+	})
+
 	k, _ = s.repo.FindByID(k.ID)
 	resp := toDetail(*k)
 	return &resp, nil
 }
 
-func (s *kegiatanService) Delete(id uint) error {
-	_, err := s.repo.FindByID(id)
+func (s *kegiatanService) Delete(ctx context.Context, id uint) error {
+	k, err := s.repo.FindByID(id)
 	if err != nil {
 		return helper.NewServiceError("NOT_FOUND", "Kegiatan tidak ditemukan.", err)
 	}
-	return s.repo.SoftDelete(id)
+	if err := s.repo.SoftDelete(id); err != nil {
+		return helper.NewServiceError("SERVER_ERROR", "Gagal menghapus kegiatan.", err)
+	}
+
+	s.log(ctx, &activitylogdto.ActivityLogInput{
+		Action:      "kegiatan.delete",
+		EntityType:  "kegiatan",
+		EntityID:    &id,
+		EntityLabel: k.Title,
+		Description: "Menghapus kegiatan (soft delete): " + k.Title,
+	})
+
+	return nil
 }
 
-func (s *kegiatanService) Restore(id uint) error {
-	return s.repo.Restore(id)
+func (s *kegiatanService) Restore(ctx context.Context, id uint) error {
+	if err := s.repo.Restore(id); err != nil {
+		return helper.NewServiceError("SERVER_ERROR", "Gagal memulihkan kegiatan.", err)
+	}
+
+	s.log(ctx, &activitylogdto.ActivityLogInput{
+		Action:      "kegiatan.restore",
+		EntityType:  "kegiatan",
+		EntityID:    &id,
+		Description: "Memulihkan kegiatan (ID: " + strconv.FormatUint(uint64(id), 10) + ")",
+	})
+
+	return nil
 }
 
-func (s *kegiatanService) BulkDelete(ids []uint) error {
+func (s *kegiatanService) BulkDelete(ctx context.Context, ids []uint) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	return s.repo.BulkSoftDelete(ids)
+	if err := s.repo.BulkSoftDelete(ids); err != nil {
+		return helper.NewServiceError("SERVER_ERROR", "Gagal menghapus kegiatan.", err)
+	}
+
+	s.log(ctx, &activitylogdto.ActivityLogInput{
+		Action:      "kegiatan.bulk_delete",
+		EntityType:  "kegiatan",
+		Description: "Menghapus " + strconv.FormatUint(uint64(len(ids)), 10) + " kegiatan (soft delete)",
+		Metadata: map[string]any{
+			"ids": ids,
+		},
+	})
+
+	return nil
 }
 
-func (s *kegiatanService) BulkRestore(ids []uint) error {
+func (s *kegiatanService) BulkRestore(ctx context.Context, ids []uint) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	return s.repo.BulkRestore(ids)
+	if err := s.repo.BulkRestore(ids); err != nil {
+		return helper.NewServiceError("SERVER_ERROR", "Gagal memulihkan kegiatan.", err)
+	}
+
+	s.log(ctx, &activitylogdto.ActivityLogInput{
+		Action:      "kegiatan.bulk_restore",
+		EntityType:  "kegiatan",
+		Description: "Memulihkan " + strconv.FormatUint(uint64(len(ids)), 10) + " kegiatan",
+		Metadata: map[string]any{
+			"ids": ids,
+		},
+	})
+
+	return nil
 }
 
-func (s *kegiatanService) DeleteGalleryImage(galleryID uint) error {
+func (s *kegiatanService) DeleteGalleryImage(ctx context.Context, galleryID uint) error {
 	return s.repo.DeleteGalleryImage(galleryID)
 }
 
@@ -371,6 +474,6 @@ func maxInt(a, b int) int {
 }
 
 // GetCategories mengembalikan daftar kategori unik untuk dropdown admin.
-func (s *kegiatanService) GetCategories() ([]string, error) {
+func (s *kegiatanService) GetCategories(ctx context.Context) ([]string, error) {
 	return s.repo.GetCategories()
 }

@@ -1,9 +1,0 @@
-*Halo {{.Name}}*
-
-Akun SchoolPay Anda siap digunakan.
-Klik tautan berikut untuk mengaktifkan:
-
-{{.URL}}
-
-Tautan berlaku 7 hari.
-Abaikan jika Anda tidak merasa mendaftar.

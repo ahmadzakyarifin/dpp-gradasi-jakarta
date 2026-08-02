@@ -4,10 +4,9 @@ import (
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/middleware"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kontak/handler"
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
 )
 
-func RegisterRoutes(api *gin.RouterGroup, h *handler.KontakHandler, jwtSecret string, rl *redis.Client) {
+func RegisterRoutes(api *gin.RouterGroup, h *handler.KontakHandler, jwtSecret string) {
 	// Publik — submit pesan
 	api.POST("/kontak", h.Submit)
 

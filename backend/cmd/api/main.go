@@ -23,14 +23,7 @@ func main() {
 		log.Fatalf("gagal melakukan koneksi ke database: %v", err)
 	}
 
-	redisClient, err := infrastructure.ConnectRedis(cfg)
-	if err != nil {
-		log.Fatalf("gagal melakukan koneksi ke redis: %v", err)
-	}
-	log.Println("berhasil terkoneksi ke redis")
-	defer redisClient.Close()
-
-	app := app.NewApp(db, cfg, redisClient)
+	app := app.NewApp(db, cfg)
 
 	port := ":" + app.Cfg.App.Port
 	log.Printf("server berjalan di %s", port)

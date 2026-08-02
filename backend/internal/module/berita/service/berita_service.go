@@ -1,47 +1,77 @@
 package service
 
 import (
+	"context"
 	"strings"
 	"time"
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/helper"
+	activitylogdto "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/dto"
+	activitylogservice "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/service"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/berita/dto"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/berita/model"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/berita/repository"
 	"github.com/gosimple/slug"
+	"gorm.io/gorm"
 )
 
 type BeritaService interface {
-	GetPublished(query dto.BeritaQuery) (*dto.BeritaListResponse, error)
-	GetAll(query dto.BeritaQuery) (*dto.BeritaListResponse, error)
-	GetBySlug(slug string) (*dto.BeritaDetailResponse, error)
-	GetByID(id uint) (*dto.BeritaDetailResponse, error)
-	Create(req *dto.BeritaCreateRequest, authorID uint) (*dto.BeritaDetailResponse, error)
-	Update(id uint, req *dto.BeritaUpdateRequest) (*dto.BeritaDetailResponse, error)
-	Delete(id uint) error
-	Restore(id uint) error
-	BulkDelete(ids []uint) error
-	BulkRestore(ids []uint) error
-	GetCategories() ([]string, error)
+	GetPublished(ctx context.Context, query dto.BeritaQuery) (*dto.BeritaListResponse, error)
+	GetAll(ctx context.Context, query dto.BeritaQuery) (*dto.BeritaListResponse, error)
+	GetBySlug(ctx context.Context, slug string) (*dto.BeritaDetailResponse, error)
+	GetByID(ctx context.Context, id uint) (*dto.BeritaDetailResponse, error)
+	Create(ctx context.Context, req *dto.BeritaCreateRequest, authorID uint) (*dto.BeritaDetailResponse, error)
+	Update(ctx context.Context, id uint, req *dto.BeritaUpdateRequest) (*dto.BeritaDetailResponse, error)
+	Delete(ctx context.Context, id uint) error
+	Restore(ctx context.Context, id uint) error
+	BulkDelete(ctx context.Context, ids []uint) error
+	BulkRestore(ctx context.Context, ids []uint) error
+	GetCategories(ctx context.Context) ([]string, error)
 }
 
 type beritaService struct {
-	repo repository.BeritaRepo
+	db    *gorm.DB
+	repo  repository.BeritaRepo
+	audit activitylogservice.ActivityLogService
 }
 
-func NewBeritaService(repo repository.BeritaRepo) BeritaService {
-	return &beritaService{repo: repo}
+func NewBeritaService(db *gorm.DB, repo repository.BeritaRepo, audit activitylogservice.ActivityLogService) BeritaService {
+	return &beritaService{db: db, repo: repo, audit: audit}
 }
 
-func (s *beritaService) GetPublished(query dto.BeritaQuery) (*dto.BeritaListResponse, error) {
-	return s.list(true, query)
+func (s *beritaService) log(ctx context.Context, input *activitylogdto.ActivityLogInput) {
+	if s.audit == nil {
+		return
+	}
+	userID, userName, role, ipAddress, userAgent := helper.GetAuditMeta(ctx)
+	if input.ActorID == nil && userID > 0 {
+		input.ActorID = &userID
+	}
+	if input.ActorName == "" {
+		input.ActorName = userName
+	}
+	if input.ActorRole == "" {
+		input.ActorRole = role
+	}
+	if input.IPAddress == "" {
+		input.IPAddress = ipAddress
+	}
+	if input.UserAgent == "" {
+		input.UserAgent = userAgent
+	}
+
+	_ = s.audit.Log(ctx, s.db, input)
 }
 
-func (s *beritaService) GetAll(query dto.BeritaQuery) (*dto.BeritaListResponse, error) {
-	return s.list(false, query)
+func (s *beritaService) GetPublished(ctx context.Context, query dto.BeritaQuery) (*dto.BeritaListResponse, error) {
+	return s.list(ctx, true, query)
 }
 
-func (s *beritaService) list(publishedOnly bool, q dto.BeritaQuery) (*dto.BeritaListResponse, error) {
+func (s *beritaService) GetAll(ctx context.Context, query dto.BeritaQuery) (*dto.BeritaListResponse, error) {
+	return s.list(ctx, false, query)
+}
+
+func (s *beritaService) list(ctx context.Context, publishedOnly bool, q dto.BeritaQuery) (*dto.BeritaListResponse, error) {
 	var beritas []model.Berita
 	var total int64
 	var err error
@@ -82,7 +112,7 @@ func (s *beritaService) list(publishedOnly bool, q dto.BeritaQuery) (*dto.Berita
 	return resp, nil
 }
 
-func (s *beritaService) GetBySlug(slug string) (*dto.BeritaDetailResponse, error) {
+func (s *beritaService) GetBySlug(ctx context.Context, slug string) (*dto.BeritaDetailResponse, error) {
 	b, err := s.repo.FindBySlug(slug)
 	if err != nil {
 		return nil, helper.NewServiceError("NOT_FOUND", "Berita tidak ditemukan.", err)
@@ -96,7 +126,7 @@ func (s *beritaService) GetBySlug(slug string) (*dto.BeritaDetailResponse, error
 	return &resp, nil
 }
 
-func (s *beritaService) GetByID(id uint) (*dto.BeritaDetailResponse, error) {
+func (s *beritaService) GetByID(ctx context.Context, id uint) (*dto.BeritaDetailResponse, error) {
 	b, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, helper.NewServiceError("NOT_FOUND", "Berita tidak ditemukan.", err)
@@ -105,7 +135,7 @@ func (s *beritaService) GetByID(id uint) (*dto.BeritaDetailResponse, error) {
 	return &resp, nil
 }
 
-func (s *beritaService) Create(req *dto.BeritaCreateRequest, authorID uint) (*dto.BeritaDetailResponse, error) {
+func (s *beritaService) Create(ctx context.Context, req *dto.BeritaCreateRequest, authorID uint) (*dto.BeritaDetailResponse, error) {
 	title := strings.TrimSpace(req.Title)
 	if title == "" {
 		return nil, helper.NewServiceError("VALIDATION_ERROR", "Judul wajib diisi.", nil)
@@ -169,6 +199,18 @@ func (s *beritaService) Create(req *dto.BeritaCreateRequest, authorID uint) (*dt
 		_ = s.repo.SaveTags(b.ID, tags)
 	}
 
+	s.log(ctx, &activitylogdto.ActivityLogInput{
+		Action:      "berita.create",
+		EntityType:  "berita",
+		EntityID:    &b.ID,
+		EntityLabel: b.Title,
+		Description: "Membuat berita baru: " + b.Title,
+		Metadata: map[string]any{
+			"slug":     b.Slug,
+			"category": b.Category,
+		},
+	})
+
 	// Reload with tags
 	b, _ = s.repo.FindByID(b.ID)
 
@@ -176,7 +218,7 @@ func (s *beritaService) Create(req *dto.BeritaCreateRequest, authorID uint) (*dt
 	return &resp, nil
 }
 
-func (s *beritaService) Update(id uint, req *dto.BeritaUpdateRequest) (*dto.BeritaDetailResponse, error) {
+func (s *beritaService) Update(ctx context.Context, id uint, req *dto.BeritaUpdateRequest) (*dto.BeritaDetailResponse, error) {
 	b, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, helper.NewServiceError("NOT_FOUND", "Berita tidak ditemukan.", err)
@@ -235,35 +277,114 @@ func (s *beritaService) Update(id uint, req *dto.BeritaUpdateRequest) (*dto.Beri
 		_ = s.repo.SaveTags(b.ID, tags)
 	}
 
+	s.log(ctx, &activitylogdto.ActivityLogInput{
+		Action:      "berita.update",
+		EntityType:  "berita",
+		EntityID:    &b.ID,
+		EntityLabel: b.Title,
+		Description: "Memperbarui berita: " + b.Title,
+		Metadata: map[string]any{
+			"slug": b.Slug,
+		},
+	})
+
 	b, _ = s.repo.FindByID(b.ID)
 	resp := toDetail(*b)
 	return &resp, nil
 }
 
-func (s *beritaService) Delete(id uint) error {
-	_, err := s.repo.FindByID(id)
+func (s *beritaService) Delete(ctx context.Context, id uint) error {
+	b, err := s.repo.FindByID(id)
 	if err != nil {
 		return helper.NewServiceError("NOT_FOUND", "Berita tidak ditemukan.", err)
 	}
-	return s.repo.SoftDelete(id)
+
+	if err := s.repo.SoftDelete(id); err != nil {
+		return helper.NewServiceError("SERVER_ERROR", "Gagal menghapus berita.", err)
+	}
+
+	s.log(ctx, &activitylogdto.ActivityLogInput{
+		Action:      "berita.delete",
+		EntityType:  "berita",
+		EntityID:    &id,
+		EntityLabel: b.Title,
+		Description: "Menghapus berita (soft delete): " + b.Title,
+	})
+
+	return nil
 }
 
-func (s *beritaService) Restore(id uint) error {
-	return s.repo.Restore(id)
+func (s *beritaService) Restore(ctx context.Context, id uint) error {
+	if err := s.repo.Restore(id); err != nil {
+		return helper.NewServiceError("SERVER_ERROR", "Gagal memulihkan berita.", err)
+	}
+
+	s.log(ctx, &activitylogdto.ActivityLogInput{
+		Action:      "berita.restore",
+		EntityType:  "berita",
+		EntityID:    &id,
+		Description: "Memulihkan berita (ID: " + fmtUint(id) + ")",
+	})
+
+	return nil
 }
 
-func (s *beritaService) BulkDelete(ids []uint) error {
+func (s *beritaService) BulkDelete(ctx context.Context, ids []uint) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	return s.repo.BulkSoftDelete(ids)
+	if err := s.repo.BulkSoftDelete(ids); err != nil {
+		return helper.NewServiceError("SERVER_ERROR", "Gagal menghapus berita.", err)
+	}
+
+	s.log(ctx, &activitylogdto.ActivityLogInput{
+		Action:      "berita.bulk_delete",
+		EntityType:  "berita",
+		Description: "Menghapus " + fmtUint(uint(len(ids))) + " berita (soft delete)",
+		Metadata: map[string]any{
+			"ids": ids,
+		},
+	})
+
+	return nil
 }
 
-func (s *beritaService) BulkRestore(ids []uint) error {
+func (s *beritaService) BulkRestore(ctx context.Context, ids []uint) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	return s.repo.BulkRestore(ids)
+	if err := s.repo.BulkRestore(ids); err != nil {
+		return helper.NewServiceError("SERVER_ERROR", "Gagal memulihkan berita.", err)
+	}
+
+	s.log(ctx, &activitylogdto.ActivityLogInput{
+		Action:      "berita.bulk_restore",
+		EntityType:  "berita",
+		Description: "Memulihkan " + fmtUint(uint(len(ids))) + " berita",
+		Metadata: map[string]any{
+			"ids": ids,
+		},
+	})
+
+	return nil
+}
+
+func fmtUint(v uint) string {
+	return strconvFormatUint(v)
+}
+
+func strconvFormatUint(v uint) string {
+	if v == 0 {
+		return "0"
+	}
+	var buf [20]byte
+	i := len(buf)
+	for v > 0 {
+		i--
+		buf[i] = byte('0' + v%10)
+		v /= 10
+	}
+	return string(buf[i:])
 }
 
 func toListItem(b model.Berita) dto.BeritaListItem {
@@ -355,6 +476,6 @@ func formatDate(v string) string {
 }
 
 // GetCategories mengembalikan daftar kategori unik untuk dropdown admin.
-func (s *beritaService) GetCategories() ([]string, error) {
+func (s *beritaService) GetCategories(ctx context.Context) ([]string, error) {
 	return s.repo.GetCategories()
 }

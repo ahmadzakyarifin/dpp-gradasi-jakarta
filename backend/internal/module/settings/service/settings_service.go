@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,32 +15,61 @@ import (
 	"time"
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/helper"
+	activitylogdto "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/dto"
+	activitylogservice "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/service"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/settings/dto"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/settings/model"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/settings/repository"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 type SettingsService interface {
-	GetSettings() (*dto.SettingsResponse, error)
-	UpdateSettings(values map[string]interface{}, updatedBy *uint) (*dto.SettingsResponse, error)
-	UploadLogo(file *multipart.FileHeader, updatedBy *uint) (*dto.SettingsResponse, error)
+	GetSettings(ctx context.Context) (*dto.SettingsResponse, error)
+	UpdateSettings(ctx context.Context, values map[string]interface{}, updatedBy *uint) (*dto.SettingsResponse, error)
+	UploadLogo(ctx context.Context, file *multipart.FileHeader, updatedBy *uint) (*dto.SettingsResponse, error)
 }
 
 type settingsService struct {
+	db         *gorm.DB
 	repo       repository.SettingsRepo
+	audit      activitylogservice.ActivityLogService
 	uploadPath string
 }
 
-func NewSettingsService(repo repository.SettingsRepo) SettingsService {
+func NewSettingsService(db *gorm.DB, repo repository.SettingsRepo, audit activitylogservice.ActivityLogService) SettingsService {
 	uploadPath := "public/uploads/settings"
 	if err := os.MkdirAll(uploadPath, 0o755); err != nil {
 		helper.Logger.Error("gagal buat direktori upload settings", zap.Error(err))
 	}
-	return &settingsService{repo: repo, uploadPath: uploadPath}
+	return &settingsService{db: db, repo: repo, audit: audit, uploadPath: uploadPath}
 }
 
-func (s *settingsService) GetSettings() (*dto.SettingsResponse, error) {
+func (s *settingsService) log(ctx context.Context, input *activitylogdto.ActivityLogInput) {
+	if s.audit == nil {
+		return
+	}
+	userID, userName, role, ipAddress, userAgent := helper.GetAuditMeta(ctx)
+	if input.ActorID == nil && userID > 0 {
+		input.ActorID = &userID
+	}
+	if input.ActorName == "" {
+		input.ActorName = userName
+	}
+	if input.ActorRole == "" {
+		input.ActorRole = role
+	}
+	if input.IPAddress == "" {
+		input.IPAddress = ipAddress
+	}
+	if input.UserAgent == "" {
+		input.UserAgent = userAgent
+	}
+
+	_ = s.audit.Log(ctx, s.db, input)
+}
+
+func (s *settingsService) GetSettings(ctx context.Context) (*dto.SettingsResponse, error) {
 	settings, err := s.repo.Get()
 	if err != nil {
 		return nil, err
@@ -49,7 +79,7 @@ func (s *settingsService) GetSettings() (*dto.SettingsResponse, error) {
 
 // UpdateSettings menerima key-value snake_case (sesuai JSON tag) dan menyimpan
 // ke database. Key yang tidak dikenal ditolak (400).
-func (s *settingsService) UpdateSettings(values map[string]interface{}, updatedBy *uint) (*dto.SettingsResponse, error) {
+func (s *settingsService) UpdateSettings(ctx context.Context, values map[string]interface{}, updatedBy *uint) (*dto.SettingsResponse, error) {
 	errorsMap := make(map[string]string)
 	settingsModelType := reflect.TypeOf(model.Settings{})
 
@@ -144,11 +174,28 @@ func (s *settingsService) UpdateSettings(values map[string]interface{}, updatedB
 		return nil, err
 	}
 
+	if len(updates) > 0 {
+		keys := make([]string, 0, len(updates))
+		for k := range updates {
+			keys = append(keys, k)
+		}
+		s.log(ctx, &activitylogdto.ActivityLogInput{
+			Action:      "settings.update",
+			EntityType:  "settings",
+			EntityID:    &updatedSettings.ID,
+			EntityLabel: "Konfigurasi Website",
+			Description: "Memperbarui konfigurasi website",
+			Metadata: map[string]any{
+				"fields": keys,
+			},
+		})
+	}
+
 	return toResponse(*updatedSettings), nil
 }
 
 // UploadLogo menyimpan file logo ke disk lokal dan memperbarui logo_path di DB.
-func (s *settingsService) UploadLogo(file *multipart.FileHeader, updatedBy *uint) (*dto.SettingsResponse, error) {
+func (s *settingsService) UploadLogo(ctx context.Context, file *multipart.FileHeader, updatedBy *uint) (*dto.SettingsResponse, error) {
 	if file == nil {
 		return nil, errors.New("File logo wajib diunggah")
 	}
@@ -216,7 +263,19 @@ func (s *settingsService) UploadLogo(file *multipart.FileHeader, updatedBy *uint
 		return nil, err
 	}
 
-	return s.GetSettings()
+	settingsID := uint(1)
+	s.log(ctx, &activitylogdto.ActivityLogInput{
+		Action:      "settings.update",
+		EntityType:  "settings",
+		EntityID:    &settingsID,
+		EntityLabel: "Logo Website",
+		Description: "Mengunggah logo website",
+		Metadata: map[string]any{
+			"logo_path": logoPath,
+		},
+	})
+
+	return s.GetSettings(ctx)
 }
 
 func toResponse(settings model.Settings) *dto.SettingsResponse {

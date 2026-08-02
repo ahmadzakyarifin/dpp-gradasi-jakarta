@@ -24,9 +24,7 @@ CREATE TABLE kegiatan (
     INDEX idx_deleted_at (deleted_at),
     FULLTEXT INDEX ft_kegiatan (title, content)
 );
--- +goose StatementEnd
 
--- +goose StatementBegin
 CREATE TABLE kegiatan_tags (
     id INT AUTO_INCREMENT PRIMARY KEY,
     kegiatan_id INT NOT NULL,
@@ -36,9 +34,7 @@ CREATE TABLE kegiatan_tags (
     INDEX idx_kegiatan_id (kegiatan_id),
     INDEX idx_tag (tag)
 );
--- +goose StatementEnd
 
--- +goose StatementBegin
 CREATE TABLE kegiatan_gallery (
     id INT AUTO_INCREMENT PRIMARY KEY,
     kegiatan_id INT NOT NULL,
@@ -54,12 +50,6 @@ CREATE TABLE kegiatan_gallery (
 -- +goose Down
 -- +goose StatementBegin
 DROP TABLE IF EXISTS kegiatan_gallery;
--- +goose StatementEnd
-
--- +goose StatementBegin
 DROP TABLE IF EXISTS kegiatan_tags;
--- +goose StatementEnd
-
--- +goose StatementBegin
 DROP TABLE IF EXISTS kegiatan;
 -- +goose StatementEnd

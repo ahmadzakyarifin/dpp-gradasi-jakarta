@@ -223,66 +223,81 @@ export default function PengurusAdmin() {
 
   const levelLabel = { ketua: 'Ketua Umum', dpp: 'Pusat (DPP)', dpd: 'Provinsi (DPD)', dpc: 'Kab/Kota (DPC)' }
 
+  function resetFilter() {
+    setSearchQuery('')
+    setFilterLevel('')
+    setCurrentPage(1)
+    showToast('Filter direset.', 'success')
+  }
+
+  const headerContent = (
+    <div className="flex items-center gap-2 w-full max-w-2xl animate-fade-in-up">
+      <div className="relative w-full">
+        <i className="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          placeholder="Cari pengurus..."
+          className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors"
+        />
+      </div>
+      <select
+        value={filterLevel}
+        onChange={e => setFilterLevel(e.target.value)}
+        className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
+      >
+        <option value="">Semua Level</option>
+        <option value="ketua">Ketua Umum</option>
+        <option value="dpp">DPP (Pusat)</option>
+        <option value="dpd">DPD (Wilayah)</option>
+        <option value="dpc">DPC (Daerah)</option>
+      </select>
+      <button
+        onClick={resetFilter}
+        className="shrink-0 bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all btn-press"
+      >
+        <i className="ph ph-arrows-counter-clockwise text-lg" /> Reset
+      </button>
+    </div>
+  )
+
   return (
-    <AdminLayout title="Kelola Pengurus">
+    <AdminLayout title="Kelola Pengurus" headerContent={headerContent}>
       <ConfirmDialog {...confirm} onClose={() => setConfirm(prev => ({ ...prev, isOpen: false, action: null }))} onConfirm={executeConfirm} />
       <ToastNotification show={toast.show} message={toast.message} type={toast.type} />
 
-      <div className="space-y-6">
+      <div className="space-y-6 animate-fade-in-up">
         {/* Navigation Tabs */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex bg-white rounded-xl p-1 border border-gray-200 shadow-sm">
+          <div className="flex bg-white rounded-lg p-1 border border-gray-200 shadow-sm">
             <button
               onClick={() => setCurrentTab('active')}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${currentTab === 'active' ? 'bg-brand-50 text-brand-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`px-4 py-1.5 rounded-md text-sm transition-all duration-200 ${currentTab === 'active' ? 'bg-brand-50 text-brand-600 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Pengurus Aktif
             </button>
             <button
               onClick={() => setCurrentTab('inactive')}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${currentTab === 'inactive' ? 'bg-brand-50 text-brand-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`px-4 py-1.5 rounded-md text-sm transition-all duration-200 ${currentTab === 'inactive' ? 'bg-brand-50 text-brand-600 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Non-aktif
             </button>
             <button
               onClick={() => setCurrentTab('trash')}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${currentTab === 'trash' ? 'bg-brand-50 text-brand-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`px-4 py-1.5 rounded-md text-sm transition-all duration-200 flex items-center gap-2 ${currentTab === 'trash' ? 'bg-red-50 text-red-600 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'}`}
             >
-              Sampah
+              <i className="ph ph-trash" /> Sampah (History)
             </button>
           </div>
           {currentTab !== 'trash' && (
             <button
               onClick={() => openForm()}
-              className="px-4 py-2.5 bg-brand-600 text-white rounded-xl hover:bg-brand-700 text-sm font-semibold shadow-sm"
+              className="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all btn-press shadow-sm"
             >
-              + Tambah Pengurus Baru
+              <i className="ph ph-plus-circle text-lg" /> Tambah
             </button>
           )}
-        </div>
-
-        {/* Filter Bar */}
-        <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-          <input
-            type="text"
-            placeholder="Cari nama atau jabatan pengurus..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full md:max-w-md px-3.5 py-2.5 bg-slate-50 border border-gray-200 rounded-xl text-sm outline-none"
-          />
-          <div className="flex gap-2 w-full md:w-auto">
-            <select
-              value={filterLevel}
-              onChange={e => setFilterLevel(e.target.value)}
-              className="px-3.5 py-2.5 bg-slate-50 border border-gray-200 rounded-xl text-sm text-slate-600 outline-none w-full sm:w-auto"
-            >
-              <option value="">Semua Tingkatan</option>
-              <option value="ketua">Ketua Umum</option>
-              <option value="dpp">Pusat (DPP)</option>
-              <option value="dpd">Provinsi (DPD)</option>
-              <option value="dpc">Kab/Kota (DPC)</option>
-            </select>
-          </div>
         </div>
 
         {/* Bulk Action Bar */}
@@ -339,16 +354,20 @@ export default function PengurusAdmin() {
                       <th className="p-4 text-right">Aksi</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100">
                     {items.map(item => (
-                      <tr key={item.id} className="hover:bg-slate-50/50">
+                      <tr key={item.id} className="hover:bg-slate-50/50 admin-row">
                         <td className="p-4">
-                          <input type="checkbox" checked={selectedItems.includes(item.id)} onChange={() => toggleOne(item.id)} className="accent-brand-600" />
+                          <input type="checkbox" checked={selectedItems.includes(item.id)} onChange={() => toggleOne(item.id)} className="accent-brand-600 border-gray-300 rounded" />
                         </td>
                         <td className="p-4 font-medium text-slate-900">
                           <div className="flex items-center gap-3">
-                            {item.image_url && (
-                              <img src={resolveAssetUrl(item.image_url)} alt="" className="w-8 h-8 rounded-full object-cover border" />
+                            {item.image_url ? (
+                              <img src={resolveAssetUrl(item.image_url)} alt="" className="w-10 h-10 rounded-full object-cover border border-gray-200" />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold text-sm">
+                                {item.name.charAt(0).toUpperCase()}
+                              </div>
                             )}
                             <div>
                               <div>{item.name}</div>
@@ -362,15 +381,19 @@ export default function PengurusAdmin() {
                           {item.provinsi ? `${item.provinsi}${item.kabupaten ? `, ${item.kabupaten}` : ''}` : '-'}
                         </td>
                         <td className="p-4 text-right">
-                          <div className="flex justify-end gap-3">
+                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             {currentTab === 'trash' ? (
-                              <button onClick={() => confirmAction('restore', item)} title="Pulihkan" className="text-xs text-emerald-600 font-semibold hover:underline">
-                                Pulihkan
+                              <button onClick={() => confirmAction('restore', item)} title="Pulihkan" className="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded">
+                                <i className="ph ph-arrow-counter-clockwise text-lg" />
                               </button>
                             ) : (
                               <>
-                                <button onClick={() => openForm(item)} className="text-xs text-slate-600 font-semibold hover:underline">Edit</button>
-                                <button onClick={() => confirmAction('delete', item)} className="text-xs text-red-600 font-semibold hover:underline">Hapus</button>
+                                <button onClick={() => openForm(item)} className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded" title="Edit">
+                                  <i className="ph ph-pencil-simple text-lg" />
+                                </button>
+                                <button onClick={() => confirmAction('delete', item)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded" title="Hapus (Soft Delete)">
+                                  <i className="ph ph-trash text-lg" />
+                                </button>
                               </>
                             )}
                           </div>

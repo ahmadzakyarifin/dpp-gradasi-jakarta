@@ -1,194 +1,270 @@
 package repository
 
 import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
 	"time"
 
-	authmodel "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/auth/model"
-	rolemodel "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/role/model"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/auth/model"
+	userentity "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/user/entity"
+	usermapper "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/user/mapper"
 	usermodel "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/user/model"
 	"gorm.io/gorm"
 )
 
-type AuthRepo interface {
-	// User
-	FindByEmail(email string) (*usermodel.User, error)
-	FindByID(id uint) (*usermodel.User, error)
-	CreateUser(name, email, hashedPassword string) (*usermodel.User, error)
-	UpdateLastLogin(id uint) error
-
-	// Refresh Token
-	SaveRefreshToken(token *authmodel.RefreshToken) error
-	FindRefreshTokenByHash(hash string) (*authmodel.RefreshToken, error)
-	DeleteRefreshToken(id uint) error
-	DeleteUserRefreshTokens(userID uint) error
-
-	// Password Reset
-	SavePasswordResetToken(token *authmodel.PasswordResetToken) error
-	FindPasswordResetTokenByHash(hash string) (*authmodel.PasswordResetToken, error)
-	MarkResetTokenUsed(id uint) error
-
-	// Activation
-	SaveActivationToken(token *authmodel.ActivationToken) error
-	FindActivationTokenByHash(hash string) (*authmodel.ActivationToken, error)
-	MarkActivationTokenUsed(id uint) error
-	ActivateUser(userID uint) error
-	SetUserPassword(userID uint, hashedPassword string) error
-
-	// Role
-	FindRoleByID(id uint) (*rolemodel.Role, error)
-	FindRoleByName(name string) (*rolemodel.Role, error)
-}
+const (
+	TokenResetPassword = "reset_password"
+	TokenActivation    = "activation"
+)
 
 type authRepo struct {
 	db *gorm.DB
+}
+
+func hashToken(token string) string {
+	hash := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(hash[:])
 }
 
 func NewAuthRepo(db *gorm.DB) AuthRepo {
 	return &authRepo{db: db}
 }
 
-func (r *authRepo) DB() *gorm.DB {
+func (r *authRepo) WithTx(tx *gorm.DB) AuthRepo {
+	return &authRepo{db: tx}
+}
+
+func (r *authRepo) GetDB() *gorm.DB {
 	return r.db
 }
 
-func (r *authRepo) FindByEmail(email string) (*usermodel.User, error) {
-	var user usermodel.User
-	err := r.db.Where("email = ?", email).Preload("Role").First(&user).Error
+func (r *authRepo) GetPermissionsByRoleID(ctx context.Context, roleID uint) ([]string, error) {
+	return fetchRolePermissionsFromDB(ctx, r.db, roleID)
+}
+
+func (r *authRepo) FindByEmail(ctx context.Context, email string) (*userentity.User, error) {
+	var u usermodel.UserModel
+	err := r.db.WithContext(ctx).Unscoped().Preload("Role").Where("users.email = ?", email).First(&u).Error
 	if err != nil {
 		return nil, err
 	}
-	return &user, nil
+	return usermapper.ModelToUserEntity(&u), nil
 }
 
-func (r *authRepo) FindByID(id uint) (*usermodel.User, error) {
-	var user usermodel.User
-	err := r.db.Preload("Role").First(&user, id).Error
+func (r *authRepo) FindUserByID(ctx context.Context, id uint) (*userentity.User, error) {
+	var u usermodel.UserModel
+	err := r.db.WithContext(ctx).Preload("Role").Where("users.id = ?", id).First(&u).Error
 	if err != nil {
 		return nil, err
 	}
-	return &user, nil
+	return usermapper.ModelToUserEntity(&u), nil
 }
 
-func (r *authRepo) CreateUser(name, email, hashedPassword string) (*usermodel.User, error) {
-	// Find default role (admin)
-	role, err := r.FindRoleByName("admin")
+func (r *authRepo) SaveRefreshToken(ctx context.Context, userID uint, token string, expiresAt time.Time, ip string, userAgent string, device string) error {
+	hash := hashToken(token)
+	m := &model.RefreshTokenModel{
+		UserID:    userID,
+		TokenHash: hash,
+		ExpiresAt: expiresAt,
+	}
+
+	if ip != "" {
+		m.IPAddress = &ip
+	}
+	if userAgent != "" {
+		m.UserAgent = &userAgent
+	}
+
+	if device != "" {
+		m.DeviceName = &device
+	}
+
+	if err := r.db.WithContext(ctx).Create(m).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *authRepo) FindUserByRefreshToken(ctx context.Context, token string) (*userentity.User, time.Time, error) {
+	hash := hashToken(token)
+	var rt model.RefreshTokenModel
+	err := r.db.WithContext(ctx).
+		Where("token_hash = ?", hash).
+		Where("revoked_at IS NULL").
+		Where("expires_at > ?", time.Now()).
+		First(&rt).Error
 	if err != nil {
-		// Fallback to role_id=2
-		role = &rolemodel.Role{ID: 2, Name: "admin", DisplayName: "Administrator"}
+		return nil, time.Time{}, err
 	}
 
-	user := usermodel.User{
-		RoleID:   role.ID,
-		Name:     name,
-		Email:    email,
-		Password: hashedPassword,
-		Status:   "active",
+	user, err := r.FindUserByID(
+		ctx,
+		rt.UserID,
+	)
+
+	if err != nil {
+		return nil, time.Time{}, err
 	}
 
-	if err := r.db.Create(&user).Error; err != nil {
-		return nil, err
-	}
-
-	// Reload with role
-	var loaded usermodel.User
-	if err := r.db.Preload("Role").First(&loaded, user.ID).Error; err != nil {
-		return nil, err
-	}
-
-	return &loaded, nil
+	return user, rt.ExpiresAt, nil
 }
-
-func (r *authRepo) UpdateLastLogin(id uint) error {
+func (r *authRepo) DeleteRefreshToken(ctx context.Context, token string) error {
+	hashedToken := hashToken(token)
 	now := time.Now()
-	return r.db.Model(&usermodel.User{}).Where("id = ?", id).Update("last_login_at", &now).Error
+	res := r.db.WithContext(ctx).Model(&model.RefreshTokenModel{}).
+		Where("token_hash = ? AND revoked_at IS NULL", hashedToken).
+		Update("revoked_at", now)
+	return res.Error
 }
 
-func (r *authRepo) SaveRefreshToken(token *authmodel.RefreshToken) error {
-	return r.db.Create(token).Error
-}
-
-func (r *authRepo) FindRefreshTokenByHash(hash string) (*authmodel.RefreshToken, error) {
-	var token authmodel.RefreshToken
-	err := r.db.Where("token_hash = ? AND expires_at > ?", hash, time.Now()).First(&token).Error
-	if err != nil {
-		return nil, err
-	}
-	return &token, nil
-}
-
-func (r *authRepo) DeleteRefreshToken(id uint) error {
-	return r.db.Delete(&authmodel.RefreshToken{}, id).Error
-}
-
-func (r *authRepo) DeleteUserRefreshTokens(userID uint) error {
-	return r.db.Where("user_id = ?", userID).Delete(&authmodel.RefreshToken{}).Error
-}
-
-func (r *authRepo) SavePasswordResetToken(token *authmodel.PasswordResetToken) error {
-	return r.db.Create(token).Error
-}
-
-func (r *authRepo) FindPasswordResetTokenByHash(hash string) (*authmodel.PasswordResetToken, error) {
-	var token authmodel.PasswordResetToken
-	err := r.db.Where("token_hash = ? AND expires_at > ? AND used_at IS NULL", hash, time.Now()).First(&token).Error
-	if err != nil {
-		return nil, err
-	}
-	return &token, nil
-}
-
-func (r *authRepo) MarkResetTokenUsed(id uint) error {
+func (r *authRepo) DeleteAllUserRefreshTokens(ctx context.Context, userID uint) error {
 	now := time.Now()
-	return r.db.Model(&authmodel.PasswordResetToken{}).Where("id = ?", id).Update("used_at", &now).Error
+	res := r.db.WithContext(ctx).Model(&model.RefreshTokenModel{}).
+		Where("user_id = ? AND revoked_at IS NULL", userID).
+		Update("revoked_at", now)
+	return res.Error
 }
 
-func (r *authRepo) SaveActivationToken(token *authmodel.ActivationToken) error {
-	return r.db.Create(token).Error
+func (r *authRepo) UpdatePassword(ctx context.Context, userID uint, hashedPassword string) error {
+	res := r.db.WithContext(ctx).
+		Model(&usermodel.UserModel{}).
+		Where("id = ?", userID).
+		Update("password_hash", hashedPassword)
+	return res.Error
 }
 
-func (r *authRepo) FindActivationTokenByHash(hash string) (*authmodel.ActivationToken, error) {
-	var token authmodel.ActivationToken
-	err := r.db.Where("token_hash = ? AND expires_at > ? AND used_at IS NULL", hash, time.Now()).First(&token).Error
-	if err != nil {
-		return nil, err
+func (r *authRepo) UpdateUserContact(ctx context.Context, userID uint, field string, value string, verifiedAt time.Time) error {
+	updates := map[string]any{
+		field: value,
 	}
-	return &token, nil
+	switch field {
+	case "email":
+		updates["email_verified_at"] = verifiedAt
+	case "phone":
+		updates["phone_verified_at"] = verifiedAt
+	}
+
+	return r.db.WithContext(ctx).
+		Model(&usermodel.UserModel{}).
+		Where("id = ?", userID).
+		Updates(updates).Error
 }
 
-func (r *authRepo) MarkActivationTokenUsed(id uint) error {
+func (r *authRepo) SaveAuthToken(ctx context.Context, userID uint, token string, tokenType string, expiresAt time.Time) error {
+	hash := hashToken(token)
+
+	switch tokenType {
+
+	case TokenResetPassword:
+
+		m := &model.PasswordResetTokenModel{
+			UserID:    userID,
+			TokenHash: hash,
+			ExpiresAt: expiresAt,
+		}
+
+		if err := r.db.WithContext(ctx).Create(m).Error; err != nil {
+			return err
+		}
+
+		return nil
+
+	case TokenActivation:
+
+		m := &model.AccountActivationTokenModel{
+			UserID:    userID,
+			TokenHash: hash,
+			ExpiresAt: expiresAt,
+		}
+
+		if err := r.db.WithContext(ctx).Create(m).Error; err != nil {
+			return err
+		}
+
+		return nil
+
+	default:
+		return fmt.Errorf(
+			"unknown auth token type: %s",
+			tokenType,
+		)
+	}
+}
+
+func (r *authRepo) FindAuthToken(ctx context.Context, token string, tokenType string) (uint, error) {
+	hash := hashToken(token)
+
+	switch tokenType {
+	case "reset_password":
+		var row model.PasswordResetTokenModel
+		err := r.db.WithContext(ctx).
+			Where("token_hash=?", hash).
+			Where("used_at IS NULL").
+			Where("expires_at > ?", time.Now()).
+			First(&row).Error
+
+		if err != nil {
+			return 0, err
+		}
+
+		return row.UserID, nil
+	case "activation":
+		var row model.AccountActivationTokenModel
+		err := r.db.WithContext(ctx).
+			Where("token_hash=?", hash).
+			Where("used_at IS NULL").
+			Where("expires_at > ?", time.Now()).
+			First(&row).Error
+
+		if err != nil {
+			return 0, err
+		}
+
+		return row.UserID, nil
+	default:
+
+		return 0, fmt.Errorf(
+			"unknown token type",
+		)
+	}
+}
+
+func (r *authRepo) DeleteAuthToken(ctx context.Context, token string, tokenType string) error {
+	hash := hashToken(token)
 	now := time.Now()
-	return r.db.Model(&authmodel.ActivationToken{}).Where("id = ?", id).Update("used_at", &now).Error
-}
 
-func (r *authRepo) ActivateUser(userID uint) error {
-	now := time.Now()
-	return r.db.Model(&usermodel.User{}).Where("id = ?", userID).Updates(map[string]any{
-		"status":            "active",
-		"email_verified_at": &now,
-	}).Error
-}
+	switch tokenType {
+	case "reset_password":
+		res := r.db.WithContext(ctx).
+			Model(&model.PasswordResetTokenModel{}).
+			Where("token_hash=?", hash).
+			Update("used_at", now)
+		return res.Error
 
-func (r *authRepo) SetUserPassword(userID uint, hashedPassword string) error {
-	return r.db.Model(&usermodel.User{}).Where("id = ?", userID).Updates(map[string]any{
-		"password":             hashedPassword,
-		"must_change_password": false,
-	}).Error
-}
+	case "activation":
+		res := r.db.WithContext(ctx).
+			Model(&model.AccountActivationTokenModel{}).
+			Where("token_hash=?", hash).
+			Update("used_at", now)
+		return res.Error
 
-func (r *authRepo) FindRoleByID(id uint) (*rolemodel.Role, error) {
-	var role rolemodel.Role
-	err := r.db.First(&role, id).Error
-	if err != nil {
-		return nil, err
+	default:
+		return fmt.Errorf(
+			"unknown token type",
+		)
 	}
-	return &role, nil
 }
 
-func (r *authRepo) FindRoleByName(name string) (*rolemodel.Role, error) {
-	var role rolemodel.Role
-	err := r.db.Where("name = ?", name).First(&role).Error
-	if err != nil {
-		return nil, err
-	}
-	return &role, nil
+func fetchRolePermissionsFromDB(ctx context.Context, db *gorm.DB, roleID uint) ([]string, error) {
+	var names []string
+	err := db.WithContext(ctx).
+		Table("role_permissions AS rp").
+		Select("p.name").
+		Joins("JOIN permissions AS p ON rp.permission_id = p.id").
+		Where("rp.role_id = ?", roleID).
+		Scan(&names).Error
+	return names, err
 }

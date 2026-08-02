@@ -13,9 +13,7 @@ CREATE TABLE refresh_tokens (
     INDEX idx_user_id (user_id),
     INDEX idx_expires_at (expires_at)
 );
--- +goose StatementEnd
 
--- +goose StatementBegin
 CREATE TABLE password_reset_tokens (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -28,9 +26,7 @@ CREATE TABLE password_reset_tokens (
     INDEX idx_user_id (user_id),
     INDEX idx_token_hash (token_hash)
 );
--- +goose StatementEnd
 
--- +goose StatementBegin
 CREATE TABLE activation_tokens (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -49,12 +45,6 @@ CREATE TABLE activation_tokens (
 -- +goose Down
 -- +goose StatementBegin
 DROP TABLE IF EXISTS activation_tokens;
--- +goose StatementEnd
-
--- +goose StatementBegin
 DROP TABLE IF EXISTS password_reset_tokens;
--- +goose StatementEnd
-
--- +goose StatementBegin
 DROP TABLE IF EXISTS refresh_tokens;
 -- +goose StatementEnd

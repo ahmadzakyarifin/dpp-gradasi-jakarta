@@ -240,63 +240,73 @@ export default function KegiatanAdmin() {
     showToast('Filter direset.', 'info')
   }
 
+  const headerContent = (
+    <div className="flex items-center gap-2 w-full max-w-3xl animate-fade-in-up">
+      <div className="relative w-full">
+        <i className="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+          placeholder="Cari kegiatan atau lokasi..."
+          className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors"
+        />
+      </div>
+      <select
+        value={filterStatus}
+        onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }}
+        className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
+      >
+        <option value="">Semua Status</option>
+        <option value="published">Terbit</option>
+        <option value="draft">Draft</option>
+      </select>
+      <select
+        value={filterSort}
+        onChange={e => { setFilterSort(e.target.value); setCurrentPage(1); }}
+        className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
+      >
+        <option value="newest">Terbaru</option>
+        <option value="oldest">Terlama</option>
+      </select>
+      <button
+        onClick={resetFilter}
+        className="shrink-0 bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all btn-press"
+      >
+        <i className="ph ph-arrows-counter-clockwise text-lg" /> Reset
+      </button>
+    </div>
+  )
+
   return (
-    <AdminLayout title="Kelola Kegiatan">
+    <AdminLayout title="Kelola Kegiatan" headerContent={headerContent}>
       {toast.show && <ToastNotification message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
       <ConfirmDialog {...confirm} onClose={() => setConfirm(prev => ({ ...prev, isOpen: false, action: null }))} onConfirm={executeConfirm} />
 
-      <div className="space-y-6">
-        <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-          <div className="flex gap-2">
+      <div className="space-y-6 animate-fade-in-up">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex bg-white rounded-lg p-1 border border-gray-200 shadow-sm">
             <button
               onClick={() => { setCurrentTab('active'); setCurrentPage(1); }}
-              className={`px-4 py-2 text-xs font-semibold rounded-lg transition ${currentTab === 'active' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-slate-700'}`}
+              className={`px-4 py-1.5 rounded-md text-sm transition-all duration-200 ${currentTab === 'active' ? 'bg-brand-50 text-brand-600 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'}`}
             >
-              Kegiatan Aktif
+              Aktif & Draft
             </button>
             <button
               onClick={() => { setCurrentTab('trash'); setCurrentPage(1); }}
-              className={`px-4 py-2 text-xs font-semibold rounded-lg transition ${currentTab === 'trash' ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-slate-700'}`}
+              className={`px-4 py-1.5 rounded-md text-sm transition-all duration-200 flex items-center gap-2 ${currentTab === 'trash' ? 'bg-red-50 text-red-600 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'}`}
             >
-              Sampah
+              <i className="ph ph-trash" /> Sampah (History)
             </button>
           </div>
           {currentTab === 'active' && (
             <button
               onClick={() => openForm()}
-              className="px-4 py-2.5 bg-brand-600 text-white rounded-xl hover:bg-brand-700 text-xs font-semibold flex items-center gap-2 shadow-sm"
+              className="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all btn-press shadow-sm"
             >
-              + Tambah Kegiatan Baru
+              <i className="ph ph-plus-circle text-lg" /> Tambah
             </button>
           )}
-        </div>
-
-        {/* Filter Bar */}
-        <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-          <input
-            type="text"
-            placeholder="Cari kegiatan atau lokasi..."
-            value={searchQuery}
-            onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-            className="w-full md:max-w-md px-3.5 py-2.5 bg-slate-50 border border-gray-200 rounded-xl text-sm outline-none"
-          />
-          <div className="flex gap-2 w-full md:w-auto">
-            <select
-              value={filterStatus}
-              onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }}
-              className="px-3.5 py-2.5 bg-slate-50 border border-gray-200 rounded-xl text-sm text-slate-600 outline-none"
-            >
-              <option value="">Semua Status</option>
-              <option value="published">Terbit</option>
-              <option value="draft">Draft</option>
-            </select>
-            <button
-              onClick={resetFilter}
-              className="px-3.5 py-2.5 bg-slate-50 border border-gray-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition flex items-center gap-2"
-            >
-              <i className="ph-bold ph-arrows-counter-clockwise" /> Reset
-            </button>
-          </div>
         </div>
 
         {/* Bulk Action Bar */}
@@ -357,7 +367,7 @@ export default function KegiatanAdmin() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {paginatedItems.map(item => (
-                  <tr key={item.id} className="hover:bg-slate-50/60 transition">
+                  <tr key={item.id} className="hover:bg-slate-50/60 transition admin-row">
                     <td className="p-4 text-center">
                       <input type="checkbox" checked={selectedItems.includes(item.id)} onChange={() => toggleItem(item.id)} className="rounded border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer" />
                     </td>
@@ -391,12 +401,16 @@ export default function KegiatanAdmin() {
                       <div className="flex justify-end gap-2">
                         {currentTab === 'trash' ? (
                           <button onClick={() => confirmAction('restore', item.id)} className="p-2 text-slate-400 hover:text-emerald-600 rounded-lg" title="Pulihkan">
-                            <i className="ph-bold ph-arrow-counter-clockwise" /> Pulihkan
+                            <i className="ph ph-arrow-counter-clockwise text-base" /> Pulihkan
                           </button>
                         ) : (
                           <>
-                            <button onClick={() => openForm(item)} className="p-2 text-slate-400 hover:text-brand-600 rounded-lg">Edit</button>
-                            <button onClick={() => confirmAction('delete', item.id)} className="p-2 text-slate-400 hover:text-red-600 rounded-lg">Hapus</button>
+                            <button onClick={() => openForm(item)} className="p-2 text-slate-400 hover:text-brand-600 rounded-lg">
+                              <i className="ph ph-pencil-simple text-base" />
+                            </button>
+                            <button onClick={() => confirmAction('delete', item.id)} className="p-2 text-slate-400 hover:text-red-600 rounded-lg">
+                              <i className="ph ph-trash text-base" />
+                            </button>
                           </>
                         )}
                       </div>

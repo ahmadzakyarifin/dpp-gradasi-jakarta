@@ -15,7 +15,7 @@ type ActivityLogService interface {
 	// API
 	List(ctx context.Context, req *dto.ActivityLogQueryReq) (*dto.ActivityLogListRes, error)
 
-	// Summary untuk dashboard
+	// Summary statistik activity log (dipakai dashboard).
 	Summary(ctx context.Context, req *dto.ActivityLogQueryReq) (*dto.ActivityLogSummaryRes, error)
 
 	Detail(ctx context.Context, id uint64) (*dto.ActivityLogDetailRes, error)

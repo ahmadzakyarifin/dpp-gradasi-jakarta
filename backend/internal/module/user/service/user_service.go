@@ -2,480 +2,530 @@ package service
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/json"
+	"errors"
 	"fmt"
-	"io"
-	"math/big"
-	"mime/multipart"
-	"net/http"
-	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/config"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/helper"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/infrastructure"
+	activitylogdto "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/dto"
+	activitylogservice "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/service"
+	authrepo "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/auth/repository"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/user/dto"
-	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/user/model"
-	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/user/repository"
-	"github.com/redis/go-redis/v9"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/user/entity"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/user/mapper"
+	userrepo "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/user/repository"
+	emailtemplate "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/template_message/email"
+	"gorm.io/gorm"
 )
 
 type UserService interface {
-	GetProfile(userID uint) (*dto.UserResponse, error)
-	UpdateProfile(userID uint, req *dto.ProfileUpdateRequest) (*dto.UserResponse, string, error)
-	VerifyEmail(userID uint, req *dto.VerifyEmailRequest) error
-	ChangePassword(userID uint, req *dto.ChangePasswordRequest) error
-
-	// Admin Management
-	GetAdmins(q dto.ListUsersQuery) (*dto.UserListResponse, error)
-	CreateAdmin(req *dto.AdminCreateRequest, appURL string) (*dto.UserResponse, error)
-	ResendActivation(adminID uint, targetID uint, appURL string) error
-	SetAdminStatus(adminID uint, targetID uint, req *dto.AdminStatusRequest) error
-	DeleteAdmin(adminID uint, targetID uint) error
-	RestoreAdmin(adminID uint, targetID uint) error
-	BulkDeleteAdmin(adminID uint, targetIDs []uint) error
-	BulkRestoreAdmin(targetIDs []uint) error
+	GetAll(ctx context.Context, roleID uint) ([]entity.User, error)
+	GetPaginated(ctx context.Context, req dto.UserQueryReq) ([]entity.User, int, error)
+	Create(ctx context.Context, req dto.UserCreateReq) (*entity.User, error)
+	Update(ctx context.Context, id uint, req dto.UserUpdateReq) (*entity.User, error)
+	Delete(ctx context.Context, id uint) error
+	ActivateAccount(ctx context.Context, token string, password string) (*entity.User, error)
+	SaveRefreshToken(ctx context.Context, userID uint, token string, expiresAt time.Time) error
+	ToggleStatus(ctx context.Context, id uint) error
+	ResendNotification(ctx context.Context, id uint) error
+	BulkResendNotification(ctx context.Context, ids []uint) (*BulkResendResult, error)
+	GetByID(ctx context.Context, id uint) (*entity.User, error)
+	BulkDelete(ctx context.Context, ids []uint) error
+	Restore(ctx context.Context, id uint) error
+	BulkRestore(ctx context.Context, ids []uint) error
+	GetDependencyInfo(ctx context.Context, id uint) (map[string]interface{}, error)
+	CheckUnique(ctx context.Context, field string, value string, excludeID uint) (bool, error)
+	UpdateProfile(ctx context.Context, id uint, name string) (*entity.User, error)
 }
 
 type userService struct {
-	repo       repository.UserRepo
-	redis      *redis.Client
-	mailer     *infrastructure.Mailer
-	uploadPath string
+	db       *gorm.DB
+	repo     userrepo.UserRepo
+	authRepo authrepo.AuthRepo
+	audit    activitylogservice.ActivityLogService
+	mailer   *infrastructure.Mailer
+	cfg      *config.Config
 }
 
-func NewUserService(repo repository.UserRepo, redis *redis.Client, mailer *infrastructure.Mailer) UserService {
-	uploadPath := "public/uploads/users"
-	_ = os.MkdirAll(uploadPath, 0755)
+func NewUserService(db *gorm.DB, repo userrepo.UserRepo, authRepo authrepo.AuthRepo, audit activitylogservice.ActivityLogService, mailer *infrastructure.Mailer, cfg *config.Config) UserService {
 	return &userService{
-		repo:       repo,
-		redis:      redis,
-		mailer:     mailer,
-		uploadPath: uploadPath,
+		db:       db,
+		repo:     repo,
+		authRepo: authRepo,
+		audit:    audit,
+		mailer:   mailer,
+		cfg:      cfg,
 	}
 }
 
-func (s *userService) GetProfile(userID uint) (*dto.UserResponse, error) {
-	user, err := s.repo.FindByID(userID)
-	if err != nil {
-		return nil, helper.NewServiceError("NOT_FOUND", "User tidak ditemukan", err)
+func (s *userService) log(ctx context.Context, db *gorm.DB, input *activitylogdto.ActivityLogInput) {
+	if s.audit == nil {
+		return
 	}
-	resp := toResponse(*user)
-	return &resp, nil
+	userID, userName, role, ipAddress, userAgent := helper.GetAuditMeta(ctx)
+	if input.ActorID == nil && userID > 0 {
+		input.ActorID = &userID
+	}
+	if input.ActorName == "" {
+		input.ActorName = userName
+	}
+	if input.ActorRole == "" {
+		input.ActorRole = role
+	}
+	if input.IPAddress == "" {
+		input.IPAddress = ipAddress
+	}
+	if input.UserAgent == "" {
+		input.UserAgent = userAgent
+	}
+
+	_ = s.audit.Log(ctx, db, input)
 }
 
-func (s *userService) UpdateProfile(userID uint, req *dto.ProfileUpdateRequest) (*dto.UserResponse, string, error) {
-	user, err := s.repo.FindByID(userID)
-	if err != nil {
-		return nil, "", helper.NewServiceError("NOT_FOUND", "User tidak ditemukan", err)
-	}
-
-	if req.Photo != nil {
-		newPhoto, err := s.handleUpload(req.Photo)
-		if err == nil && newPhoto != "" {
-			user.PhotoPath = newPhoto
-		}
-	}
-
-	user.Name = req.Name
-
-	var message string
-	// Check if email changed
-	if user.Email != req.Email {
-		// Check if email is already taken by someone else
-		existing, _ := s.repo.FindByEmail(req.Email)
-		if existing != nil && existing.ID != userID {
-			return nil, "", helper.NewServiceError("EMAIL_TAKEN", "Email sudah terdaftar", nil)
-		}
-
-		// Generate token
-		token, _ := generateRandomNumber(6)
-
-		// Save to Redis (expire in 1 hour)
-		key := fmt.Sprintf("email_verify:%d", userID)
-		redisData := map[string]string{
-			"email": req.Email,
-			"token": token,
-		}
-		jsonData, _ := json.Marshal(redisData)
-		s.redis.Set(context.Background(), key, jsonData, time.Hour)
-
-		// Send Email
-		go func() {
-			_ = s.mailer.Send(
-				req.Email,
-				"Verifikasi Perubahan Email",
-				fmt.Sprintf("Kode verifikasi Anda adalah: <b>%s</b>. Kode ini berlaku selama 1 jam.", token),
-			)
-		}()
-
-		message = "Profil berhasil diperbarui. Karena Anda mengubah email, silakan periksa email baru Anda untuk kode verifikasi."
-	} else {
-		message = "Profil berhasil diperbarui."
-	}
-
-	if err := s.repo.Update(user); err != nil {
-		return nil, "", helper.NewServiceError("SERVER_ERROR", "Gagal menyimpan profil", err)
-	}
-
-	resp := toResponse(*user)
-	return &resp, message, nil
+func (s *userService) GetAll(ctx context.Context, roleID uint) ([]entity.User, error) {
+	return s.repo.FindAll(ctx, roleID)
 }
 
-func (s *userService) VerifyEmail(userID uint, req *dto.VerifyEmailRequest) error {
-	key := fmt.Sprintf("email_verify:%d", userID)
-	val, err := s.redis.Get(context.Background(), key).Result()
+func (s *userService) GetByID(ctx context.Context, id uint) (*entity.User, error) {
+	user, err := s.repo.FindByID(ctx, id)
 	if err != nil {
-		return helper.NewServiceError("INVALID_TOKEN", "Kode verifikasi tidak valid atau kedaluwarsa", err)
+		return nil, helper.NewNotFoundError("Pengguna tidak ditemukan")
 	}
-
-	var data map[string]string
-	if err := json.Unmarshal([]byte(val), &data); err != nil {
-		return helper.NewServiceError("INVALID_TOKEN", "Kode verifikasi tidak valid", err)
-	}
-
-	if data["token"] != req.Token {
-		return helper.NewServiceError("INVALID_TOKEN", "Kode verifikasi salah", nil)
-	}
-
-	// Token valid, update email in DB
-	user, err := s.repo.FindByID(userID)
-	if err != nil {
-		return helper.NewServiceError("NOT_FOUND", "User tidak ditemukan", err)
-	}
-
-	user.Email = data["email"]
-	now := time.Now()
-	user.EmailVerifiedAt = &now
-	if err := s.repo.Update(user); err != nil {
-		return helper.NewServiceError("SERVER_ERROR", "Gagal mengupdate email", err)
-	}
-
-	// Delete token
-	s.redis.Del(context.Background(), key)
-	return nil
+	return user, nil
 }
 
-func (s *userService) ChangePassword(userID uint, req *dto.ChangePasswordRequest) error {
-	user, err := s.repo.FindByID(userID)
-	if err != nil {
-		return helper.NewServiceError("NOT_FOUND", "User tidak ditemukan", err)
-	}
-
-	// Verify old password
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.OldPassword)); err != nil {
-		return helper.NewServiceError("INVALID_PASSWORD", "Password lama salah", err)
-	}
-
-	// Hash new password
-	hashed, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
-	if err != nil {
-		return helper.NewServiceError("SERVER_ERROR", "Gagal mengenkripsi password", err)
-	}
-
-	user.Password = string(hashed)
-	user.MustChangePassword = false // Password sudah diganti, flag reset
-	if err := s.repo.Update(user); err != nil {
-		return helper.NewServiceError("SERVER_ERROR", "Gagal menyimpan password baru", err)
-	}
-	return nil
+func (s *userService) GetPaginated(ctx context.Context, req dto.UserQueryReq) ([]entity.User, int, error) {
+	req.Normalize()
+	return s.repo.FindPaginated(ctx, req.Page, req.Limit, req.Search, req.Role, req.Status, req.Sort, req.Trashed)
 }
 
-func (s *userService) GetAdmins(q dto.ListUsersQuery) (*dto.UserListResponse, error) {
-	users, total, err := s.repo.FindAllAdmins(q)
-	if err != nil {
-		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil data admin", err)
+func (s *userService) Create(ctx context.Context, req dto.UserCreateReq) (*entity.User, error) {
+	user := mapper.CreateReqToEntity(&req)
+	user.Name = strings.TrimSpace(user.Name)
+	user.Email = strings.ToLower(strings.TrimSpace(user.Email))
+	if user.Status == "" {
+		user.Status = "inactive"
 	}
 
-	page, limit := q.Page, q.Limit
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 {
-		limit = 10
-	}
-
-	items := make([]dto.UserResponse, 0, len(users))
-	for _, u := range users {
-		items = append(items, toResponse(u))
+	// Validasi email unik
+	if existing, _ := s.repo.FindByEmail(ctx, user.Email); existing != nil {
+		v := helper.NewValidationError()
+		v.Add("email", fmt.Sprintf("Email '%s' sudah terdaftar", user.Email))
+		return nil, v
 	}
 
-	totalPages := int((total + int64(limit) - 1) / int64(limit))
-	return &dto.UserListResponse{
-		Items: items,
-		Pagination: dto.Pagination{
-			Page:       page,
-			Limit:      limit,
-			Total:      total,
-			TotalPages: totalPages,
+	if err := s.repo.CreateTx(ctx, user); err != nil {
+		return nil, err
+	}
+
+	// Kirim email aktivasi (langsung, sync via template email)
+	if err := s.sendActivationEmail(ctx, user); err != nil {
+		// Email gagal bukan berarti user gagal dibuat — log saja.
+		_ = err
+	}
+
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
+		ActorID:     &user.ID,
+		ActorName:   user.Name,
+		ActorRole:   user.RoleName,
+		Action:      "users.create",
+		EntityType:  "users",
+		EntityID:    &user.ID,
+		EntityLabel: user.Name,
+		Description: fmt.Sprintf("Membuat pengguna baru: %s", user.Name),
+		Metadata: map[string]any{
+			"email": user.Email,
 		},
+	})
+
+	return user, nil
+}
+
+func (s *userService) Update(ctx context.Context, id uint, req dto.UserUpdateReq) (*entity.User, error) {
+	user, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return nil, helper.NewNotFoundError("Pengguna tidak ditemukan")
+	}
+
+	// Cek email unik (kecuali dirinya sendiri)
+	if strings.ToLower(strings.TrimSpace(req.Email)) != user.Email {
+		if other, _ := s.repo.FindByEmail(ctx, strings.ToLower(strings.TrimSpace(req.Email))); other != nil {
+			v := helper.NewValidationError()
+			v.Add("email", fmt.Sprintf("Email '%s' sudah digunakan oleh pengguna lain", req.Email))
+			return nil, v
+		}
+	}
+
+	oldName := user.Name
+	oldEmail := user.Email
+	oldStatus := user.Status
+
+	mapper.UpdateReqToEntity(&req, user)
+	user.Name = strings.TrimSpace(user.Name)
+	user.Email = strings.ToLower(strings.TrimSpace(user.Email))
+
+	if err := s.repo.UpdateTx(ctx, user); err != nil {
+		return nil, err
+	}
+
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
+		ActorID:     &user.ID,
+		ActorName:   user.Name,
+		ActorRole:   user.RoleName,
+		Action:      "users.update",
+		EntityType:  "users",
+		EntityID:    &user.ID,
+		EntityLabel: user.Name,
+		Description: fmt.Sprintf("Memperbarui pengguna: %s", user.Name),
+		Metadata: map[string]any{
+			"old_name":   oldName,
+			"old_email":  oldEmail,
+			"old_status": oldStatus,
+			"new_name":   user.Name,
+			"new_email":  user.Email,
+			"new_status": user.Status,
+		},
+	})
+
+	return user, nil
+}
+
+func (s *userService) Delete(ctx context.Context, id uint) error {
+	user, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return helper.NewNotFoundError("Pengguna tidak ditemukan")
+	}
+
+	if err := s.repo.Delete(ctx, id); err != nil {
+		return err
+	}
+
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
+		ActorID:     &user.ID,
+		ActorName:   user.Name,
+		ActorRole:   user.RoleName,
+		Action:      "users.delete",
+		EntityType:  "users",
+		EntityID:    &user.ID,
+		EntityLabel: user.Name,
+		Description: fmt.Sprintf("Menghapus pengguna (soft delete): %s", user.Name),
+		Metadata: map[string]any{
+			"email": user.Email,
+		},
+	})
+
+	return nil
+}
+
+func (s *userService) ToggleStatus(ctx context.Context, id uint) error {
+	user, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return helper.NewNotFoundError("Pengguna tidak ditemukan")
+	}
+
+	if err := s.repo.ToggleStatus(ctx, id); err != nil {
+		return err
+	}
+
+	// Status baru = kebalikan dari sebelumnya
+	newStatus := "active"
+	if user.Status == "active" {
+		newStatus = "inactive"
+	}
+
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
+		ActorID:     &user.ID,
+		ActorName:   user.Name,
+		ActorRole:   user.RoleName,
+		Action:      "users.toggle_status",
+		EntityType:  "users",
+		EntityID:    &user.ID,
+		EntityLabel: user.Name,
+		Description: fmt.Sprintf("Mengubah status pengguna menjadi %s: %s", newStatus, user.Name),
+		Metadata: map[string]any{
+			"email":      user.Email,
+			"old_status": user.Status,
+			"new_status": newStatus,
+		},
+	})
+
+	return nil
+}
+
+func (s *userService) BulkDelete(ctx context.Context, ids []uint) error {
+	if err := s.repo.BulkDelete(ctx, ids); err != nil {
+		return err
+	}
+
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
+		Action:      "users.bulk_delete",
+		EntityType:  "users",
+		Description: fmt.Sprintf("Menghapus %d pengguna (soft delete)", len(ids)),
+		Metadata: map[string]any{
+			"ids": ids,
+		},
+	})
+
+	return nil
+}
+
+func (s *userService) Restore(ctx context.Context, id uint) error {
+	user, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return helper.NewNotFoundError("Pengguna tidak ditemukan")
+	}
+
+	if err := s.repo.Restore(ctx, id); err != nil {
+		return err
+	}
+
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
+		ActorID:     &user.ID,
+		ActorName:   user.Name,
+		ActorRole:   user.RoleName,
+		Action:      "users.restore",
+		EntityType:  "users",
+		EntityID:    &user.ID,
+		EntityLabel: user.Name,
+		Description: fmt.Sprintf("Memulihkan pengguna: %s", user.Name),
+		Metadata: map[string]any{
+			"email": user.Email,
+		},
+	})
+
+	return nil
+}
+
+func (s *userService) BulkRestore(ctx context.Context, ids []uint) error {
+	if err := s.repo.BulkRestore(ctx, ids); err != nil {
+		return err
+	}
+
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
+		Action:      "users.bulk_restore",
+		EntityType:  "users",
+		Description: fmt.Sprintf("Memulihkan %d pengguna", len(ids)),
+		Metadata: map[string]any{
+			"ids": ids,
+		},
+	})
+
+	return nil
+}
+
+func (s *userService) sendActivationEmail(ctx context.Context, user *entity.User) error {
+	if s.mailer == nil {
+		return nil
+	}
+
+	rawToken, _, expiresAt, err := helper.GenerateActivationToken(s.cfg.JWT.Secret, 72)
+	if err != nil {
+		return err
+	}
+
+	if err := s.authRepo.SaveAuthToken(ctx, user.ID, rawToken, "activation", expiresAt); err != nil {
+		return err
+	}
+
+	link := fmt.Sprintf("%s/activate?token=%s",
+		strings.TrimSuffix(s.cfg.App.URL, "/"),
+		rawToken,
+	)
+
+	html, err := emailtemplate.Render("account_activation.html", map[string]any{
+		"Name": user.Name,
+		"URL":  link,
+	})
+	if err != nil {
+		return fmt.Errorf("gagal merender template email: %w", err)
+	}
+
+	return s.mailer.Send(user.Email, "Aktivasi Akun", html)
+}
+
+func (s *userService) ResendNotification(ctx context.Context, id uint) error {
+	user, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return helper.NewNotFoundError("Pengguna tidak ditemukan")
+	}
+
+	if err := s.sendActivationEmail(ctx, user); err != nil {
+		return err
+	}
+
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
+		ActorID:     &user.ID,
+		ActorName:   user.Name,
+		ActorRole:   user.RoleName,
+		Action:      "users.resend_activation",
+		EntityType:  "users",
+		EntityID:    &user.ID,
+		EntityLabel: user.Name,
+		Description: fmt.Sprintf("Mengirim ulang email aktivasi: %s", user.Name),
+		Metadata: map[string]any{
+			"email": user.Email,
+		},
+	})
+
+	return nil
+}
+
+type BulkResendResult struct {
+	Total  int      `json:"total"`
+	Sent   int      `json:"sent"`
+	Failed int      `json:"failed"`
+	Errors []string `json:"errors"`
+}
+
+func (s *userService) BulkResendNotification(ctx context.Context, ids []uint) (*BulkResendResult, error) {
+	result := &BulkResendResult{
+		Total:  len(ids),
+		Errors: []string{},
+	}
+
+	for _, id := range ids {
+		user, err := s.repo.FindByID(ctx, id)
+		if err != nil || user == nil {
+			result.Failed++
+			result.Errors = append(result.Errors, fmt.Sprintf("ID %d: Data tidak ditemukan", id))
+			continue
+		}
+		if userHasPassword(user) {
+			result.Failed++
+			result.Errors = append(result.Errors, fmt.Sprintf("%s: Akun sudah aktif dan sudah memiliki password", user.Name))
+			continue
+		}
+
+		if err := s.sendActivationEmail(ctx, user); err != nil {
+			result.Failed++
+			result.Errors = append(result.Errors, fmt.Sprintf("%s: %s", user.Name, err.Error()))
+			continue
+		}
+		result.Sent++
+	}
+
+	return result, nil
+}
+
+func userHasPassword(user *entity.User) bool {
+	return user != nil && strings.TrimSpace(user.PasswordHash) != ""
+}
+
+// ActivateAccount mengaktifkan akun via token aktivasi.
+func (s *userService) ActivateAccount(ctx context.Context, token string, password string) (*entity.User, error) {
+	userID, err := s.authRepo.FindAuthToken(ctx, token, "activation")
+	if err != nil {
+		return nil, &helper.AuthenticationError{Message: "Token aktivasi tidak valid atau telah kedaluwarsa.", Code: "AUTH_TOKEN_INVALID_OR_EXPIRED"}
+	}
+
+	user, err := s.repo.FindByID(ctx, userID)
+	if err != nil {
+		return nil, helper.NewNotFoundError("Pengguna tidak ditemukan")
+	}
+
+	hashed, err := helper.HashPassword(password)
+	if err != nil {
+		return nil, errors.New("gagal memproses password baru")
+	}
+
+	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := s.repo.UpdatePassword(ctx, userID, hashed); err != nil {
+			return err
+		}
+		if err := s.repo.Activate(ctx, userID); err != nil {
+			return err
+		}
+		return s.authRepo.DeleteAuthToken(ctx, token, "activation")
+	})
+	if err != nil {
+		return nil, errors.New("gagal mengaktifkan akun")
+	}
+
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
+		ActorID:     &user.ID,
+		ActorName:   user.Name,
+		ActorRole:   user.RoleName,
+		Action:      "users.activate",
+		EntityType:  "users",
+		EntityID:    &user.ID,
+		EntityLabel: user.Name,
+		Description: fmt.Sprintf("Akun diaktifkan: %s", user.Name),
+		Metadata: map[string]any{
+			"email": user.Email,
+		},
+	})
+
+	return user, nil
+}
+
+func (s *userService) SaveRefreshToken(ctx context.Context, userID uint, token string, expiresAt time.Time) error {
+	return s.authRepo.SaveRefreshToken(ctx, userID, token, expiresAt, "", "", "")
+}
+
+func (s *userService) GetDependencyInfo(ctx context.Context, id uint) (map[string]interface{}, error) {
+	user, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return nil, helper.NewNotFoundError("Pengguna tidak ditemukan")
+	}
+
+	return map[string]interface{}{
+		"user_id":   user.ID,
+		"name":      user.Name,
+		"email":     user.Email,
+		"has_child": false,
 	}, nil
 }
 
-func (s *userService) CreateAdmin(req *dto.AdminCreateRequest, appURL string) (*dto.UserResponse, error) {
-	existing, _ := s.repo.FindByEmail(req.Email)
-	if existing != nil {
-		return nil, helper.NewServiceError("EMAIL_TAKEN", "Email sudah terdaftar", nil)
-	}
+func (s *userService) CheckUnique(ctx context.Context, field string, value string, excludeID uint) (bool, error) {
+	field = strings.ToLower(strings.TrimSpace(field))
+	value = strings.TrimSpace(value)
 
-	// Generate password default (acak 10 karakter)
-	defaultPassword, err := generateRandomPassword(10)
-	if err != nil {
-		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal membuat password default", err)
-	}
-
-	hashed, err := bcrypt.GenerateFromPassword([]byte(defaultPassword), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengenkripsi password", err)
-	}
-
-	user := &model.User{
-		Name:               req.Name,
-		Email:              req.Email,
-		RoleID:             req.RoleID,
-		Password:           string(hashed),
-		Status:             "active",
-		MustChangePassword: true, // Wajib ganti password pada login pertama
-		EmailVerifiedAt:    nil,
-	}
-
-	if err := s.repo.Create(user); err != nil {
-		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal membuat admin", err)
-	}
-
-	// Kirim email kredensial (email + password default) secara SYNC
-	subject := "Akun Pengelola DPP GRADASI — Kredensial Login"
-	body := s.buildCredentialsEmail(user.Name, user.Email, defaultPassword)
-
-	if err := s.mailer.Send(user.Email, subject, body); err != nil {
-		// Email gagal → hapus user agar tidak ada akun tanpa kredensial
-		_ = s.repo.Delete(user.ID)
-		return nil, helper.NewServiceError("MAIL_SEND_FAILED", "Gagal mengirim email kredensial. Periksa konfigurasi SMTP dan coba lagi.", err)
-	}
-
-	resp := toResponse(*user)
-	return &resp, nil
-}
-
-func (s *userService) buildCredentialsEmail(name, email, password string) string {
-	return `<!DOCTYPE html>
-<html><head><meta charset="UTF-8"></head>
-<body style="font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px;">
-<div style="max-width: 600px; margin: auto; background: white; border-radius: 12px; padding: 40px; border: 1px solid #e2e8f0;">
-<h2 style="color: #1e3a8a;">Selamat Datang, ` + name + `!</h2>
-<p style="color: #475569; line-height: 1.6;">Anda telah didaftarkan sebagai pengelola <strong>DPP GRADASI</strong>. Berikut kredensial login Anda:</p>
-<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin: 24px 0;">
-<p style="margin: 8px 0;"><strong style="color: #1e3a8a;">Email:</strong> <span style="color: #334155;">` + email + `</span></p>
-<p style="margin: 8px 0;"><strong style="color: #1e3a8a;">Password:</strong> <span style="font-family: monospace; background: #f1f5f9; padding: 2px 8px; border-radius: 6px; color: #dc2626;">` + password + `</span></p>
-</div>
-<p style="color: #475569; line-height: 1.6;">Silakan login di <strong>` + `, lalu <strong>segera ganti password Anda</strong> pada halaman profil.</p>
-<p style="color: #dc2626; font-size: 13px; font-weight: bold;">Demi keamanan, Anda akan diminta mengganti password ini pada login pertama.</p>
-<p style="color: #94a3b8; font-size: 13px;">Jika Anda merasa tidak mengenali email ini, Anda dapat mengabaikannya.</p>
-<hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
-<p style="color: #94a3b8; font-size: 12px;">DPP GRADASI — Generasi Digital Indonesia</p>
-</div></body></html>`
-}
-
-func (s *userService) ResendActivation(adminID uint, targetID uint, appURL string) error {
-	target, err := s.repo.FindByID(targetID)
-	if err != nil {
-		return helper.NewServiceError("NOT_FOUND", "Admin tidak ditemukan", err)
-	}
-	if target.RoleID == 1 {
-		return helper.NewServiceError("FORBIDDEN", "Tidak bisa mengirim kredensial ulang ke super_admin", nil)
-	}
-
-	// Generate password default baru
-	defaultPassword, err := generateRandomPassword(10)
-	if err != nil {
-		return helper.NewServiceError("SERVER_ERROR", "Gagal membuat password default", err)
-	}
-
-	hashed, err := bcrypt.GenerateFromPassword([]byte(defaultPassword), bcrypt.DefaultCost)
-	if err != nil {
-		return helper.NewServiceError("SERVER_ERROR", "Gagal mengenkripsi password", err)
-	}
-
-	target.Password = string(hashed)
-	target.MustChangePassword = true
-	if err := s.repo.Update(target); err != nil {
-		return helper.NewServiceError("SERVER_ERROR", "Gagal memperbarui kredensial admin", err)
-	}
-
-	subject := "Kredensial Login DPP GRADASI — Perbaruan Password"
-	body := s.buildCredentialsEmail(target.Name, target.Email, defaultPassword)
-
-	if err := s.mailer.Send(target.Email, subject, body); err != nil {
-		return helper.NewServiceError("MAIL_SEND_FAILED", "Gagal mengirim email kredensial. Periksa konfigurasi SMTP dan coba lagi.", err)
-	}
-	return nil
-}
-
-func (s *userService) SetAdminStatus(adminID uint, targetID uint, req *dto.AdminStatusRequest) error {
-	target, err := s.repo.FindByID(targetID)
-	if err != nil {
-		return helper.NewServiceError("NOT_FOUND", "Admin tidak ditemukan", err)
-	}
-	if target.RoleID == 1 {
-		return helper.NewServiceError("FORBIDDEN", "Tidak bisa mengubah status super_admin", nil)
-	}
-
-	target.Status = req.Status
-	if err := s.repo.Update(target); err != nil {
-		return helper.NewServiceError("SERVER_ERROR", "Gagal mengubah status admin", err)
-	}
-	return nil
-}
-
-func (s *userService) DeleteAdmin(adminID uint, targetID uint) error {
-	if adminID == targetID {
-		return helper.NewServiceError("BAD_REQUEST", "Tidak bisa menghapus akun sendiri", nil)
-	}
-	user, err := s.repo.FindByID(targetID)
-	if err != nil {
-		return helper.NewServiceError("NOT_FOUND", "Admin tidak ditemukan", err)
-	}
-	if user.RoleID == 1 {
-		return helper.NewServiceError("FORBIDDEN", "Tidak bisa menghapus super_admin", nil)
-	}
-	return s.repo.Delete(targetID)
-}
-
-func (s *userService) RestoreAdmin(adminID uint, targetID uint) error {
-	return s.repo.Restore(targetID)
-}
-
-func (s *userService) BulkDeleteAdmin(adminID uint, targetIDs []uint) error {
-	// Filter out admin sendiri + semua super_admin (role 1)
-	filtered := make([]uint, 0)
-	for _, id := range targetIDs {
-		if id == adminID {
-			continue
-		}
-		user, err := s.repo.FindByID(id)
+	switch field {
+	case "email":
+		value = strings.ToLower(value)
+		existing, err := s.repo.FindByEmail(ctx, value)
 		if err != nil {
-			continue // skip yang tidak ditemukan
+			return true, nil
 		}
-		if user.RoleID == 1 {
-			continue // super_admin tidak bisa dihapus
+		if existing != nil && existing.ID != excludeID {
+			return false, nil
 		}
-		filtered = append(filtered, id)
+		return true, nil
+	default:
+		return true, nil
 	}
-	if len(filtered) == 0 {
-		return nil
-	}
-	return s.repo.BulkSoftDelete(filtered)
 }
 
-func (s *userService) BulkRestoreAdmin(targetIDs []uint) error {
-	if len(targetIDs) == 0 {
-		return nil
-	}
-	return s.repo.BulkRestore(targetIDs)
-}
-
-func (s *userService) handleUpload(file *multipart.FileHeader) (string, error) {
-	if file == nil {
-		return "", nil
-	}
-
-	// Limit ukuran 2MB
-	const maxSize = 2 << 20 // 2MB
-	if file.Size > maxSize {
-		return "", fmt.Errorf("file terlalu besar (maks 2MB)")
-	}
-
-	src, err := file.Open()
+func (s *userService) UpdateProfile(ctx context.Context, id uint, name string) (*entity.User, error) {
+	user, err := s.repo.FindByID(ctx, id)
 	if err != nil {
-		return "", err
-	}
-	defer src.Close()
-
-	// Detect MIME dari content (bukan ekstensi)
-	buffer := make([]byte, 512)
-	n, _ := src.Read(buffer)
-	if n == 0 {
-		return "", fmt.Errorf("file kosong")
-	}
-	mimeType := http.DetectContentType(buffer[:n])
-	if !strings.HasPrefix(mimeType, "image/") {
-		return "", fmt.Errorf("file harus berupa gambar (image/*)")
+		return nil, helper.NewNotFoundError("Pengguna tidak ditemukan")
 	}
 
-	// Reset reader
-	if _, err := src.Seek(0, io.SeekStart); err != nil {
-		return "", err
+	oldName := user.Name
+	user.Name = strings.TrimSpace(name)
+
+	if err := s.repo.UpdateTx(ctx, user); err != nil {
+		return nil, err
 	}
 
-	ext := filepath.Ext(file.Filename)
-	if ext == "" {
-		switch mimeType {
-		case "image/png":
-			ext = ".png"
-		case "image/jpeg":
-			ext = ".jpg"
-		default:
-			ext = ".png"
-		}
-	}
-	filename := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
-	dst := filepath.Join(s.uploadPath, filename)
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
+		ActorID:     &user.ID,
+		ActorName:   user.Name,
+		ActorRole:   user.RoleName,
+		Action:      "users.update_profile",
+		EntityType:  "users",
+		EntityID:    &user.ID,
+		EntityLabel: user.Name,
+		Description: fmt.Sprintf("Memperbarui profil: %s", user.Name),
+		Metadata: map[string]any{
+			"old_name": oldName,
+			"new_name": user.Name,
+		},
+	})
 
-	out, err := os.Create(dst)
-	if err != nil {
-		return "", err
-	}
-	defer out.Close()
-
-	if _, err = io.Copy(out, src); err != nil {
-		return "", err
-	}
-	return "/uploads/users/" + filename, nil
-}
-
-func toResponse(u model.User) dto.UserResponse {
-	roleName := ""
-	if u.Role.Name != "" {
-		roleName = u.Role.Name
-	}
-	return dto.UserResponse{
-		ID:                 u.ID,
-		RoleID:             u.RoleID,
-		RoleName:           roleName,
-		Name:               u.Name,
-		Email:              u.Email,
-		PhotoPath:          u.PhotoPath,
-		Status:             u.Status,
-		MustChangePassword: u.MustChangePassword,
-	}
-}
-
-func generateRandomNumber(length int) (string, error) {
-	const charset = "0123456789"
-	b := make([]byte, length)
-	for i := range b {
-		n, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
-		if err != nil {
-			return "", err
-		}
-		b[i] = charset[n.Int64()]
-	}
-	return string(b), nil
-}
-
-// generateRandomPassword membuat password acak alfanumerik (aman untuk dikirim via email).
-func generateRandomPassword(length int) (string, error) {
-	const charset = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789" // tanpa karakter ambigu (0,1,O,I,l)
-	b := make([]byte, length)
-	for i := range b {
-		n, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
-		if err != nil {
-			return "", err
-		}
-		b[i] = charset[n.Int64()]
-	}
-	return string(b), nil
+	return user, nil
 }

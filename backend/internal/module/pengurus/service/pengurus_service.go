@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -9,45 +10,74 @@ import (
 	"time"
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/helper"
+	activitylogdto "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/dto"
+	activitylogservice "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/service"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/pengurus/dto"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/pengurus/model"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/pengurus/repository"
+	"gorm.io/gorm"
 )
 
 type PengurusService interface {
-	GetAllPublic(query dto.PengurusQuery) (*dto.PengurusListResponse, error)
-	GetAllAdmin(query dto.PengurusQuery) (*dto.PengurusListResponse, error)
-	GetRegions() (*dto.RegionsResponse, error)
-	GetByID(id uint) (*dto.PengurusResponse, error)
-	Create(req *dto.PengurusRequest) (*dto.PengurusResponse, error)
-	Update(id uint, req *dto.PengurusRequest) (*dto.PengurusResponse, error)
-	Delete(id uint) error
-	Restore(id uint) error
-	BulkDelete(ids []uint) error
-	BulkRestore(ids []uint) error
+	GetAllPublic(ctx context.Context, query dto.PengurusQuery) (*dto.PengurusListResponse, error)
+	GetAllAdmin(ctx context.Context, query dto.PengurusQuery) (*dto.PengurusListResponse, error)
+	GetRegions(ctx context.Context) (*dto.RegionsResponse, error)
+	GetByID(ctx context.Context, id uint) (*dto.PengurusResponse, error)
+	Create(ctx context.Context, req *dto.PengurusRequest) (*dto.PengurusResponse, error)
+	Update(ctx context.Context, id uint, req *dto.PengurusRequest) (*dto.PengurusResponse, error)
+	Delete(ctx context.Context, id uint) error
+	Restore(ctx context.Context, id uint) error
+	BulkDelete(ctx context.Context, ids []uint) error
+	BulkRestore(ctx context.Context, ids []uint) error
 }
 
 type pengurusService struct {
+	db         *gorm.DB
 	repo       repository.PengurusRepo
+	audit      activitylogservice.ActivityLogService
 	uploadPath string
 }
 
-func NewPengurusService(repo repository.PengurusRepo) PengurusService {
+func NewPengurusService(db *gorm.DB, repo repository.PengurusRepo, audit activitylogservice.ActivityLogService) PengurusService {
 	// Create upload dir if not exists
 	uploadPath := "public/uploads/pengurus"
 	_ = os.MkdirAll(uploadPath, 0755)
-	return &pengurusService{repo: repo, uploadPath: uploadPath}
+	return &pengurusService{db: db, repo: repo, audit: audit, uploadPath: uploadPath}
 }
 
-func (s *pengurusService) GetAllPublic(query dto.PengurusQuery) (*dto.PengurusListResponse, error) {
-	return s.list(query, false)
+func (s *pengurusService) log(ctx context.Context, input *activitylogdto.ActivityLogInput) {
+	if s.audit == nil {
+		return
+	}
+	userID, userName, role, ipAddress, userAgent := helper.GetAuditMeta(ctx)
+	if input.ActorID == nil && userID > 0 {
+		input.ActorID = &userID
+	}
+	if input.ActorName == "" {
+		input.ActorName = userName
+	}
+	if input.ActorRole == "" {
+		input.ActorRole = role
+	}
+	if input.IPAddress == "" {
+		input.IPAddress = ipAddress
+	}
+	if input.UserAgent == "" {
+		input.UserAgent = userAgent
+	}
+
+	_ = s.audit.Log(ctx, s.db, input)
 }
 
-func (s *pengurusService) GetAllAdmin(query dto.PengurusQuery) (*dto.PengurusListResponse, error) {
-	return s.list(query, true)
+func (s *pengurusService) GetAllPublic(ctx context.Context, query dto.PengurusQuery) (*dto.PengurusListResponse, error) {
+	return s.list(ctx, query, false)
 }
 
-func (s *pengurusService) list(q dto.PengurusQuery, adminMode bool) (*dto.PengurusListResponse, error) {
+func (s *pengurusService) GetAllAdmin(ctx context.Context, query dto.PengurusQuery) (*dto.PengurusListResponse, error) {
+	return s.list(ctx, query, true)
+}
+
+func (s *pengurusService) list(ctx context.Context, q dto.PengurusQuery, adminMode bool) (*dto.PengurusListResponse, error) {
 	results, total, err := s.repo.FindAll(q, adminMode)
 	if err != nil {
 		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil data pengurus.", err)
@@ -79,7 +109,7 @@ func (s *pengurusService) list(q dto.PengurusQuery, adminMode bool) (*dto.Pengur
 	return resp, nil
 }
 
-func (s *pengurusService) GetRegions() (*dto.RegionsResponse, error) {
+func (s *pengurusService) GetRegions(ctx context.Context) (*dto.RegionsResponse, error) {
 	raw, err := s.repo.GetRegions()
 	if err != nil {
 		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil data wilayah.", err)
@@ -116,7 +146,7 @@ func (s *pengurusService) GetRegions() (*dto.RegionsResponse, error) {
 	return resp, nil
 }
 
-func (s *pengurusService) GetByID(id uint) (*dto.PengurusResponse, error) {
+func (s *pengurusService) GetByID(ctx context.Context, id uint) (*dto.PengurusResponse, error) {
 	p, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, helper.NewServiceError("NOT_FOUND", "Pengurus tidak ditemukan.", err)
@@ -125,7 +155,7 @@ func (s *pengurusService) GetByID(id uint) (*dto.PengurusResponse, error) {
 	return &resp, nil
 }
 
-func (s *pengurusService) Create(req *dto.PengurusRequest) (*dto.PengurusResponse, error) {
+func (s *pengurusService) Create(ctx context.Context, req *dto.PengurusRequest) (*dto.PengurusResponse, error) {
 	// Validasi wilayah sesuai level (contract: required_if)
 	if verr := req.ValidateRegionRules(); len(verr) > 0 {
 		return nil, helper.NewServiceError("VALIDATION_ERROR", "validasi gagal", nil)
@@ -166,11 +196,23 @@ func (s *pengurusService) Create(req *dto.PengurusRequest) (*dto.PengurusRespons
 		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal membuat data pengurus.", err)
 	}
 
+	s.log(ctx, &activitylogdto.ActivityLogInput{
+		Action:      "pengurus.create",
+		EntityType:  "pengurus",
+		EntityID:    &p.ID,
+		EntityLabel: p.Name,
+		Description: "Menambahkan pengurus baru: " + p.Name,
+		Metadata: map[string]any{
+			"role":    p.Role,
+			"periode": p.Periode,
+		},
+	})
+
 	resp := toResponse(*p)
 	return &resp, nil
 }
 
-func (s *pengurusService) Update(id uint, req *dto.PengurusRequest) (*dto.PengurusResponse, error) {
+func (s *pengurusService) Update(ctx context.Context, id uint, req *dto.PengurusRequest) (*dto.PengurusResponse, error) {
 	// Validasi wilayah sesuai level (contract: required_if)
 	if verr := req.ValidateRegionRules(); len(verr) > 0 {
 		return nil, helper.NewServiceError("VALIDATION_ERROR", "validasi gagal", nil)
@@ -209,34 +251,96 @@ func (s *pengurusService) Update(id uint, req *dto.PengurusRequest) (*dto.Pengur
 		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengupdate data pengurus.", err)
 	}
 
+	s.log(ctx, &activitylogdto.ActivityLogInput{
+		Action:      "pengurus.update",
+		EntityType:  "pengurus",
+		EntityID:    &p.ID,
+		EntityLabel: p.Name,
+		Description: "Memperbarui pengurus: " + p.Name,
+		Metadata: map[string]any{
+			"role":    p.Role,
+			"periode": p.Periode,
+		},
+	})
+
 	resp := toResponse(*p)
 	return &resp, nil
 }
 
-func (s *pengurusService) Delete(id uint) error {
-	_, err := s.repo.FindByID(id)
+func (s *pengurusService) Delete(ctx context.Context, id uint) error {
+	p, err := s.repo.FindByID(id)
 	if err != nil {
 		return helper.NewServiceError("NOT_FOUND", "Pengurus tidak ditemukan.", err)
 	}
-	return s.repo.SoftDelete(id)
+
+	if err := s.repo.SoftDelete(id); err != nil {
+		return helper.NewServiceError("SERVER_ERROR", "Gagal menghapus data pengurus.", err)
+	}
+
+	s.log(ctx, &activitylogdto.ActivityLogInput{
+		Action:      "pengurus.delete",
+		EntityType:  "pengurus",
+		EntityID:    &id,
+		EntityLabel: p.Name,
+		Description: "Menghapus pengurus (soft delete): " + p.Name,
+	})
+
+	return nil
 }
 
-func (s *pengurusService) Restore(id uint) error {
-	return s.repo.Restore(id)
+func (s *pengurusService) Restore(ctx context.Context, id uint) error {
+	if err := s.repo.Restore(id); err != nil {
+		return helper.NewServiceError("SERVER_ERROR", "Gagal memulihkan data pengurus.", err)
+	}
+
+	s.log(ctx, &activitylogdto.ActivityLogInput{
+		Action:      "pengurus.restore",
+		EntityType:  "pengurus",
+		EntityID:    &id,
+		Description: "Memulihkan pengurus (ID: " + fmt.Sprint(id) + ")",
+	})
+
+	return nil
 }
 
-func (s *pengurusService) BulkDelete(ids []uint) error {
+func (s *pengurusService) BulkDelete(ctx context.Context, ids []uint) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	return s.repo.BulkSoftDelete(ids)
+	if err := s.repo.BulkSoftDelete(ids); err != nil {
+		return helper.NewServiceError("SERVER_ERROR", "Gagal menghapus data pengurus.", err)
+	}
+
+	s.log(ctx, &activitylogdto.ActivityLogInput{
+		Action:      "pengurus.bulk_delete",
+		EntityType:  "pengurus",
+		Description: "Menghapus " + fmt.Sprint(len(ids)) + " pengurus (soft delete)",
+		Metadata: map[string]any{
+			"ids": ids,
+		},
+	})
+
+	return nil
 }
 
-func (s *pengurusService) BulkRestore(ids []uint) error {
+func (s *pengurusService) BulkRestore(ctx context.Context, ids []uint) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	return s.repo.BulkRestore(ids)
+	if err := s.repo.BulkRestore(ids); err != nil {
+		return helper.NewServiceError("SERVER_ERROR", "Gagal memulihkan data pengurus.", err)
+	}
+
+	s.log(ctx, &activitylogdto.ActivityLogInput{
+		Action:      "pengurus.bulk_restore",
+		EntityType:  "pengurus",
+		Description: "Memulihkan " + fmt.Sprint(len(ids)) + " pengurus",
+		Metadata: map[string]any{
+			"ids": ids,
+		},
+	})
+
+	return nil
 }
 
 func (s *pengurusService) handleUpload(file *multipart.FileHeader) (string, error) {

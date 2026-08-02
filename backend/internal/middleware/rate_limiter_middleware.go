@@ -7,17 +7,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
 )
 
 type RateLimiter struct {
-	limiter *fixedWindowLimiter
+	limiter *memoryLimiter
 }
 
 type preparedRule struct {
@@ -35,10 +33,10 @@ type requestInfo struct {
 
 var defaultRateLimiter *RateLimiter
 
-func NewRedisRateLimiter(redisClient *redis.Client) (*RateLimiter, error) {
+func NewRateLimiter() *RateLimiter {
 	return &RateLimiter{
-		limiter: newFixedWindowLimiter(redisClient),
-	}, nil
+		limiter: newMemoryLimiter(),
+	}
 }
 
 func SetDefaultRateLimiter(rl *RateLimiter) {
@@ -88,19 +86,11 @@ func (r *RateLimiter) Use(scope string, rules ...Rule) gin.HandlerFunc {
 				continue
 			}
 
-			blocked, retryAfter, _, err := r.limiter.check(
-				c,
+			blocked, retryAfter, _ := r.limiter.check(
 				key,
 				item.rule.Limit,
 				item.rule.Period,
 			)
-			if err != nil {
-				// Fail-open: Redis error jangan blokir request (availability > security).
-				// Log warning supaya kebaca kalau ini terjadi di production.
-				log.Printf("[rate-limit][warn] redis error utk scope=%s kind=%s: %v — fail-open, request diteruskan", scope, item.rule.Kind, err)
-				continue
-			}
-
 			if blocked {
 				abortTooManyRequests(c, time.Now().Add(time.Duration(retryAfter)*time.Second).Unix())
 				return

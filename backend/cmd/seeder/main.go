@@ -66,11 +66,11 @@ func main() {
 
 	// 3. Insert Roles (nama snake_case sesuai normalisasi 00016 & kontrak middleware)
 	log.Println("[3/10] Menyisipkan data Roles...")
-	roles := []roleModel.Role{
-		{Name: "super_admin", DisplayName: "Super Administrator", Description: "Akses penuh ke semua modul sistem"},
-		{Name: "admin", DisplayName: "Admin", Description: "Akses pengelolaan konten & data"},
-		{Name: "admin_berita", DisplayName: "Admin Berita", Description: "Khusus pengelolaan berita & informasi"},
-		{Name: "admin_kegiatan", DisplayName: "Admin Kegiatan", Description: "Khusus pengelolaan agenda & kegiatan"},
+	roles := []roleModel.RoleModel{
+		{Name: "super_admin", DisplayName: "Super Administrator", IsSystem: true, IsActive: true},
+		{Name: "admin", DisplayName: "Admin", IsSystem: false, IsActive: true},
+		{Name: "admin_berita", DisplayName: "Admin Berita", IsSystem: false, IsActive: true},
+		{Name: "admin_kegiatan", DisplayName: "Admin Kegiatan", IsSystem: false, IsActive: true},
 	}
 	db.Create(&roles)
 
@@ -94,13 +94,13 @@ func main() {
 		log.Fatalf("Gagal enkripsi password super admin: %v", err)
 	}
 
-	adminUser := userModel.User{
-		RoleID:    roles[0].ID,
-		Name:      adminName,
-		Email:     adminEmail,
-		Password:  string(hash),
-		Status:    "active",
-		PhotoPath: "https://ui-avatars.com/api/?name=Super+Admin&background=0D8ABC&color=fff",
+	adminUser := userModel.UserModel{
+		RoleID:       roles[0].ID,
+		Name:         adminName,
+		Email:        adminEmail,
+		PasswordHash: string(hash),
+		Status:       "active",
+		PhotoPath:    strPtr("https://ui-avatars.com/api/?name=Super+Admin&background=0D8ABC&color=fff"),
 	}
 	db.Create(&adminUser)
 

@@ -1,441 +1,351 @@
 package handler
 
 import (
-	"context"
+	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/config"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/helper"
-	activitylogdto "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/dto"
-	activitylogservice "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/service"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/user/dto"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/user/mapper"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/user/service"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/validator"
 	"github.com/gin-gonic/gin"
 )
 
 type UserHandler struct {
-	svc    service.UserService
-	logSvc activitylogservice.ActivityLogService
-	cfg    *config.Config
+	s   service.UserService
+	cfg *config.Config
 }
 
-func NewUserHandler(svc service.UserService, logSvc activitylogservice.ActivityLogService, cfg *config.Config) *UserHandler {
-	return &UserHandler{svc: svc, logSvc: logSvc, cfg: cfg}
+func NewUserHandler(s service.UserService, cfg *config.Config) *UserHandler {
+	return &UserHandler{s: s, cfg: cfg}
 }
 
-func (h *UserHandler) getAuthUserID(c *gin.Context) (uint, error) {
-	// Baca dari request context (di-set AuthMiddleware via context.WithValue)
-	val := c.Request.Context().Value(helper.ContextUserID)
-	if val == nil {
-		return 0, helper.NewServiceError("UNAUTHORIZED", "User tidak terautentikasi", nil)
+func (h *UserHandler) secureCookie() bool {
+	return h.cfg != nil && h.cfg.App.Env == "production"
+}
+
+func (h *UserHandler) GetAll(c *gin.Context) {
+	var req dto.UserQueryReq
+	if err := c.ShouldBindQuery(&req); err != nil {
+		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "validasi gagal", validator.Errors(err))
+		return
 	}
-	if id, ok := val.(uint); ok {
-		return id, nil
-	}
-	return 0, helper.NewServiceError("UNAUTHORIZED", "ID User tidak valid", nil)
-}
+	req.Normalize()
 
-func (h *UserHandler) GetProfile(c *gin.Context) {
-	userID, err := h.getAuthUserID(c)
+	users, total, err := h.s.GetPaginated(c.Request.Context(), req)
 	if err != nil {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", err.Error(), nil)
+		helper.HandleServiceError(c, err)
 		return
 	}
 
-	resp, err := h.svc.GetProfile(userID)
+	filters := map[string]any{
+		"search": req.Search,
+		"role":   req.Role,
+		"status": req.Status,
+		"sort":   req.Sort,
+	}
+	meta := helper.GetPaginationMeta(int(total), req.Page, req.Limit, filters)
+	helper.SuccessResponse(c, http.StatusOK, "USER_LIST", "berhasil mengambil data", mapper.UsersEntityToResponse(users), meta)
+}
+
+func (h *UserHandler) GetByID(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		svcErr, _ := err.(*helper.ServiceError)
-		helper.ErrorResponse(c, http.StatusNotFound, svcErr.Code, svcErr.Message, nil)
+		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "ID tidak valid", validator.Errors(err))
 		return
 	}
 
-	helper.SuccessResponse(c, http.StatusOK, "PROFILE_RETRIEVED", "Profil berhasil diambil", resp, nil)
+	user, err := h.s.GetByID(c.Request.Context(), uint(id))
+	if err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+	helper.SuccessResponse(c, http.StatusOK, "USER_DETAIL", "berhasil mengambil data user", gin.H{"user": mapper.UserEntityToResponse(*user)}, nil)
+}
+
+func (h *UserHandler) Create(c *gin.Context) {
+	var req dto.UserCreateReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "validasi gagal", validator.Errors(err))
+		return
+	}
+
+	created, err := h.s.Create(c.Request.Context(), req)
+	if err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+
+	helper.SuccessResponse(c, http.StatusCreated, "USER_CREATED", "user berhasil dibuat, email aktivasi dikirim", gin.H{"user": mapper.UserEntityToResponse(*created)}, nil)
+}
+
+func (h *UserHandler) Update(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "ID tidak valid", nil)
+		return
+	}
+
+	var req dto.UserUpdateReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "validasi gagal", validator.Errors(err))
+		return
+	}
+
+	updated, err := h.s.Update(c.Request.Context(), uint(id), req)
+	if err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+
+	helper.SuccessResponse(c, http.StatusOK, "USER_UPDATED", "user berhasil diperbarui", gin.H{"user": mapper.UserEntityToResponse(*updated)}, nil)
+}
+
+func (h *UserHandler) Delete(c *gin.Context) {
+	id, _ := strconv.Atoi(c.Param("id"))
+
+	currentUserID, _ := c.Get("user_id")
+	if uid, ok := currentUserID.(uint); ok && uint(id) == uid {
+		helper.ErrorResponse(c, http.StatusBadRequest, "UNAUTHORIZED_ACTION", "Anda tidak diperbolehkan menghapus akun Anda sendiri", nil)
+		return
+	}
+
+	if err := h.s.Delete(c.Request.Context(), uint(id)); err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+	helper.SuccessResponse(c, http.StatusOK, "USER_DELETED", "user berhasil dihapus", nil, nil)
+}
+
+func (h *UserHandler) ToggleStatus(c *gin.Context) {
+	id, _ := strconv.Atoi(c.Param("id"))
+
+	user, err := h.s.GetByID(c.Request.Context(), uint(id))
+	if err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+
+	currentUserID, _ := c.Get("user_id")
+	if uid, ok := currentUserID.(uint); ok && uint(id) == uid {
+		helper.ErrorResponse(c, http.StatusBadRequest, "UNAUTHORIZED_ACTION", "Anda tidak diperbolehkan menonaktifkan akun Anda sendiri", nil)
+		return
+	}
+
+	if user.RoleID == 1 && user.Status == "active" {
+		admins, _ := h.s.GetAll(c.Request.Context(), 1)
+		activeAdmins := 0
+		for _, a := range admins {
+			if a.Status == "active" {
+				activeAdmins++
+			}
+		}
+		if activeAdmins <= 1 {
+			helper.ErrorResponse(c, http.StatusBadRequest, "UNAUTHORIZED_ACTION", "Gagal: Ini adalah satu-satunya akun Super Admin yang aktif di sistem", nil)
+			return
+		}
+	}
+
+	if err := h.s.ToggleStatus(c.Request.Context(), uint(id)); err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+	helper.SuccessResponse(c, http.StatusOK, "USER_STATUS_UPDATED", "status user berhasil diubah", nil, nil)
+}
+
+func (h *UserHandler) Activate(c *gin.Context) {
+	var req struct {
+		Token    string `json:"token" binding:"required"`
+		Password string `json:"password" binding:"required,min=6"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "validasi gagal", validator.Errors(err))
+		return
+	}
+
+	ctx := c.Request.Context()
+	user, err := h.s.ActivateAccount(ctx, req.Token, req.Password)
+	if err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+
+	accessToken, _ := helper.GenerateAccessToken(user.ID, user.Email, user.RoleID, user.Name, user.RoleName, h.cfg.JWT.Secret, h.cfg.JWT.AccessTTLMinutes)
+	refreshToken, expiry, _ := helper.GenerateRefreshToken(h.cfg.JWT.RefreshTTLHours)
+	if err := h.s.SaveRefreshToken(ctx, user.ID, refreshToken, expiry); err != nil {
+		helper.ErrorResponse(c, http.StatusInternalServerError, "GAGAL_MENYIMPAN_SESSION", "gagal menyimpan session", nil)
+		return
+	}
+
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("refresh_token", refreshToken, int(time.Until(expiry).Seconds()), "/", "", h.secureCookie(), true)
+
+	helper.SuccessResponse(c, http.StatusOK, "AKUN_BERHASIL_DIAKTIFKAN", "akun berhasil diaktifkan", gin.H{
+		"access_token": accessToken,
+		"user": gin.H{
+			"id":      user.ID,
+			"name":    user.Name,
+			"email":   user.Email,
+			"role_id": user.RoleID,
+		},
+	}, nil)
+}
+
+func (h *UserHandler) ResendNotification(c *gin.Context) {
+	id, _ := strconv.Atoi(c.Param("id"))
+
+	if err := h.s.ResendNotification(c.Request.Context(), uint(id)); err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+	helper.SuccessResponse(c, http.StatusOK, "LINK_AKTIVASI_DIKIRIM_ULANG", "link aktivasi berhasil dikirim ulang", nil, nil)
+}
+
+func (h *UserHandler) BulkResendNotification(c *gin.Context) {
+	var req struct {
+		IDs []uint `json:"ids" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "validasi gagal", validator.Errors(err))
+		return
+	}
+
+	result, err := h.s.BulkResendNotification(c.Request.Context(), req.IDs)
+	if err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+
+	helper.SuccessResponse(c, http.StatusOK, "BULK_RESEND_NOTIFICATION", fmt.Sprintf("%d link aktivasi diproses", result.Sent), gin.H{"result": result}, nil)
+}
+
+func (h *UserHandler) BulkDelete(c *gin.Context) {
+	var req struct {
+		IDs []uint `json:"ids" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "ID tidak valid", validator.Errors(err))
+		return
+	}
+
+	currentUserID, _ := c.Get("user_id")
+	for _, id := range req.IDs {
+		if uid, ok := currentUserID.(uint); ok && id == uid {
+			helper.ErrorResponse(c, http.StatusBadRequest, "UNAUTHORIZED_ACTION", "Operasi dibatalkan: Terdapat akun Anda sendiri dalam daftar hapus", nil)
+			return
+		}
+
+		user, err := h.s.GetByID(c.Request.Context(), id)
+		if err == nil && user != nil && user.RoleID == 1 {
+			helper.ErrorResponse(c, http.StatusBadRequest, "UNAUTHORIZED_ACTION", fmt.Sprintf("Operasi dibatalkan: Akun %s adalah Admin dan tidak boleh dihapus", user.Name), nil)
+			return
+		}
+	}
+
+	if err := h.s.BulkDelete(c.Request.Context(), req.IDs); err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+
+	helper.SuccessResponse(c, http.StatusOK, "BULK_DELETE_USERS", fmt.Sprintf("%d pengguna berhasil dihapus", len(req.IDs)), nil, nil)
+}
+
+func (h *UserHandler) Restore(c *gin.Context) {
+	id, _ := strconv.Atoi(c.Param("id"))
+	if err := h.s.Restore(c.Request.Context(), uint(id)); err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+	helper.SuccessResponse(c, http.StatusOK, "USER_RESTORE_SUCCESS", "akun berhasil dipulihkan", nil, nil)
+}
+
+func (h *UserHandler) BulkRestore(c *gin.Context) {
+	var req struct {
+		IDs []uint `json:"ids" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "ID tidak valid", validator.Errors(err))
+		return
+	}
+
+	if err := h.s.BulkRestore(c.Request.Context(), req.IDs); err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+
+	helper.SuccessResponse(c, http.StatusOK, "BULK_RESTORE_USERS", fmt.Sprintf("%d pengguna berhasil dipulihkan", len(req.IDs)), nil, nil)
+}
+
+func (h *UserHandler) GetDependencyInfo(c *gin.Context) {
+	id, _ := strconv.Atoi(c.Param("id"))
+
+	info, err := h.s.GetDependencyInfo(c.Request.Context(), uint(id))
+	if err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+
+	helper.SuccessResponse(
+		c,
+		http.StatusOK,
+		"USER_DEPENDENCY_INFO_RETRIEVED",
+		"User dependency information retrieved successfully.",
+		info,
+		nil,
+	)
+}
+
+func (h *UserHandler) CheckUnique(c *gin.Context) {
+	field := c.Query("field")
+	value := c.Query("value")
+	excludeIDStr := c.DefaultQuery("exclude_id", "0")
+	excludeID, _ := strconv.Atoi(excludeIDStr)
+
+	isUnique, err := h.s.CheckUnique(c.Request.Context(), field, value, uint(excludeID))
+	if err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+
+	helper.SuccessResponse(c, http.StatusOK, "USER_UNIQUENESS_CHECKED", "berhasil", gin.H{
+		"is_unique": isUnique,
+	}, nil)
 }
 
 func (h *UserHandler) UpdateProfile(c *gin.Context) {
-	userID, err := h.getAuthUserID(c)
-	if err != nil {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", err.Error(), nil)
-		return
+	var req struct {
+		Name string `json:"name" binding:"required,min=2"`
 	}
-
-	var req dto.ProfileUpdateRequest
-	if err := c.ShouldBind(&req); err != nil {
-		helper.ValidationErrorResponse(c, []helper.ValidationErrorItem{{Field: "input", Tag: "invalid", Message: err.Error()}})
-		return
-	}
-
-	file, _ := c.FormFile("photo")
-	req.Photo = file
-
-	resp, msg, err := h.svc.UpdateProfile(userID, &req)
-	if err != nil {
-		svcErr, _ := err.(*helper.ServiceError)
-		helper.ErrorResponse(c, http.StatusBadRequest, svcErr.Code, svcErr.Message, nil)
-		return
-	}
-
-	helper.SuccessResponse(c, http.StatusOK, "PROFILE_UPDATED", msg, resp, nil)
-
-	actorID, actorName, actorRole, ip, ua := helper.GetAuditMeta(c.Request.Context())
-	go h.logSvc.Log(context.Background(), nil, &activitylogdto.ActivityLogInput{
-		ActorID:     &actorID,
-		ActorName:   actorName,
-		ActorRole:   actorRole,
-		Action:      "user.update_profile",
-		EntityType:  "user",
-		EntityID:    &userID,
-		EntityLabel: resp.Name,
-		Description: "Mengupdate profil sendiri",
-		IPAddress:   ip,
-		UserAgent:   ua,
-	})
-}
-
-func (h *UserHandler) VerifyEmail(c *gin.Context) {
-	userID, err := h.getAuthUserID(c)
-	if err != nil {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", err.Error(), nil)
-		return
-	}
-
-	var req dto.VerifyEmailRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.ValidationErrorResponse(c, []helper.ValidationErrorItem{{Field: "token", Tag: "required", Message: "Token wajib diisi"}})
+		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "validasi gagal", validator.Errors(err))
 		return
 	}
 
-	if err := h.svc.VerifyEmail(userID, &req); err != nil {
-		svcErr, _ := err.(*helper.ServiceError)
-		helper.ErrorResponse(c, http.StatusBadRequest, svcErr.Code, svcErr.Message, nil)
+	value, exists := c.Get("user_id")
+	if !exists {
+		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED_ACTION", "akses tidak sah", nil)
 		return
 	}
 
-	helper.SuccessResponse(c, http.StatusOK, "EMAIL_VERIFIED", "Email berhasil diverifikasi dan diperbarui", nil, nil)
+	userID, ok := value.(uint)
+	if !ok {
+		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED_ACTION", "user tidak valid", nil)
+		return
+	}
 
-	actorID, actorName, actorRole, ip, ua := helper.GetAuditMeta(c.Request.Context())
-	go h.logSvc.Log(context.Background(), nil, &activitylogdto.ActivityLogInput{
-		ActorID:     &actorID,
-		ActorName:   actorName,
-		ActorRole:   actorRole,
-		Action:      "user.verify_email",
-		EntityType:  "user",
-		EntityID:    &userID,
-		Description: "Memverifikasi email baru",
-		IPAddress:   ip,
-		UserAgent:   ua,
-	})
-}
-
-func (h *UserHandler) ChangePassword(c *gin.Context) {
-	userID, err := h.getAuthUserID(c)
+	updated, err := h.s.UpdateProfile(c.Request.Context(), userID, req.Name)
 	if err != nil {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", err.Error(), nil)
+		helper.HandleServiceError(c, err)
 		return
 	}
 
-	var req dto.ChangePasswordRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.ValidationErrorResponse(c, []helper.ValidationErrorItem{{Field: "password", Tag: "invalid", Message: "Format password tidak valid"}})
-		return
-	}
-
-	if err := h.svc.ChangePassword(userID, &req); err != nil {
-		svcErr, _ := err.(*helper.ServiceError)
-		helper.ErrorResponse(c, http.StatusBadRequest, svcErr.Code, svcErr.Message, nil)
-		return
-	}
-
-	helper.SuccessResponse(c, http.StatusOK, "PASSWORD_CHANGED", "Password berhasil diubah", nil, nil)
-
-	actorID, actorName, actorRole, ip, ua := helper.GetAuditMeta(c.Request.Context())
-	go h.logSvc.Log(context.Background(), nil, &activitylogdto.ActivityLogInput{
-		ActorID:     &actorID,
-		ActorName:   actorName,
-		ActorRole:   actorRole,
-		Action:      "user.change_password",
-		EntityType:  "user",
-		EntityID:    &userID,
-		Description: "Mengubah password sendiri",
-		IPAddress:   ip,
-		UserAgent:   ua,
-	})
-}
-
-func (h *UserHandler) GetAdmins(c *gin.Context) {
-	var q dto.ListUsersQuery
-	if err := c.ShouldBindQuery(&q); err != nil {
-		helper.ValidationErrorResponse(c, []helper.ValidationErrorItem{{Field: "tab", Tag: "invalid", Message: "Parameter tab harus 'active', 'pending', atau 'trash'"}})
-		return
-	}
-
-	resp, err := h.svc.GetAdmins(q)
-	if err != nil {
-		svcErr, _ := err.(*helper.ServiceError)
-		helper.ErrorResponse(c, http.StatusInternalServerError, svcErr.Code, svcErr.Message, nil)
-		return
-	}
-	helper.SuccessResponse(c, http.StatusOK, "ADMIN_LIST", "Daftar admin berhasil diambil", resp, nil)
-}
-
-func (h *UserHandler) CreateAdmin(c *gin.Context) {
-	var req dto.AdminCreateRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.ValidationErrorResponse(c, []helper.ValidationErrorItem{{Field: "input", Tag: "invalid", Message: err.Error()}})
-		return
-	}
-
-	resp, err := h.svc.CreateAdmin(&req, h.cfg.App.URL)
-	if err != nil {
-		svcErr, _ := err.(*helper.ServiceError)
-		helper.ErrorResponse(c, http.StatusBadRequest, svcErr.Code, svcErr.Message, nil)
-		return
-	}
-
-	helper.SuccessResponse(c, http.StatusCreated, "ADMIN_CREATED", "Admin berhasil dibuat. Kredensial login (email & password default) telah dikirim ke email admin.", resp, nil)
-
-	actorID, actorName, actorRole, ip, ua := helper.GetAuditMeta(c.Request.Context())
-	go h.logSvc.Log(context.Background(), nil, &activitylogdto.ActivityLogInput{
-		ActorID:     &actorID,
-		ActorName:   actorName,
-		ActorRole:   actorRole,
-		Action:      "user.create",
-		EntityType:  "user",
-		EntityID:    &resp.ID,
-		EntityLabel: resp.Name,
-		Description: "Mengundang admin baru (Email Invitation)",
-		IPAddress:   ip,
-		UserAgent:   ua,
-	})
-}
-
-// POST /api/v1/admin/users/:id/resend-activation
-func (h *UserHandler) ResendActivation(c *gin.Context) {
-	adminID, err := h.getAuthUserID(c)
-	if err != nil {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", err.Error(), nil)
-		return
-	}
-
-	targetID, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		helper.ErrorResponse(c, http.StatusBadRequest, "INVALID_ID", "ID tidak valid", nil)
-		return
-	}
-
-	if err := h.svc.ResendActivation(adminID, uint(targetID), h.cfg.App.URL); err != nil {
-		svcErr, _ := err.(*helper.ServiceError)
-		code := http.StatusBadRequest
-		if svcErr.Code == "NOT_FOUND" {
-			code = http.StatusNotFound
-		}
-		helper.ErrorResponse(c, code, svcErr.Code, svcErr.Message, nil)
-		return
-	}
-
-	helper.SuccessResponse(c, http.StatusOK, "ACTIVATION_RESENT", "Kredensial login baru berhasil dikirim ulang ke email admin.", nil, nil)
-
-	actorID, actorName, actorRole, ip, ua := helper.GetAuditMeta(c.Request.Context())
-	eID := uint(targetID)
-	go h.logSvc.Log(context.Background(), nil, &activitylogdto.ActivityLogInput{
-		ActorID:     &actorID,
-		ActorName:   actorName,
-		ActorRole:   actorRole,
-		Action:      "user.resend_activation",
-		EntityType:  "user",
-		EntityID:    &eID,
-		Description: "Mengirim ulang undangan aktivasi admin",
-		IPAddress:   ip,
-		UserAgent:   ua,
-	})
-}
-
-// PUT /api/v1/admin/users/:id/status
-func (h *UserHandler) SetAdminStatus(c *gin.Context) {
-	adminID, err := h.getAuthUserID(c)
-	if err != nil {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", err.Error(), nil)
-		return
-	}
-
-	targetID, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		helper.ErrorResponse(c, http.StatusBadRequest, "INVALID_ID", "ID tidak valid", nil)
-		return
-	}
-
-	var req dto.AdminStatusRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.ValidationErrorResponse(c, []helper.ValidationErrorItem{{Field: "status", Tag: "invalid", Message: "Status harus 'active' atau 'inactive'"}})
-		return
-	}
-
-	if err := h.svc.SetAdminStatus(adminID, uint(targetID), &req); err != nil {
-		svcErr, _ := err.(*helper.ServiceError)
-		code := http.StatusBadRequest
-		if svcErr.Code == "NOT_FOUND" {
-			code = http.StatusNotFound
-		}
-		helper.ErrorResponse(c, code, svcErr.Code, svcErr.Message, nil)
-		return
-	}
-
-	helper.SuccessResponse(c, http.StatusOK, "ADMIN_STATUS_UPDATED", "Status admin berhasil diperbarui", nil, nil)
-
-	actorID, actorName, actorRole, ip, ua := helper.GetAuditMeta(c.Request.Context())
-	eID := uint(targetID)
-	go h.logSvc.Log(context.Background(), nil, &activitylogdto.ActivityLogInput{
-		ActorID:     &actorID,
-		ActorName:   actorName,
-		ActorRole:   actorRole,
-		Action:      "user.update_status",
-		EntityType:  "user",
-		EntityID:    &eID,
-		Description: "Mengubah status admin menjadi " + req.Status,
-		IPAddress:   ip,
-		UserAgent:   ua,
-	})
-}
-
-func (h *UserHandler) DeleteAdmin(c *gin.Context) {
-	adminID, err := h.getAuthUserID(c)
-	if err != nil {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", err.Error(), nil)
-		return
-	}
-
-	targetID, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		helper.ErrorResponse(c, http.StatusBadRequest, "INVALID_ID", "ID tidak valid", nil)
-		return
-	}
-
-	if err := h.svc.DeleteAdmin(adminID, uint(targetID)); err != nil {
-		svcErr, _ := err.(*helper.ServiceError)
-		code := http.StatusBadRequest
-		if svcErr.Code == "NOT_FOUND" {
-			code = http.StatusNotFound
-		}
-		helper.ErrorResponse(c, code, svcErr.Code, svcErr.Message, nil)
-		return
-	}
-
-	helper.SuccessResponse(c, http.StatusOK, "ADMIN_DELETED", "Admin berhasil dihapus", nil, nil)
-
-	actorID, actorName, actorRole, ip, ua := helper.GetAuditMeta(c.Request.Context())
-	eID := uint(targetID)
-	go h.logSvc.Log(context.Background(), nil, &activitylogdto.ActivityLogInput{
-		ActorID:     &actorID,
-		ActorName:   actorName,
-		ActorRole:   actorRole,
-		Action:      "user.delete",
-		EntityType:  "user",
-		EntityID:    &eID,
-		Description: "Menghapus admin",
-		IPAddress:   ip,
-		UserAgent:   ua,
-	})
-}
-
-// POST /api/v1/admin/users/:id/restore
-func (h *UserHandler) RestoreAdmin(c *gin.Context) {
-	adminID, err := h.getAuthUserID(c)
-	if err != nil {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", err.Error(), nil)
-		return
-	}
-
-	targetID, err := strconv.ParseUint(c.Param("id"), 10, 32)
-	if err != nil {
-		helper.ErrorResponse(c, http.StatusBadRequest, "INVALID_ID", "ID tidak valid", nil)
-		return
-	}
-
-	if err := h.svc.RestoreAdmin(adminID, uint(targetID)); err != nil {
-		svcErr, _ := err.(*helper.ServiceError)
-		helper.ErrorResponse(c, http.StatusInternalServerError, svcErr.Code, svcErr.Message, nil)
-		return
-	}
-	helper.SuccessResponse(c, http.StatusOK, "ADMIN_RESTORED", "Admin berhasil dipulihkan", nil, nil)
-
-	actorID, actorName, actorRole, ip, ua := helper.GetAuditMeta(c.Request.Context())
-	eID := uint(targetID)
-	go h.logSvc.Log(context.Background(), nil, &activitylogdto.ActivityLogInput{
-		ActorID:     &actorID,
-		ActorName:   actorName,
-		ActorRole:   actorRole,
-		Action:      "user.restore",
-		EntityType:  "user",
-		EntityID:    &eID,
-		Description: "Memulihkan admin",
-		IPAddress:   ip,
-		UserAgent:   ua,
-	})
-}
-
-// POST /api/v1/admin/users/bulk-delete
-func (h *UserHandler) BulkDeleteAdmin(c *gin.Context) {
-	adminID, err := h.getAuthUserID(c)
-	if err != nil {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", err.Error(), nil)
-		return
-	}
-
-	var req dto.BulkRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.ValidationErrorResponse(c, []helper.ValidationErrorItem{
-			{Field: "ids", Tag: "required", Message: "IDs wajib diisi minimal 1."},
-		})
-		return
-	}
-
-	if err := h.svc.BulkDeleteAdmin(adminID, req.IDs); err != nil {
-		svcErr, _ := err.(*helper.ServiceError)
-		helper.ErrorResponse(c, http.StatusInternalServerError, svcErr.Code, svcErr.Message, nil)
-		return
-	}
-	helper.SuccessResponse(c, http.StatusOK, "ADMIN_BULK_DELETED", "Admin berhasil dihapus massal", nil, nil)
-
-	actorID, actorName, actorRole, ip, ua := helper.GetAuditMeta(c.Request.Context())
-	go h.logSvc.Log(context.Background(), nil, &activitylogdto.ActivityLogInput{
-		ActorID:     &actorID,
-		ActorName:   actorName,
-		ActorRole:   actorRole,
-		Action:      "user.bulk_delete",
-		EntityType:  "user",
-		Description: "Menghapus admin secara massal",
-		IPAddress:   ip,
-		UserAgent:   ua,
-	})
-}
-
-// POST /api/v1/admin/users/bulk-restore
-func (h *UserHandler) BulkRestoreAdmin(c *gin.Context) {
-	var req dto.BulkRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.ValidationErrorResponse(c, []helper.ValidationErrorItem{
-			{Field: "ids", Tag: "required", Message: "IDs wajib diisi minimal 1."},
-		})
-		return
-	}
-
-	if err := h.svc.BulkRestoreAdmin(req.IDs); err != nil {
-		svcErr, _ := err.(*helper.ServiceError)
-		helper.ErrorResponse(c, http.StatusInternalServerError, svcErr.Code, svcErr.Message, nil)
-		return
-	}
-	helper.SuccessResponse(c, http.StatusOK, "ADMIN_BULK_RESTORED", "Admin berhasil dipulihkan massal", nil, nil)
-
-	actorID, actorName, actorRole, ip, ua := helper.GetAuditMeta(c.Request.Context())
-	go h.logSvc.Log(context.Background(), nil, &activitylogdto.ActivityLogInput{
-		ActorID:     &actorID,
-		ActorName:   actorName,
-		ActorRole:   actorRole,
-		Action:      "user.bulk_restore",
-		EntityType:  "user",
-		Description: "Memulihkan admin secara massal",
-		IPAddress:   ip,
-		UserAgent:   ua,
-	})
+	helper.SuccessResponse(c, http.StatusOK, "USER_PROFILE_UPDATED", "profil berhasil diperbarui", gin.H{
+		"user": mapper.UserEntityToResponse(*updated),
+	}, nil)
 }

@@ -144,3 +144,7 @@ vite.config.ts.timestamp-*
 
 # Go build artifacts
 backend/tmp/
+
+# Knowledge graph (generated, dirty by design)
+graphify-out/
+**/graphify-out/

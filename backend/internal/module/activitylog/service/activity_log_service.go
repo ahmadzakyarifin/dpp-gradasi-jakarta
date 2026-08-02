@@ -45,9 +45,6 @@ func (s *activityLogService) List(
 	}
 
 	if req.Limit <= 0 {
-		req.Limit = req.PerPage
-	}
-	if req.Limit <= 0 {
 		req.Limit = 10
 	}
 
@@ -89,11 +86,15 @@ func (s *activityLogService) Summary(
 	ctx context.Context,
 	req *dto.ActivityLogQueryReq,
 ) (*dto.ActivityLogSummaryRes, error) {
+	if req == nil {
+		req = &dto.ActivityLogQueryReq{}
+	}
 
 	summary, err := s.repo.GetSummary(ctx, req)
 	if err != nil {
 		return nil, err
 	}
+
 	return &summary, nil
 }
 

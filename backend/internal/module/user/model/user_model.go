@@ -7,25 +7,29 @@ import (
 	"gorm.io/gorm"
 )
 
-type User struct {
-	ID                 uint           `gorm:"primaryKey;autoIncrement" json:"id"`
-	RoleID             uint           `gorm:"not null;index" json:"role_id"`
-	Name               string         `gorm:"size:100;not null" json:"name"`
-	Email              string         `gorm:"uniqueIndex;size:150;not null" json:"email"`
-	Password           string         `gorm:"size:255" json:"-"`
-	PhotoPath          string         `gorm:"size:500" json:"photo_path,omitempty"`
-	Status             string         `gorm:"type:enum('active','inactive','pending_activation');default:'inactive'" json:"status"`
-	MustChangePassword bool           `gorm:"not null;default:false" json:"must_change_password"`
-	EmailVerifiedAt    *time.Time     `json:"email_verified_at,omitempty"`
-	LastLoginAt        *time.Time     `json:"last_login_at,omitempty"`
-	CreatedAt          time.Time      `json:"created_at"`
-	UpdatedAt          time.Time      `json:"updated_at"`
-	DeletedAt          gorm.DeletedAt `gorm:"index" json:"-"`
+// UserModel memetakan tabel users.
+type UserModel struct {
+	ID              uint                 `gorm:"column:id;primaryKey;autoIncrement"`
+	RoleID          uint                 `gorm:"column:role_id;not null"`
+	Role            *rolemodel.RoleModel `gorm:"foreignKey:RoleID;references:ID"`
+	Name            string               `gorm:"column:name;not null"`
+	Email           string               `gorm:"column:email;unique;not null"`
+	Phone           string               `gorm:"column:phone;unique;not null"`
+	DateOfBirth     *time.Time           `gorm:"column:date_of_birth"`
+	CountryCode     *string              `gorm:"column:country_code"`
+	PhotoPath       *string              `gorm:"column:photo_path"`
+	PasswordHash    string               `gorm:"column:password_hash"`
+	Status          string               `gorm:"column:status;not null;default:inactive"`
+	EmailVerifiedAt *time.Time           `gorm:"column:email_verified_at"`
+	PhoneVerifiedAt *time.Time           `gorm:"column:phone_verified_at"`
+	LastLoginAt     *time.Time           `gorm:"column:last_login_at"`
+	CreatedAt       time.Time            `gorm:"column:created_at;not null;autoCreateTime"`
+	UpdatedAt       time.Time            `gorm:"column:updated_at;not null;autoUpdateTime"`
+	DeletedAt       gorm.DeletedAt       `gorm:"column:deleted_at;index"`
 
-	// Relasi
-	Role rolemodel.Role `gorm:"foreignKey:RoleID" json:"role,omitempty"`
+	// Kolom hasil subquery (read-only, bukan kolom tabel asli).
+	StudentCount int    `gorm:"->;column:student_count"`
+	StudentNames string `gorm:"->;column:student_names"`
 }
 
-func (User) TableName() string {
-	return "users"
-}
+func (UserModel) TableName() string { return "users" }

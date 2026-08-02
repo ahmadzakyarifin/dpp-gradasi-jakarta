@@ -287,68 +287,74 @@ export default function BeritaAdmin() {
   const paginatedItems = items
   const totalPages = meta.total_pages || 1
 
+  const headerContent = (
+    <div className="flex items-center gap-2 w-full max-w-3xl animate-fade-in-up">
+      <div className="relative w-full">
+        <i className="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          placeholder={beritaContent.admin.searchPlaceholder}
+          className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors"
+        />
+      </div>
+      <select
+        value={filterStatus}
+        onChange={e => setFilterStatus(e.target.value)}
+        className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
+      >
+        <option value="">{beritaContent.admin.allStatus}</option>
+        <option value="published">Public</option>
+        <option value="draft">Draft</option>
+      </select>
+      <select
+        value={filterSort}
+        onChange={e => setFilterSort(e.target.value)}
+        className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
+      >
+        <option value="newest">Terbaru</option>
+        <option value="oldest">Terlama</option>
+      </select>
+      <button
+        onClick={resetFilter}
+        className="shrink-0 bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all btn-press"
+      >
+        <i className="ph ph-arrows-counter-clockwise text-lg" /> Reset
+      </button>
+    </div>
+  )
+
   return (
-    <AdminLayout title="Kelola Berita">
+    <AdminLayout title="Kelola Berita" headerContent={headerContent}>
       {toast.show && <ToastNotification message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
       <ConfirmDialog {...confirm} onClose={() => setConfirm(prev => ({ ...prev, isOpen: false, action: null }))} onConfirm={executeConfirm} />
 
-      <div className="space-y-5">
+      <div className="space-y-6 animate-fade-in-up">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex bg-white rounded-xl p-1 border border-slate-200 shadow-sm">
+          <div className="flex bg-white rounded-lg p-1 border border-gray-200 shadow-sm">
             <button
               onClick={() => setCurrentTab('active')}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${currentTab === 'active' ? 'bg-brand-50 text-brand-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`px-4 py-1.5 rounded-md text-sm transition-all duration-200 ${currentTab === 'active' ? 'bg-brand-50 text-brand-600 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'}`}
             >
-              {beritaContent.admin.activeTab}
+              Aktif & Draft
             </button>
             <button
               onClick={() => setCurrentTab('trash')}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 ${currentTab === 'trash' ? 'bg-red-50 text-red-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`px-4 py-1.5 rounded-md text-sm transition-all duration-200 flex items-center gap-2 ${currentTab === 'trash' ? 'bg-red-50 text-red-600 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'}`}
             >
-              <i className="ph-bold ph-trash" /> {beritaContent.admin.trashTab}
+              <i className="ph ph-trash" /> Sampah (History)
             </button>
           </div>
 
           {currentTab === 'active' && (
             <button
               onClick={() => openForm()}
-              className="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-colors shadow-sm"
+              className="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all btn-press shadow-sm"
             >
-              <i className="ph-bold ph-plus-circle text-lg" /> {beritaContent.admin.add}
+              <i className="ph ph-plus-circle text-lg" /> Tambah
             </button>
           )}
-        </div>
-
-        {/* FILTER BAR */}
-        <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-          <div className="relative flex-1 min-w-0">
-            <i className="ph-bold ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder={beritaContent.admin.searchPlaceholder}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:bg-white transition-all"
-            />
-          </div>
-
-          <div className="flex gap-2 shrink-0">
-            <select
-              value={filterStatus}
-              onChange={e => setFilterStatus(e.target.value)}
-              className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-600 outline-none focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 cursor-pointer transition-all hover:bg-slate-100"
-            >
-              <option value="">{beritaContent.admin.allStatus}</option>
-              <option value="published">Public</option>
-              <option value="draft">Draft</option>
-            </select>
-            <button
-              onClick={resetFilter}
-              className="bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-800 px-3.5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-colors"
-            >
-              <i className="ph-bold ph-arrows-counter-clockwise" /> Reset
-            </button>
-          </div>
         </div>
 
         {/* BULK ACTION BAR */}
@@ -406,9 +412,9 @@ export default function BeritaAdmin() {
                   <th className="p-4 text-right">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-sm text-slate-700">
+              <tbody className="divide-y divide-slate-100 text-sm text-gray-700">
                 {paginatedItems.map(item => (
-                  <tr key={item.id} className="hover:bg-slate-50/70 transition-colors group">
+                  <tr key={item.id} className="hover:bg-slate-50/70 transition-colors group admin-row">
                     <td className="p-4 text-center">
                       <input type="checkbox" checked={selectedItems.includes(item.id)} onChange={() => toggleItem(item.id)} className="rounded border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer" />
                     </td>
@@ -427,7 +433,7 @@ export default function BeritaAdmin() {
                     <td className="p-4">
                       {currentTab === 'trash' ? (
                         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-500">
-                          <i className="ph-bold ph-trash" /> Di Sampah
+                          <i className="ph ph-trash" /> Di Sampah
                         </span>
                       ) : (
                         <button onClick={() => confirmAction('toggle_publish', item.id, item.is_published)} className="inline-flex items-center gap-2 cursor-pointer">
@@ -444,15 +450,15 @@ export default function BeritaAdmin() {
                       <div className="flex items-center justify-end gap-1">
                         {currentTab === 'trash' ? (
                           <button onClick={() => confirmAction('restore', item.id)} className="p-2 text-slate-400 hover:text-emerald-600 rounded-lg" title="Pulihkan">
-                            <i className="ph-bold ph-arrow-counter-clockwise text-base" />
+                            <i className="ph ph-arrow-counter-clockwise text-base" />
                           </button>
                         ) : (
                           <>
                             <button onClick={() => openForm(item)} className="p-2 text-slate-400 hover:text-brand-600 rounded-lg">
-                              <i className="ph-bold ph-pencil-simple text-base" />
+                              <i className="ph ph-pencil-simple text-base" />
                             </button>
                             <button onClick={() => confirmAction('delete', item.id)} className="p-2 text-slate-400 hover:text-red-600 rounded-lg">
-                              <i className="ph-bold ph-trash text-base" />
+                              <i className="ph ph-trash text-base" />
                             </button>
                           </>
                         )}

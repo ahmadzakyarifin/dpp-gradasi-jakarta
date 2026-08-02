@@ -21,6 +21,9 @@ import (
 	pengurushandler "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/pengurus/handler"
 	pengurusrepo "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/pengurus/repository"
 	pengurusservice "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/pengurus/service"
+	rolehandler "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/role/handler"
+	rolerepo "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/role/repository"
+	roleservice "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/role/service"
 	settingshandler "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/settings/handler"
 	settingsrepo "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/settings/repository"
 	settingsservice "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/settings/service"
@@ -39,7 +42,6 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
@@ -55,28 +57,28 @@ type App struct {
 	kontakHandler      *kontakhandler.KontakHandler
 	pengurusHandler    *pengurushandler.PengurusHandler
 	userHandler        *userhandler.UserHandler
+	roleHandler        *rolehandler.RoleHandler
 	settingsHandler    settingshandler.SettingsHandler
 	activityLogHandler *activityloghandler.ActivityLogHandler
 	ActivityLogSvc     activitylogservice.ActivityLogService
 	dashboardHandler   *dashboardhandler.DashboardHandler
 }
 
-func NewApp(database *gorm.DB, appConfig *config.Config, redisClient *redis.Client) *App {
+func NewApp(database *gorm.DB, appConfig *config.Config) *App {
 	if appConfig.App.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	if redisClient == nil {
-		panic("Redis client is required")
-	}
-
-	rl, err := middleware.NewRedisRateLimiter(redisClient)
-	if err != nil {
-		panic("failed to initialize Redis rate limiter: " + err.Error())
-	}
+	// Rate limiter in-memory (gaya DPP murni, tanpa Redis).
+	rl := middleware.NewRateLimiter()
 	middleware.SetDefaultRateLimiter(rl)
 
 	routerEngine := gin.Default()
+
+	// Client IP akurat di belakang Cloudflare (penting utk rate limiter + audit IP)
+	if appConfig.App.Env == "production" {
+		configureCloudflareClientIP(routerEngine)
+	}
 
 	// Enable CORS
 	routerEngine.Use(cors.New(cors.Config{
@@ -106,42 +108,47 @@ func NewApp(database *gorm.DB, appConfig *config.Config, redisClient *redis.Clie
 
 	// Auth
 	authRepo := authrepo.NewAuthRepo(database)
-	authSvc := authservice.NewAuthService(authRepo, appConfig, mailer, redisClient, database, activityLogSvc)
-	authHandler := authhandler.NewAuthHandler(authSvc, appConfig, activityLogSvc)
+	authSvc := authservice.NewAuthService(authRepo, activityLogSvc, mailer, appConfig)
+	authHandler := authhandler.NewAuthHandler(authSvc, appConfig)
 
 	// Sliders
 	slidersRepo := slidersrepo.NewSlidersRepo(database)
-	slidersSvc := slidersservice.NewSlidersService(slidersRepo)
-	slidersHandler := slidershandler.NewSlidersHandler(slidersSvc, activityLogSvc)
+	slidersSvc := slidersservice.NewSlidersService(database, slidersRepo, activityLogSvc)
+	slidersHandler := slidershandler.NewSlidersHandler(slidersSvc)
 
 	// Berita
 	beritaRepo := beritarepo.NewBeritaRepo(database)
-	beritaSvc := beritaservice.NewBeritaService(beritaRepo)
-	beritaHandler := beritahandler.NewBeritaHandler(beritaSvc, activityLogSvc)
+	beritaSvc := beritaservice.NewBeritaService(database, beritaRepo, activityLogSvc)
+	beritaHandler := beritahandler.NewBeritaHandler(beritaSvc)
 
 	// Kegiatan
 	kegiatanRepo := kegiatanrepo.NewKegiatanRepo(database)
-	kegiatanSvc := kegiatanservice.NewKegiatanService(kegiatanRepo)
-	kegiatanHandler := kegiatanhandler.NewKegiatanHandler(kegiatanSvc, activityLogSvc)
+	kegiatanSvc := kegiatanservice.NewKegiatanService(database, kegiatanRepo, activityLogSvc)
+	kegiatanHandler := kegiatanhandler.NewKegiatanHandler(kegiatanSvc)
 
 	// Kontak
 	kontakRepo := kontakrepo.NewKontakRepo(database)
-	kontakSvc := kontakservice.NewKontakService(kontakRepo)
-	kontakHandler := kontakhandler.NewKontakHandler(kontakSvc, activityLogSvc)
+	kontakSvc := kontakservice.NewKontakService(database, kontakRepo, activityLogSvc)
+	kontakHandler := kontakhandler.NewKontakHandler(kontakSvc)
 
 	// Pengurus
 	pengurusRepo := pengurusrepo.NewPengurusRepo(database)
-	pengurusSvc := pengurusservice.NewPengurusService(pengurusRepo)
-	pengurusHandler := pengurushandler.NewPengurusHandler(pengurusSvc, activityLogSvc)
+	pengurusSvc := pengurusservice.NewPengurusService(database, pengurusRepo, activityLogSvc)
+	pengurusHandler := pengurushandler.NewPengurusHandler(pengurusSvc)
 
 	// User
 	userRepo := userrepo.NewUserRepo(database)
-	userSvc := userservice.NewUserService(userRepo, redisClient, mailer)
-	userHandler := userhandler.NewUserHandler(userSvc, activityLogSvc, appConfig)
+	userSvc := userservice.NewUserService(database, userRepo, authRepo, activityLogSvc, mailer, appConfig)
+	userHandler := userhandler.NewUserHandler(userSvc, appConfig)
+
+	// Role
+	roleRepo := rolerepo.NewRoleRepo(database)
+	roleSvc := roleservice.NewRoleService(database, roleRepo, activityLogSvc)
+	roleHandler := rolehandler.NewRoleHandler(roleSvc)
 
 	// Settings
 	settingsRepo := settingsrepo.NewSettingsRepo(database)
-	settingsSvc := settingsservice.NewSettingsService(settingsRepo)
+	settingsSvc := settingsservice.NewSettingsService(database, settingsRepo, activityLogSvc)
 	settingsHandler := settingshandler.NewSettingsHandler(settingsSvc)
 
 	// Dashboard
@@ -160,13 +167,14 @@ func NewApp(database *gorm.DB, appConfig *config.Config, redisClient *redis.Clie
 		kontakHandler:      kontakHandler,
 		pengurusHandler:    pengurusHandler,
 		userHandler:        userHandler,
+		roleHandler:        roleHandler,
 		settingsHandler:    settingsHandler,
 		activityLogHandler: activityLogHandler,
 		ActivityLogSvc:     activityLogSvc,
 		dashboardHandler:   dashboardHandler,
 	}
 
-	registerRoutes(appInstance, redisClient)
+	registerRoutes(appInstance)
 
 	return appInstance
 }
