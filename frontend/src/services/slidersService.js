@@ -12,9 +12,9 @@ function toQuery(params = {}) {
 }
 
 export const slidersService = {
-  // Publik — hanya aktif
-  list(activeOnly = true) {
-    return apiRequest(`/sliders?active_only=${activeOnly}`)
+  // Publik — hanya slider aktif (tanpa param query, sesuai kontrak)
+  list() {
+    return apiRequest('/sliders')
   },
 
   // Admin — semua (active=false) atau aktif saja

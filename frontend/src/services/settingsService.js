@@ -5,10 +5,6 @@ export const settingsService = {
     return apiRequest('/settings')
   },
 
-  getAdmin() {
-    return apiRequest('/admin/settings')
-  },
-
   update(payload) {
     return apiRequest('/admin/settings', {
       method: 'PUT',

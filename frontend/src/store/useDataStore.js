@@ -122,8 +122,8 @@ export const useDataStore = create(
             pengurusService.list().catch(() => null),
           ])
 
-          if (bRes?.data?.berita && bRes.data.berita.length > 0) set({ berita: bRes.data.berita })
-          if (kRes?.data?.kegiatan && kRes.data.kegiatan.length > 0) set({ kegiatan: kRes.data.kegiatan })
+          if (bRes?.data?.berita && bRes.data.berita.length > 0) set({ berita: bRes.data.berita.map(b => ({ ...b, image_url: b.image_path || b.image_url })) })
+          if (kRes?.data?.kegiatan && kRes.data.kegiatan.length > 0) set({ kegiatan: kRes.data.kegiatan.map(k => ({ ...k, image_url: k.image_path || k.image_url })) })
           if (pRes?.data?.pengurus && pRes.data.pengurus.length > 0) set({ pengurus: pRes.data.pengurus })
         } catch {}
       }

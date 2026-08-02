@@ -12,6 +12,16 @@ function toQuery(params = {}) {
 }
 
 export const pengurusService = {
+  // Publik — daftar pengurus aktif (tanpa auth); filter level/provinsi/kabupaten
+  list(params = {}) {
+    return apiRequest(`/pengurus${toQuery(params)}`)
+  },
+
+  // Publik — daftar wilayah (provinsi + kabupaten) untuk dropdown filter
+  regions() {
+    return apiRequest('/pengurus/regions')
+  },
+
   listAdmin(params = {}) {
     return apiRequest(`/admin/pengurus${toQuery(params)}`)
   },

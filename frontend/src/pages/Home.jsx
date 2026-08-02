@@ -138,11 +138,12 @@ export default function Home() {
 
   const loadData = useCallback(() => {
     // Load Sliders
-    slidersService.list(true)
+    slidersService.list()
       .then(res => {
         if (res.success && res.data) {
           const list = Array.isArray(res.data) ? res.data : (res.data.sliders || [])
-          setSliders(list)
+          // Normalisasi: API kirim image_path → FE pakai image_url di JSX
+          setSliders(list.map(s => ({ ...s, image_url: s.image_path || s.image_url })))
         }
       }).catch(() => {})
 
@@ -151,7 +152,7 @@ export default function Home() {
       .then(res => {
         if (res.success && res.data) {
           const list = Array.isArray(res.data) ? res.data : (res.data.kegiatan || [])
-          setFeaturedKegiatan(list)
+          setFeaturedKegiatan(list.map(k => ({ ...k, image_url: k.image_path || k.image_url })))
         }
       }).catch(() => {})
 
@@ -160,7 +161,7 @@ export default function Home() {
       .then(res => {
         if (res.success && res.data) {
           const list = Array.isArray(res.data) ? res.data : (res.data.berita || [])
-          setRecentBerita(list)
+          setRecentBerita(list.map(b => ({ ...b, image_url: b.image_path || b.image_url })))
         }
       }).catch(() => {})
   }, [])

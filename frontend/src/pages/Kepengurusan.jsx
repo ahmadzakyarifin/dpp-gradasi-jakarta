@@ -48,7 +48,8 @@ export default function Kepengurusan() {
       .then(res => {
         if (res.success && res.data) {
           const list = Array.isArray(res.data) ? res.data : (res.data.pengurus || [])
-          setAllPengurus(list)
+          // Normalisasi: API kirim image_path → FE pakai image_url di JSX
+          setAllPengurus(list.map(p => ({ ...p, image_url: p.image_path || p.image_url })))
         }
       })
       .catch(() => {})

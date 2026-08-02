@@ -12,6 +12,14 @@ function toQuery(params = {}) {
 }
 
 export const kontakService = {
+  // Publik — kirim pesan dari form kontak (tanpa auth)
+  submit(payload) {
+    return apiRequest('/kontak', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
   list(params) {
     return apiRequest(`/admin/kontak${toQuery(params)}`)
   },

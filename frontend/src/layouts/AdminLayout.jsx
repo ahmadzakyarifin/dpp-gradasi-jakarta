@@ -5,7 +5,7 @@ import { useAuthStore } from '../store/useAuthStore'
 const sidebarLinks = [
   { path: '/dashboard', label: 'Dashboard', icon: 'ph-squares-four' },
   { path: '/admin/berita', label: 'Berita', icon: 'ph-article', roles: ['super_admin', 'admin', 'admin_berita'] },
-  { path: '/admin/kegiatan', label: 'Kegiatan', icon: 'ph-calendar-check', roles: ['super_admin', 'admin', 'admin_kegiatan'] },
+  { path: '/admin/kegiatan', label: 'Kegiatan', icon: 'ph-calendar-check', roles: ['super_admin', 'admin', 'editor'] },
   { path: '/admin/pengurus', label: 'Pengurus', icon: 'ph-users-three' },
   { path: '/admin/sliders', label: 'Sliders', icon: 'ph-image' },
   { path: '/admin/kontak', label: 'Pesan Kontak', icon: 'ph-envelope-simple' },
