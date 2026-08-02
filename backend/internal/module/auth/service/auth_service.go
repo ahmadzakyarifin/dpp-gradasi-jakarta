@@ -9,7 +9,10 @@ import (
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/config"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/helper"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/infrastructure"
+	activitylogdto "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/dto"
+	activitylogservice "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/service"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/auth/dto"
+	authmapper "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/auth/mapper"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/auth/model"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/auth/repository"
 	"github.com/redis/go-redis/v9"
@@ -34,15 +37,27 @@ type authService struct {
 	cfg   *config.Config
 	mail  *infrastructure.Mailer
 	redis *redis.Client
+	db    *gorm.DB
+	log   activitylogservice.ActivityLogService
 }
 
-func NewAuthService(repo repository.AuthRepo, cfg *config.Config, mail *infrastructure.Mailer, redis *redis.Client) AuthService {
+func NewAuthService(repo repository.AuthRepo, cfg *config.Config, mail *infrastructure.Mailer, redis *redis.Client, db *gorm.DB, log activitylogservice.ActivityLogService) AuthService {
 	return &authService{
 		repo:  repo,
 		cfg:   cfg,
 		mail:  mail,
 		redis: redis,
+		db:    db,
+		log:   log,
 	}
+}
+
+// audit mencatat activity log secara SYNC (pola skill — bukan async).
+func (s *authService) audit(ctx context.Context, input *activitylogdto.ActivityLogInput) {
+	if s.log == nil {
+		return
+	}
+	_ = s.log.Log(ctx, s.db, input)
 }
 
 func (s *authService) Login(req *dto.LoginRequest) (*dto.AuthResponse, string, int, error) {
@@ -100,21 +115,23 @@ func (s *authService) Login(req *dto.LoginRequest) (*dto.AuthResponse, string, i
 
 	maxAge := refreshTTL * 3600
 
+	entity := authmapper.UserModelToEntity(user)
 	resp := &dto.AuthResponse{
 		AccessToken: accessToken,
-		User: dto.AuthUserResponse{
-			ID:                 user.ID,
-			Name:               user.Name,
-			Email:              user.Email,
-			Status:             user.Status,
-			MustChangePassword: user.MustChangePassword,
-			Role: dto.RoleInfo{
-				ID:          user.Role.ID,
-				Name:        user.Role.Name,
-				DisplayName: user.Role.DisplayName,
-			},
-		},
+		User:        authmapper.UserEntityToAuthResponse(entity),
 	}
+
+	// Audit log SYNC (pola skill — bukan async dari handler)
+	s.audit(context.Background(), &activitylogdto.ActivityLogInput{
+		ActorID:     &resp.User.ID,
+		ActorName:   resp.User.Name,
+		ActorRole:   resp.User.Role.Name,
+		Action:      "auth.login",
+		EntityType:  "auth",
+		Description: "Login berhasil",
+		IPAddress:   req.IPAddress,
+		UserAgent:   req.UserAgent,
+	})
 
 	return resp, refreshRaw, maxAge, nil
 }

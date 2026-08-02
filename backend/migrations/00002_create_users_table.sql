@@ -7,7 +7,8 @@ CREATE TABLE users (
     email VARCHAR(150) NOT NULL UNIQUE,
     password VARCHAR(255) DEFAULT NULL,
     photo_path VARCHAR(500),
-    status ENUM('active', 'inactive') NOT NULL DEFAULT 'inactive',
+    status ENUM('active', 'inactive', 'pending_activation') NOT NULL DEFAULT 'inactive',
+    must_change_password TINYINT(1) NOT NULL DEFAULT 0,
     email_verified_at TIMESTAMP NULL,
     last_login_at TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -20,8 +21,6 @@ CREATE TABLE users (
     INDEX idx_deleted_at (deleted_at),
     INDEX idx_email (email)
 );
-
-(1, 'Administrator', 'admin@gradasi.org', '6285279880008', '$2a$10$WYeiTAB4gHLq1jxprM47.OIlQLC1xxOEQgdov6/6K2pV8mBYPP.a6', 'active', NOW(), NOW());
 -- +goose StatementEnd
 
 -- +goose Down

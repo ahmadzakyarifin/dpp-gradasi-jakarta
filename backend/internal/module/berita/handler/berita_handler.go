@@ -11,6 +11,7 @@ import (
 	activitylogservice "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/service"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/berita/dto"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/berita/service"
+	internalvalidator "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/validator"
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,6 +22,19 @@ type BeritaHandler struct {
 
 func NewBeritaHandler(svc service.BeritaService, logSvc activitylogservice.ActivityLogService) *BeritaHandler {
 	return &BeritaHandler{svc: svc, logSvc: logSvc}
+}
+
+// bindErrors memetakan error binding gin (validator) menjadi per-field ValidationErrorItem
+func (h *BeritaHandler) bindErrors(c *gin.Context, err error) {
+	vitems := internalvalidator.Errors(err)
+	if len(vitems) == 0 {
+		vitems = []internalvalidator.ValidationErrorItem{{Field: "input", Tag: "invalid", Message: err.Error()}}
+	}
+	items := make([]helper.ValidationErrorItem, 0, len(vitems))
+	for _, v := range vitems {
+		items = append(items, helper.ValidationErrorItem{Field: v.Field, Tag: v.Tag, Param: v.Param, Message: v.Message})
+	}
+	helper.ValidationErrorResponse(c, items)
 }
 
 // GET /api/v1/berita — publik (published only)
@@ -97,20 +111,34 @@ func (h *BeritaHandler) GetByID(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "BERITA_DETAIL", "Detail berita berhasil diambil.", resp, nil)
 }
 
+// mapServiceError mengubah ServiceError menjadi HTTP status code yang tepat
+func mapServiceError(err error) (int, string, string) {
+	svcErr, ok := err.(*helper.ServiceError)
+	if !ok || svcErr == nil {
+		return http.StatusInternalServerError, "SERVER_ERROR", "Terjadi kesalahan pada server."
+	}
+	switch svcErr.Code {
+	case "NOT_FOUND":
+		return http.StatusNotFound, svcErr.Code, svcErr.Message
+	case "VALIDATION_ERROR", "DUPLICATE_TITLE":
+		return http.StatusUnprocessableEntity, svcErr.Code, svcErr.Message
+	default:
+		return http.StatusInternalServerError, svcErr.Code, svcErr.Message
+	}
+}
+
 // POST /api/v1/berita — admin
 func (h *BeritaHandler) Create(c *gin.Context) {
-	var req dto.BeritaRequest
+	var req dto.BeritaCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.ValidationErrorResponse(c, []helper.ValidationErrorItem{
-			{Field: "title", Tag: "required", Message: "Title dan content wajib diisi."},
-		})
+		h.bindErrors(c, err)
 		return
 	}
 	userID, _ := middleware.GetUserID(c)
 	resp, err := h.svc.Create(&req, userID)
 	if err != nil {
-		svcErr, _ := err.(*helper.ServiceError)
-		helper.ErrorResponse(c, http.StatusInternalServerError, svcErr.Code, svcErr.Message, nil)
+		httpCode, code, msg := mapServiceError(err)
+		helper.ErrorResponse(c, httpCode, code, msg, nil)
 		return
 	}
 	helper.SuccessResponse(c, http.StatusCreated, "BERITA_CREATED", "Berita berhasil diterbitkan.", resp, nil)
@@ -137,21 +165,15 @@ func (h *BeritaHandler) Update(c *gin.Context) {
 		helper.ErrorResponse(c, http.StatusBadRequest, "INVALID_ID", "ID berita tidak valid.", nil)
 		return
 	}
-	var req dto.BeritaRequest
+	var req dto.BeritaUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.ValidationErrorResponse(c, []helper.ValidationErrorItem{
-			{Field: "title", Tag: "required", Message: "Title dan content wajib diisi."},
-		})
+		h.bindErrors(c, err)
 		return
 	}
 	resp, err := h.svc.Update(uint(id), &req)
 	if err != nil {
-		svcErr, _ := err.(*helper.ServiceError)
-		httpCode := http.StatusInternalServerError
-		if svcErr.Code == "NOT_FOUND" {
-			httpCode = http.StatusNotFound
-		}
-		helper.ErrorResponse(c, httpCode, svcErr.Code, svcErr.Message, nil)
+		httpCode, code, msg := mapServiceError(err)
+		helper.ErrorResponse(c, httpCode, code, msg, nil)
 		return
 	}
 	helper.SuccessResponse(c, http.StatusOK, "BERITA_UPDATED", "Berita berhasil diperbarui.", resp, nil)

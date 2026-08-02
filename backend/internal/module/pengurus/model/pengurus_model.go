@@ -14,7 +14,7 @@ type Pengurus struct {
 	Level        string         `gorm:"size:50;not null" json:"level"` // ketua, dpp, dpd, dpc
 	Provinsi     *string        `gorm:"size:100" json:"provinsi,omitempty"`
 	Kabupaten    *string        `gorm:"size:100" json:"kabupaten,omitempty"`
-	ImageURL     string         `gorm:"size:500;not null" json:"image_url"`
+	ImagePath    string         `gorm:"size:500;not null" json:"image_path"`
 	FacebookURL  *string        `gorm:"size:500" json:"facebook_url,omitempty"`
 	InstagramURL *string        `gorm:"size:500" json:"instagram_url,omitempty"`
 	LinkedinURL  *string        `gorm:"size:500" json:"linkedin_url,omitempty"`

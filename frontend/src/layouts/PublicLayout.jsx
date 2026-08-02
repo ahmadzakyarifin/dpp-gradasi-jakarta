@@ -21,10 +21,10 @@ export default function PublicLayout({ children }) {
 
   return (
     <div className="font-sans bg-slate-50 min-h-screen">
-      {/* Navigation Header */}
-      <header className="fixed top-0 w-full z-50 transition-all duration-300 bg-white py-4 border-b border-slate-200 shadow-xs">
+      {/* Navigation Header — glassmorphism + scroll effect */}
+      <header className="fixed top-0 w-full z-50 transition-all duration-300 bg-white/80 backdrop-blur-xl border-b border-white/40 shadow-[0_1px_20px_-5px_rgba(37,99,235,0.08)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center py-4">
             {/* Logo Branding */}
             <Link to="/" className="flex-shrink-0 flex items-center gap-3 group">
               <img src={resolveAssetUrl(settings.logo_url)} alt={`Logo ${settings.site_name}`} className="h-10 w-auto object-contain transition duration-300 group-hover:scale-105" />
@@ -71,7 +71,7 @@ export default function PublicLayout({ children }) {
                 </Link>
                 {kegiatanDropdown && (
                   <div className="absolute left-0 top-full pt-1 w-52 z-50">
-                    <div className="bg-white rounded-xl shadow-xl py-2 border border-slate-100 animate-fadeIn">
+                    <div className="glass animate-scale-in rounded-xl shadow-xl py-2 border border-slate-100">
                       <Link 
                         to="/kegiatan" 
                         onClick={() => setKegiatanDropdown(false)}
@@ -105,7 +105,7 @@ export default function PublicLayout({ children }) {
                 </Link>
                 {informasiDropdown && (
                   <div className="absolute left-0 top-full pt-1 w-52 z-50">
-                    <div className="bg-white rounded-xl shadow-xl py-2 border border-slate-100 animate-fadeIn">
+                    <div className="glass animate-scale-in rounded-xl shadow-xl py-2 border border-slate-100">
                       <Link 
                         to="/berita" 
                         onClick={() => setInformasiDropdown(false)}
@@ -141,7 +141,7 @@ export default function PublicLayout({ children }) {
             <div className="hidden lg:flex items-center gap-3">
               <Link 
                 to="/login" 
-                className="group relative inline-flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold text-white bg-brand-600 hover:bg-brand-700 rounded-xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
+                className="btn-press group relative inline-flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold text-white bg-gradient-brand animate-gradient rounded-xl overflow-hidden glow-brand transition-all duration-300"
               >
                 <i className="ph-bold ph-sign-in text-lg transition-transform duration-300 group-hover:translate-x-0.5" />
                 <span>Masuk</span>

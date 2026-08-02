@@ -50,7 +50,7 @@
               "level": "dpp",
               "provinsi": null,
               "kabupaten": null,
-              "image_url": "/uploads/pengurus/upi.jpg",
+              "image_path": "/uploads/pengurus/upi.jpg",
               "facebook_url": "#",
               "instagram_url": "#",
               "linkedin_url": "#",
@@ -125,6 +125,7 @@
       "query": {
         "level": "dpp",
         "provinsi": "Jawa Timur",
+        "kabupaten": "Kota Surabaya",
         "search": "Kusbeni",
         "status": "active",        // active | inactive | all
         "page": "1",
@@ -149,7 +150,7 @@
               "level": "dpp",
               "provinsi": null,
               "kabupaten": null,
-              "image_url": "/uploads/pengurus/upi.jpg",
+              "image_path": "/uploads/pengurus/upi.jpg",
               "is_active": true,
               "periode": "2025 - 2030",
               "sort_order": 1,

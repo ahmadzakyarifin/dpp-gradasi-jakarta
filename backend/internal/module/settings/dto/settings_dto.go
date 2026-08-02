@@ -4,7 +4,7 @@ type SettingsResponse struct {
 	ID                 uint     `json:"id"`
 	SiteName           string   `json:"site_name"`
 	Tagline            string   `json:"tagline"`
-	LogoURL            string   `json:"logo_url"`
+	LogoPath           string   `json:"logo_path"`
 	ContactEmail       string   `json:"contact_email"`
 	ContactPhone       string   `json:"contact_phone"`
 	Address            string   `json:"address"`
@@ -12,7 +12,7 @@ type SettingsResponse struct {
 	FacebookURL        string   `json:"facebook_url"`
 	InstagramURL       string   `json:"instagram_url"`
 	YoutubeURL         string   `json:"youtube_url"`
-	VideoProfileURL    string   `json:"video_profile_url"`
+	VideoProfilePath   string   `json:"video_profile_path"`
 	History            string   `json:"history"`
 	AboutTutorial      string   `json:"about_tutorial"`
 	AboutFormationDate string   `json:"about_formation_date"`
@@ -23,7 +23,7 @@ type SettingsResponse struct {
 	GreetingSubtitle   string   `json:"greeting_subtitle"`
 	GreetingDate       string   `json:"greeting_date"`
 	GreetingContent    string   `json:"greeting_content"`
-	GreetingImageURL   string   `json:"greeting_image_url"`
+	GreetingImagePath  string   `json:"greeting_image_path"`
 	CreatedAt          string   `json:"created_at"`
 	UpdatedAt          string   `json:"updated_at,omitempty"`
 	UpdatedBy          *uint    `json:"updated_by,omitempty"`

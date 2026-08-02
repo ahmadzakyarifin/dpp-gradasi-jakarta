@@ -90,7 +90,7 @@ func (h *settingsHandler) UpdateSettings(c *gin.Context) {
 }
 
 // UploadLogo menerima multipart file "logo", memvalidasi ukuran & MIME type,
-// menyimpan ke public/uploads/settings, dan memperbarui logo_url di settings.
+// menyimpan ke public/uploads/settings, dan memperbarui logo_path di settings.
 func (h *settingsHandler) UploadLogo(c *gin.Context) {
 	file, err := c.FormFile("logo")
 	if err != nil {

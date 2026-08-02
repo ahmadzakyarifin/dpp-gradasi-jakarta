@@ -7,6 +7,9 @@ export const useAuthStore = create((set, get) => ({
   loading: false,
   error: null,
 
+  // role name dari user.role (di-set saat login/fetchMe); dipakai untuk filter menu FE
+  role: null,
+
   setToken: (token) => {
     if (token) {
       localStorage.setItem('access_token', token)
@@ -16,7 +19,10 @@ export const useAuthStore = create((set, get) => ({
     set({ token })
   },
 
-  setUser: (user) => set({ user }),
+  setUser: (user) => {
+    const role = user?.role?.name || user?.role_name || null
+    set({ user, role })
+  },
 
   login: async ({ email, password, rememberMe = false, captcha_token = '' }) => {
     set({ loading: true, error: null })
@@ -36,9 +42,11 @@ export const useAuthStore = create((set, get) => ({
       }
 
       localStorage.setItem('access_token', token)
+      const role = user?.role?.name || user?.role_name || null
       set({
         token,
         user,
+        role,
         loading: false,
         error: null,
       })
@@ -54,8 +62,10 @@ export const useAuthStore = create((set, get) => ({
     try {
       const response = await authService.me()
       if (response && response.data) {
-        set({ user: response.data })
-        return response.data
+        const user = response.data
+        const role = user?.role?.name || user?.role_name || null
+        set({ user, role })
+        return user
       }
     } catch {
       // Return local user fallback

@@ -31,7 +31,7 @@ CREATE TABLE activation_tokens (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     token_hash VARCHAR(255) NOT NULL UNIQUE,
-    channel ENUM('email', 'whatsapp', 'all') NOT NULL DEFAULT 'email',
+    channel ENUM('email') NOT NULL DEFAULT 'email',
     expires_at TIMESTAMP NOT NULL,
     used_at TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

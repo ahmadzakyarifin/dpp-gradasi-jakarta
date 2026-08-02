@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"errors"
+	"log"
 	"strconv"
 	"time"
 
@@ -33,7 +34,9 @@ func (l *fixedWindowLimiter) check(c *gin.Context, key string, limit int64, wind
 
 	res, err := incrFixedWindow(ctx, l.client, fullKey, window)
 	if err != nil {
-		return false, 0, 0, err
+		// Fail-open: Redis error jangan blokir request (availability > security).
+		log.Printf("[rate-limit][warn] redis error utk key=%s: %v — fail-open, request diteruskan", fullKey, err)
+		return false, 0, 0, nil
 	}
 
 	remaining = limit - res.Count

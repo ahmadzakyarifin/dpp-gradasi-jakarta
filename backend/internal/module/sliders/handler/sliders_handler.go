@@ -72,7 +72,7 @@ func (h *SlidersHandler) Create(c *gin.Context) {
 	var req dto.SliderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.ValidationErrorResponse(c, []helper.ValidationErrorItem{
-			{Field: "title", Tag: "required", Message: "Title dan image_url wajib diisi."},
+			{Field: "title", Tag: "required", Message: "Title dan image_path wajib diisi."},
 		})
 		return
 	}
@@ -110,7 +110,7 @@ func (h *SlidersHandler) Update(c *gin.Context) {
 	var req dto.SliderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.ValidationErrorResponse(c, []helper.ValidationErrorItem{
-			{Field: "title", Tag: "required", Message: "Title dan image_url wajib diisi."},
+			{Field: "title", Tag: "required", Message: "Title dan image_path wajib diisi."},
 		})
 		return
 	}

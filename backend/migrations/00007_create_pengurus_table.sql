@@ -8,7 +8,7 @@ CREATE TABLE pengurus (
     level ENUM('ketua', 'dpp', 'dpd', 'dpc') NOT NULL,
     provinsi VARCHAR(100),
     kabupaten VARCHAR(100),
-    image_url VARCHAR(500),
+    image_path VARCHAR(500),
     facebook_url VARCHAR(500),
     instagram_url VARCHAR(500),
     linkedin_url VARCHAR(500),

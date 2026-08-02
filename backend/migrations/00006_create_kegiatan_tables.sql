@@ -8,7 +8,8 @@ CREATE TABLE kegiatan (
     event_date DATE,
     location VARCHAR(200),
     organizer VARCHAR(200),
-    image_url VARCHAR(500),
+    author_id INT NULL,
+    image_path VARCHAR(500),
     excerpt TEXT,
     content LONGTEXT,
     is_published BOOLEAN DEFAULT TRUE,
@@ -17,6 +18,7 @@ CREATE TABLE kegiatan (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP NULL,
 
+    FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE SET NULL,
     INDEX idx_event_date (event_date DESC),
     INDEX idx_is_published (is_published),
     INDEX idx_deleted_at (deleted_at),
@@ -36,7 +38,7 @@ CREATE TABLE kegiatan_tags (
 CREATE TABLE kegiatan_gallery (
     id INT AUTO_INCREMENT PRIMARY KEY,
     kegiatan_id INT NOT NULL,
-    image_url VARCHAR(500) NOT NULL,
+    image_path VARCHAR(500) NOT NULL,
     caption VARCHAR(200),
     sort_order INT DEFAULT 0,
 

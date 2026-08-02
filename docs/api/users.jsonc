@@ -126,6 +126,53 @@
           }
         }
       }
+    },
+
+    // ======================================================
+    // CHANGE PASSWORD (Profil Sendiri)
+    // ======================================================
+    "change_password": {
+      "method": "PUT",
+      "endpoint": "/api/v1/profile/password",
+      "consumes": "application/json",
+      "produces": "application/json",
+      "authentication": {
+        "type": "Bearer Access Token"
+      },
+      "headers": {
+        "Accept": "application/json",
+        "Authorization": "Bearer <access_token>"
+      },
+      "request": {
+        "old_password": "passwordlama123",
+        "new_password": "passwordbaru123"
+      },
+      "validation": {
+        "old_password": "required",
+        "new_password": "required,min=6"
+      },
+      "notes": [
+        "Mengganti password akun sendiri. Wajib menyertakan password lama.",
+        "Setelah berhasil, flag must_change_password di-reset ke false dan semua refresh token user dihapus (logout dari semua perangkat)."
+      ],
+      "responses": {
+        "200": {
+          "description": "Password berhasil diubah",
+          "body": {
+            "success": true,
+            "code": "PASSWORD_CHANGED",
+            "message": "Password berhasil diubah"
+          }
+        },
+        "400": {
+          "description": "Password lama salah",
+          "body": {
+            "success": false,
+            "code": "INVALID_PASSWORD",
+            "message": "Password lama salah"
+          }
+        }
+      }
     }
   },
 
@@ -224,7 +271,7 @@
       "validation": {
         "name": "required,min=3,max=100",
         "email": "required,email,max=150",
-        "role_id": "required,oneof=2 3 4"
+        "role_id": "required,oneof=2 5 6"
       },
       "notes": [
         "Membuat akun admin baru. Super Admin tidak perlu menginput password.",

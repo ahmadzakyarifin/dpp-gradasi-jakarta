@@ -1,8 +1,29 @@
 import { apiRequest } from '../api'
 
+function toQuery(params = {}) {
+  const query = new URLSearchParams()
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      query.set(key, value)
+    }
+  })
+  const text = query.toString()
+  return text ? `?${text}` : ''
+}
+
 export const slidersService = {
+  // Publik — hanya aktif
   list(activeOnly = true) {
     return apiRequest(`/sliders?active_only=${activeOnly}`)
+  },
+
+  // Admin — semua (active=false) atau aktif saja
+  listAdmin(active = false) {
+    return apiRequest(`/sliders/admin?active=${active}`)
+  },
+
+  getById(id) {
+    return apiRequest(`/sliders/${id}`)
   },
 
   create(payload) {
@@ -21,5 +42,30 @@ export const slidersService = {
 
   remove(id) {
     return apiRequest(`/sliders/${id}`, { method: 'DELETE' })
+  },
+
+  restore(id) {
+    return apiRequest(`/sliders/${id}/restore`, { method: 'POST' })
+  },
+
+  bulkDelete(ids) {
+    return apiRequest('/sliders/bulk-delete', {
+      method: 'POST',
+      body: JSON.stringify({ ids }),
+    })
+  },
+
+  bulkRestore(ids) {
+    return apiRequest('/sliders/bulk-restore', {
+      method: 'POST',
+      body: JSON.stringify({ ids }),
+    })
+  },
+
+  reorder(ids) {
+    return apiRequest('/sliders/reorder', {
+      method: 'PUT',
+      body: JSON.stringify({ ids }),
+    })
   },
 }

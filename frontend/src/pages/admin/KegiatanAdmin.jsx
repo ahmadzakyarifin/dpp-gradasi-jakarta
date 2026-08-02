@@ -9,6 +9,7 @@ const PAGE_SIZE = 5
 export default function KegiatanAdmin() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
   const [meta, setMeta] = useState({ total_data: 0, total_pages: 1, current_page: 1, limit: 10 })
 
   const [currentTab, setCurrentTab] = useState('active')
@@ -69,7 +70,10 @@ export default function KegiatanAdmin() {
           if (res.data.meta) setMeta(res.data.meta)
         }
       })
-      .catch(() => {})
+      .catch(err => {
+        setError(err?.message || 'Gagal memuat kegiatan')
+        setItems([])
+      })
       .finally(() => setLoading(false))
   }, [currentTab, currentPage, searchQuery, filterStatus, filterSort])
 
@@ -214,7 +218,9 @@ export default function KegiatanAdmin() {
     const action = confirm.action
     setConfirm(prev => ({ ...prev, isOpen: false, action: null }))
     if (action) {
-      try { await action() } catch {}
+      try { await action() } catch (err) {
+        showToast(err?.message || 'Terjadi kesalahan, coba lagi.', 'error')
+      }
     }
   }
 
@@ -327,6 +333,14 @@ export default function KegiatanAdmin() {
 
         {/* Data Table */}
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+          {loading && <div className="py-16 text-center text-slate-500">Memuat kegiatan...</div>}
+          {!loading && error && (
+            <div className="py-16 text-center text-red-600 font-medium">
+              <i className="ph-bold ph-warning-circle text-2xl mb-2 block mx-auto" /> {error}
+            </div>
+          )}
+          {!loading && !error && (
+          <>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-slate-700">
               <thead className="bg-slate-50 border-b border-gray-200 font-semibold text-xs uppercase tracking-wider text-slate-500">
@@ -428,6 +442,8 @@ export default function KegiatanAdmin() {
                 </button>
               </div>
             </div>
+          )}
+          </>
           )}
         </div>
       </div>

@@ -184,20 +184,18 @@
           "code": "ACTIVITY_LOG_DETAIL",
           "message": "Detail log aktivitas berhasil diambil",
           "data": {
-            "id": 1,
-            "actor_id": 1,
-            "actor_name": "Administrator Utama",
-            "actor_role": "super_admin",
+            "id": "1",
+            "time": "2026-07-30 13:35:00",
+            "actor": "Administrator Utama",
+            "role": "super_admin",
             "action": "user.create",
-            "status": "success",
-            "entity_type": "user",
-            "entity_id": 2,
-            "entity_label": "Admin Berita",
-            "risk_level": "high",
+            "entity": "user",
+            "entityLabel": "Admin Berita",
             "description": "Membuat admin baru",
-            "ip_address": "127.0.0.1",
-            "user_agent": "Mozilla/5.0 ...",
-            "created_at": "2026-07-30T13:35:00Z"
+            "ip": "127.0.0.1",
+            "device": "Mozilla/5.0 ...",
+            "risk": "high",
+            "metadata": {}
           }
         }
       },
@@ -248,10 +246,18 @@
           "message": "Riwayat aktivitas entitas berhasil diambil",
           "data": [
             {
-              "id": 1,
-              "actor_name": "Administrator Utama",
+              "id": "1",
+              "time": "2026-07-30 13:35:00",
+              "actor": "Administrator Utama",
+              "role": "super_admin",
               "action": "user.create",
-              "created_at": "2026-07-30T13:35:00Z"
+              "entity": "user",
+              "entityLabel": "Admin Berita",
+              "description": "Membuat admin baru",
+              "ip": "127.0.0.1",
+              "device": "Mozilla/5.0 ...",
+              "risk": "high",
+              "metadata": {}
             }
           ]
         }

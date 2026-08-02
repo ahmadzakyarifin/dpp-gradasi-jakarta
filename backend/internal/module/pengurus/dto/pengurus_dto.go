@@ -49,7 +49,7 @@ type PengurusResponse struct {
 	Level        string `json:"level"`
 	Provinsi     string `json:"provinsi,omitempty"`
 	Kabupaten    string `json:"kabupaten,omitempty"`
-	ImageURL     string `json:"image_url"`
+	ImagePath    string `json:"image_path"`
 	FacebookURL  string `json:"facebook_url,omitempty"`
 	InstagramURL string `json:"instagram_url,omitempty"`
 	LinkedinURL  string `json:"linkedin_url,omitempty"`

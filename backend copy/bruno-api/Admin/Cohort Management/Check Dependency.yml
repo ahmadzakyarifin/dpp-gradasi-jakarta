@@ -1,0 +1,21 @@
+info:
+  name: Check Dependency
+  type: http
+  seq: 9
+
+http:
+  method: GET
+  url: "{{base_url}}/api/v1/cohorts/:id/dependency-info"
+  params:
+    - name: id
+      value: "1"
+      type: path
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJlbWFpbCI6InNjaG9vbHBheTQxQGdtYWlsLmNvbSIsInJvbGVfaWQiOjEsIm5hbWUiOiJBZG1pbmlzdHJhdG9yIiwicm9sZV9uYW1lIjoic3VwZXJfYWRtaW4iLCJleHAiOjE3ODQ4OTc3NzYsImlhdCI6MTc4NDg5Njg3Nn0.iKm1BY9AdDqt2cWD--csk8qfvbR7dcs39DbKCP3hft0
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

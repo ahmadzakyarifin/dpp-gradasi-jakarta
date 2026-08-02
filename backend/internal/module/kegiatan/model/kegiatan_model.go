@@ -16,7 +16,7 @@ type Kegiatan struct {
 	Organizer   string            `gorm:"size:200" json:"organizer"`
 	AuthorID    *uint             `json:"author_id,omitempty"`
 	AuthorName  string            `gorm:"->;-:migration" json:"author_name,omitempty"`
-	ImageURL    *string           `gorm:"size:500" json:"image_url,omitempty"`
+	ImagePath   *string           `gorm:"size:500" json:"image_path,omitempty"`
 	Excerpt     *string           `gorm:"type:text" json:"excerpt,omitempty"`
 	Content     *string           `gorm:"type:longtext" json:"content,omitempty"`
 	IsPublished bool              `gorm:"default:true" json:"is_published"`
@@ -41,7 +41,7 @@ func (KegiatanTag) TableName() string { return "kegiatan_tags" }
 type KegiatanGallery struct {
 	ID         uint   `gorm:"primaryKey;autoIncrement" json:"id"`
 	KegiatanID uint   `gorm:"not null;index" json:"kegiatan_id"`
-	ImageURL   string `gorm:"size:500;not null" json:"image_url"`
+	ImagePath  string `gorm:"size:500;not null" json:"image_path"`
 	Caption    string `gorm:"size:200" json:"caption"`
 	SortOrder  int    `gorm:"default:0" json:"sort_order"`
 }

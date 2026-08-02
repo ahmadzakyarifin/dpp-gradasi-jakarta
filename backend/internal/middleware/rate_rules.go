@@ -41,11 +41,6 @@ func User(limit int64, period time.Duration) Rule {
 	return Rule{Kind: KindUser, Limit: limit, Period: period}
 }
 
-func abortRateLimitError(c *gin.Context) {
-	helper.ErrorResponse(c, http.StatusInternalServerError, "SERVER_ERROR", "Terjadi kesalahan pada server.", nil)
-	c.Abort()
-}
-
 func abortRateLimitUnauthorized(c *gin.Context) {
 	helper.ErrorResponse(c, http.StatusUnauthorized, "AUTH_TOKEN_INVALID_OR_EXPIRED", "Sesi login telah berakhir. Silakan login kembali.", nil)
 	c.Abort()

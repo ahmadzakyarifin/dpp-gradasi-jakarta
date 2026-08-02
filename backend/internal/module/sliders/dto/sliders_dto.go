@@ -8,7 +8,7 @@ type SliderRequest struct {
 	IsNew     bool    `json:"is_new"`
 	EventDate *string `json:"event_date,omitempty"`
 	Location  *string `json:"location,omitempty"`
-	ImageURL  string  `json:"image_url" binding:"required"`
+	ImagePath string  `json:"image_path" binding:"required"`
 	LinkURL   *string `json:"link_url,omitempty"`
 	SortOrder int     `json:"sort_order"`
 	IsActive  bool    `json:"is_active"`
@@ -23,7 +23,7 @@ type SliderResponse struct {
 	IsNew     bool   `json:"is_new"`
 	EventDate string `json:"event_date,omitempty"`
 	Location  string `json:"location,omitempty"`
-	ImageURL  string `json:"image_url"`
+	ImagePath string `json:"image_path"`
 	LinkURL   string `json:"link_url,omitempty"`
 	SortOrder int    `json:"sort_order"`
 	IsActive  bool   `json:"is_active"`

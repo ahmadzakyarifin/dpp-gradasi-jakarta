@@ -62,11 +62,11 @@ export default function Dashboard() {
             <Link
               key={stat.label}
               to={stat.link}
-              className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition group flex flex-col justify-between"
+              className="card-lift bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition group flex flex-col justify-between"
             >
               <div className="flex items-center justify-between mb-4">
                 <span className="text-gray-500 font-semibold text-xs tracking-wider uppercase">{stat.label}</span>
-                <div className={`w-12 h-12 rounded-2xl ${stat.color} flex items-center justify-center text-2xl group-hover:scale-110 transition-transform`}>
+                <div className={`w-12 h-12 rounded-full ${stat.color} flex items-center justify-center text-2xl group-hover:scale-110 group-hover:rotate-3 transition-transform shadow-sm`}>
                   <i className={`ph ${stat.icon}`} />
                 </div>
               </div>

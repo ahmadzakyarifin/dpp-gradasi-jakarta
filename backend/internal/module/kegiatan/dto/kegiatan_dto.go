@@ -1,19 +1,35 @@
 package dto
 
-// KegiatanRequest create/update
-type KegiatanRequest struct {
+// KegiatanCreateRequest — create (wajib penuh)
+type KegiatanCreateRequest struct {
 	Title       string `json:"title" binding:"required,min=5,max=300"`
 	Category    string `json:"category"`
 	EventDate   string `json:"event_date"`
 	Location    string `json:"location"`
 	Organizer   string `json:"organizer"`
 	AuthorID    *uint  `json:"author_id,omitempty"`
-	ImageURL    string `json:"image_url"`
+	ImagePath   string `json:"image_path"`
 	Excerpt     string `json:"excerpt"`
 	Content     string `json:"content" binding:"required"`
 	IsPublished *bool  `json:"is_published"`
 	Tags        string `json:"tags"`    // comma-separated
-	GalleryJSON string `json:"gallery"` // JSON string: [{"image_url":"...","caption":"...","sort_order":0}]
+	GalleryJSON string `json:"gallery"` // JSON string: [{"image_path":"...","caption":"...","sort_order":0}]
+}
+
+// KegiatanUpdateRequest — update (partial; field kosong diabaikan)
+type KegiatanUpdateRequest struct {
+	Title       string `json:"title" binding:"omitempty,min=5,max=300"`
+	Category    string `json:"category"`
+	EventDate   string `json:"event_date"`
+	Location    string `json:"location"`
+	Organizer   string `json:"organizer"`
+	AuthorID    *uint  `json:"author_id,omitempty"`
+	ImagePath   string `json:"image_path"`
+	Excerpt     string `json:"excerpt"`
+	Content     string `json:"content"`
+	IsPublished *bool  `json:"is_published"`
+	Tags        string `json:"tags"`    // comma-separated
+	GalleryJSON string `json:"gallery"` // JSON string: [{"image_path":"...","caption":"...","sort_order":0}]
 }
 
 type KegiatanListItem struct {
@@ -25,7 +41,7 @@ type KegiatanListItem struct {
 	Location     string `json:"location,omitempty"`
 	Organizer    string `json:"organizer,omitempty"`
 	AuthorName   string `json:"author_name,omitempty"`
-	ImageURL     string `json:"image_url,omitempty"`
+	ImagePath    string `json:"image_path,omitempty"`
 	Excerpt      string `json:"excerpt,omitempty"`
 	IsPublished  *bool  `json:"is_published,omitempty"`
 	Views        int    `json:"views"`
@@ -43,7 +59,7 @@ type KegiatanDetailResponse struct {
 	Location    string             `json:"location,omitempty"`
 	Organizer   string             `json:"organizer,omitempty"`
 	AuthorName  string             `json:"author_name,omitempty"`
-	ImageURL    string             `json:"image_url,omitempty"`
+	ImagePath   string             `json:"image_path,omitempty"`
 	Excerpt     string             `json:"excerpt,omitempty"`
 	Content     string             `json:"content,omitempty"`
 	IsPublished bool               `json:"is_published"`
@@ -55,13 +71,13 @@ type KegiatanDetailResponse struct {
 
 type GalleryImageItem struct {
 	ID        uint   `json:"id"`
-	ImageURL  string `json:"image_url"`
+	ImagePath string `json:"image_path"`
 	Caption   string `json:"caption,omitempty"`
 	SortOrder int    `json:"sort_order"`
 }
 
 type GalleryInput struct {
-	ImageURL  string `json:"image_url"`
+	ImagePath string `json:"image_path"`
 	Caption   string `json:"caption"`
 	SortOrder int    `json:"sort_order"`
 }

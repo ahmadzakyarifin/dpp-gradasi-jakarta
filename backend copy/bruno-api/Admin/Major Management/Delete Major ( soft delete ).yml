@@ -1,0 +1,21 @@
+info:
+  name: Delete Major ( soft delete )
+  type: http
+  seq: 5
+
+http:
+  method: DELETE
+  url: "{{base_url}}/api/v1/major/:id"
+  params:
+    - name: id
+      value: "37"
+      type: path
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJlbWFpbCI6InNjaG9vbHBheTQxQGdtYWlsLmNvbSIsInJvbGVfaWQiOjEsIm5hbWUiOiJBZG1pbmlzdHJhdG9yIiwicm9sZV9uYW1lIjoic3VwZXJfYWRtaW4iLCJleHAiOjE3ODQ4ODEwMTYsImlhdCI6MTc4NDg4MDExNn0.gUmTuET8TXWt-XLzjQlO7gnlgu54e6Ph8Ag9Rz7jWFk
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

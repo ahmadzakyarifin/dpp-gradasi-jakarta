@@ -2,6 +2,7 @@ package repository
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kegiatan/dto"
@@ -13,6 +14,8 @@ type KegiatanRepo interface {
 	FindPublished(q dto.KegiatanQuery) ([]model.Kegiatan, int64, error)
 	FindAll(q dto.KegiatanQuery) ([]model.Kegiatan, int64, error)
 	FindBySlug(slug string) (*model.Kegiatan, error)
+	FindUniqueSlug(slug string) (string, error)
+	ExistsTitle(title string, excludeID uint) (bool, error)
 	FindByID(id uint) (*model.Kegiatan, error)
 	Create(k *model.Kegiatan) error
 	Update(k *model.Kegiatan) error
@@ -117,6 +120,38 @@ func (r *kegiatanRepo) FindBySlug(slug string) (*model.Kegiatan, error) {
 	return &k, nil
 }
 
+// FindUniqueSlug mengembalikan slug unik dengan suffix -2, -3, dst jika slug sudah dipakai.
+// Memakai Unscoped agar slug di soft-delete (trash) juga dianggap terpakai.
+func (r *kegiatanRepo) FindUniqueSlug(slug string) (string, error) {
+	base := slug
+	candidate := slug
+	for i := 2; ; i++ {
+		var count int64
+		err := r.db.Unscoped().Model(&model.Kegiatan{}).Where("slug = ?", candidate).Count(&count).Error
+		if err != nil {
+			return "", err
+		}
+		if count == 0 {
+			return candidate, nil
+		}
+		candidate = fmt.Sprintf("%s-%d", base, i)
+	}
+}
+
+// ExistsTitle mengembalikan true jika judul sudah dipakai kegiatan lain (soft-delete ikut dihitung).
+// excludeID dipakai saat update — mengabaikan kegiatan dengan id tersebut (dirinya sendiri).
+func (r *kegiatanRepo) ExistsTitle(title string, excludeID uint) (bool, error) {
+	var count int64
+	q := r.db.Unscoped().Model(&model.Kegiatan{}).Where("title = ?", title)
+	if excludeID > 0 {
+		q = q.Where("id != ?", excludeID)
+	}
+	if err := q.Count(&count).Error; err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
 func (r *kegiatanRepo) FindByID(id uint) (*model.Kegiatan, error) {
 	var k model.Kegiatan
 	err := r.db.Model(&model.Kegiatan{}).
@@ -175,12 +210,12 @@ func (r *kegiatanRepo) SaveTags(kegiatanID uint, tags []string) error {
 func (r *kegiatanRepo) SaveGallery(kegiatanID uint, items []dto.GalleryInput) error {
 	r.db.Where("kegiatan_id = ?", kegiatanID).Delete(&model.KegiatanGallery{})
 	for _, item := range items {
-		if item.ImageURL == "" {
+		if item.ImagePath == "" {
 			continue
 		}
 		r.db.Create(&model.KegiatanGallery{
 			KegiatanID: kegiatanID,
-			ImageURL:   item.ImageURL,
+			ImagePath:  item.ImagePath,
 			Caption:    item.Caption,
 			SortOrder:  item.SortOrder,
 		})

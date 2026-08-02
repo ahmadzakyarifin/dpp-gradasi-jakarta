@@ -7,46 +7,11 @@ import ToastNotification from '../../components/admin/ToastNotification'
 
 const PAGE_SIZE = 5
 
-const DEFAULT_BERITA = [
-  {
-    id: 1,
-    title: 'Rapat Kerja Daerah Jatim',
-    slug: 'rapat-kerja-daerah-jatim',
-    category: 'Berita Daerah',
-    published_date: '2026-02-11',
-    image_url: 'https://gradasi.org/uploads/img/berita/17708152730.jpg',
-    excerpt: 'SURABAYA, Generasi Digital Indonesia (GRADASI) Jawa Timur bersiap menggelar Rapat Kerja Daerah...',
-    views: 142,
-    is_published: true
-  },
-  {
-    id: 2,
-    title: 'Peningkatan Kompetensi SDM',
-    slug: 'peningkatan-kompetensi-sdm-pendidikan',
-    category: 'Edukasi',
-    published_date: '2025-11-02',
-    image_url: 'https://gradasi.org/uploads/img/berita/17620765070.jpg',
-    excerpt: 'Inisiatif GRADASI Mendorong Peningkatan Kompetensi SDM Pendidikan dalam Memanfaatkan Kecerdasan Buatan (AI)...',
-    views: 98,
-    is_published: true
-  },
-  {
-    id: 3,
-    title: 'Rumusan Kunci Kebijakan',
-    slug: 'rumusan-kunci-kebijakan-literasi-digital',
-    category: 'Berita Utama',
-    published_date: '2025-10-31',
-    image_url: 'https://gradasi.org/uploads/img/berita/17618789900.jpg',
-    excerpt: '#Ketua Dewan Pakar GRADASI, Damar Juniarto, Paparkan Lima Rumusan Kunci Kebijakan...',
-    views: 215,
-    is_published: true
-  }
-]
-
 export default function BeritaAdmin() {
-  const [items, setItems] = useState(DEFAULT_BERITA)
-  const [meta, setMeta] = useState({ current_page: 1, limit: PAGE_SIZE, total_data: DEFAULT_BERITA.length, total_pages: 1 })
+  const [items, setItems] = useState([])
+  const [meta, setMeta] = useState({ current_page: 1, limit: PAGE_SIZE, total_data: 0, total_pages: 1 })
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   const [currentTab, setCurrentTab] = useState('active')
   const [currentPage, setCurrentPage] = useState(1)
@@ -72,6 +37,30 @@ export default function BeritaAdmin() {
     tags: '',
     is_published: true,
   })
+  const [formErrors, setFormErrors] = useState({})
+  const [touched, setTouched] = useState({})
+
+  // Validasi custom — Bahasa Indonesia, per-field
+  const validateForm = useCallback((data = formData) => {
+    const errors = {}
+    if (!data.title || !data.title.trim()) {
+      errors.title = 'Judul berita wajib diisi.'
+    } else if (data.title.trim().length < 5) {
+      errors.title = 'Judul minimal 5 karakter.'
+    } else if (data.title.trim().length > 300) {
+      errors.title = 'Judul maksimal 300 karakter.'
+    }
+    if (!data.category || !data.category.trim()) {
+      errors.category = 'Kategori wajib dipilih.'
+    }
+    if (!data.published_date) {
+      errors.published_date = 'Tanggal terbit wajib diisi.'
+    }
+    if (!data.content || !data.content.trim()) {
+      errors.content = 'Konten lengkap wajib diisi.'
+    }
+    return errors
+  }, [formData])
 
   const [confirm, setConfirm] = useState({
     isOpen: false,
@@ -88,6 +77,8 @@ export default function BeritaAdmin() {
   }, [])
 
   const loadBerita = useCallback(async () => {
+    setLoading(true)
+    setError(null)
     try {
       const params = { page: currentPage, limit: PAGE_SIZE, sort: filterSort }
       if (searchQuery.trim()) params.search = searchQuery.trim()
@@ -103,8 +94,9 @@ export default function BeritaAdmin() {
         setItems(list)
         setMeta(res.data.meta || { current_page: currentPage, limit: PAGE_SIZE, total_data: list.length, total_pages: Math.ceil(list.length / PAGE_SIZE) || 1 })
       }
-    } catch {
-      // Keep existing default items gracefully
+    } catch (err) {
+      setError(err?.message || 'Gagal memuat berita')
+      setItems([])
     } finally {
       setLoading(false)
     }
@@ -130,6 +122,8 @@ export default function BeritaAdmin() {
   }, [currentTab, searchQuery, filterStatus, filterSort])
 
   function openForm(item = null) {
+    setFormErrors({})
+    setTouched({})
     if (item) {
       setFormMode('edit')
       setFormData({
@@ -162,6 +156,13 @@ export default function BeritaAdmin() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    const errors = validateForm()
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors)
+      setTouched(Object.keys(errors).reduce((acc, k) => ({ ...acc, [k]: true }), {}))
+      return
+    }
+    setFormErrors({})
     setFormLoading(true)
     try {
       if (formMode === 'create') {
@@ -174,7 +175,13 @@ export default function BeritaAdmin() {
       setIsFormOpen(false)
       await loadBerita()
     } catch (err) {
-      showToast(err.message || 'Gagal menyimpan berita.', 'error')
+      // Tangkap DUPLICATE_TITLE dari BE → tampilkan di field title
+      if (err?.code === 'DUPLICATE_TITLE' || (err?.data?.errors && err.data.errors.some(x => x.field === 'title' && x.tag === 'duplicate_title'))) {
+        setFormErrors(prev => ({ ...prev, title: 'Judul sudah digunakan, gunakan judul lain.' }))
+        setTouched(prev => ({ ...prev, title: true }))
+      } else {
+        showToast(err.message || 'Gagal menyimpan berita.', 'error')
+      }
     } finally {
       setFormLoading(false)
     }
@@ -207,9 +214,13 @@ export default function BeritaAdmin() {
         title: extraData ? 'Jadikan Draft' : 'Terbitkan Berita',
         message: extraData ? 'Berita ini akan diubah menjadi draft. Lanjutkan?' : 'Berita ini akan diterbitkan. Lanjutkan?',
         action: async () => {
-          setItems(prev => prev.map(i => i.id === id ? { ...i, is_published: !extraData } : i))
-          try { await beritaService.update(id, { is_published: !extraData }) } catch {}
-          showToast(extraData ? 'Berita dijadikan draft.' : 'Berita berhasil diterbitkan!')
+          try {
+            await beritaService.update(id, { is_published: !extraData })
+            setItems(prev => prev.map(i => i.id === id ? { ...i, is_published: !extraData } : i))
+            showToast(extraData ? 'Berita dijadikan draft.' : 'Berita berhasil diterbitkan!')
+          } catch (err) {
+            showToast(err?.message || 'Gagal mengubah status berita.', 'error')
+          }
         },
       },
       bulk_delete: {
@@ -309,23 +320,23 @@ export default function BeritaAdmin() {
         </div>
 
         {/* FILTER BAR */}
-        <div className="flex flex-col md:flex-row gap-3 items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-          <div className="relative w-full md:flex-1">
+        <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div className="relative flex-1 min-w-0">
             <i className="ph-bold ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder={beritaContent.admin.searchPlaceholder}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:bg-white transition-colors"
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:bg-white transition-all"
             />
           </div>
 
-          <div className="flex gap-2 w-full md:w-auto">
+          <div className="flex gap-2 shrink-0">
             <select
               value={filterStatus}
               onChange={e => setFilterStatus(e.target.value)}
-              className="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-600 outline-none"
+              className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-600 outline-none focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 cursor-pointer transition-all hover:bg-slate-100"
             >
               <option value="">{beritaContent.admin.allStatus}</option>
               <option value="published">Public</option>
@@ -333,7 +344,7 @@ export default function BeritaAdmin() {
             </select>
             <button
               onClick={resetFilter}
-              className="bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 px-3.5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-colors"
+              className="bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-800 px-3.5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-colors"
             >
               <i className="ph-bold ph-arrows-counter-clockwise" /> Reset
             </button>
@@ -374,6 +385,14 @@ export default function BeritaAdmin() {
 
         {/* DATA TABLE */}
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+          {loading && <div className="py-16 text-center text-slate-500">Memuat berita...</div>}
+          {!loading && error && (
+            <div className="py-16 text-center text-red-600 font-medium">
+              <i className="ph-bold ph-warning-circle text-2xl mb-2 block mx-auto" /> {error}
+            </div>
+          )}
+          {!loading && !error && (
+          <>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -481,6 +500,8 @@ export default function BeritaAdmin() {
               </div>
             </div>
           )}
+          </>
+          )}
         </div>
       </div>
 
@@ -497,14 +518,35 @@ export default function BeritaAdmin() {
                 <i className="ph-bold ph-x text-lg" />
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
+            <form onSubmit={handleSubmit} noValidate className="p-6 space-y-4 overflow-y-auto">
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1">Judul Berita *</label>
-                <input type="text" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} required className="w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none" />
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={e => {
+                    setFormData({ ...formData, title: e.target.value })
+                    if (touched.title) {
+                      const errs = validateForm({ ...formData, title: e.target.value })
+                      setFormErrors(prev => ({ ...prev, title: errs.title }))
+                    }
+                  }}
+                  onBlur={() => {
+                    setTouched(prev => ({ ...prev, title: true }))
+                    const errs = validateForm()
+                    setFormErrors(prev => ({ ...prev, title: errs.title }))
+                  }}
+                  className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors ${touched.title && formErrors.title ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
+                />
+                {touched.title && formErrors.title && (
+                  <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
+                    <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.title}
+                  </p>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Kategori</label>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Kategori *</label>
                   <select
                     value={formData.category}
                     onChange={e => {
@@ -515,34 +557,114 @@ export default function BeritaAdmin() {
                           if (!categories.includes(clean)) {
                             setCategories(prev => [...prev, clean])
                           }
-                          setFormData({ ...formData, category: clean })
+                          setFormData(prev => ({ ...prev, category: clean }))
+                          if (touched.category) {
+                            const errs = validateForm({ ...formData, category: clean })
+                            setFormErrors(prev => ({ ...prev, category: errs.category }))
+                          }
                         }
                         return
                       }
-                      setFormData({ ...formData, category: e.target.value })
+                      const val = e.target.value
+                      setFormData(prev => ({ ...prev, category: val }))
+                      if (touched.category) {
+                        const errs = validateForm({ ...formData, category: val })
+                        setFormErrors(prev => ({ ...prev, category: errs.category }))
+                      }
                     }}
-                    className="w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none bg-white"
+                    onBlur={() => {
+                      setTouched(prev => ({ ...prev, category: true }))
+                      const errs = validateForm()
+                      setFormErrors(prev => ({ ...prev, category: errs.category }))
+                    }}
+                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none bg-white transition-colors ${touched.category && formErrors.category ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
                   >
+                    <option value="">Pilih Kategori</option>
                     {categories.map(c => <option key={c} value={c}>{c}</option>)}
                     <option value="__new__">+ Buat Kategori Baru...</option>
                   </select>
+                  {touched.category && formErrors.category && (
+                    <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
+                      <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.category}
+                    </p>
+                  )}
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Tanggal Terbit</label>
-                  <input type="date" value={formData.published_date} onChange={e => setFormData({ ...formData, published_date: e.target.value })} className="w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none" />
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Tanggal Terbit *</label>
+                  <input
+                    type="date"
+                    value={formData.published_date}
+                    onChange={e => {
+                      setFormData({ ...formData, published_date: e.target.value })
+                      if (touched.published_date) {
+                        const errs = validateForm({ ...formData, published_date: e.target.value })
+                        setFormErrors(prev => ({ ...prev, published_date: errs.published_date }))
+                      }
+                    }}
+                    onBlur={() => {
+                      setTouched(prev => ({ ...prev, published_date: true }))
+                      const errs = validateForm()
+                      setFormErrors(prev => ({ ...prev, published_date: errs.published_date }))
+                    }}
+                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors ${touched.published_date && formErrors.published_date ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
+                  />
+                  {touched.published_date && formErrors.published_date && (
+                    <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
+                      <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.published_date}
+                    </p>
+                  )}
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1">URL Gambar</label>
-                <input type="text" value={formData.image_url} onChange={e => setFormData({ ...formData, image_url: e.target.value })} className="w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none" />
+                <input type="text" value={formData.image_url} onChange={e => setFormData({ ...formData, image_url: e.target.value })} className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1">Ringkasan (Excerpt)</label>
-                <textarea rows={2} value={formData.excerpt} onChange={e => setFormData({ ...formData, excerpt: e.target.value })} className="w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none" />
+                <textarea rows={2} value={formData.excerpt} onChange={e => setFormData({ ...formData, excerpt: e.target.value })} className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Konten Lengkap *</label>
+                <textarea
+                  rows={6}
+                  value={formData.content}
+                  onChange={e => {
+                    setFormData({ ...formData, content: e.target.value })
+                    if (touched.content) {
+                      const errs = validateForm({ ...formData, content: e.target.value })
+                      setFormErrors(prev => ({ ...prev, content: errs.content }))
+                    }
+                  }}
+                  onBlur={() => {
+                    setTouched(prev => ({ ...prev, content: true }))
+                    const errs = validateForm()
+                    setFormErrors(prev => ({ ...prev, content: errs.content }))
+                  }}
+                  placeholder="Isi berita lengkap di sini..."
+                  className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors ${touched.content && formErrors.content ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
+                />
+                {touched.content && formErrors.content && (
+                  <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
+                    <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.content}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Tags (pisahkan dengan koma)</label>
+                <input type="text" value={formData.tags} onChange={e => setFormData({ ...formData, tags: e.target.value })} placeholder="teknologi, pendidikan, digital" className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
+              </div>
+              <div>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="checkbox" checked={formData.is_published} onChange={e => setFormData({ ...formData, is_published: e.target.checked })} className="accent-brand-600" />
+                  Terbitkan langsung (Published)
+                </label>
               </div>
               <div className="flex justify-end gap-2 pt-4 border-t">
-                <button type="button" onClick={() => setIsFormOpen(false)} className="px-4 py-2 border rounded-xl text-sm font-semibold">Batal</button>
-                <button type="submit" disabled={formLoading} className="px-5 py-2 bg-brand-600 text-white rounded-xl text-sm font-semibold">Simpan</button>
+                <button type="button" onClick={() => setIsFormOpen(false)} disabled={formLoading} className="px-4 py-2 border rounded-xl text-sm font-semibold hover:bg-slate-50 disabled:opacity-50 transition-colors">Batal</button>
+                <button type="submit" disabled={formLoading} className="px-5 py-2 bg-brand-600 text-white rounded-xl text-sm font-semibold hover:bg-brand-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors flex items-center gap-2">
+                  {formLoading && <i className="ph-bold ph-circle-notch animate-spin text-sm" />}
+                  {formLoading ? 'Menyimpan...' : 'Simpan'}
+                </button>
               </div>
             </form>
           </div>

@@ -17,7 +17,7 @@ import (
 func registerRoutes(app *App, redisClient *redis.Client) {
 	api := app.Server.Group("/api/v1")
 
-	auth.RegisterRoutes(api, app.authHandler, app.Cfg.JWT.Secret, redisClient)
+	auth.RegisterRoutes(api, app.authHandler, app.Cfg.JWT.Secret, redisClient, &app.Cfg)
 	sliders.RegisterRoutes(api, app.slidersHandler, app.Cfg.JWT.Secret, redisClient)
 	berita.RegisterRoutes(api, app.beritaHandler, app.Cfg.JWT.Secret, redisClient)
 	kegiatan.RegisterRoutes(api, app.kegiatanHandler, app.Cfg.JWT.Secret, redisClient)

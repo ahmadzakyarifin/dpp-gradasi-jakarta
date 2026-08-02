@@ -58,7 +58,7 @@ func (s *slidersService) Create(req *dto.SliderRequest, createdBy uint) (*dto.Sl
 		IsNew:     req.IsNew,
 		EventDate: req.EventDate,
 		Location:  req.Location,
-		ImageURL:  req.ImageURL,
+		ImagePath: req.ImagePath,
 		LinkURL:   req.LinkURL,
 		SortOrder: req.SortOrder,
 		IsActive:  req.IsActive,
@@ -85,7 +85,7 @@ func (s *slidersService) Update(id uint, req *dto.SliderRequest) (*dto.SliderRes
 	sl.IsNew = req.IsNew
 	sl.EventDate = req.EventDate
 	sl.Location = req.Location
-	sl.ImageURL = req.ImageURL
+	sl.ImagePath = req.ImagePath
 	sl.LinkURL = req.LinkURL
 	sl.SortOrder = req.SortOrder
 	sl.IsActive = req.IsActive
@@ -136,7 +136,7 @@ func toResponse(sl model.Slider) dto.SliderResponse {
 		ID:        sl.ID,
 		Title:     sl.Title,
 		IsNew:     sl.IsNew,
-		ImageURL:  sl.ImageURL,
+		ImagePath: sl.ImagePath,
 		SortOrder: sl.SortOrder,
 		IsActive:  sl.IsActive,
 	}

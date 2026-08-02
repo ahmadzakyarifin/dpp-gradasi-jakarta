@@ -1,0 +1,23 @@
+info:
+  name: Delete Class Bulk
+  type: http
+  seq: 6
+
+http:
+  method: POST
+  url: "{{base_url}}/api/v1/class-template/bulk-delete"
+  body:
+    type: json
+    data: |-
+      {
+        "ids": [2,3]
+      }
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJlbWFpbCI6InNjaG9vbHBheTQxQGdtYWlsLmNvbSIsInJvbGVfaWQiOjEsIm5hbWUiOiJBZG1pbmlzdHJhdG9yIiwicm9sZV9uYW1lIjoic3VwZXJfYWRtaW4iLCJleHAiOjE3ODQ4ODI2ODMsImlhdCI6MTc4NDg4MTc4M30.tAORV11GLr1C0B1TnURNVKYSqgsQbhg5-JU3BFSoRnM
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

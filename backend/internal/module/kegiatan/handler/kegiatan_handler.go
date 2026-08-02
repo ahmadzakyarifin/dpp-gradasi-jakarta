@@ -26,7 +26,10 @@ func NewKegiatanHandler(svc service.KegiatanService, logSvc activitylogservice.A
 // GET /api/v1/kegiatan — publik (published only)
 func (h *KegiatanHandler) List(c *gin.Context) {
 	var q dto.KegiatanQuery
-	c.ShouldBindQuery(&q)
+	if err := c.ShouldBindQuery(&q); err != nil {
+		helper.ErrorResponse(c, http.StatusBadRequest, "VALIDATION_ERROR", "Query tidak valid.", nil)
+		return
+	}
 
 	resp, err := h.svc.GetPublished(q)
 	if err != nil {
@@ -50,7 +53,10 @@ func (h *KegiatanHandler) GetCategories(c *gin.Context) {
 // GET /api/v1/kegiatan/admin — admin (all status)
 func (h *KegiatanHandler) ListAdmin(c *gin.Context) {
 	var q dto.KegiatanQuery
-	c.ShouldBindQuery(&q)
+	if err := c.ShouldBindQuery(&q); err != nil {
+		helper.ErrorResponse(c, http.StatusBadRequest, "VALIDATION_ERROR", "Query tidak valid.", nil)
+		return
+	}
 
 	resp, err := h.svc.GetAll(q)
 	if err != nil {
@@ -99,7 +105,7 @@ func (h *KegiatanHandler) GetByID(c *gin.Context) {
 
 // POST /api/v1/kegiatan — admin
 func (h *KegiatanHandler) Create(c *gin.Context) {
-	var req dto.KegiatanRequest
+	var req dto.KegiatanCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.ValidationErrorResponse(c, []helper.ValidationErrorItem{
 			{Field: "title", Tag: "required", Message: "Title dan content wajib diisi."},
@@ -137,7 +143,7 @@ func (h *KegiatanHandler) Update(c *gin.Context) {
 		helper.ErrorResponse(c, http.StatusBadRequest, "INVALID_ID", "ID tidak valid.", nil)
 		return
 	}
-	var req dto.KegiatanRequest
+	var req dto.KegiatanUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.ValidationErrorResponse(c, []helper.ValidationErrorItem{
 			{Field: "title", Tag: "required", Message: "Title dan content wajib diisi."},
@@ -148,8 +154,11 @@ func (h *KegiatanHandler) Update(c *gin.Context) {
 	if err != nil {
 		svcErr, _ := err.(*helper.ServiceError)
 		code := http.StatusInternalServerError
-		if svcErr.Code == "NOT_FOUND" {
+		switch svcErr.Code {
+		case "NOT_FOUND":
 			code = http.StatusNotFound
+		case "VALIDATION_ERROR", "DUPLICATE_TITLE":
+			code = http.StatusUnprocessableEntity
 		}
 		helper.ErrorResponse(c, code, svcErr.Code, svcErr.Message, nil)
 		return

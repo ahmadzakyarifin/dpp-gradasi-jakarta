@@ -1,0 +1,23 @@
+info:
+  name: Delete Cohort Bulk
+  type: http
+  seq: 7
+
+http:
+  method: POST
+  url: "{{base_url}}/api/v1/cohorts/bulk-delete"
+  body:
+    type: json
+    data: |-
+      {
+         "ids": [1, 2]
+      }
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJlbWFpbCI6InNjaG9vbHBheTQxQGdtYWlsLmNvbSIsInJvbGVfaWQiOjEsIm5hbWUiOiJBZG1pbmlzdHJhdG9yIiwicm9sZV9uYW1lIjoic3VwZXJfYWRtaW4iLCJleHAiOjE3ODQ4OTcxMzEsImlhdCI6MTc4NDg5NjIzMX0.1XwEyXL3jJvXsEaCVpoyPzqvzstCUsLrDcb55EXmZbk
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

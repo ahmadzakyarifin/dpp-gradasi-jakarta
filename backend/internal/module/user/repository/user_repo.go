@@ -50,7 +50,7 @@ func (r *userRepo) FindAllAdmins(q dto.ListUsersQuery) ([]model.User, int64, err
 	var users []model.User
 	var total int64
 
-	base := r.db.Model(&model.User{}).Where("role_id IN (1, 2, 3, 4)")
+	base := r.db.Model(&model.User{}).Where("role_id IN (1, 2, 5, 6)")
 
 	switch q.Tab {
 	case "pending":

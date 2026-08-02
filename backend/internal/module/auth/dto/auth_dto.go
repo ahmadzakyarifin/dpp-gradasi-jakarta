@@ -14,6 +14,10 @@ type LoginRequest struct {
 	Password     string `json:"password" binding:"required"`
 	RememberMe   *bool  `json:"remember_me,omitempty"`
 	CaptchaToken string `json:"captcha_token,omitempty"`
+
+	// Diisi middleware/handler (bukan dari body) — untuk audit log
+	IPAddress string `json:"-"`
+	UserAgent string `json:"-"`
 }
 
 // ForgotPasswordRequest untuk lupa password

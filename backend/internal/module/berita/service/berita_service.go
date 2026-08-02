@@ -16,8 +16,8 @@ type BeritaService interface {
 	GetAll(query dto.BeritaQuery) (*dto.BeritaListResponse, error)
 	GetBySlug(slug string) (*dto.BeritaDetailResponse, error)
 	GetByID(id uint) (*dto.BeritaDetailResponse, error)
-	Create(req *dto.BeritaRequest, authorID uint) (*dto.BeritaDetailResponse, error)
-	Update(id uint, req *dto.BeritaRequest) (*dto.BeritaDetailResponse, error)
+	Create(req *dto.BeritaCreateRequest, authorID uint) (*dto.BeritaDetailResponse, error)
+	Update(id uint, req *dto.BeritaUpdateRequest) (*dto.BeritaDetailResponse, error)
 	Delete(id uint) error
 	Restore(id uint) error
 	BulkDelete(ids []uint) error
@@ -105,8 +105,26 @@ func (s *beritaService) GetByID(id uint) (*dto.BeritaDetailResponse, error) {
 	return &resp, nil
 }
 
-func (s *beritaService) Create(req *dto.BeritaRequest, authorID uint) (*dto.BeritaDetailResponse, error) {
-	slugStr := slug.Make(req.Title)
+func (s *beritaService) Create(req *dto.BeritaCreateRequest, authorID uint) (*dto.BeritaDetailResponse, error) {
+	title := strings.TrimSpace(req.Title)
+	if title == "" {
+		return nil, helper.NewServiceError("VALIDATION_ERROR", "Judul wajib diisi.", nil)
+	}
+	content := strings.TrimSpace(req.Content)
+	if content == "" {
+		return nil, helper.NewServiceError("VALIDATION_ERROR", "Konten lengkap wajib diisi.", nil)
+	}
+
+	// Validasi judul duplikat — error jelas (bukan auto-suffix)
+	dup, err := s.repo.ExistsTitle(title, 0)
+	if err != nil {
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal memvalidasi judul.", err)
+	}
+	if dup {
+		return nil, helper.NewServiceError("DUPLICATE_TITLE", "Judul sudah digunakan, gunakan judul lain.", nil)
+	}
+
+	slugStr := slug.Make(title)
 
 	cat := strings.TrimSpace(req.Category)
 	if cat == "" {
@@ -125,10 +143,10 @@ func (s *beritaService) Create(req *dto.BeritaRequest, authorID uint) (*dto.Beri
 
 	b := &model.Berita{
 		Slug:          slugStr,
-		Title:         req.Title,
+		Title:         title,
 		Category:      cat,
 		PublishedDate: req.PublishedDate,
-		ImageURL:      strPtr(req.ImageURL),
+		ImagePath:     strPtr(req.ImagePath),
 		Excerpt:       strPtr(req.Excerpt),
 		Content:       strPtr(req.Content),
 		IsFeatured:    isFeatured,
@@ -158,24 +176,45 @@ func (s *beritaService) Create(req *dto.BeritaRequest, authorID uint) (*dto.Beri
 	return &resp, nil
 }
 
-func (s *beritaService) Update(id uint, req *dto.BeritaRequest) (*dto.BeritaDetailResponse, error) {
+func (s *beritaService) Update(id uint, req *dto.BeritaUpdateRequest) (*dto.BeritaDetailResponse, error) {
 	b, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, helper.NewServiceError("NOT_FOUND", "Berita tidak ditemukan.", err)
 	}
 
-	cat := strings.TrimSpace(req.Category)
-	if cat == "" {
-		cat = "Berita Organisasi"
+	// Partial update: hanya field yang dikirim yang diubah
+	if req.Title != "" {
+		title := strings.TrimSpace(req.Title)
+		if title == "" {
+			return nil, helper.NewServiceError("VALIDATION_ERROR", "Judul wajib diisi.", nil)
+		}
+		// Cek duplikat judul (kecuali id ini sendiri)
+		dup, err := s.repo.ExistsTitle(title, id)
+		if err != nil {
+			return nil, helper.NewServiceError("SERVER_ERROR", "Gagal memvalidasi judul.", err)
+		}
+		if dup {
+			return nil, helper.NewServiceError("DUPLICATE_TITLE", "Judul sudah digunakan, gunakan judul lain.", nil)
+		}
+		b.Title = title
 	}
 
-	b.Title = req.Title
-	// b.Slug = slug.Make(req.Title) // Slug dipertahankan agar link lama tidak mati (404)
-	b.Category = cat
-	b.PublishedDate = req.PublishedDate
-	b.ImageURL = strPtr(req.ImageURL)
-	b.Excerpt = strPtr(req.Excerpt)
-	b.Content = strPtr(req.Content)
+	cat := strings.TrimSpace(req.Category)
+	if cat != "" {
+		b.Category = cat
+	}
+	if req.PublishedDate != "" {
+		b.PublishedDate = req.PublishedDate
+	}
+	if req.ImagePath != "" {
+		b.ImagePath = strPtr(req.ImagePath)
+	}
+	if req.Excerpt != "" {
+		b.Excerpt = strPtr(req.Excerpt)
+	}
+	if req.Content != "" {
+		b.Content = strPtr(req.Content)
+	}
 	if req.IsFeatured != nil {
 		b.IsFeatured = *req.IsFeatured
 	}
@@ -240,8 +279,8 @@ func toListItem(b model.Berita) dto.BeritaListItem {
 		CreatedAt:     b.CreatedAt.Format("2006-01-02T15:04:05Z"),
 		UpdatedAt:     b.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 	}
-	if b.ImageURL != nil {
-		item.ImageURL = *b.ImageURL
+	if b.ImagePath != nil {
+		item.ImagePath = *b.ImagePath
 	}
 	if b.Excerpt != nil {
 		item.Excerpt = *b.Excerpt
@@ -263,8 +302,8 @@ func toDetail(b model.Berita) dto.BeritaDetailResponse {
 		CreatedAt:     b.CreatedAt.Format("2006-01-02T15:04:05Z"),
 		Tags:          make([]string, 0),
 	}
-	if b.ImageURL != nil {
-		resp.ImageURL = *b.ImageURL
+	if b.ImagePath != nil {
+		resp.ImagePath = *b.ImagePath
 	}
 	if b.Excerpt != nil {
 		resp.Excerpt = *b.Excerpt

@@ -4,7 +4,7 @@ CREATE TABLE settings (
     id INT AUTO_INCREMENT PRIMARY KEY,
     site_name VARCHAR(100) NOT NULL,
     tagline VARCHAR(200),
-    logo_url VARCHAR(200),
+    logo_path VARCHAR(500),
     contact_email VARCHAR(100) NOT NULL,
     contact_phone VARCHAR(20) NOT NULL,
     address VARCHAR(255),
@@ -12,7 +12,7 @@ CREATE TABLE settings (
     facebook_url VARCHAR(200),
     instagram_url VARCHAR(200),
     youtube_url VARCHAR(200),
-    video_profile_url VARCHAR(500),
+    video_profile_path VARCHAR(500),
     history TEXT,
     about_tutorial TEXT,
     about_formation_date VARCHAR(50),
@@ -23,13 +23,13 @@ CREATE TABLE settings (
     greeting_subtitle VARCHAR(255),
     greeting_date VARCHAR(100),
     greeting_content TEXT,
-    greeting_image_url VARCHAR(500),
+    greeting_image_path VARCHAR(500),
+    updated_by INT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-INSERT INTO settings (id, site_name, tagline, logo_url, contact_email, contact_phone, about_formation_date, about_no_sk, about_vision, about_mission, greeting_title, greeting_subtitle, greeting_date, greeting_content, greeting_image_url) 
-VALUES (1, 'DPP GRADASI', 'Generasi Digital Indonesia', '/uploads/logo.png', 'dpp@gradasi.org', '+6285279880008', '4 Februari 2019', 'AHU – 0000151.AH.01.07.2019', 'Mewujudkan masyarakat Indonesia yang cerdas dan berdaulat di era digital.', '["Membangun ekosistem literasi digital", "Meningkatkan kecakapan digital masyarakat"]', 'Tahun Baru 2026', 'Resolusi & Harapan', '11 February 2026', 'Memasuki tahun 2026, GRADASI menetapkan pilar utama perjuangan...', 'https://gradasi.org/uploads/img/event-terkini/1767154211.jpg');
+    FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+);
 -- +goose StatementEnd
 
 -- +goose Down

@@ -223,7 +223,7 @@ export default function Kepengurusan() {
           {activeTab !== 'ketua' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {paginatedList.map(item => (
-                <div key={item.id} className="bg-white rounded-2xl p-6 border border-slate-100 flex flex-col items-center text-center hover:border-brand-200 hover:shadow-[0_8px_30px_rgba(37,99,235,0.08)] transition-all duration-300 group">
+                <div key={item.id} className="card-lift bg-white rounded-2xl p-6 border border-slate-100 flex flex-col items-center text-center hover:border-brand-200 hover:shadow-[0_8px_30px_rgba(37,99,235,0.08)] transition-all duration-300 group">
                   <div className="w-28 h-28 rounded-full overflow-hidden mb-5 border-4 border-slate-50 group-hover:border-brand-100 transition duration-300 shadow-sm">
                     <img src={item.image_url.startsWith('http') ? item.image_url : `http://127.0.0.1:8080${item.image_url}`} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
                   </div>

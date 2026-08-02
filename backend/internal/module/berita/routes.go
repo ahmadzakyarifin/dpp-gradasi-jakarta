@@ -16,10 +16,10 @@ func RegisterRoutes(api *gin.RouterGroup, h *handler.BeritaHandler, jwtSecret st
 		berita.GET("/:slug", h.GetBySlug)
 	}
 
-	// Admin — super_admin, admin, editor
+	// Admin — super_admin, admin, admin_berita
 	admin := berita.Group("")
 	admin.Use(middleware.AuthMiddleware(jwtSecret))
-	admin.Use(middleware.RoleMiddleware("super_admin", "admin"))
+	admin.Use(middleware.RoleMiddleware("super_admin", "admin", "admin_berita"))
 	admin.Use(middleware.RateLimitPerUser("berita-crud", 30))
 	{
 		admin.GET("/admin", h.ListAdmin)

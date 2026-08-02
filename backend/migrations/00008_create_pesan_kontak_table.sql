@@ -10,9 +10,11 @@ CREATE TABLE pesan_kontak (
     response_note TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL,
 
     INDEX idx_is_read (is_read),
-    INDEX idx_created_at (created_at DESC)
+    INDEX idx_created_at (created_at DESC),
+    INDEX idx_deleted_at (deleted_at)
 );
 -- +goose StatementEnd
 

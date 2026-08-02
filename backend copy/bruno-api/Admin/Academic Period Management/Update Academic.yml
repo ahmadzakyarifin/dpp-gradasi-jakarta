@@ -1,0 +1,30 @@
+info:
+  name: Update Academic
+  type: http
+  seq: 4
+
+http:
+  method: PUT
+  url: "{{base_url}}/api/v1/academic-years/:id"
+  params:
+    - name: id
+      value: "1"
+      type: path
+  body:
+    type: json
+    data: |2-
+       {
+              "name": "2026/2027  ( ubah )",
+              "start_date": "2026-07-01T00:00:00Z",
+              "end_date": "2027-06-30T23:59:59Z",
+              "status": "active"
+            }
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJlbWFpbCI6InNjaG9vbHBheTQxQGdtYWlsLmNvbSIsInJvbGVfaWQiOjEsIm5hbWUiOiJBZG1pbmlzdHJhdG9yIiwicm9sZV9uYW1lIjoic3VwZXJfYWRtaW4iLCJleHAiOjE3ODQ5NTE4NDYsImlhdCI6MTc4NDk1MDk0Nn0.sZk-6BR5k5Id1PM5J-ii4QK5H3vlR9Ib2WL-SeKAEiQ
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

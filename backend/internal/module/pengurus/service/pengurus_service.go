@@ -152,7 +152,7 @@ func (s *pengurusService) Create(req *dto.PengurusRequest) (*dto.PengurusRespons
 		Level:        req.Level,
 		Provinsi:     strPtr(req.Provinsi),
 		Kabupaten:    strPtr(req.Kabupaten),
-		ImageURL:     imageURL,
+		ImagePath:    imageURL,
 		FacebookURL:  strPtr(req.FacebookURL),
 		InstagramURL: strPtr(req.InstagramURL),
 		LinkedinURL:  strPtr(req.LinkedinURL),
@@ -184,7 +184,7 @@ func (s *pengurusService) Update(id uint, req *dto.PengurusRequest) (*dto.Pengur
 	if req.Image != nil {
 		newImg, err := s.handleUpload(req.Image)
 		if err == nil && newImg != "" {
-			p.ImageURL = newImg
+			p.ImagePath = newImg
 		}
 	}
 
@@ -280,7 +280,7 @@ func toResponse(p model.Pengurus) dto.PengurusResponse {
 		Name:      p.Name,
 		Role:      p.Role,
 		Level:     p.Level,
-		ImageURL:  p.ImageURL,
+		ImagePath: p.ImagePath,
 		Periode:   p.Periode,
 		SortOrder: p.SortOrder,
 		IsActive:  p.IsActive,

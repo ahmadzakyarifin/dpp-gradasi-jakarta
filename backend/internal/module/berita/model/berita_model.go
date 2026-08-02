@@ -14,7 +14,7 @@ type Berita struct {
 	PublishedDate string         `gorm:"size:20;not null" json:"published_date"`
 	AuthorID      *uint          `json:"author_id,omitempty"`
 	AuthorName    string         `gorm:"->;-:migration" json:"author_name,omitempty"`
-	ImageURL      *string        `gorm:"size:500" json:"image_url,omitempty"`
+	ImagePath     *string        `gorm:"size:500" json:"image_path,omitempty"`
 	Excerpt       *string        `gorm:"type:text" json:"excerpt,omitempty"`
 	Content       *string        `gorm:"type:longtext" json:"content,omitempty"`
 	IsFeatured    bool           `gorm:"default:false" json:"is_featured"`

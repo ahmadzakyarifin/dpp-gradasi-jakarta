@@ -147,7 +147,7 @@ func (s *settingsService) UpdateSettings(values map[string]interface{}, updatedB
 	return toResponse(*updatedSettings), nil
 }
 
-// UploadLogo menyimpan file logo ke disk lokal dan memperbarui logo_url di DB.
+// UploadLogo menyimpan file logo ke disk lokal dan memperbarui logo_path di DB.
 func (s *settingsService) UploadLogo(file *multipart.FileHeader, updatedBy *uint) (*dto.SettingsResponse, error) {
 	if file == nil {
 		return nil, errors.New("File logo wajib diunggah")
@@ -211,8 +211,8 @@ func (s *settingsService) UploadLogo(file *multipart.FileHeader, updatedBy *uint
 		return nil, err
 	}
 
-	logoURL := "/uploads/settings/" + filename
-	if err := s.repo.UpdateLogo(logoURL, updatedBy); err != nil {
+	logoPath := "/uploads/settings/" + filename
+	if err := s.repo.UpdateLogo(logoPath, updatedBy); err != nil {
 		return nil, err
 	}
 
@@ -235,7 +235,7 @@ func toResponse(settings model.Settings) *dto.SettingsResponse {
 		ID:                 settings.ID,
 		SiteName:           settings.SiteName,
 		Tagline:            settings.Tagline,
-		LogoURL:            settings.LogoURL,
+		LogoPath:           settings.LogoPath,
 		ContactEmail:       settings.ContactEmail,
 		ContactPhone:       settings.ContactPhone,
 		Address:            settings.Address,
@@ -243,7 +243,7 @@ func toResponse(settings model.Settings) *dto.SettingsResponse {
 		FacebookURL:        settings.FacebookURL,
 		InstagramURL:       settings.InstagramURL,
 		YoutubeURL:         settings.YoutubeURL,
-		VideoProfileURL:    settings.VideoProfileURL,
+		VideoProfilePath:   settings.VideoProfilePath,
 		History:            settings.History,
 		AboutTutorial:      settings.AboutTutorial,
 		AboutFormationDate: settings.AboutFormationDate,
@@ -254,7 +254,7 @@ func toResponse(settings model.Settings) *dto.SettingsResponse {
 		GreetingSubtitle:   settings.GreetingSubtitle,
 		GreetingDate:       settings.GreetingDate,
 		GreetingContent:    settings.GreetingContent,
-		GreetingImageURL:   settings.GreetingImageURL,
+		GreetingImagePath:  settings.GreetingImagePath,
 		CreatedAt:          settings.CreatedAt,
 		UpdatedAt:          settings.UpdatedAt,
 		UpdatedBy:          settings.UpdatedBy,

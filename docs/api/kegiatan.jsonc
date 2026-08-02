@@ -26,7 +26,8 @@
         "limit": "6",
         "search": "bantuan",
         "category": "Kegiatan",
-        "sort": "newest"           // newest | oldest | most_viewed
+        "sort": "newest",           // newest | oldest | most_viewed
+        "status": "published"      // published | draft | trashed (admin)
       }
     },
     "notes": [
@@ -50,7 +51,7 @@
                 "event_date": "2025-12-31",
                 "location": "Aceh, Indonesia",
                 "organizer": "DPP GRADASI",
-                "image_url": "/uploads/event/1767154719.jpg",
+                "image_path": "/uploads/event/1767154719.jpg",
                 "excerpt": "Dewan Pimpinan Pusat (DPP) GRADASI menyalurkan bantuan...",
                 "views": 80,
                 "is_published": true,
@@ -143,7 +144,7 @@
             "event_date": "2025-12-31",
             "location": "Aceh, Indonesia",
             "organizer": "DPP GRADASI",
-            "image_url": "/uploads/event/1767154719.jpg",
+            "image_path": "/uploads/event/1767154719.jpg",
             "content": "<p>Isi detail kegiatan...</p>",
             "views": 81,
             "is_published": true,
@@ -151,7 +152,7 @@
             "gallery": [
               {
                 "id": 1,
-                "image_url": "/uploads/event/gallery1.jpg",
+                "image_path": "/uploads/event/gallery1.jpg",
                 "caption": "Serah terima",
                 "sort_order": 0
               }
@@ -225,7 +226,7 @@
                 "event_date": "2025-12-31",
                 "location": "Aceh, Indonesia",
                 "organizer": "DPP GRADASI",
-                "image_url": "/uploads/event/1767154719.jpg",
+                "image_path": "/uploads/event/1767154719.jpg",
                 "excerpt": "DPP GRADASI menyalurkan bantuan...",
                 "is_published": true,
                 "views": 80,
@@ -284,7 +285,7 @@
             "event_date": "2025-12-31",
             "location": "Aceh, Indonesia",
             "organizer": "DPP GRADASI",
-            "image_url": "/uploads/event/1767154719.jpg",
+            "image_path": "/uploads/event/1767154719.jpg",
             "content": "<p>Isi detail kegiatan...</p>",
             "views": 81,
             "is_published": true,
@@ -292,7 +293,7 @@
             "gallery": [
               {
                 "id": 1,
-                "image_url": "/uploads/event/gallery1.jpg",
+                "image_path": "/uploads/event/gallery1.jpg",
                 "caption": "Serah terima",
                 "sort_order": 0
               }
@@ -343,12 +344,12 @@
       "location": "Aceh, Indonesia",
       "organizer": "DPP GRADASI",
       "author_id": 1,
-      "image_url": "https://images.unsplash.com/photo-xxx",
+      "image_path": "https://images.unsplash.com/photo-xxx",
       "excerpt": "DPP GRADASI menyalurkan...",
       "content": "<p>HTML content...</p>",
       "is_published": true,
       "tags": "Kemanusiaan,Donasi,Aceh",
-      "gallery": "[{\"image_url\":\"https://images.unsplash.com/photo-g1\",\"caption\":\"Serah terima\",\"sort_order\":0},{\"image_url\":\"https://images.unsplash.com/photo-g2\",\"caption\":\"Foto bersama\",\"sort_order\":1}]"
+      "gallery": "[{\"image_path\":\"https://images.unsplash.com/photo-g1\",\"caption\":\"Serah terima\",\"sort_order\":0},{\"image_path\":\"https://images.unsplash.com/photo-g2\",\"caption\":\"Foto bersama\",\"sort_order\":1}]"
     },
     "validation": {
       "title": [
@@ -383,14 +384,14 @@
             "event_date": "2025-12-31",
             "location": "Aceh, Indonesia",
             "organizer": "DPP GRADASI",
-            "image_url": "https://images.unsplash.com/photo-xxx",
+            "image_path": "https://images.unsplash.com/photo-xxx",
             "content": "<p>HTML content...</p>",
             "is_published": true,
             "tags": ["Kemanusiaan", "Donasi", "Aceh"],
             "gallery": [
               {
                 "id": 1,
-                "image_url": "https://images.unsplash.com/photo-g1",
+                "image_path": "https://images.unsplash.com/photo-g1",
                 "caption": "Serah terima",
                 "sort_order": 0
               }
@@ -461,12 +462,12 @@
       "location": "Aceh, Indonesia",
       "organizer": "DPP GRADASI",
       "author_id": 1,
-      "image_url": "https://images.unsplash.com/photo-yyy",
+      "image_path": "https://images.unsplash.com/photo-yyy",
       "excerpt": "Excerpt baru...",
       "content": "<p>Konten baru...</p>",
       "is_published": true,
       "tags": "Kemanusiaan,Donasi,Aceh,Banjir",
-      "gallery": "[{\"image_url\":\"https://images.unsplash.com/photo-g1-updated\",\"caption\":\"Serah terima update\",\"sort_order\":0}]"
+      "gallery": "[{\"image_path\":\"https://images.unsplash.com/photo-g1-updated\",\"caption\":\"Serah terima update\",\"sort_order\":0}]"
     },
     "validation": {
       "title": [
@@ -493,14 +494,14 @@
             "event_date": "2025-12-31",
             "location": "Aceh, Indonesia",
             "organizer": "DPP GRADASI",
-            "image_url": "https://images.unsplash.com/photo-yyy",
+            "image_path": "https://images.unsplash.com/photo-yyy",
             "content": "<p>Konten baru...</p>",
             "is_published": true,
             "tags": ["Kemanusiaan", "Donasi", "Aceh", "Banjir"],
             "gallery": [
               {
                 "id": 1,
-                "image_url": "https://images.unsplash.com/photo-g1-updated",
+                "image_path": "https://images.unsplash.com/photo-g1-updated",
                 "caption": "Serah terima update",
                 "sort_order": 0
               }

@@ -10,66 +10,15 @@ export default function BeritaList() {
   const page = Number(searchParams.get('page') || 1)
   const searchQuery = searchParams.get('q') || ''
   const filterCategory = searchParams.get('category') || ''
-  const [items, setItems] = useState([
-    {
-      id: 1,
-      title: 'Rapat Kerja Daerah Jatim',
-      slug: 'rapat-kerja-daerah-jatim',
-      category: 'Berita Daerah',
-      published_date: '2026-02-11',
-      image_url: 'https://gradasi.org/uploads/img/berita/17708152730.jpg',
-      excerpt: 'SURABAYA, Generasi Digital Indonesia (GRADASI) Jawa Timur bersiap menggelar Rapat Kerja Daerah untuk menyelaraskan program kerja digitalisasi UMKM.'
-    },
-    {
-      id: 2,
-      title: 'Peningkatan Kompetensi SDM',
-      slug: 'peningkatan-kompetensi-sdm-pendidikan',
-      category: 'Edukasi',
-      published_date: '2025-11-02',
-      image_url: 'https://gradasi.org/uploads/img/berita/17620765070.jpg',
-      excerpt: 'Inisiatif GRADASI Mendorong Peningkatan Kompetensi SDM Pendidikan dalam Memanfaatkan Kecerdasan Buatan (AI) secara bijak.'
-    },
-    {
-      id: 3,
-      title: 'Rumusan Kunci Kebijakan',
-      slug: 'rumusan-kunci-kebijakan-literasi-digital',
-      category: 'Berita Utama',
-      published_date: '2025-10-31',
-      image_url: 'https://gradasi.org/uploads/img/berita/17618789900.jpg',
-      excerpt: '#Ketua Dewan Pakar GRADASI, Damar Juniarto, Paparkan Lima Rumusan Kunci Kebijakan untuk Mempercepat Transformasi Digital.'
-    },
-    {
-      id: 4,
-      title: 'Rapat Strategis Pengurus Pusat',
-      slug: 'rapat-strategis-pengurus-pusat',
-      category: 'Nasional',
-      published_date: '2025-10-20',
-      image_url: 'https://gradasi.org/uploads/img/berita/17708152730.jpg',
-      excerpt: 'Pusat pelaporan kegiatan dalam rangka mempersiapkan agenda strategis organisasi untuk tahun 2026.'
-    },
-    {
-      id: 5,
-      title: 'Audiensi Lanjutan Kementerian',
-      slug: 'audiensi-lanjutan-kementerian',
-      category: 'Kemitraan',
-      published_date: '2025-09-15',
-      image_url: 'https://gradasi.org/uploads/img/berita/17620765070.jpg',
-      excerpt: 'Laporan singkat dari hasil pertemuan pimpinan pusat bersama kementerian untuk program literasi tahap dua.'
-    },
-    {
-      id: 6,
-      title: 'MOU Ekosistem Digital Kota',
-      slug: 'mou-ekosistem-digital-kota',
-      category: 'Kerjasama',
-      published_date: '2025-08-05',
-      image_url: 'https://gradasi.org/uploads/img/berita/17618789900.jpg',
-      excerpt: 'Meningkatkan sinergi antara DPD setempat dengan pemerintah kota dalam menyepakati ekosistem digital bersama.'
-    }
-  ])
-  const [meta, setMeta] = useState({ current_page: 1, total_pages: 3, total_data: 18 })
+  const [items, setItems] = useState([])
+  const [meta, setMeta] = useState({ current_page: 1, total_pages: 1, total_data: 0 })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const currentPage = page
 
   useEffect(() => {
+    setLoading(true)
+    setError(null)
     const params = { page: currentPage, limit: 6, sort: 'newest' }
     if (searchQuery.trim()) params.search = searchQuery.trim()
     if (filterCategory) params.category = filterCategory
@@ -80,7 +29,11 @@ export default function BeritaList() {
           setMeta(res.data.meta || { current_page: currentPage, total_pages: 1, total_data: res.data.berita.length })
         }
       })
-      .catch(() => {})
+      .catch(err => {
+        setError(err?.message || 'Gagal memuat berita')
+        setItems([])
+      })
+      .finally(() => setLoading(false))
   }, [currentPage, searchQuery, filterCategory])
 
   function goToPage(nextPage) {
@@ -117,9 +70,19 @@ export default function BeritaList() {
 
       <section className="py-12 md:py-16 bg-slate-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          {loading && <div className="py-20 text-center text-slate-500">Memuat berita...</div>}
+          {!loading && error && (
+            <div className="py-20 text-center text-red-600 font-medium">
+              <i className="ph-bold ph-warning-circle text-2xl mb-2 block mx-auto" /> {error}
+            </div>
+          )}
+          {!loading && !error && items.length === 0 && (
+            <div className="py-20 text-center text-slate-500">Belum ada berita.</div>
+          )}
+          {!loading && !error && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {items.map((item) => (
-              <article key={item.id} className="group cursor-pointer bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-[0_8px_30px_rgba(37,99,235,0.08)] transition-all duration-300 border border-slate-100 flex flex-col">
+              <article key={item.id} className="group cursor-pointer card-lift bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-[0_8px_30px_rgba(37,99,235,0.08)] transition-all duration-300 border border-slate-100 flex flex-col">
                 <div className="h-44 relative overflow-hidden bg-slate-100">
                   <img 
                     src={item.image_url ? (item.image_url.startsWith('http') ? item.image_url : `http://127.0.0.1:8080${item.image_url}`) : 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=600'} 
@@ -150,6 +113,7 @@ export default function BeritaList() {
               </article>
             ))}
           </div>
+          )}
 
           {/* PAGINATION — hilang total saat data kosong */}
           {items.length > 0 && (

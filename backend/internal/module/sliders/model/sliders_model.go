@@ -14,7 +14,7 @@ type Slider struct {
 	IsNew     bool           `gorm:"default:false" json:"is_new"`
 	EventDate *string        `gorm:"size:100" json:"event_date,omitempty"`
 	Location  *string        `gorm:"size:200" json:"location,omitempty"`
-	ImageURL  string         `gorm:"size:500;not null" json:"image_url"`
+	ImagePath string         `gorm:"size:500;not null" json:"image_path"`
 	LinkURL   *string        `gorm:"size:500" json:"link_url,omitempty"`
 	SortOrder int            `gorm:"default:0" json:"sort_order"`
 	IsActive  bool           `gorm:"default:true" json:"is_active"`

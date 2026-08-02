@@ -41,7 +41,7 @@
                 "is_new": true,
                 "event_date": "10 - 12 Agustus 2026",
                 "location": "Jakarta Convention Center",
-                "image_url": "/uploads/sliders/1749385864.jpg",
+                "image_path": "/uploads/sliders/1749385864.jpg",
                 "link_url": "/kegiatan/munas-ke-ii",
                 "sort_order": 0,
                 "is_active": true
@@ -180,7 +180,7 @@
             "is_new": true,
             "event_date": "10 - 12 Agustus 2026",
             "location": "Jakarta Convention Center",
-            "image_url": "/uploads/sliders/1749385864.jpg",
+            "image_path": "/uploads/sliders/1749385864.jpg",
             "link_url": "/kegiatan/munas-ke-ii",
             "sort_order": 0,
             "is_active": true
@@ -229,7 +229,7 @@
       "is_new": true,
       "event_date": "2026",
       "location": "Jakarta",
-      "image_url": "https://images.unsplash.com/photo-xxx",
+      "image_path": "https://images.unsplash.com/photo-xxx",
       "link_url": "https://dppgradasi.org",
       "sort_order": 0,
       "is_active": true
@@ -238,7 +238,7 @@
       "title": [
         { "tag": "required", "message": "Title wajib diisi." }
       ],
-      "image_url": [
+      "image_path": [
         { "tag": "required", "message": "Image URL wajib diisi." }
       ]
     },
@@ -261,7 +261,7 @@
             "is_new": true,
             "event_date": "2026",
             "location": "Jakarta",
-            "image_url": "https://images.unsplash.com/photo-xxx",
+            "image_path": "https://images.unsplash.com/photo-xxx",
             "link_url": "https://dppgradasi.org",
             "sort_order": 0,
             "is_active": true
@@ -338,7 +338,7 @@
       "is_new": false,
       "event_date": "2026",
       "location": "Jakarta",
-      "image_url": "https://images.unsplash.com/photo-xxx",
+      "image_path": "https://images.unsplash.com/photo-xxx",
       "link_url": "https://dppgradasi.org",
       "sort_order": 0,
       "is_active": true
@@ -347,7 +347,7 @@
       "title": [
         { "tag": "required", "message": "Title wajib diisi." }
       ],
-      "image_url": [
+      "image_path": [
         { "tag": "required", "message": "Image URL wajib diisi." }
       ]
     },
@@ -363,7 +363,7 @@
             "title": "Selamat Datang di DPP GRADASI",
             "subtitle": "Versi terbaru",
             "is_new": false,
-            "image_url": "https://images.unsplash.com/photo-xxx",
+            "image_path": "https://images.unsplash.com/photo-xxx",
             "sort_order": 0,
             "is_active": true
           }

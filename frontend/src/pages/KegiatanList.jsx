@@ -159,7 +159,7 @@ export default function KegiatanList() {
                 {paginatedItems.map(item => (
                   <div 
                     key={item.id} 
-                    className="group cursor-pointer bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-[0_8px_30px_rgba(37,99,235,0.08)] transition-all duration-300 border border-slate-100 flex flex-col h-full"
+                    className="group cursor-pointer card-lift bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-[0_8px_30px_rgba(37,99,235,0.08)] transition-all duration-300 border border-slate-100 flex flex-col h-full"
                   >
                     <div className="h-44 relative overflow-hidden bg-slate-100">
                       <img 

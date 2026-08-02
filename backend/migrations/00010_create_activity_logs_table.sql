@@ -3,7 +3,7 @@
 CREATE TABLE activity_logs (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
-    actor_id INT UNSIGNED NULL,
+    actor_id INT NULL,
     actor_name VARCHAR(150) NULL,
     actor_role VARCHAR(100) NULL,
 

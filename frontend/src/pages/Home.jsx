@@ -7,9 +7,14 @@ import { slidersService } from '../services/slidersService'
 import { kegiatanService } from '../services/kegiatanService'
 import { beritaService } from '../services/beritaService'
 import { kontakService } from '../services/kontakService'
+import useReveal from '../hooks/useReveal'
 
 export default function Home() {
   const { settings } = useSettings()
+  const revealVisimisi = useReveal()
+  const revealKegiatan = useReveal()
+  const revealBerita = useReveal()
+  const revealKontak = useReveal()
 
   const [sliders, setSliders] = useState([
     {
@@ -224,6 +229,10 @@ export default function Home() {
           />
           <div className="absolute inset-0 bg-gradient-to-r from-brand-950 via-brand-950/90 to-brand-900/60" />
           <div className="absolute inset-0 bg-texture-dots opacity-20 mix-blend-overlay" />
+          {/* Floating glow orbs — hidup */}
+          <div className="absolute top-[15%] left-[10%] w-72 h-72 bg-brand-500/30 blur-[120px] rounded-full pointer-events-none orb-float" />
+          <div className="absolute bottom-[10%] right-[8%] w-80 h-80 bg-amber-500/15 blur-[100px] rounded-full pointer-events-none orb-float-slow" />
+          <div className="absolute top-[45%] right-[30%] w-40 h-40 bg-purple-500/25 blur-[90px] rounded-full pointer-events-none orb-float" />
         </div>
 
         {/* Hero Content Grid */}
@@ -511,7 +520,7 @@ export default function Home() {
 
       {/* 4. VISI & MISI BENTO GRID */}
       <section className="py-24 bg-slate-50 border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div ref={revealVisimisi} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 reveal">
           <div className="text-center mb-16">
             <span className="inline-block px-4 py-1.5 rounded-full bg-brand-100 border border-brand-200 text-xs font-bold text-brand-700 tracking-widest uppercase mb-4 shadow-sm">
               Tujuan & Arah Organisasi
@@ -564,7 +573,7 @@ export default function Home() {
 
       {/* 5. BERBAGAI EVENT MENARIK */}
       <section id="kegiatan" className="py-20 bg-slate-50 border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div ref={revealKegiatan} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 reveal">
           <div className="text-center mb-12">
             <span className="text-xs font-bold text-brand-600 tracking-widest uppercase mb-2 block">Aktivitas Terbaru</span>
             <h2 className="font-heading text-3xl font-bold text-slate-900">Berbagai Event Menarik</h2>
@@ -678,7 +687,7 @@ export default function Home() {
 
       {/* 7. BERITA TERBARU */}
       <section id="informasi" className="py-20 bg-slate-50 border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div ref={revealBerita} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 reveal">
           <div className="text-center mb-12">
             <span className="text-xs font-bold text-brand-600 tracking-widest uppercase mb-2 block">Pusat Informasi</span>
             <h2 className="font-heading text-3xl font-bold text-slate-900">Berita Terbaru</h2>
@@ -745,7 +754,7 @@ export default function Home() {
 
       {/* 8. KONTAK (MAP & FORM) */}
       <section id="kontak" className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div ref={revealKontak} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 reveal">
           <div className="bg-slate-50 p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm">
             <div className="grid lg:grid-cols-2 gap-10">
               {/* Google Maps Embed */}

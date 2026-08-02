@@ -1,0 +1,27 @@
+info:
+  name: Update Status
+  type: http
+  seq: 4
+
+http:
+  method: PATCH
+  url: "{{base_url}}/api/v1/class-template/:id/status"
+  params:
+    - name: id
+      value: "1"
+      type: path
+  body:
+    type: json
+    data: |-
+      {
+        "is_active": false
+      }
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJlbWFpbCI6InNjaG9vbHBheTQxQGdtYWlsLmNvbSIsInJvbGVfaWQiOjEsIm5hbWUiOiJBZG1pbmlzdHJhdG9yIiwicm9sZV9uYW1lIjoic3VwZXJfYWRtaW4iLCJleHAiOjE3ODQ4Nzk4MjksImlhdCI6MTc4NDg3ODkyOX0.tdqvBKfoLG9Ihn0w-1uLBxQevodUDF_DQMbAtlNH6wY
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

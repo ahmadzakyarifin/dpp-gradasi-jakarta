@@ -64,13 +64,13 @@ func main() {
 	// Helper for string pointers
 	strPtr := func(s string) *string { return &s }
 
-	// 3. Insert Roles
+	// 3. Insert Roles (nama snake_case sesuai normalisasi 00016 & kontrak middleware)
 	log.Println("[3/10] Menyisipkan data Roles...")
 	roles := []roleModel.Role{
-		{Name: "Super Admin", Description: "Akses penuh ke semua modul sistem"},
-		{Name: "Admin", Description: "Akses pengelolaan konten & data"},
-		{Name: "Admin Berita", Description: "Khusus pengelolaan berita & informasi"},
-		{Name: "Admin Kegiatan", Description: "Khusus pengelolaan agenda & kegiatan"},
+		{Name: "super_admin", DisplayName: "Super Administrator", Description: "Akses penuh ke semua modul sistem"},
+		{Name: "admin", DisplayName: "Admin", Description: "Akses pengelolaan konten & data"},
+		{Name: "admin_berita", DisplayName: "Admin Berita", Description: "Khusus pengelolaan berita & informasi"},
+		{Name: "admin_kegiatan", DisplayName: "Admin Kegiatan", Description: "Khusus pengelolaan agenda & kegiatan"},
 	}
 	db.Create(&roles)
 
@@ -109,7 +109,7 @@ func main() {
 	setting := settingsModel.Settings{
 		SiteName:           "DPP GRADASI",
 		Tagline:            "Generasi Digital Indonesia",
-		LogoURL:            "https://gradasi.org/uploads/img/logo/1737187847.png",
+		LogoPath:           "https://gradasi.org/uploads/img/logo/1737187847.png",
 		ContactEmail:       "dpp@gradasi.org",
 		ContactPhone:       "+6285279880008",
 		Address:            "Office Park OL3-IZA The Bellagio Mall, Mega Kuningan, Jakarta Selatan",
@@ -117,7 +117,7 @@ func main() {
 		FacebookURL:        "https://www.facebook.com/gradasiofficial.id",
 		InstagramURL:       "https://www.instagram.com/dppgradasi",
 		YoutubeURL:         "https://www.youtube.com/channel/UCwdjB4LkqcF4Kw5-PoyOb5A",
-		VideoProfileURL:    "https://www.youtube.com/embed/dQw4w9WgXcQ",
+		VideoProfilePath:   "https://www.youtube.com/embed/dQw4w9WgXcQ",
 		History:            "Perkumpulan Generasi Digital Indonesia (GRADASI) didirikan pada 4 Februari 2019 sebagai organisasi independen yang berfokus pada pengembangan literasi digital, pemberdayaan UMKM, dan transformasi teknologi di Indonesia.",
 		AboutTutorial:      "Pengesahan Badan Hukum Kemenkumham RI.",
 		AboutFormationDate: "4 Februari 2019",
@@ -128,7 +128,7 @@ func main() {
 		GreetingSubtitle:   "Resolusi & Harapan",
 		GreetingDate:       "11 Februari 2026",
 		GreetingContent:    "Memasuki tahun 2026, GRADASI menetapkan pilar utama perjuangan: memastikan setiap masyarakat memiliki kecakapan digital (digital skills), serta mengembangkan program literasi yang berdampak nyata bagi pertumbuhan ekonomi lokal.",
-		GreetingImageURL:   "https://gradasi.org/uploads/img/event-terkini/1767154211.jpg",
+		GreetingImagePath:  "https://gradasi.org/uploads/img/event-terkini/1767154211.jpg",
 	}
 	db.Create(&setting)
 
@@ -139,7 +139,7 @@ func main() {
 			Title:     "Musyawarah Nasional Ke-II GRADASI",
 			Subtitle:  strPtr("Kolaborasi Membangun Negeri Menuju Indonesia Emas 2045"),
 			Tag:       strPtr("HEADLINE EVENT"),
-			ImageURL:  "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=1920",
+			ImagePath: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=1920",
 			SortOrder: 1,
 			IsActive:  true,
 			IsNew:     true,
@@ -151,7 +151,7 @@ func main() {
 			Title:     "Program 1 Juta Talenta Digital",
 			Subtitle:  strPtr("Menyiapkan SDM Unggul Siap Kerja dan Berdaya Saing Global"),
 			Tag:       strPtr("PROGRAM UNGGULAN"),
-			ImageURL:  "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&q=80&w=1920",
+			ImagePath: "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&q=80&w=1920",
 			SortOrder: 2,
 			IsActive:  true,
 			IsNew:     false,
@@ -163,7 +163,7 @@ func main() {
 			Title:     "Pelatihan Instruktur IT & Literasi",
 			Subtitle:  strPtr("Tingkatkan Kualitas Pengajar Digital di Seluruh Pelosok Negeri"),
 			Tag:       strPtr("INFO KEGIATAN"),
-			ImageURL:  "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&q=80&w=1920",
+			ImagePath: "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&q=80&w=1920",
 			SortOrder: 3,
 			IsActive:  true,
 			IsNew:     false,
@@ -183,7 +183,7 @@ func main() {
 			Category:      "Berita Daerah",
 			PublishedDate: "2026-02-11",
 			AuthorID:      &adminUser.ID,
-			ImageURL:      strPtr("https://gradasi.org/uploads/img/berita/17708152730.jpg"),
+			ImagePath:     strPtr("https://gradasi.org/uploads/img/berita/17708152730.jpg"),
 			Excerpt:       strPtr("SURABAYA, Generasi Digital Indonesia (GRADASI) Jawa Timur bersiap menggelar Rapat Kerja Daerah..."),
 			Content:       strPtr("<p>SURABAYA, Generasi Digital Indonesia (GRADASI) Jawa Timur bersiap menggelar Rapat Kerja Daerah untuk menyelaraskan program kerja digitalisasi UMKM dan literasi masyarakat di wilayah Jawa Timur.</p>"),
 			IsPublished:   true,
@@ -195,7 +195,7 @@ func main() {
 			Category:      "Edukasi",
 			PublishedDate: "2025-11-02",
 			AuthorID:      &adminUser.ID,
-			ImageURL:      strPtr("https://gradasi.org/uploads/img/berita/17620765070.jpg"),
+			ImagePath:     strPtr("https://gradasi.org/uploads/img/berita/17620765070.jpg"),
 			Excerpt:       strPtr("Inisiatif GRADASI Mendorong Peningkatan Kompetensi SDM Pendidikan dalam Memanfaatkan Kecerdasan Buatan..."),
 			Content:       strPtr("<p>Inisiatif GRADASI Mendorong Peningkatan Kompetensi SDM Pendidikan dalam Memanfaatkan Kecerdasan Buatan (AI) secara bijak dan adaptif.</p>"),
 			IsPublished:   true,
@@ -207,7 +207,7 @@ func main() {
 			Category:      "Berita Utama",
 			PublishedDate: "2025-10-31",
 			AuthorID:      &adminUser.ID,
-			ImageURL:      strPtr("https://gradasi.org/uploads/img/berita/17618789900.jpg"),
+			ImagePath:     strPtr("https://gradasi.org/uploads/img/berita/17618789900.jpg"),
 			Excerpt:       strPtr("Ketua Dewan Pakar GRADASI memaparkan lima rumusan kunci kebijakan untuk mempercepat transformasi digital..."),
 			Content:       strPtr("<p>Ketua Dewan Pakar GRADASI memaparkan lima rumusan kunci kebijakan untuk mempercepat transformasi digital nasional yang inklusif.</p>"),
 			IsPublished:   true,
@@ -231,7 +231,7 @@ func main() {
 			Location:    "Aceh, Indonesia",
 			Organizer:   "DPP GRADASI",
 			AuthorID:    &adminUser.ID,
-			ImageURL:    strPtr("https://gradasi.org/uploads/img/event/1767154719.jpg"),
+			ImagePath:   strPtr("https://gradasi.org/uploads/img/event/1767154719.jpg"),
 			Excerpt:     strPtr("Dewan Pimpinan Pusat (DPP) GRADASI menyalurkan bantuan kemanusiaan kepada korban bencana alam."),
 			Content:     strPtr("<p>Dewan Pimpinan Pusat (DPP) GRADASI menyalurkan bantuan kemanusiaan kepada korban bencana alam sebagai wujud kepedulian sosial organisasi.</p>"),
 			IsPublished: true,
@@ -245,7 +245,7 @@ func main() {
 			Location:    "Surabaya, Jawa Timur",
 			Organizer:   "DPD Jawa Timur",
 			AuthorID:    &adminUser.ID,
-			ImageURL:    strPtr("https://gradasi.org/uploads/img/event/1767154619.jpg"),
+			ImagePath:   strPtr("https://gradasi.org/uploads/img/event/1767154619.jpg"),
 			Excerpt:     strPtr("Program pendampingan dan pelatihan pemasaran digital gratis bagi pelaku UMKM Jawa Timur."),
 			Content:     strPtr("<p>Program pendampingan dan pelatihan pemasaran digital gratis bagi pelaku UMKM Jawa Timur agar produk lokal dapat bersaing nasional.</p>"),
 			IsPublished: true,
@@ -259,7 +259,7 @@ func main() {
 			Location:    "Bandar Lampung",
 			Organizer:   "DPD Lampung",
 			AuthorID:    &adminUser.ID,
-			ImageURL:    strPtr("https://gradasi.org/uploads/img/event/1767154397.jpg"),
+			ImagePath:   strPtr("https://gradasi.org/uploads/img/event/1767154397.jpg"),
 			Excerpt:     strPtr("Rapat konsolidasi pengurus pusat dan pengurus daerah untuk memantapkan peta jalan program kerja."),
 			Content:     strPtr("<p>Rapat konsolidasi pengurus pusat dan pengurus daerah untuk memantapkan peta jalan program kerja lima tahun ke depan.</p>"),
 			IsPublished: true,
@@ -274,13 +274,13 @@ func main() {
 	if len(kegiatanList) > 0 {
 		db.Create(&kegiatanModel.KegiatanGallery{
 			KegiatanID: kegiatanList[0].ID,
-			ImageURL:   "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=600",
+			ImagePath:  "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=600",
 			Caption:    "Pembukaan Munas II",
 			SortOrder:  1,
 		})
 		db.Create(&kegiatanModel.KegiatanGallery{
 			KegiatanID: kegiatanList[0].ID,
-			ImageURL:   "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=600",
+			ImagePath:  "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=600",
 			Caption:    "Sidang Pleno Organisasi",
 			SortOrder:  2,
 		})
@@ -295,7 +295,7 @@ func main() {
 			Role:         "Ketua Umum Generasi Digital Indonesia 2025 - 2030",
 			Department:   strPtr("Pimpinan Pusat"),
 			Level:        "ketua",
-			ImageURL:     "https://gradasi.org/uploads/img/s-anggota/ketua/1735027418.jpg",
+			ImagePath:    "https://gradasi.org/uploads/img/s-anggota/ketua/1735027418.jpg",
 			Periode:      "2025 - 2030",
 			SortOrder:    1,
 			IsActive:     true,
@@ -303,21 +303,21 @@ func main() {
 			InstagramURL: strPtr("https://www.instagram.com/dppgradasi"),
 		},
 		// DPP
-		{Name: "Dr. Susi Susanti, M.Pd", Role: "Wakil Ketua I", Department: strPtr("Pengurus Harian"), Level: "dpp", ImageURL: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200", SortOrder: 2, Periode: "2025 - 2030", IsActive: true},
-		{Name: "Ir. Budi Santoso", Role: "Wakil Ketua II", Department: strPtr("Pengurus Harian"), Level: "dpp", ImageURL: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=200", SortOrder: 3, Periode: "2025 - 2030", IsActive: true},
-		{Name: "Junaidi, S.Kom", Role: "Sekretaris Jenderal", Department: strPtr("Kesekretariatan"), Level: "dpp", ImageURL: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200", SortOrder: 4, Periode: "2025 - 2030", IsActive: true},
-		{Name: "Dina Mariana, S.ST", Role: "Wakil Sekjen 1", Department: strPtr("Kesekretariatan"), Level: "dpp", ImageURL: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=200", SortOrder: 5, Periode: "2025 - 2030", IsActive: true},
-		{Name: "Rina Wijaya, M.Sc", Role: "Bendahara Umum", Department: strPtr("Kebendaharaan"), Level: "dpp", ImageURL: "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=200", SortOrder: 6, Periode: "2025 - 2030", IsActive: true},
-		{Name: "Muhammad Hertiyadi Alfaqy S.Kom", Role: "Koordinator Dept 02 IT & Digital", Department: strPtr("Departemen 02"), Level: "dpp", ImageURL: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=200", SortOrder: 7, Periode: "2025 - 2030", IsActive: true},
+		{Name: "Dr. Susi Susanti, M.Pd", Role: "Wakil Ketua I", Department: strPtr("Pengurus Harian"), Level: "dpp", ImagePath: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200", SortOrder: 2, Periode: "2025 - 2030", IsActive: true},
+		{Name: "Ir. Budi Santoso", Role: "Wakil Ketua II", Department: strPtr("Pengurus Harian"), Level: "dpp", ImagePath: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=200", SortOrder: 3, Periode: "2025 - 2030", IsActive: true},
+		{Name: "Junaidi, S.Kom", Role: "Sekretaris Jenderal", Department: strPtr("Kesekretariatan"), Level: "dpp", ImagePath: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200", SortOrder: 4, Periode: "2025 - 2030", IsActive: true},
+		{Name: "Dina Mariana, S.ST", Role: "Wakil Sekjen 1", Department: strPtr("Kesekretariatan"), Level: "dpp", ImagePath: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=200", SortOrder: 5, Periode: "2025 - 2030", IsActive: true},
+		{Name: "Rina Wijaya, M.Sc", Role: "Bendahara Umum", Department: strPtr("Kebendaharaan"), Level: "dpp", ImagePath: "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=200", SortOrder: 6, Periode: "2025 - 2030", IsActive: true},
+		{Name: "Muhammad Hertiyadi Alfaqy S.Kom", Role: "Koordinator Dept 02 IT & Digital", Department: strPtr("Departemen 02"), Level: "dpp", ImagePath: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=200", SortOrder: 7, Periode: "2025 - 2030", IsActive: true},
 		// DPD
-		{Name: "Kusbeni Abdulloh, S.Kom.", Role: "Ketua DPD Gradasi Jawa Timur", Level: "dpd", Provinsi: strPtr("Jawa Timur"), ImageURL: "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=200", SortOrder: 8, Periode: "2025 - 2030", IsActive: true},
-		{Name: "SHANTY OCTAVIA UTAMI, ST", Role: "Sekretaris DPD Gradasi Jawa Timur", Level: "dpd", Provinsi: strPtr("Jawa Timur"), ImageURL: "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=200", SortOrder: 9, Periode: "2025 - 2030", IsActive: true},
-		{Name: "Ridona", Role: "Ketua DPD Gradasi Provinsi Riau", Level: "dpd", Provinsi: strPtr("Riau"), ImageURL: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=200", SortOrder: 10, Periode: "2025 - 2030", IsActive: true},
-		{Name: "Safrial", Role: "Ketua Gradasi DPD Sumatera Utara", Level: "dpd", Provinsi: strPtr("Sumatera Utara"), ImageURL: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=200", SortOrder: 11, Periode: "2025 - 2030", IsActive: true},
+		{Name: "Kusbeni Abdulloh, S.Kom.", Role: "Ketua DPD Gradasi Jawa Timur", Level: "dpd", Provinsi: strPtr("Jawa Timur"), ImagePath: "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=200", SortOrder: 8, Periode: "2025 - 2030", IsActive: true},
+		{Name: "SHANTY OCTAVIA UTAMI, ST", Role: "Sekretaris DPD Gradasi Jawa Timur", Level: "dpd", Provinsi: strPtr("Jawa Timur"), ImagePath: "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=200", SortOrder: 9, Periode: "2025 - 2030", IsActive: true},
+		{Name: "Ridona", Role: "Ketua DPD Gradasi Provinsi Riau", Level: "dpd", Provinsi: strPtr("Riau"), ImagePath: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=200", SortOrder: 10, Periode: "2025 - 2030", IsActive: true},
+		{Name: "Safrial", Role: "Ketua Gradasi DPD Sumatera Utara", Level: "dpd", Provinsi: strPtr("Sumatera Utara"), ImagePath: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=200", SortOrder: 11, Periode: "2025 - 2030", IsActive: true},
 		// DPC
-		{Name: "Budi Pratama, S.T.", Role: "Ketua DPC Gradasi Kab. Malang", Level: "dpc", Provinsi: strPtr("Jawa Timur"), Kabupaten: strPtr("Kabupaten Malang"), ImageURL: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=200", SortOrder: 12, Periode: "2025 - 2030", IsActive: true},
-		{Name: "Siti Rahmawati", Role: "Sekretaris DPC Gradasi Kota Surabaya", Level: "dpc", Provinsi: strPtr("Jawa Timur"), Kabupaten: strPtr("Kota Surabaya"), ImageURL: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200", SortOrder: 13, Periode: "2025 - 2030", IsActive: true},
-		{Name: "Ahmad Fauzi", Role: "Ketua DPC Gradasi Kab. Bogor", Level: "dpc", Provinsi: strPtr("Jawa Barat"), Kabupaten: strPtr("Kabupaten Bogor"), ImageURL: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200", SortOrder: 14, Periode: "2025 - 2030", IsActive: true},
+		{Name: "Budi Pratama, S.T.", Role: "Ketua DPC Gradasi Kab. Malang", Level: "dpc", Provinsi: strPtr("Jawa Timur"), Kabupaten: strPtr("Kabupaten Malang"), ImagePath: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=200", SortOrder: 12, Periode: "2025 - 2030", IsActive: true},
+		{Name: "Siti Rahmawati", Role: "Sekretaris DPC Gradasi Kota Surabaya", Level: "dpc", Provinsi: strPtr("Jawa Timur"), Kabupaten: strPtr("Kota Surabaya"), ImagePath: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200", SortOrder: 13, Periode: "2025 - 2030", IsActive: true},
+		{Name: "Ahmad Fauzi", Role: "Ketua DPC Gradasi Kab. Bogor", Level: "dpc", Provinsi: strPtr("Jawa Barat"), Kabupaten: strPtr("Kabupaten Bogor"), ImagePath: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200", SortOrder: 14, Periode: "2025 - 2030", IsActive: true},
 	}
 	db.Create(&pengurusList)
 

@@ -1,0 +1,26 @@
+info:
+  name: Create Cohort
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{base_url}}/api/v1/cohorts"
+  body:
+    type: json
+    data: |2-
+       {
+              "name": "Angkatan 2026/2027",
+              "start_date": "2026-07-01T00:00:00Z",
+              "end_date": "2029-06-30T23:59:59Z",
+              "description": "Angkatan baru"
+      }
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJlbWFpbCI6InNjaG9vbHBheTQxQGdtYWlsLmNvbSIsInJvbGVfaWQiOjEsIm5hbWUiOiJBZG1pbmlzdHJhdG9yIiwicm9sZV9uYW1lIjoic3VwZXJfYWRtaW4iLCJleHAiOjE3ODQ4OTYxNTgsImlhdCI6MTc4NDg5NTI1OH0.gt2OiWKTIuMd9hy4oGWUxEURQjvsTmYNSgzrGVOEtgU
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

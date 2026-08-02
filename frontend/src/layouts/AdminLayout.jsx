@@ -4,13 +4,13 @@ import { useAuthStore } from '../store/useAuthStore'
 
 const sidebarLinks = [
   { path: '/dashboard', label: 'Dashboard', icon: 'ph-squares-four' },
-  { path: '/admin/berita', label: 'Berita', icon: 'ph-article' },
-  { path: '/admin/kegiatan', label: 'Kegiatan', icon: 'ph-calendar-check' },
+  { path: '/admin/berita', label: 'Berita', icon: 'ph-article', roles: ['super_admin', 'admin', 'admin_berita'] },
+  { path: '/admin/kegiatan', label: 'Kegiatan', icon: 'ph-calendar-check', roles: ['super_admin', 'admin', 'admin_kegiatan'] },
   { path: '/admin/pengurus', label: 'Pengurus', icon: 'ph-users-three' },
   { path: '/admin/sliders', label: 'Sliders', icon: 'ph-image' },
   { path: '/admin/kontak', label: 'Pesan Kontak', icon: 'ph-envelope-simple' },
-  { path: '/admin/users', label: 'Manajemen Admin', icon: 'ph-user-gear' },
-  { path: '/admin/activity-log', label: 'Activity Log', icon: 'ph-clock-counter-clockwise' },
+  { path: '/admin/users', label: 'Manajemen Admin', icon: 'ph-user-gear', roles: ['super_admin'] },
+  { path: '/admin/activity-log', label: 'Activity Log', icon: 'ph-clock-counter-clockwise', roles: ['super_admin'] },
   { path: '/admin/settings', label: 'Pengaturan Website', icon: 'ph-gear' },
 ]
 
@@ -18,7 +18,10 @@ export default function AdminLayout({ children, title = 'Admin Panel' }) {
   const navigate = useNavigate()
   const location = useLocation()
   const logout = useAuthStore((state) => state.logout)
+  const role = useAuthStore((state) => state.role)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+
+  const visibleLinks = role ? sidebarLinks.filter((l) => !l.roles || l.roles.includes(role)) : sidebarLinks
 
   function handleLogout() {
     logout()
@@ -29,13 +32,13 @@ export default function AdminLayout({ children, title = 'Admin Panel' }) {
     <div className="font-sans antialiased overflow-hidden flex h-screen bg-gray-50 text-gray-800">
       {/* Sidebar */}
       <aside className="w-64 bg-brand-900 text-white flex flex-col h-full shrink-0">
-        <div className="h-16 flex items-center px-6 border-b border-white/10">
+        <div className="h-16 flex items-center px-6 border-b border-white/10 bg-gradient-to-r from-brand-950/40 to-transparent">
           <span className="font-heading font-bold text-xl tracking-wide">
-            GRADASI<span className="text-brand-400">Admin</span>
+            GRADASI<span className="text-gradient-light">Admin</span>
           </span>
         </div>
         <nav className="flex-1 overflow-y-auto py-4 space-y-1 px-3">
-          {sidebarLinks.map((link) => {
+          {visibleLinks.map((link) => {
             const isActive = location.pathname === link.path
             return (
               <Link

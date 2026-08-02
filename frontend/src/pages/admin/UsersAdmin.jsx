@@ -591,8 +591,8 @@ export default function UsersAdmin() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm bg-white"
                     >
                       <option value="2">Admin</option>
-                      <option value="3">Admin Berita</option>
-                      <option value="4">Admin Kegiatan</option>
+                      <option value="5">Admin Berita</option>
+                      <option value="6">Admin Kegiatan</option>
                     </select>
                     <p className="text-xs text-gray-500 mt-1">Super Admin tidak bisa dibuat via undangan (role_id 1 khusus seed).</p>
                   </div>

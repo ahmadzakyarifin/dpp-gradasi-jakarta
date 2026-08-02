@@ -32,7 +32,7 @@
           "data": {
             "site_name": "DPP GRADASI",
             "tagline": "Generasi Digital Indonesia",
-            "logo_url": "/uploads/logo.png",
+            "logo_path": "/uploads/logo.png",
             "contact_email": "dpp@gradasi.org",
             "contact_phone": "+628****0008",
             "address": "Jl. Jenderal Sudirman No.1, Jakarta Pusat",
@@ -40,7 +40,7 @@
             "facebook_url": "https://www.facebook.com/gradasiofficial.id",
             "instagram_url": "https://www.instagram.com/dppgradasi",
             "youtube_url": "https://www.youtube.com/channel/UCwdjB4LkqcF4Kw5-PoyOb5A",
-            "video_profile_url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+            "video_profile_path": "https://www.youtube.com/embed/dQw4w9WgXcQ",
             "history": "Perkumpulan Generasi Digital Indonesia (GRADASI) didirikan...",
             "about_tutorial": "Pada tahun 2018 di Yogyakarta...",
             "about_formation_date": "4 Februari 2019",
@@ -54,7 +54,7 @@
             "greeting_subtitle": "Resolusi & Harapan",
             "greeting_date": "11 February 2026",
             "greeting_content": "Memasuki tahun 2026, GRADASI menetapkan pilar...",
-            "greeting_image_url": "https://gradasi.org/uploads/img/event-terkini/1767154211.jpg",
+            "greeting_image_path": "https://gradasi.org/uploads/img/event-terkini/1767154211.jpg",
             "created_at": "2026-07-30T08:00:00Z"
           }
         }
@@ -66,7 +66,7 @@
   // UPDATE SETTINGS (Admin Only)
   // ======================================================
   "update": {
-    "method": "POST",
+    "method": "PUT",
     "endpoint": "/api/v1/admin/settings",
     "consumes": "application/json",
     "produces": "application/json",
@@ -116,13 +116,13 @@
             "site_name": "DPP GRADASI",
             "tagline": "Generasi Digital Indonesia",
             "address": "Jl. Jenderal Sudirman No.1, Jakarta Pusat",
-            "video_profile_url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+            "video_profile_path": "https://www.youtube.com/embed/dQw4w9WgXcQ",
             "history": "Perkumpulan Generasi Digital Indonesia (GRADASI) didirikan...",
             "greeting_title": "Tahun Baru 2026",
             "greeting_subtitle": "Resolusi & Harapan",
             "greeting_date": "11 February 2026",
             "greeting_content": "Memasuki tahun 2026, GRADASI menetapkan pilar...",
-            "greeting_image_url": "https://gradasi.org/uploads/img/event-terkini/1767154211.jpg",
+            "greeting_image_path": "https://gradasi.org/uploads/img/event-terkini/1767154211.jpg",
             "about_mission": [
               "Membangun ekosistem literasi digital"
             ]
@@ -138,6 +138,63 @@
           "errors": {
             "contact_email": "Format email tidak valid"
           }
+        }
+      }
+    }
+  },
+
+  // ======================================================
+  // UPLOAD LOGO (Admin Only)
+  // ======================================================
+  "upload_logo": {
+    "method": "POST",
+    "endpoint": "/api/v1/admin/settings/logo",
+    "consumes": "multipart/form-data",
+    "produces": "application/json",
+    "authentication": {
+      "type": "Bearer Access Token"
+    },
+    "headers": {
+      "Accept": "application/json",
+      "Authorization": "Bearer <access_token>"
+    },
+    "security": {
+      "rate_limit": {
+        "enabled": true,
+        "key": "User",
+        "limit": "30 request / menit"
+      },
+      "roles": ["super_admin", "admin"]
+    },
+    "request": {
+      "logo": "(binary file image/jpeg, image/png, image/webp)"
+    },
+    "validation": {
+      "logo": "required, image/*, maks 2MB"
+    },
+    "notes": [
+      "Upload file logo baru (multipart/form-data, field name 'logo').",
+      "File divalidasi: tipe image/* (jpeg/png/webp), ukuran maks 2MB.",
+      "Sukses: logo_path di database diperbarui ke path file baru."
+    ],
+    "responses": {
+      "200": {
+        "description": "Logo berhasil diunggah",
+        "body": {
+          "success": true,
+          "code": "SETTINGS_LOGO_UPDATED",
+          "message": "Logo berhasil diperbarui",
+          "data": {
+            "logo_path": "/uploads/logo/1767154211.png"
+          }
+        }
+      },
+      "400": {
+        "description": "File tidak valid (bukan gambar / terlalu besar)",
+        "body": {
+          "success": false,
+          "code": "VALIDATION_ERROR",
+          "message": "File harus berupa gambar (image/*) dan maksimal 2MB"
         }
       }
     }

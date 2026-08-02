@@ -1,0 +1,23 @@
+info:
+  name: Restore Academic Bulk
+  type: http
+  seq: 8
+
+http:
+  method: PATCH
+  url: "{{base_url}}/api/v1/academic-years/bulk-restore"
+  body:
+    type: json
+    data: |-
+      {
+        "ids": [3,2]
+      }
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJlbWFpbCI6InNjaG9vbHBheTQxQGdtYWlsLmNvbSIsInJvbGVfaWQiOjEsIm5hbWUiOiJBZG1pbmlzdHJhdG9yIiwicm9sZV9uYW1lIjoic3VwZXJfYWRtaW4iLCJleHAiOjE3ODQ5NTM0NTgsImlhdCI6MTc4NDk1MjU1OH0.R7XFjF76X_woI0M4UFHusgBgGhHwsWnys55kc2Mr7AU
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -16,7 +16,7 @@ type ChangePasswordRequest struct {
 type AdminCreateRequest struct {
 	Name   string `json:"name" binding:"required,min=3,max=100"`
 	Email  string `json:"email" binding:"required,email,max=150"`
-	RoleID uint   `json:"role_id" binding:"required,oneof=2 3 4"`
+	RoleID uint   `json:"role_id" binding:"required,oneof=2 5 6"`
 }
 
 type AdminStatusRequest struct {

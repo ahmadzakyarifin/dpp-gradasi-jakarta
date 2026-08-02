@@ -299,9 +299,9 @@
             "id": 1,
             "name": "Administrator",
             "email": "admin@example.com",
-            "phone": "6285279880008",
             "photo_path": null,
             "status": "active",
+            "must_change_password": false,
             "role": {
               "id": 1,
               "name": "super_admin",

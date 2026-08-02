@@ -27,7 +27,8 @@
         "search": "Rakorda",
         "category": "Berita Organisasi",
         "tag": "Nasional",
-        "sort": "newest"          // newest | oldest | most_viewed
+        "sort": "newest",          // newest | oldest | most_viewed
+        "status": "published"      // published | draft | trashed (admin)
       }
     },
     "notes": [
@@ -50,7 +51,7 @@
                 "slug": "rapat-kerja-daerah-jatim",
                 "category": "Berita Organisasi",
                 "published_date": "2026-02-11",
-                "image_url": "/uploads/berita/17708152730.jpg",
+                "image_path": "/uploads/berita/17708152730.jpg",
                 "excerpt": "SURABAYA, Generasi Digital Indonesia (GRADASI) Jawa Timur...",
                 "is_featured": false,
                 "views": 120,
@@ -141,7 +142,7 @@
             "category": "Berita Organisasi",
             "published_date": "2026-02-11",
             "author_name": "Administrator",
-            "image_url": "/uploads/berita/17708152730.jpg",
+            "image_path": "/uploads/berita/17708152730.jpg",
             "excerpt": "SURABAYA, Generasi Digital Indonesia...",
             "content": "<p>Konten berita lengkap dalam format HTML dari editor...</p>",
             "is_featured": false,
@@ -184,7 +185,7 @@
         "key": "User",
         "limit": "30 request / menit"
       },
-      "roles": ["super_admin", "admin"]
+      "roles": ["super_admin", "admin", "admin_berita"]
     },
     "parameters": {
       "query": {
@@ -199,7 +200,7 @@
     },
     "notes": [
       "Menampilkan semua berita termasuk draft dan yang sudah dihapus (trashed).",
-      "Hanya bisa diakses oleh user dengan role super_admin, admin, atau editor."
+      "Hanya bisa diakses oleh user dengan role super_admin, admin, atau admin_berita."
     ],
     "responses": {
       "200": {
@@ -217,7 +218,7 @@
                 "category": "Berita Organisasi",
                 "published_date": "2026-02-11",
                 "author_name": "Administrator",
-                "image_url": "/uploads/berita/17708152730.jpg",
+                "image_path": "/uploads/berita/17708152730.jpg",
                 "excerpt": "SURABAYA, Generasi Digital Indonesia...",
                 "is_featured": false,
                 "views": 120,
@@ -253,7 +254,7 @@
       "Authorization": "Bearer <access_token>"
     },
     "security": {
-      "roles": ["super_admin", "admin"]
+      "roles": ["super_admin", "admin", "admin_berita"]
     },
     "parameters": {
       "path": {
@@ -288,14 +289,14 @@
         "key": "User",
         "limit": "30 request / menit"
       },
-      "roles": ["super_admin", "admin"]
+      "roles": ["super_admin", "admin", "admin_berita"]
     },
     "request": {
       "title": "Rapat Kerja Daerah Jatim",
       "category": "Berita Organisasi",
       "published_date": "2026-02-11",
       "author_id": 1,
-      "image_url": "https://images.unsplash.com/photo-xxx",
+      "image_path": "https://images.unsplash.com/photo-xxx",
       "excerpt": "SURABAYA, Generasi Digital Indonesia...",
       "content": "<p>Konten HTML dari editor...</p>",
       "is_featured": false,
@@ -317,9 +318,10 @@
     },
     "notes": [
       "Slug dibuat otomatis dari title oleh backend (gosimple/slug).",
+      "Judul duplikat (sudah dipakai berita lain, termasuk di sampah) → 422 DUPLICATE_TITLE.",
       "author_id bersifat opsional. Jika tidak diisi, diambil otomatis dari token login.",
       "Field tags dikirim sebagai string dipisahkan koma.",
-      "Body JSON biasa — image_url cukup string URL, bukan upload file."
+      "Body JSON biasa — image_path cukup string path file, bukan upload file."
     ],
     "responses": {
       "201": {
@@ -334,7 +336,7 @@
             "slug": "rapat-kerja-daerah-jatim",
             "category": "Berita Organisasi",
             "published_date": "2026-02-11",
-            "image_url": "https://images.unsplash.com/photo-xxx",
+            "image_path": "https://images.unsplash.com/photo-xxx",
             "excerpt": "SURABAYA, Generasi Digital Indonesia...",
             "content": "<p>Konten HTML dari editor...</p>",
             "is_featured": false,
@@ -358,6 +360,14 @@
               "message": "Title wajib diisi, minimal 5 karakter."
             }
           ]
+        }
+      },
+      "422": {
+        "description": "Judul duplikat / validasi bisnis gagal",
+        "body": {
+          "success": false,
+          "code": "DUPLICATE_TITLE",
+          "message": "Judul sudah digunakan, gunakan judul lain."
         }
       },
       "401": {
@@ -393,7 +403,7 @@
         "key": "User",
         "limit": "30 request / menit"
       },
-      "roles": ["super_admin", "admin"]
+      "roles": ["super_admin", "admin", "admin_berita"]
     },
     "parameters": {
       "path": {
@@ -405,7 +415,7 @@
       "category": "Berita Organisasi",
       "published_date": "2026-02-11",
       "author_id": 1,
-      "image_url": "https://images.unsplash.com/photo-yyy",
+      "image_path": "https://images.unsplash.com/photo-yyy",
       "excerpt": "Excerpt baru...",
       "content": "<p>Konten baru...</p>",
       "is_featured": true,
@@ -422,6 +432,11 @@
         { "tag": "required", "message": "Content wajib diisi." }
       ]
     },
+    "notes": [
+      "Partial update — hanya field yang dikirim yang diubah (misal toggle publish cukup kirim {\\\"is_published\\\": false}).",
+      "Judul duplikat → 422 DUPLICATE_TITLE (judul berita lain).",
+      "Slug TIDAK berubah saat update (link lama tidak mati)."
+    ],
     "responses": {
       "200": {
         "description": "Berita berhasil diperbarui",
@@ -472,7 +487,7 @@
       "Authorization": "Bearer <access_token>"
     },
     "security": {
-      "roles": ["super_admin", "admin"]
+      "roles": ["super_admin", "admin", "admin_berita"]
     },
     "parameters": {
       "path": {
@@ -519,7 +534,7 @@
       "Authorization": "Bearer <access_token>"
     },
     "security": {
-      "roles": ["super_admin", "admin"]
+      "roles": ["super_admin", "admin", "admin_berita"]
     },
     "parameters": {
       "path": {

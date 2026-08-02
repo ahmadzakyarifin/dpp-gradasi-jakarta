@@ -106,7 +106,7 @@ func NewApp(database *gorm.DB, appConfig *config.Config, redisClient *redis.Clie
 
 	// Auth
 	authRepo := authrepo.NewAuthRepo(database)
-	authSvc := authservice.NewAuthService(authRepo, appConfig, mailer, redisClient)
+	authSvc := authservice.NewAuthService(authRepo, appConfig, mailer, redisClient, database, activityLogSvc)
 	authHandler := authhandler.NewAuthHandler(authSvc, appConfig, activityLogSvc)
 
 	// Sliders

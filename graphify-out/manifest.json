@@ -5,58 +5,53 @@
     "semantic_hash": ""
   },
   "backend/cmd/seeder/main.go": {
-    "mtime": 1785570087.2702148,
-    "ast_hash": "6afee59bcbf410ef0a1f80dd354df62e",
+    "mtime": 1785598376.0241928,
+    "ast_hash": "d33b98d06ed09916daa39b71a8d785cf",
     "semantic_hash": ""
   },
   "backend/config/app.go": {
-    "mtime": 1785564189.8044782,
-    "ast_hash": "16bcf80407c7ab106b9ed8d84610e8c8",
+    "mtime": 1785611396.8084123,
+    "ast_hash": "fd07db8bc793d9dcddd2f37a4c8b7cb9",
     "semantic_hash": ""
   },
   "backend/config/config.go": {
-    "mtime": 1785564189.8046522,
+    "mtime": 1785611415.5295446,
     "ast_hash": "e66ad001c38ac968bda8fd8547d9b97c",
     "semantic_hash": ""
   },
   "backend/config/cookie.go": {
-    "mtime": 1785564189.8046522,
-    "ast_hash": "c8744c13fb5dd8a14283aa2286a14037",
+    "mtime": 1785611415.5375445,
+    "ast_hash": "2ff883cda0a5ad9b4ea88c8e8d56e659",
     "semantic_hash": ""
   },
   "backend/config/database.go": {
-    "mtime": 1785564189.8046522,
-    "ast_hash": "e6efba1a7f1e0ede53cd328fdcee1e1e",
+    "mtime": 1785611391.2843733,
+    "ast_hash": "00f91d8d36615d622e8236d1c7092ef6",
     "semantic_hash": ""
   },
   "backend/config/dev.go": {
-    "mtime": 1785564189.8047342,
-    "ast_hash": "c770bb4138e3a2b1e53fbf7b91cb8fab",
+    "mtime": 1785611402.4809268,
+    "ast_hash": "b2434c2c09a4cefc542cc2863108c230",
     "semantic_hash": ""
   },
   "backend/config/jwt.go": {
-    "mtime": 1785564189.8047342,
-    "ast_hash": "9bd924aa8ef0bc3983aed339e63656f3",
+    "mtime": 1785611396.8244123,
+    "ast_hash": "9f1dd02ad0e9309dce35080f688bc93e",
     "semantic_hash": ""
   },
   "backend/config/redis.go": {
-    "mtime": 1785564189.8047342,
-    "ast_hash": "aec8fb9727eb8d0447a7a254d7d4652b",
+    "mtime": 1785611391.3143735,
+    "ast_hash": "9118d5a9c8780037c463183e1a3fc671",
     "semantic_hash": ""
   },
   "backend/config/security.go": {
-    "mtime": 1785570087.268215,
-    "ast_hash": "86588159177d8929a37a7b091ae457ab",
+    "mtime": 1785611415.5425446,
+    "ast_hash": "64f2d1265297714074a68943b6599fe6",
     "semantic_hash": ""
   },
   "backend/config/smtp.go": {
-    "mtime": 1785564189.8047342,
-    "ast_hash": "93c17f7a7f0f9b5c87335dd5f9224e66",
-    "semantic_hash": ""
-  },
-  "backend/config/worker.go": {
-    "mtime": 1785564189.8047342,
-    "ast_hash": "721f709d3a7fa60ca969beafc77635c2",
+    "mtime": 1785611402.4664524,
+    "ast_hash": "d1343fde08c2db7d15c12dbd2d667ba1",
     "semantic_hash": ""
   },
   "backend/go.mod": {
@@ -105,8 +100,8 @@
     "semantic_hash": ""
   },
   "backend/internal/infrastructure/database.go": {
-    "mtime": 1785564189.8051782,
-    "ast_hash": "0d217a12d8c345abba20e56887a3e054",
+    "mtime": 1785611438.0227034,
+    "ast_hash": "0f4223847be6785aca88464a97b18e19",
     "semantic_hash": ""
   },
   "backend/internal/infrastructure/mail.go": {
@@ -115,8 +110,8 @@
     "semantic_hash": ""
   },
   "backend/internal/infrastructure/redis.go": {
-    "mtime": 1785567529.739622,
-    "ast_hash": "cb0740425400999bb12486de5e78bdc8",
+    "mtime": 1785611438.0287035,
+    "ast_hash": "949c3b675edec3d332af0c3cb45eed96",
     "semantic_hash": ""
   },
   "backend/internal/middleware/auth_middleware.go": {
@@ -235,13 +230,13 @@
     "semantic_hash": ""
   },
   "backend/internal/module/berita/dto/berita_dto.go": {
-    "mtime": 1785564189.806702,
-    "ast_hash": "173c220a3b8f8888f318cd3f89b5a43e",
+    "mtime": 1785592478.9113052,
+    "ast_hash": "ee43951da527fecc7b224c5a749466d0",
     "semantic_hash": ""
   },
   "backend/internal/module/berita/handler/berita_handler.go": {
-    "mtime": 1785576640.9742105,
-    "ast_hash": "e8617e5fc4e38ef01daad21605585bd2",
+    "mtime": 1785592665.771832,
+    "ast_hash": "5d434c0bf03ec39948013b3ef0a7f604",
     "semantic_hash": ""
   },
   "backend/internal/module/berita/model/berita_model.go": {
@@ -250,18 +245,18 @@
     "semantic_hash": ""
   },
   "backend/internal/module/berita/repository/berita_repo.go": {
-    "mtime": 1785576610.5329583,
-    "ast_hash": "a6dce39af8041105170dc2a4cc4359da",
+    "mtime": 1785592521.5975688,
+    "ast_hash": "808b754f11a5cb44fb0e122e7120fcd1",
     "semantic_hash": ""
   },
   "backend/internal/module/berita/routes.go": {
-    "mtime": 1785576647.051258,
-    "ast_hash": "f77b0a790d4820e41b943b4fffc5d02f",
+    "mtime": 1785591206.4206917,
+    "ast_hash": "0d95b0be04a60a7960b1de5333d41af1",
     "semantic_hash": ""
   },
   "backend/internal/module/berita/service/berita_service.go": {
-    "mtime": 1785576628.0317616,
-    "ast_hash": "402fda2aa0526e6b81544da79799ddaa",
+    "mtime": 1785592587.547976,
+    "ast_hash": "a69e9272f8dc6deef9fd6f16199a0573",
     "semantic_hash": ""
   },
   "backend/internal/module/dashboard/dto/dashboard_dto.go": {
@@ -285,13 +280,13 @@
     "semantic_hash": ""
   },
   "backend/internal/module/kegiatan/dto/kegiatan_dto.go": {
-    "mtime": 1785564189.8074095,
-    "ast_hash": "bdd5ec8d43bf5afe752000131ef15bd4",
+    "mtime": 1785598300.436621,
+    "ast_hash": "c20b58f07ac74ee936d50ec4c1515895",
     "semantic_hash": ""
   },
   "backend/internal/module/kegiatan/handler/kegiatan_handler.go": {
-    "mtime": 1785576923.3997586,
-    "ast_hash": "c3a3eb7a43d3398fa7f4d854ee520449",
+    "mtime": 1785598496.5136373,
+    "ast_hash": "a47e3fa684f55ccecd6e301e366ff06e",
     "semantic_hash": ""
   },
   "backend/internal/module/kegiatan/model/kegiatan_model.go": {
@@ -300,18 +295,18 @@
     "semantic_hash": ""
   },
   "backend/internal/module/kegiatan/repository/kegiatan_repo.go": {
-    "mtime": 1785577464.537621,
-    "ast_hash": "0d21fcff7c8c641ca7763b8d537f2a7f",
+    "mtime": 1785598345.3219147,
+    "ast_hash": "51c5ddd9b74d53e3cefd59a1e247317c",
     "semantic_hash": ""
   },
   "backend/internal/module/kegiatan/routes.go": {
-    "mtime": 1785576928.3255382,
-    "ast_hash": "664e8f90d22f62370b50f72a2c3827ef",
+    "mtime": 1785591215.5437553,
+    "ast_hash": "91e475bdf28d49890f90d65950873fe7",
     "semantic_hash": ""
   },
   "backend/internal/module/kegiatan/service/kegiatan_service.go": {
-    "mtime": 1785577595.2163346,
-    "ast_hash": "7761b2708539c0bfa7ac74be0e9808a6",
+    "mtime": 1785598482.054894,
+    "ast_hash": "6785a9a4cb1ab2249c25f8b2b6fe7e03",
     "semantic_hash": ""
   },
   "backend/internal/module/kontak/dto/kontak_dto.go": {
@@ -440,8 +435,8 @@
     "semantic_hash": ""
   },
   "backend/internal/module/user/dto/user_dto.go": {
-    "mtime": 1785571481.6074643,
-    "ast_hash": "db1dc02a0081b2817aac7d5e7a3497f8",
+    "mtime": 1785591198.6516378,
+    "ast_hash": "3a14e0a78b70c2d028cb7e04e00bf246",
     "semantic_hash": ""
   },
   "backend/internal/module/user/handler/user_handler.go": {
@@ -455,8 +450,8 @@
     "semantic_hash": ""
   },
   "backend/internal/module/user/repository/user_repo.go": {
-    "mtime": 1785571491.4676204,
-    "ast_hash": "2ed3a043eca12bbe2e163722c93a5be2",
+    "mtime": 1785598292.9125717,
+    "ast_hash": "00fe6325bc345944c2ac66fdae97b652",
     "semantic_hash": ""
   },
   "backend/internal/module/user/routes.go": {
@@ -575,7 +570,7 @@
     "semantic_hash": ""
   },
   "frontend/src/App.jsx": {
-    "mtime": 1785566076.065008,
+    "mtime": 1785589700.2719612,
     "ast_hash": "b1aeffd74443d94bd2c8457e051da819",
     "semantic_hash": ""
   },
@@ -610,8 +605,8 @@
     "semantic_hash": ""
   },
   "frontend/src/content/authContent.js": {
-    "mtime": 1785564190.2903996,
-    "ast_hash": "6a4ef3d2bb8325447f1ff03dfa0288ae",
+    "mtime": 1785579401.923054,
+    "ast_hash": "bd17627e7a548249abb6c75221d5f3bd",
     "semantic_hash": ""
   },
   "frontend/src/content/beritaContent.js": {
@@ -620,13 +615,13 @@
     "semantic_hash": ""
   },
   "frontend/src/layouts/AdminLayout.jsx": {
-    "mtime": 1785564190.290618,
-    "ast_hash": "70d8a7fce8ae56aaa486bd5963c5104c",
+    "mtime": 1785591499.7817311,
+    "ast_hash": "fcc7f3076d10bcd030f2e6f7a71f19ab",
     "semantic_hash": ""
   },
   "frontend/src/layouts/PublicLayout.jsx": {
-    "mtime": 1785566102.2036622,
-    "ast_hash": "49c140eee6016fc98128939fa42ad25c",
+    "mtime": 1785589748.514739,
+    "ast_hash": "49e73e2c674a2fb8be020655ba3b242d",
     "semantic_hash": ""
   },
   "frontend/src/main.jsx": {
@@ -640,18 +635,18 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/BeritaList.jsx": {
-    "mtime": 1785577294.5303354,
-    "ast_hash": "6258421550606aa98a73587a38618f24",
+    "mtime": 1785591958.4409196,
+    "ast_hash": "cec98ae10cad0990940a0d04121106fa",
     "semantic_hash": ""
   },
   "frontend/src/pages/Dashboard.jsx": {
-    "mtime": 1785566235.80165,
-    "ast_hash": "a894a34507aeb61735c85bcee4555654",
+    "mtime": 1785588934.3565967,
+    "ast_hash": "7c1e0d4ee0413fc3a2a60aa64b26c8d5",
     "semantic_hash": ""
   },
   "frontend/src/pages/Home.jsx": {
-    "mtime": 1785577066.455547,
-    "ast_hash": "a4f0d2e768d493e2f96b8c032c1587b9",
+    "mtime": 1785587480.9215343,
+    "ast_hash": "8fac804ba5f81a48be0ed5acc3b115ec",
     "semantic_hash": ""
   },
   "frontend/src/pages/KegiatanDetail.jsx": {
@@ -660,18 +655,18 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/KegiatanList.jsx": {
-    "mtime": 1785564190.2926614,
-    "ast_hash": "93791d7b406ee47b406e396b06c74a2e",
+    "mtime": 1785587139.4449408,
+    "ast_hash": "4927a4a465c22adfb44f373b725a0c53",
     "semantic_hash": ""
   },
   "frontend/src/pages/Kepengurusan.jsx": {
-    "mtime": 1785564190.2926614,
-    "ast_hash": "f88ca1c991aa10a0974620a65e9f95e7",
+    "mtime": 1785587148.6630108,
+    "ast_hash": "d30cc6be4801440259ad078ae23c08a8",
     "semantic_hash": ""
   },
   "frontend/src/pages/Login.jsx": {
-    "mtime": 1785578886.6712213,
-    "ast_hash": "ea931fbaed2659eee46b05b81b99aa6f",
+    "mtime": 1785579644.7231627,
+    "ast_hash": "1df13bf29f40fecd5e9923d753f39c64",
     "semantic_hash": ""
   },
   "frontend/src/pages/ResetPassword.jsx": {
@@ -685,13 +680,13 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/admin/BeritaAdmin.jsx": {
-    "mtime": 1785577141.0911322,
-    "ast_hash": "1fa5066e7768316d0496688a1817a043",
+    "mtime": 1785592798.5212789,
+    "ast_hash": "84855206792d83aab286fe79af5ec54f",
     "semantic_hash": ""
   },
   "frontend/src/pages/admin/KegiatanAdmin.jsx": {
-    "mtime": 1785577217.5437317,
-    "ast_hash": "54e8a67b2e82647dd8e125c18b5d1650",
+    "mtime": 1785592119.180037,
+    "ast_hash": "f6d4af131c2f3c574a0b4efc81009285",
     "semantic_hash": ""
   },
   "frontend/src/pages/admin/KontakAdmin.jsx": {
@@ -700,8 +695,8 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/admin/PengurusAdmin.jsx": {
-    "mtime": 1785564190.296483,
-    "ast_hash": "a11af3143d1ae2d366c76163119de27c",
+    "mtime": 1785586355.174999,
+    "ast_hash": "6f8266edf45472a891f3e68745ef1f9f",
     "semantic_hash": ""
   },
   "frontend/src/pages/admin/ProfileAdmin.jsx": {
@@ -710,18 +705,18 @@
     "semantic_hash": ""
   },
   "frontend/src/pages/admin/SettingsAdmin.jsx": {
-    "mtime": 1785577096.6018114,
-    "ast_hash": "0cfdc4591f33c88fb513da04d237ed96",
+    "mtime": 1785582775.2945716,
+    "ast_hash": "bf5a7e5088de39aff6b7bd11d80e57be",
     "semantic_hash": ""
   },
   "frontend/src/pages/admin/SlidersAdmin.jsx": {
-    "mtime": 1785564190.296483,
-    "ast_hash": "bf9eca600c9786c2ba932ecc32d66452",
+    "mtime": 1785590185.4485018,
+    "ast_hash": "b3ca191b6dba9642bca7c1aad493a8b4",
     "semantic_hash": ""
   },
   "frontend/src/pages/admin/UsersAdmin.jsx": {
-    "mtime": 1785571723.5249088,
-    "ast_hash": "404a8357a22b425e0e4037ce0ad5bed0",
+    "mtime": 1785591387.825953,
+    "ast_hash": "c3d18d1f0cb3985f7b2fa44a88f31439",
     "semantic_hash": ""
   },
   "frontend/src/services/activityLogService.js": {
@@ -755,8 +750,8 @@
     "semantic_hash": ""
   },
   "frontend/src/services/pengurusService.js": {
-    "mtime": 1785564190.2984831,
-    "ast_hash": "1b2c45dfb13a56d92b52242973d519fe",
+    "mtime": 1785586130.9668508,
+    "ast_hash": "9e044a1a6a508fbc9bf3a6eeddd5e018",
     "semantic_hash": ""
   },
   "frontend/src/services/settingsService.js": {
@@ -765,8 +760,8 @@
     "semantic_hash": ""
   },
   "frontend/src/services/slidersService.js": {
-    "mtime": 1785564190.2984831,
-    "ast_hash": "d9c3ef15f4b9b936b5fbef028442f3f4",
+    "mtime": 1785585451.2426069,
+    "ast_hash": "be1d20fc1cdffe0335cb63b095b9da45",
     "semantic_hash": ""
   },
   "frontend/src/services/userService.js": {
@@ -775,8 +770,8 @@
     "semantic_hash": ""
   },
   "frontend/src/store/useAuthStore.js": {
-    "mtime": 1785579053.9984176,
-    "ast_hash": "c01fae04a274a0efc1fb387de96e592f",
+    "mtime": 1785591446.4933608,
+    "ast_hash": "89b69ceb1b3e85e13af89a569a946b34",
     "semantic_hash": ""
   },
   "frontend/src/store/useDashboardStore.js": {
@@ -905,7 +900,7 @@
     "semantic_hash": ""
   },
   "company_profile/login.html": {
-    "mtime": 1785564190.3494828,
+    "mtime": 1785589700.2703757,
     "ast_hash": "a3b7059c34726d59643edeed181c2aae",
     "semantic_hash": ""
   },
@@ -989,11 +984,6 @@
     "ast_hash": "952583045348f95e125121fc3870d4da",
     "semantic_hash": ""
   },
-  "AUDIT_LOG.md": {
-    "mtime": 1785579157.998348,
-    "ast_hash": "69c6ce565e434d43e7daecc75755f1a2",
-    "semantic_hash": ""
-  },
   "backend/internal/middleware/rate_limiter_fixed.go": {
     "mtime": 1785574871.4946864,
     "ast_hash": "537250ac8c2b4dc1b54b4d31b57059e9",
@@ -1004,14 +994,34 @@
     "ast_hash": "be7817ad88c41566b6b717e625592077",
     "semantic_hash": ""
   },
-  "backend/migrations/00018_seed_berita_kegiatan_sliders.sql": {
-    "mtime": 1785576561.2593193,
-    "ast_hash": "1fa65ca200ca5e7986d5fd0d45ed9bc6",
+  "backend/migrations/00020_add_deleted_at_pesan_kontak.sql": {
+    "mtime": 1785598416.6774056,
+    "ast_hash": "fef76a1fb7db63eee1b6e8a9dbce6cbe",
     "semantic_hash": ""
   },
-  "backend/migrations/00019_seed_extra_pagination.sql": {
-    "mtime": 1785577428.182351,
-    "ast_hash": "9f488f8e2725312e8c432ffbcc586b8e",
+  "frontend/src/components/NavbarBeritaSearch.jsx": {
+    "mtime": 1785579847.843755,
+    "ast_hash": "45b066737e20f2703221f45328f53611",
+    "semantic_hash": ""
+  },
+  "frontend/src/hooks/useReveal.js": {
+    "mtime": 1785587573.039234,
+    "ast_hash": "f5b78ff6057912536838bca1111f566d",
+    "semantic_hash": ""
+  },
+  "docs/API_CONTRACT_SYNC_REPORT_2026-08.md": {
+    "mtime": 1785597867.1008804,
+    "ast_hash": "217df30afc892bccd6e1e7193ea537a3",
+    "semantic_hash": ""
+  },
+  "backend/public/uploads/pengurus/1785586347643796103.png": {
+    "mtime": 1785586347.644942,
+    "ast_hash": "2cd8bde463f5d82aae0f0cec061d6b8f",
+    "semantic_hash": ""
+  },
+  "backend/public/uploads/pengurus/1785586414123278730.png": {
+    "mtime": 1785586414.1224453,
+    "ast_hash": "fabac646f3c957f0bae0858652e67c2f",
     "semantic_hash": ""
   }
 }

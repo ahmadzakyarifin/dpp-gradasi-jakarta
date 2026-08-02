@@ -12,6 +12,19 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// Tuning koneksi Redis — konstanta (bukan env). Nilai aman untuk Upstash & lokal.
+const (
+	redisPoolSize        = 20
+	redisMinIdleConns    = 5
+	redisMaxRetries      = 3
+	redisDialTimeout     = 5 * time.Second
+	redisReadTimeout     = 3 * time.Second
+	redisWriteTimeout    = 3 * time.Second
+	redisPoolTimeout     = 4 * time.Second
+	redisConnMaxIdleTime = 5 * time.Minute
+	redisConnMaxLifetime = 30 * time.Minute
+)
+
 func ConnectRedis(cfg *config.Config) (*redis.Client, error) {
 	addr := fmt.Sprintf("%s:%s", cfg.Redis.Host, cfg.Redis.Port)
 
@@ -20,15 +33,15 @@ func ConnectRedis(cfg *config.Config) (*redis.Client, error) {
 		Username:        cfg.Redis.Username,
 		Password:        cfg.Redis.Pass,
 		DB:              cfg.Redis.DB,
-		PoolSize:        cfg.Redis.PoolSize,
-		MinIdleConns:    cfg.Redis.MinIdleConns,
-		MaxRetries:      cfg.Redis.MaxRetries,
-		DialTimeout:     time.Duration(cfg.Redis.DialTimeoutSecs) * time.Second,
-		ReadTimeout:     time.Duration(cfg.Redis.ReadTimeoutSecs) * time.Second,
-		WriteTimeout:    time.Duration(cfg.Redis.WriteTimeoutSecs) * time.Second,
-		PoolTimeout:     time.Duration(cfg.Redis.PoolTimeoutSecs) * time.Second,
-		ConnMaxIdleTime: time.Duration(cfg.Redis.ConnMaxIdleTimeMins) * time.Minute,
-		ConnMaxLifetime: time.Duration(cfg.Redis.ConnMaxLifetimeMins) * time.Minute,
+		PoolSize:        redisPoolSize,
+		MinIdleConns:    redisMinIdleConns,
+		MaxRetries:      redisMaxRetries,
+		DialTimeout:     redisDialTimeout,
+		ReadTimeout:     redisReadTimeout,
+		WriteTimeout:    redisWriteTimeout,
+		PoolTimeout:     redisPoolTimeout,
+		ConnMaxIdleTime: redisConnMaxIdleTime,
+		ConnMaxLifetime: redisConnMaxLifetime,
 	}
 
 	// Redis managed (Upstash, Redis Cloud, dll) wajib TLS. Auto-detect:

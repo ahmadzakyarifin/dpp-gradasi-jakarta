@@ -1,0 +1,25 @@
+info:
+  name: Create Major
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{base_url}}/api/v1/major"
+  body:
+    type: json
+    data: |-
+      {
+              "name": "Teknik dan Bisnis Sepeda Motor",
+              "code": "TBSM",
+              "is_active": true
+      }
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJlbWFpbCI6InNjaG9vbHBheTQxQGdtYWlsLmNvbSIsInJvbGVfaWQiOjEsIm5hbWUiOiJBZG1pbmlzdHJhdG9yIiwicm9sZV9uYW1lIjoic3VwZXJfYWRtaW4iLCJleHAiOjE3ODQ4NzkwMzEsImlhdCI6MTc4NDg3ODEzMX0.U_BpzRzBcrYGl9FOJI92TOe_wEpotdPHDDtDPBKBx2c
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

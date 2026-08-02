@@ -1,0 +1,23 @@
+info:
+  name: Delete Major Bulk
+  type: http
+  seq: 6
+
+http:
+  method: POST
+  url: "{{base_url}}/api/v1/major/bulk-delete"
+  body:
+    type: json
+    data: |-
+      {
+        "ids": [34, 35, 36]
+      }
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJlbWFpbCI6InNjaG9vbHBheTQxQGdtYWlsLmNvbSIsInJvbGVfaWQiOjEsIm5hbWUiOiJBZG1pbmlzdHJhdG9yIiwicm9sZV9uYW1lIjoic3VwZXJfYWRtaW4iLCJleHAiOjE3ODQ4NzkyNTIsImlhdCI6MTc4NDg3ODM1Mn0.1kKc3_Rj9ymNWcieucXcwqnDN2xAeEqEJlUhE6u8Zvs
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

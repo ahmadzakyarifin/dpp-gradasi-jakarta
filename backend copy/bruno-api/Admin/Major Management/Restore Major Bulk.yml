@@ -1,0 +1,23 @@
+info:
+  name: Restore Major Bulk
+  type: http
+  seq: 8
+
+http:
+  method: PATCH
+  url: "{{base_url}}/api/v1/major/bulk-restore"
+  body:
+    type: json
+    data: |-
+      {
+        "ids": [34, 35, 36]
+      }
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJlbWFpbCI6InNjaG9vbHBheTQxQGdtYWlsLmNvbSIsInJvbGVfaWQiOjEsIm5hbWUiOiJBZG1pbmlzdHJhdG9yIiwicm9sZV9uYW1lIjoic3VwZXJfYWRtaW4iLCJleHAiOjE3ODQ4Nzk4MjksImlhdCI6MTc4NDg3ODkyOX0.tdqvBKfoLG9Ihn0w-1uLBxQevodUDF_DQMbAtlNH6wY
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

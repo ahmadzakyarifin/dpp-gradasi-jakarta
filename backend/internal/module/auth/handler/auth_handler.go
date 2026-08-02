@@ -54,15 +54,13 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		}
 	}
 
+	// Audit context (untuk SYNC audit di service)
+	req.IPAddress = c.ClientIP()
+	req.UserAgent = c.Request.UserAgent()
+
 	resp, refreshToken, maxAge, svcErr := h.svc.Login(&req)
 	if svcErr != nil {
-		var svc *helper.ServiceError
-		if e, ok := svcErr.(*helper.ServiceError); ok {
-			svc = e
-		} else {
-			svc = helper.NewServiceError("SERVER_ERROR", "Terjadi kesalahan pada server.", nil)
-		}
-		// Log failed login
+		// Log failed login (async tetap OK untuk event gagal — bukan audit sukses)
 		ip := c.ClientIP()
 		ua := c.Request.UserAgent()
 		go h.logSvc.Log(context.Background(), nil, &activitylogdto.ActivityLogInput{
@@ -73,8 +71,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 			UserAgent:   ua,
 		})
 
-		httpCode := h.errorCodeToHTTP(svc.Code)
-		helper.ErrorResponse(c, httpCode, svc.Code, svc.Message, nil)
+		helper.HandleServiceError(c, svcErr)
 		return
 	}
 
@@ -88,19 +85,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	)
 
 	helper.SuccessResponse(c, http.StatusOK, "AUTH_LOGIN_SUCCESS", "Login berhasil.", resp, nil)
-
-	ip := c.ClientIP()
-	ua := c.Request.UserAgent()
-	go h.logSvc.Log(context.Background(), nil, &activitylogdto.ActivityLogInput{
-		ActorID:     &resp.User.ID,
-		ActorName:   resp.User.Name,
-		ActorRole:   resp.User.Role.Name,
-		Action:      "auth.login",
-		EntityType:  "auth",
-		Description: "Login berhasil",
-		IPAddress:   ip,
-		UserAgent:   ua,
-	})
 }
 
 // Refresh memperbarui access token
@@ -113,14 +97,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 
 	resp, newRefreshToken, maxAge, svcErr := h.svc.Refresh(refreshTokenStr)
 	if svcErr != nil {
-		var svc *helper.ServiceError
-		if e, ok := svcErr.(*helper.ServiceError); ok {
-			svc = e
-		} else {
-			svc = helper.NewServiceError("SERVER_ERROR", "Terjadi kesalahan pada server.", nil)
-		}
-		httpCode := h.errorCodeToHTTP(svc.Code)
-		helper.ErrorResponse(c, httpCode, svc.Code, svc.Message, nil)
+		helper.HandleServiceError(c, svcErr)
 		return
 	}
 
@@ -199,14 +176,7 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 	}
 
 	if err := h.svc.ForgotPassword(&req, h.cfg.App.URL); err != nil {
-		var svc *helper.ServiceError
-		if e, ok := err.(*helper.ServiceError); ok {
-			svc = e
-		} else {
-			svc = helper.NewServiceError("SERVER_ERROR", "Terjadi kesalahan pada server.", nil)
-		}
-		httpCode := h.errorCodeToHTTP(svc.Code)
-		helper.ErrorResponse(c, httpCode, svc.Code, svc.Message, nil)
+		helper.HandleServiceError(c, err)
 		return
 	}
 
@@ -255,14 +225,7 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	}
 
 	if err := h.svc.ResetPassword(&req); err != nil {
-		var svc *helper.ServiceError
-		if e, ok := err.(*helper.ServiceError); ok {
-			svc = e
-		} else {
-			svc = helper.NewServiceError("SERVER_ERROR", "Terjadi kesalahan pada server.", nil)
-		}
-		httpCode := h.errorCodeToHTTP(svc.Code)
-		helper.ErrorResponse(c, httpCode, svc.Code, svc.Message, nil)
+		helper.HandleServiceError(c, err)
 		return
 	}
 
@@ -310,14 +273,7 @@ func (h *AuthHandler) ActivateAccount(c *gin.Context) {
 	}
 
 	if err := h.svc.ActivateAccount(&req); err != nil {
-		var svc *helper.ServiceError
-		if e, ok := err.(*helper.ServiceError); ok {
-			svc = e
-		} else {
-			svc = helper.NewServiceError("SERVER_ERROR", "Terjadi kesalahan pada server.", nil)
-		}
-		httpCode := h.errorCodeToHTTP(svc.Code)
-		helper.ErrorResponse(c, httpCode, svc.Code, svc.Message, nil)
+		helper.HandleServiceError(c, err)
 		return
 	}
 
@@ -348,14 +304,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	}
 
 	if err := h.svc.ChangePassword(userID, &req); err != nil {
-		var svc *helper.ServiceError
-		if e, ok := err.(*helper.ServiceError); ok {
-			svc = e
-		} else {
-			svc = helper.NewServiceError("SERVER_ERROR", "Terjadi kesalahan pada server.", nil)
-		}
-		httpCode := h.errorCodeToHTTP(svc.Code)
-		helper.ErrorResponse(c, httpCode, svc.Code, svc.Message, nil)
+		helper.HandleServiceError(c, err)
 		return
 	}
 
@@ -383,39 +332,9 @@ func (h *AuthHandler) Me(c *gin.Context) {
 
 	profile, err := h.svc.GetProfile(userID)
 	if err != nil {
-		var svc *helper.ServiceError
-		if e, ok := err.(*helper.ServiceError); ok {
-			svc = e
-		} else {
-			svc = helper.NewServiceError("SERVER_ERROR", "Terjadi kesalahan pada server.", nil)
-		}
-		httpCode := h.errorCodeToHTTP(svc.Code)
-		helper.ErrorResponse(c, httpCode, svc.Code, svc.Message, nil)
+		helper.HandleServiceError(c, err)
 		return
 	}
 
 	helper.SuccessResponse(c, http.StatusOK, "AUTH_PROFILE", "Profil berhasil diambil.", profile, nil)
-}
-
-func (h *AuthHandler) errorCodeToHTTP(code string) int {
-	switch code {
-	case "AUTH_INVALID_CREDENTIALS":
-		return http.StatusUnauthorized
-	case "AUTH_ACCOUNT_INACTIVE":
-		return http.StatusForbidden
-	case "AUTH_ACCOUNT_PENDING":
-		return http.StatusForbidden
-	case "AUTH_SESSION_EXPIRED":
-		return http.StatusUnauthorized
-	case "AUTH_TOKEN_INVALID_OR_EXPIRED":
-		return http.StatusBadRequest
-	case "AUTH_EMAIL_EXISTS":
-		return http.StatusConflict
-	case "NOT_FOUND":
-		return http.StatusNotFound
-	case "VALIDATION_ERROR":
-		return http.StatusUnprocessableEntity
-	default:
-		return http.StatusInternalServerError
-	}
 }

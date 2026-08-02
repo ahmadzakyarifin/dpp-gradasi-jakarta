@@ -16,8 +16,8 @@ type KegiatanService interface {
 	GetAll(q dto.KegiatanQuery) (*dto.KegiatanListResponse, error)
 	GetBySlug(slug string) (*dto.KegiatanDetailResponse, error)
 	GetByID(id uint) (*dto.KegiatanDetailResponse, error)
-	Create(req *dto.KegiatanRequest, authorID uint) (*dto.KegiatanDetailResponse, error)
-	Update(id uint, req *dto.KegiatanRequest) (*dto.KegiatanDetailResponse, error)
+	Create(req *dto.KegiatanCreateRequest, authorID uint) (*dto.KegiatanDetailResponse, error)
+	Update(id uint, req *dto.KegiatanUpdateRequest) (*dto.KegiatanDetailResponse, error)
 	Delete(id uint) error
 	Restore(id uint) error
 	BulkDelete(ids []uint) error
@@ -98,10 +98,16 @@ func (s *kegiatanService) GetByID(id uint) (*dto.KegiatanDetailResponse, error) 
 	return &resp, nil
 }
 
-func (s *kegiatanService) Create(req *dto.KegiatanRequest, authorID uint) (*dto.KegiatanDetailResponse, error) {
+func (s *kegiatanService) Create(req *dto.KegiatanCreateRequest, authorID uint) (*dto.KegiatanDetailResponse, error) {
 	cat := strings.TrimSpace(req.Category)
 	if cat == "" {
 		cat = "Kegiatan"
+	}
+
+	// Validasi unik slug — jika sudah ada (termasuk di trash), tambah suffix -2, -3, dst
+	uniqueSlug, err := s.repo.FindUniqueSlug(slug.Make(req.Title))
+	if err != nil {
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal memvalidasi slug.", err)
 	}
 
 	isPub := true
@@ -110,13 +116,13 @@ func (s *kegiatanService) Create(req *dto.KegiatanRequest, authorID uint) (*dto.
 	}
 
 	k := &model.Kegiatan{
-		Slug:        slug.Make(req.Title),
+		Slug:        uniqueSlug,
 		Title:       req.Title,
 		Category:    cat,
 		EventDate:   req.EventDate,
 		Location:    req.Location,
 		Organizer:   req.Organizer,
-		ImageURL:    strPtr(req.ImageURL),
+		ImagePath:   strPtr(req.ImagePath),
 		Excerpt:     strPtr(req.Excerpt),
 		Content:     strPtr(req.Content),
 		IsPublished: isPub,
@@ -133,13 +139,17 @@ func (s *kegiatanService) Create(req *dto.KegiatanRequest, authorID uint) (*dto.
 	}
 
 	if req.Tags != "" {
-		s.repo.SaveTags(k.ID, parseTags(req.Tags))
+		if err := s.repo.SaveTags(k.ID, parseTags(req.Tags)); err != nil {
+			return nil, helper.NewServiceError("SERVER_ERROR", "Gagal menyimpan tag kegiatan.", err)
+		}
 	}
 
 	if req.GalleryJSON != "" {
 		items, err := repository.ParseGalleryJSON(req.GalleryJSON)
 		if err == nil && len(items) > 0 {
-			s.repo.SaveGallery(k.ID, items)
+			if err := s.repo.SaveGallery(k.ID, items); err != nil {
+				return nil, helper.NewServiceError("SERVER_ERROR", "Gagal menyimpan galeri kegiatan.", err)
+			}
 		}
 	}
 
@@ -148,26 +158,51 @@ func (s *kegiatanService) Create(req *dto.KegiatanRequest, authorID uint) (*dto.
 	return &resp, nil
 }
 
-func (s *kegiatanService) Update(id uint, req *dto.KegiatanRequest) (*dto.KegiatanDetailResponse, error) {
+func (s *kegiatanService) Update(id uint, req *dto.KegiatanUpdateRequest) (*dto.KegiatanDetailResponse, error) {
 	k, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, helper.NewServiceError("NOT_FOUND", "Kegiatan tidak ditemukan.", err)
 	}
 
-	cat := strings.TrimSpace(req.Category)
-	if cat == "" {
-		cat = "Kegiatan"
+	// Partial update: hanya field yang dikirim yang diubah
+	if req.Title != "" {
+		title := strings.TrimSpace(req.Title)
+		if title == "" {
+			return nil, helper.NewServiceError("VALIDATION_ERROR", "Judul wajib diisi.", nil)
+		}
+		// Cek duplikat judul (kecuali id ini sendiri)
+		dup, err := s.repo.ExistsTitle(title, id)
+		if err != nil {
+			return nil, helper.NewServiceError("SERVER_ERROR", "Gagal memvalidasi judul.", err)
+		}
+		if dup {
+			return nil, helper.NewServiceError("DUPLICATE_TITLE", "Judul sudah digunakan, gunakan judul lain.", nil)
+		}
+		k.Title = title
 	}
 
-	k.Title = req.Title
-	// k.Slug = slug.Make(req.Title) // Slug dipertahankan agar link lama tidak mati (404) — konsisten dengan Berita
-	k.Category = cat
-	k.EventDate = req.EventDate
-	k.Location = req.Location
-	k.Organizer = req.Organizer
-	k.ImageURL = strPtr(req.ImageURL)
-	k.Excerpt = strPtr(req.Excerpt)
-	k.Content = strPtr(req.Content)
+	cat := strings.TrimSpace(req.Category)
+	if cat != "" {
+		k.Category = cat
+	}
+	if req.EventDate != "" {
+		k.EventDate = req.EventDate
+	}
+	if req.Location != "" {
+		k.Location = req.Location
+	}
+	if req.Organizer != "" {
+		k.Organizer = req.Organizer
+	}
+	if req.ImagePath != "" {
+		k.ImagePath = strPtr(req.ImagePath)
+	}
+	if req.Excerpt != "" {
+		k.Excerpt = strPtr(req.Excerpt)
+	}
+	if req.Content != "" {
+		k.Content = strPtr(req.Content)
+	}
 	if req.IsPublished != nil {
 		k.IsPublished = *req.IsPublished
 	}
@@ -180,12 +215,16 @@ func (s *kegiatanService) Update(id uint, req *dto.KegiatanRequest) (*dto.Kegiat
 	}
 
 	if req.Tags != "" {
-		s.repo.SaveTags(k.ID, parseTags(req.Tags))
+		if err := s.repo.SaveTags(k.ID, parseTags(req.Tags)); err != nil {
+			return nil, helper.NewServiceError("SERVER_ERROR", "Gagal menyimpan tag kegiatan.", err)
+		}
 	}
 	if req.GalleryJSON != "" {
 		items, err := repository.ParseGalleryJSON(req.GalleryJSON)
 		if err == nil && len(items) > 0 {
-			s.repo.SaveGallery(k.ID, items)
+			if err := s.repo.SaveGallery(k.ID, items); err != nil {
+				return nil, helper.NewServiceError("SERVER_ERROR", "Gagal menyimpan galeri kegiatan.", err)
+			}
 		}
 	}
 
@@ -240,8 +279,8 @@ func toListItem(k model.Kegiatan) dto.KegiatanListItem {
 		CreatedAt:    k.CreatedAt.Format("2006-01-02T15:04:05Z"),
 		UpdatedAt:    k.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 	}
-	if k.ImageURL != nil {
-		item.ImageURL = *k.ImageURL
+	if k.ImagePath != nil {
+		item.ImagePath = *k.ImagePath
 	}
 	if k.Excerpt != nil {
 		item.Excerpt = *k.Excerpt
@@ -265,8 +304,8 @@ func toDetail(k model.Kegiatan) dto.KegiatanDetailResponse {
 		Tags:        make([]string, 0),
 		Gallery:     make([]dto.GalleryImageItem, 0),
 	}
-	if k.ImageURL != nil {
-		resp.ImageURL = *k.ImageURL
+	if k.ImagePath != nil {
+		resp.ImagePath = *k.ImagePath
 	}
 	if k.Excerpt != nil {
 		resp.Excerpt = *k.Excerpt
@@ -280,7 +319,7 @@ func toDetail(k model.Kegiatan) dto.KegiatanDetailResponse {
 	for _, g := range k.Gallery {
 		resp.Gallery = append(resp.Gallery, dto.GalleryImageItem{
 			ID:        g.ID,
-			ImageURL:  g.ImageURL,
+			ImagePath: g.ImagePath,
 			Caption:   g.Caption,
 			SortOrder: g.SortOrder,
 		})

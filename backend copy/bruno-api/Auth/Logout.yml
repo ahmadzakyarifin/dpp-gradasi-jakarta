@@ -1,0 +1,25 @@
+info:
+  name: Logout
+  type: http
+  seq: 6
+
+http:
+  method: POST
+  url: "{{base_url}}/api/v1/auth/logout"
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: ""
+      value: ""
+  body:
+    type: json
+    data: ""
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJlbWFpbCI6InNjaG9vbHBheTQxQGdtYWlsLmNvbSIsInJvbGVfaWQiOjEsIm5hbWUiOiJBZG1pbmlzdHJhdG9yIiwicm9sZV9uYW1lIjoic3VwZXJfYWRtaW4iLCJleHAiOjE3ODQ4NzgzNTMsImlhdCI6MTc4NDg3NzQ1M30.IbHy8_lWSV5SQFWqsbddX4_CDWdRpPmTkF0CHt-ZUIY
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

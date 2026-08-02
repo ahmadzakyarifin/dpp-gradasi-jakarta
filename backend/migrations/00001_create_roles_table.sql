@@ -9,10 +9,6 @@ CREATE TABLE roles (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
-
-INSERT INTO roles (name, display_name, description) VALUES
-('super_admin', 'Super Administrator', 'Mengelola pengguna dan audit log'),
-('admin', 'Administrator', 'Mengelola seluruh konten website');
 -- +goose StatementEnd
 
 -- +goose Down

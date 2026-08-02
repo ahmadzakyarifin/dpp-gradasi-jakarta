@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -94,8 +95,10 @@ func (r *RateLimiter) Use(scope string, rules ...Rule) gin.HandlerFunc {
 				item.rule.Period,
 			)
 			if err != nil {
-				abortRateLimitError(c)
-				return
+				// Fail-open: Redis error jangan blokir request (availability > security).
+				// Log warning supaya kebaca kalau ini terjadi di production.
+				log.Printf("[rate-limit][warn] redis error utk scope=%s kind=%s: %v — fail-open, request diteruskan", scope, item.rule.Kind, err)
+				continue
 			}
 
 			if blocked {

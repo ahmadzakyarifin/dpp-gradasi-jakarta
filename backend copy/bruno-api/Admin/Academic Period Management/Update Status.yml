@@ -1,0 +1,27 @@
+info:
+  name: Update Status
+  type: http
+  seq: 3
+
+http:
+  method: PATCH
+  url: "{{base_url}}/api/v1/academic-years/:id"
+  params:
+    - name: id
+      value: "2"
+      type: path
+  body:
+    type: json
+    data: |-
+      {
+        "is_active": false
+      }
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJlbWFpbCI6InNjaG9vbHBheTQxQGdtYWlsLmNvbSIsInJvbGVfaWQiOjEsIm5hbWUiOiJBZG1pbmlzdHJhdG9yIiwicm9sZV9uYW1lIjoic3VwZXJfYWRtaW4iLCJleHAiOjE3ODQ4OTYxNTgsImlhdCI6MTc4NDg5NTI1OH0.gt2OiWKTIuMd9hy4oGWUxEURQjvsTmYNSgzrGVOEtgU
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

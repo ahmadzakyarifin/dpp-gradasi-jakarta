@@ -350,7 +350,7 @@
                             isNew: s.is_new,
                             date: s.event_date,
                             location: s.location,
-                            img: s.image_url.startsWith('http') ? s.image_url : ('http://127.0.0.1:8080' + s.image_url),
+                            img: s.image_path.startsWith('http') ? s.image_path : ('http://127.0.0.1:8080' + s.image_path),
                             link: s.link_url || '#'
                         }));
                     }
@@ -1295,7 +1295,7 @@
                 settings: {
                     site_name: 'DPP GRADASI',
                     tagline: 'Generasi Digital Indonesia',
-                    logo_url: '/uploads/logo.png',
+                    logo_path: '/uploads/logo.png',
                     contact_email: 'dpp@gradasi.org',
                     contact_phone: '+6285279880008',
                     address: 'Jl. Jenderal Sudirman No.1, Jakarta Pusat',
@@ -1303,7 +1303,7 @@
                     facebook_url: 'https://www.facebook.com/gradasiofficial.id',
                     instagram_url: 'https://www.instagram.com/dppgradasi',
                     youtube_url: 'https://www.youtube.com/channel/UCwdjB4LkqcF4Kw5-PoyOb5A',
-                    video_profile_url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                    video_profile_path: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
                     history: 'Perkumpulan Generasi Digital Indonesia (GRADASI) didirikan pada tahun 2018 di Yogyakarta...',
                     about_formation_date: '4 Februari 2019',
                     about_no_sk: 'AHU – 0000151.AH.01.07.2019',
@@ -1313,7 +1313,7 @@
                     greeting_subtitle: 'Resolusi & Harapan',
                     greeting_date: '11 February 2026',
                     greeting_content: 'Memasuki tahun 2026, GRADASI menetapkan pilar utama perjuangan...',
-                    greeting_image_url: 'https://gradasi.org/uploads/img/event-terkini/1767154211.jpg'
+                    greeting_image_path: 'https://gradasi.org/uploads/img/event-terkini/1767154211.jpg'
                 },
                 init() {
                     fetch('http://127.0.0.1:8080/api/v1/settings')

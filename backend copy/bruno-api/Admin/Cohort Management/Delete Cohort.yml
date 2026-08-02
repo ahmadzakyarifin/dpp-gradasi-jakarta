@@ -1,0 +1,21 @@
+info:
+  name: Delete Cohort
+  type: http
+  seq: 5
+
+http:
+  method: DELETE
+  url: "{{base_url}}/api/v1/cohorts/:id"
+  params:
+    - name: id
+      value: "1"
+      type: path
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJlbWFpbCI6InNjaG9vbHBheTQxQGdtYWlsLmNvbSIsInJvbGVfaWQiOjEsIm5hbWUiOiJBZG1pbmlzdHJhdG9yIiwicm9sZV9uYW1lIjoic3VwZXJfYWRtaW4iLCJleHAiOjE3ODQ4OTcxMzEsImlhdCI6MTc4NDg5NjIzMX0.1XwEyXL3jJvXsEaCVpoyPzqvzstCUsLrDcb55EXmZbk
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/berita/dto"
@@ -12,6 +13,8 @@ type BeritaRepo interface {
 	FindPublished(query dto.BeritaQuery) ([]model.Berita, int64, error)
 	FindAll(query dto.BeritaQuery) ([]model.Berita, int64, error)
 	FindBySlug(slug string) (*model.Berita, error)
+	FindUniqueSlug(slug string) (string, error)
+	ExistsTitle(title string, excludeID uint) (bool, error)
 	FindByID(id uint) (*model.Berita, error)
 	Create(berita *model.Berita) error
 	Update(berita *model.Berita) error
@@ -122,6 +125,38 @@ func (r *beritaRepo) FindBySlug(slug string) (*model.Berita, error) {
 		return nil, err
 	}
 	return &b, nil
+}
+
+// FindUniqueSlug mengembalikan slug unik dengan suffix -2, -3, dst jika slug sudah dipakai.
+// Memakai Unscoped agar slug di soft-delete (trash) juga dianggap terpakai.
+func (r *beritaRepo) FindUniqueSlug(slug string) (string, error) {
+	base := slug
+	candidate := slug
+	for i := 2; ; i++ {
+		var count int64
+		err := r.db.Unscoped().Model(&model.Berita{}).Where("slug = ?", candidate).Count(&count).Error
+		if err != nil {
+			return "", err
+		}
+		if count == 0 {
+			return candidate, nil
+		}
+		candidate = fmt.Sprintf("%s-%d", base, i)
+	}
+}
+
+// ExistsTitle mengembalikan true jika judul sudah dipakai berita lain (soft-delete ikut dihitung).
+// excludeID dipakai saat update — mengabaikan berita dengan id tersebut (dirinya sendiri).
+func (r *beritaRepo) ExistsTitle(title string, excludeID uint) (bool, error) {
+	var count int64
+	q := r.db.Unscoped().Model(&model.Berita{}).Where("title = ?", title)
+	if excludeID > 0 {
+		q = q.Where("id != ?", excludeID)
+	}
+	if err := q.Count(&count).Error; err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
 
 func (r *beritaRepo) FindByID(id uint) (*model.Berita, error) {

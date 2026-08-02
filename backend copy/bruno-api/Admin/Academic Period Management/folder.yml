@@ -1,0 +1,7 @@
+info:
+  name: Academic Period Management
+  type: folder
+  seq: 4
+
+request:
+  auth: inherit

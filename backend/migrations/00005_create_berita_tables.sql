@@ -7,7 +7,7 @@ CREATE TABLE berita (
     category VARCHAR(100) DEFAULT 'Berita Organisasi',
     published_date DATE NOT NULL,
     author_id INT,
-    image_url VARCHAR(500),
+    image_path VARCHAR(500),
     excerpt TEXT,
     content LONGTEXT,
     is_featured BOOLEAN DEFAULT FALSE,
