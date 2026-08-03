@@ -6,6 +6,7 @@ import (
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/config"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/helper"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/middleware"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/auth/dto"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/auth/mapper"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/auth/service"
@@ -156,13 +157,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 
-	value, exists := c.Get("user_id")
-	if !exists {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "AUTH_TOKEN_INVALID_OR_EXPIRED", "Sesi login telah berakhir. Silakan login kembali.", nil)
-		return
-	}
-
-	userID, ok := value.(uint)
+	userID, ok := middleware.GetUserID(c)
 	if !ok {
 		helper.ErrorResponse(c, http.StatusUnauthorized, "AUTH_TOKEN_INVALID_OR_EXPIRED", "Sesi login telah berakhir. Silakan login kembali.", nil)
 		return
@@ -181,13 +176,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 
 // Me mengambil profil user yang sedang login (dari token).
 func (h *AuthHandler) Me(c *gin.Context) {
-	value, exists := c.Get("user_id")
-	if !exists {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "AUTH_TOKEN_INVALID_OR_EXPIRED", "Akses ditolak. Token tidak valid.", nil)
-		return
-	}
-
-	userID, ok := value.(uint)
+	userID, ok := middleware.GetUserID(c)
 	if !ok {
 		helper.ErrorResponse(c, http.StatusUnauthorized, "AUTH_TOKEN_INVALID_OR_EXPIRED", "Akses ditolak. Token tidak valid.", nil)
 		return

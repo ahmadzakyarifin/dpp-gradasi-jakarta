@@ -8,6 +8,7 @@ import (
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/config"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/helper"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/middleware"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/user/dto"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/user/mapper"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/user/service"
@@ -111,8 +112,8 @@ func (h *UserHandler) Update(c *gin.Context) {
 func (h *UserHandler) Delete(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 
-	currentUserID, _ := c.Get("user_id")
-	if uid, ok := currentUserID.(uint); ok && uint(id) == uid {
+	uid, ok := middleware.GetUserID(c)
+	if ok && uint(id) == uid {
 		helper.ErrorResponse(c, http.StatusBadRequest, "UNAUTHORIZED_ACTION", "Anda tidak diperbolehkan menghapus akun Anda sendiri", nil)
 		return
 	}
@@ -133,8 +134,8 @@ func (h *UserHandler) ToggleStatus(c *gin.Context) {
 		return
 	}
 
-	currentUserID, _ := c.Get("user_id")
-	if uid, ok := currentUserID.(uint); ok && uint(id) == uid {
+	uid, ok := middleware.GetUserID(c)
+	if ok && uint(id) == uid {
 		helper.ErrorResponse(c, http.StatusBadRequest, "UNAUTHORIZED_ACTION", "Anda tidak diperbolehkan menonaktifkan akun Anda sendiri", nil)
 		return
 	}
@@ -237,9 +238,9 @@ func (h *UserHandler) BulkDelete(c *gin.Context) {
 		return
 	}
 
-	currentUserID, _ := c.Get("user_id")
+	uid, ok := middleware.GetUserID(c)
 	for _, id := range req.IDs {
-		if uid, ok := currentUserID.(uint); ok && id == uid {
+		if ok && id == uid {
 			helper.ErrorResponse(c, http.StatusBadRequest, "UNAUTHORIZED_ACTION", "Operasi dibatalkan: Terdapat akun Anda sendiri dalam daftar hapus", nil)
 			return
 		}
@@ -330,15 +331,9 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	value, exists := c.Get("user_id")
-	if !exists {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED_ACTION", "akses tidak sah", nil)
-		return
-	}
-
-	userID, ok := value.(uint)
+	userID, ok := middleware.GetUserID(c)
 	if !ok {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED_ACTION", "user tidak valid", nil)
+		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED_ACTION", "akses tidak sah", nil)
 		return
 	}
 
@@ -355,15 +350,9 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 
 // GetProfile mengembalikan profil user yang sedang login (dari token).
 func (h *UserHandler) GetProfile(c *gin.Context) {
-	value, exists := c.Get("user_id")
-	if !exists {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED_ACTION", "akses tidak sah", nil)
-		return
-	}
-
-	userID, ok := value.(uint)
+	userID, ok := middleware.GetUserID(c)
 	if !ok {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED_ACTION", "user tidak valid", nil)
+		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED_ACTION", "akses tidak sah", nil)
 		return
 	}
 
@@ -389,15 +378,9 @@ func (h *UserHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 
-	value, exists := c.Get("user_id")
-	if !exists {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED_ACTION", "akses tidak sah", nil)
-		return
-	}
-
-	userID, ok := value.(uint)
+	userID, ok := middleware.GetUserID(c)
 	if !ok {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED_ACTION", "user tidak valid", nil)
+		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED_ACTION", "akses tidak sah", nil)
 		return
 	}
 
@@ -419,15 +402,9 @@ func (h *UserHandler) VerifyEmail(c *gin.Context) {
 		return
 	}
 
-	value, exists := c.Get("user_id")
-	if !exists {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED_ACTION", "akses tidak sah", nil)
-		return
-	}
-
-	userID, ok := value.(uint)
+	userID, ok := middleware.GetUserID(c)
 	if !ok {
-		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED_ACTION", "user tidak valid", nil)
+		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED_ACTION", "akses tidak sah", nil)
 		return
 	}
 
