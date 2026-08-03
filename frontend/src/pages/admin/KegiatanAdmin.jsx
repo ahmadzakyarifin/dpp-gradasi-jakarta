@@ -111,11 +111,28 @@ export default function KegiatanAdmin() {
         organizer: item.organizer || 'DPP GRADASI',
         eventDate: item.event_date || '',
         location: item.location || '',
-        image: item.image_url || '',
+        image: item.image_url || item.image_path || '',
         excerpt: item.excerpt || '',
         content: item.content || item.excerpt || '',
         isPublished: item.is_published !== false
       })
+      // list_admin tidak menyertakan content/tags/gallery — ambil detail penuh dulu
+      kegiatanService.detailById(item.id)
+        .then(res => {
+          if (res?.data) {
+            const d = res.data
+            setFormData(prev => ({
+              ...prev,
+              content: d.content ?? prev.content,
+              excerpt: d.excerpt ?? prev.excerpt,
+              eventDate: d.event_date ?? prev.eventDate,
+              location: d.location ?? prev.location,
+              organizer: d.organizer ?? prev.organizer,
+              image: d.image_path || d.image_url || prev.image,
+            }))
+          }
+        })
+        .catch(() => {}) // gagal ambil detail → tetap pakai data list
     } else {
       setFormMode('create')
       setFormData({
@@ -142,7 +159,7 @@ export default function KegiatanAdmin() {
       organizer: formData.organizer,
       event_date: formData.eventDate,
       location: formData.location,
-      image_url: formData.image,
+      image_path: formData.image,
       excerpt: formData.excerpt,
       content: formData.content,
       is_published: formData.isPublished

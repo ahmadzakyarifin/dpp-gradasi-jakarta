@@ -25,7 +25,7 @@ export default function SlidersAdmin() {
     title: '',
     subtitle: '',
     tag: '',
-    image_url: '',
+    image_path: '',
     link_url: '',
     sort_order: 1,
     event_date: '',
@@ -114,7 +114,7 @@ export default function SlidersAdmin() {
         title: item.title,
         subtitle: item.subtitle || '',
         tag: item.tag || '',
-        image_url: item.image_url,
+        image_path: item.image_path || item.image_url || '',
         link_url: item.link_url || '',
         sort_order: item.sort_order,
         event_date: item.event_date || '',
@@ -129,7 +129,7 @@ export default function SlidersAdmin() {
         title: '',
         subtitle: '',
         tag: '',
-        image_url: '',
+        image_path: '',
         link_url: '',
         sort_order: items.length + 1,
         event_date: '',
@@ -532,8 +532,8 @@ export default function SlidersAdmin() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Gambar Slider (URL) *</label>
                       <input
                         type="url"
-                        value={formData.image_url}
-                        onChange={e => setFormData({ ...formData, image_url: e.target.value })}
+                        value={formData.image_path}
+                        onChange={e => setFormData({ ...formData, image_path: e.target.value })}
                         required
                         placeholder="https://example.com/banner.jpg"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none"

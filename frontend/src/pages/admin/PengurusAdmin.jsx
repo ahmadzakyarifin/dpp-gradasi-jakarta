@@ -34,7 +34,7 @@ export default function PengurusAdmin() {
     linkedin_url: '',
     whatsapp: '',
     sort_order: 1,
-    image_url: '',
+    image_path: '',
     image: null,
     is_active: true,
   })
@@ -98,7 +98,7 @@ export default function PengurusAdmin() {
         linkedin_url: item.linkedin_url || '',
         whatsapp: item.whatsapp || '',
         sort_order: item.sort_order || 1,
-        image_url: item.image_url || '',
+        image_path: item.image_path || item.image_url || '',
         image: null,
         is_active: item.is_active !== false,
       })
@@ -118,7 +118,7 @@ export default function PengurusAdmin() {
         linkedin_url: '',
         whatsapp: '',
         sort_order: (meta.total_data || 0) + 1,
-        image_url: '',
+        image_path: '',
         image: null,
         is_active: true,
       })
@@ -129,7 +129,7 @@ export default function PengurusAdmin() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     const payload = { ...formData }
-    // Backend butuh multipart; buang id (meta) — image_url dikirim sebagai URL string
+    // Backend butuh multipart; buang id (meta) — image_path dikirim sebagai URL string
     if (formMode === 'create') {
       try {
         await pengurusService.create(payload)
@@ -503,13 +503,13 @@ export default function PengurusAdmin() {
                   <label className="block text-xs font-semibold text-gray-500 mb-1">Foto Profil {formMode === 'create' ? '*' : ''}</label>
                   <input type="file" accept="image/*" required={formMode === 'create'} onChange={e => {
                     const file = e.target.files && e.target.files[0]
-                    if (file) setFormData(prev => ({ ...prev, image: file, image_url: '' }))
+                    if (file) setFormData(prev => ({ ...prev, image: file, image_path: '' }))
                   }} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none" />
                   {formMode === 'create' && (
                     <p className="text-xs text-slate-400 mt-1">Foto wajib diunggah saat menambah pengurus.</p>
                   )}
-                  {formMode === 'edit' && formData.image_url && !formData.image && (
-                    <p className="text-xs text-slate-400 mt-1">Foto saat ini: {formData.image_url.split('/').pop()}</p>
+                  {formMode === 'edit' && formData.image_path && !formData.image && (
+                    <p className="text-xs text-slate-400 mt-1">Foto saat ini: {formData.image_path.split('/').pop()}</p>
                   )}
                 </div>
                 <div className="grid grid-cols-2 gap-4">

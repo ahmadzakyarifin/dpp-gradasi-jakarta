@@ -1,4 +1,5 @@
 import { apiRequest } from '../api'
+import { normalizeImage } from '../utils/normalizeImage'
 
 function toQuery(params = {}) {
   const query = new URLSearchParams()
@@ -11,11 +12,17 @@ function toQuery(params = {}) {
 
 export const kegiatanService = {
   list(params) {
-    return apiRequest(`/kegiatan${toQuery(params)}`)
+    return apiRequest(`/kegiatan${toQuery(params)}`).then(res => {
+      if (res?.data?.kegiatan) res.data.kegiatan = res.data.kegiatan.map(normalizeImage)
+      return res
+    })
   },
 
   detailBySlug(slug) {
-    return apiRequest(`/kegiatan/${encodeURIComponent(slug)}`)
+    return apiRequest(`/kegiatan/${encodeURIComponent(slug)}`).then(res => {
+      if (res?.data) res.data = normalizeImage(res.data)
+      return res
+    })
   },
 
   getCategories() {
@@ -23,11 +30,17 @@ export const kegiatanService = {
   },
 
   listAdmin(params) {
-    return apiRequest(`/kegiatan/admin${toQuery(params)}`)
+    return apiRequest(`/kegiatan/admin${toQuery(params)}`).then(res => {
+      if (res?.data?.kegiatan) res.data.kegiatan = res.data.kegiatan.map(normalizeImage)
+      return res
+    })
   },
 
   detailById(id) {
-    return apiRequest(`/kegiatan/id/${id}`)
+    return apiRequest(`/kegiatan/id/${id}`).then(res => {
+      if (res?.data) res.data = normalizeImage(res.data)
+      return res
+    })
   },
 
   create(payload) {

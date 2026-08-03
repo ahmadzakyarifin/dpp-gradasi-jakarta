@@ -4,6 +4,7 @@ import PublicLayout from '../layouts/PublicLayout'
 import { beritaContent } from '../content/beritaContent'
 import { beritaService } from '../services/beritaService'
 import { formatDate } from '../utils/format'
+import { resolveAssetUrl } from '../utils/assetUrl'
 
 export default function BeritaList() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -85,7 +86,7 @@ export default function BeritaList() {
               <article key={item.id} className="group cursor-pointer card-lift bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-[0_8px_30px_rgba(37,99,235,0.08)] transition-all duration-300 border border-slate-100 flex flex-col">
                 <div className="h-44 relative overflow-hidden bg-slate-100">
                   <img 
-                    src={item.image_url ? (item.image_url.startsWith('http') ? item.image_url : `http://127.0.0.1:8080${item.image_url}`) : 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=600'} 
+                    src={item.image_url ? resolveAssetUrl(item.image_url) : 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=600'} 
                     alt={item.title} 
                     className="w-full h-full object-cover transform group-hover:scale-105 transition duration-500" 
                   />

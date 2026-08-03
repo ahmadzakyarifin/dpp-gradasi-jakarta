@@ -1,4 +1,5 @@
 import { apiRequest } from '../api'
+import { normalizeImage } from '../utils/normalizeImage'
 
 function toQuery(params = {}) {
   const query = new URLSearchParams()
@@ -11,11 +12,17 @@ function toQuery(params = {}) {
 
 export const beritaService = {
   list(params) {
-    return apiRequest(`/berita${toQuery(params)}`)
+    return apiRequest(`/berita${toQuery(params)}`).then(res => {
+      if (res?.data?.berita) res.data.berita = res.data.berita.map(normalizeImage)
+      return res
+    })
   },
 
   detailBySlug(slug) {
-    return apiRequest(`/berita/${encodeURIComponent(slug)}`)
+    return apiRequest(`/berita/${encodeURIComponent(slug)}`).then(res => {
+      if (res?.data) res.data = normalizeImage(res.data)
+      return res
+    })
   },
 
   getCategories() {
@@ -23,11 +30,17 @@ export const beritaService = {
   },
 
   listAdmin(params) {
-    return apiRequest(`/berita/admin${toQuery(params)}`)
+    return apiRequest(`/berita/admin${toQuery(params)}`).then(res => {
+      if (res?.data?.berita) res.data.berita = res.data.berita.map(normalizeImage)
+      return res
+    })
   },
 
   detailById(id) {
-    return apiRequest(`/berita/id/${id}`)
+    return apiRequest(`/berita/id/${id}`).then(res => {
+      if (res?.data) res.data = normalizeImage(res.data)
+      return res
+    })
   },
 
   create(payload) {

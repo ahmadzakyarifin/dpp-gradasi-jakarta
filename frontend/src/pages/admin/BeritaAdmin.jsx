@@ -31,7 +31,7 @@ export default function BeritaAdmin() {
     title: '',
     category: 'Berita Nasional',
     published_date: new Date().toISOString().slice(0, 10),
-    image_url: '',
+    image_path: '',
     excerpt: '',
     content: '',
     tags: '',
@@ -131,7 +131,7 @@ export default function BeritaAdmin() {
         title: item.title,
         category: item.category,
         published_date: item.published_date,
-        image_url: item.image_url || '',
+        image_path: item.image_path || '',
         excerpt: item.excerpt || '',
         content: item.content || '',
         tags: item.tags || '',
@@ -144,7 +144,7 @@ export default function BeritaAdmin() {
         title: '',
         category: categories[0] || 'Berita Nasional',
         published_date: new Date().toISOString().slice(0, 10),
-        image_url: '',
+        image_path: '',
         excerpt: '',
         content: '',
         tags: '',
@@ -623,7 +623,7 @@ export default function BeritaAdmin() {
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1">URL Gambar</label>
-                <input type="text" value={formData.image_url} onChange={e => setFormData({ ...formData, image_url: e.target.value })} className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
+                <input type="text" value={formData.image_path} onChange={e => setFormData({ ...formData, image_path: e.target.value })} className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1">Ringkasan (Excerpt)</label>

@@ -1,4 +1,5 @@
 import { apiRequest } from '../api'
+import { normalizeImage } from '../utils/normalizeImage'
 
 function toQuery(params = {}) {
   const query = new URLSearchParams()
@@ -14,16 +15,25 @@ function toQuery(params = {}) {
 export const slidersService = {
   // Publik — hanya slider aktif (tanpa param query, sesuai kontrak)
   list() {
-    return apiRequest('/sliders')
+    return apiRequest('/sliders').then(res => {
+      if (res?.data?.sliders) res.data.sliders = res.data.sliders.map(normalizeImage)
+      return res
+    })
   },
 
   // Admin — semua (active=false) atau aktif saja
   listAdmin(active = false) {
-    return apiRequest(`/sliders/admin?active=${active}`)
+    return apiRequest(`/sliders/admin?active=${active}`).then(res => {
+      if (res?.data?.sliders) res.data.sliders = res.data.sliders.map(normalizeImage)
+      return res
+    })
   },
 
   getById(id) {
-    return apiRequest(`/sliders/${id}`)
+    return apiRequest(`/sliders/${id}`).then(res => {
+      if (res?.data) res.data = normalizeImage(res.data)
+      return res
+    })
   },
 
   create(payload) {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import AdminLayout from '../../layouts/AdminLayout'
 import { userService } from '../../services/userService'
+import { roleService } from '../../services/roleService'
 
 export default function UsersAdmin() {
   const [users, setUsers] = useState([])
@@ -19,12 +20,15 @@ export default function UsersAdmin() {
   // Selection
   const [selectedIds, setSelectedIds] = useState([])
 
+  // Roles (untuk dropdown form) — diambil dari GET /roles
+  const [roles, setRoles] = useState([])
+
   // Modal Form (Create)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    role_id: '2' // 2: Admin
+    role_id: '' // diisi dari dropdown roles dinamis
   })
 
   // Confirm Modal
@@ -62,10 +66,9 @@ export default function UsersAdmin() {
       .then(res => {
         if (res.success && res.data) {
           setUsers(res.data.items || res.data.users || [])
-          if (res.data.pagination) {
-            setTotal(res.data.pagination.total || 0)
-            setTotalPages(res.data.pagination.totalPages || 1)
-          }
+          const meta = res.data.meta || {}
+          if (meta.total !== undefined) setTotal(meta.total)
+          if (meta.total_pages !== undefined) setTotalPages(meta.total_pages)
           setError(null)
         } else {
           setError('Gagal memuat data admin')
@@ -82,6 +85,16 @@ export default function UsersAdmin() {
     setPage(1)
     fetchUsers()
   }, [currentTab])
+
+  // Ambil daftar role untuk dropdown form (non super_admin)
+  useEffect(() => {
+    roleService.list()
+      .then(res => {
+        const list = Array.isArray(res?.data) ? res.data : (res?.data?.roles || [])
+        setRoles(list.filter(r => r.name !== 'super_admin'))
+      })
+      .catch(() => {}) // fallback: dropdown kosong, validasi BE akan menolak
+  }, [])
 
   const handleSearchSubmit = (e) => {
     e.preventDefault()
@@ -102,10 +115,9 @@ export default function UsersAdmin() {
       .then(res => {
         if (res.success && res.data) {
           setUsers(res.data.items || res.data.users || [])
-          if (res.data.pagination) {
-            setTotal(res.data.pagination.total || 0)
-            setTotalPages(res.data.pagination.totalPages || 1)
-          }
+          const meta = res.data.meta || {}
+          if (meta.total !== undefined) setTotal(meta.total)
+          if (meta.total_pages !== undefined) setTotalPages(meta.total_pages)
           setError(null)
         }
       })
@@ -115,7 +127,7 @@ export default function UsersAdmin() {
 
   // Row Selection logic
   const selectableUsers = users.filter(
-    item => item.role !== 'super_admin' && item.status !== 'pending_activation'
+    item => !item.is_system && item.status !== 'pending_activation'
   )
 
   const isAllSelected = selectableUsers.length > 0 && selectedIds.length === selectableUsers.length
@@ -140,7 +152,7 @@ export default function UsersAdmin() {
     try {
       await userService.create(formData)
       setIsFormOpen(false)
-      setFormData({ name: '', email: '', role_id: '2' })
+      setFormData({ name: '', email: '', role_id: roles[0]?.id || '' })
       showToast('Admin berhasil dibuat. Kredensial login dikirim ke email admin!', 'success')
       fetchUsers()
     } catch (err) {
@@ -378,7 +390,7 @@ export default function UsersAdmin() {
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-sm text-gray-700">
                   {users.map((item) => {
-                    const isProtected = item.role === 'super_admin' || item.role_id === 1
+                    const isProtected = item.is_system || item.role === 'super_admin'
                     const isPending = item.status === 'pending_activation'
                     const canSelect = !isProtected && !isPending
 
@@ -589,11 +601,12 @@ export default function UsersAdmin() {
                       required
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm bg-white"
                     >
-                      <option value="2">Admin</option>
-                      <option value="5">Admin Berita</option>
-                      <option value="6">Admin Kegiatan</option>
+                      {roles.length === 0 && <option value="">Pilih Role...</option>}
+                      {roles.map(r => (
+                        <option key={r.id} value={r.id}>{r.display_name || r.name}</option>
+                      ))}
                     </select>
-                    <p className="text-xs text-gray-500 mt-1">Super Admin tidak bisa dibuat via undangan (role_id 1 khusus seed).</p>
+                    <p className="text-xs text-gray-500 mt-1">Super Admin (sistem) tidak bisa dibuat via undangan.</p>
                   </div>
                 </form>
               </div>

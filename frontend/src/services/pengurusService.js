@@ -1,4 +1,5 @@
 import { apiRequest } from '../api'
+import { normalizeImage } from '../utils/normalizeImage'
 
 function toQuery(params = {}) {
   const query = new URLSearchParams()
@@ -14,7 +15,10 @@ function toQuery(params = {}) {
 export const pengurusService = {
   // Publik — daftar pengurus aktif (tanpa auth); filter level/provinsi/kabupaten
   list(params = {}) {
-    return apiRequest(`/pengurus${toQuery(params)}`)
+    return apiRequest(`/pengurus${toQuery(params)}`).then(res => {
+      if (Array.isArray(res?.data)) res.data = res.data.map(normalizeImage)
+      return res
+    })
   },
 
   // Publik — daftar wilayah (provinsi + kabupaten) untuk dropdown filter
@@ -23,7 +27,10 @@ export const pengurusService = {
   },
 
   listAdmin(params = {}) {
-    return apiRequest(`/admin/pengurus${toQuery(params)}`)
+    return apiRequest(`/admin/pengurus${toQuery(params)}`).then(res => {
+      if (Array.isArray(res?.data)) res.data = res.data.map(normalizeImage)
+      return res
+    })
   },
 
   // Backend pakai multipart/form-data (c.ShouldBind) — jangan JSON.stringify

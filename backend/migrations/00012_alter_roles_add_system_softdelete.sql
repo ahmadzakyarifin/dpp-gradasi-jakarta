@@ -9,6 +9,9 @@ ALTER TABLE roles
   ADD COLUMN deleted_at TIMESTAMP NULL AFTER updated_at,
   ADD INDEX idx_roles_deleted_at (deleted_at);
 
+-- +goose StatementEnd
+
+-- +goose StatementBegin
 -- Role inti super_admin tidak boleh dihapus/nonaktifkan.
 UPDATE roles SET is_system = 1 WHERE name = 'super_admin';
 -- +goose StatementEnd
