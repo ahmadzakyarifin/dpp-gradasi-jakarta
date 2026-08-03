@@ -59,7 +59,8 @@ export default function CaptchaWidget({ onVerify, hasError }) {
   // Render widget saat script siap
   useEffect(() => {
     if (!enabled || !siteKey || !scriptLoaded || !containerRef.current) return
-    if (window.turnstile) {
+    if (!window.turnstile) return
+    try {
       const id = window.turnstile.render(containerRef.current, {
         sitekey: siteKey,
         callback: (token) => {
@@ -77,11 +78,29 @@ export default function CaptchaWidget({ onVerify, hasError }) {
         theme: 'light',
       })
       setWidgetId(id)
-    }
-    return () => {
-      if (widgetId && window.turnstile) {
-        window.turnstile.remove(widgetId)
+
+      // Deteksi render gagal diam-diam: setelah ~2.5 detik, kalau widget
+      // TIDAK menghasilkan iframe challenge (site key invalid / domain tidak
+      // diizinkan / akun Cloudflare nonaktif), tampilkan pesan eksplisit.
+      // Turnstile render "berhasil" (return id) tapi iframe tidak pernah ada.
+      const checkTimer = setTimeout(() => {
+        const container = containerRef.current
+        if (container && !container.querySelector('iframe')) {
+          setScriptFailed(true)
+          onVerify?.('')
+        }
+      }, 2500)
+
+      return () => {
+        clearTimeout(checkTimer)
+        if (id && window.turnstile) {
+          window.turnstile.remove(id)
+        }
       }
+    } catch {
+      // Render melempar exception (site key format salah dll)
+      setScriptFailed(true)
+      onVerify?.('')
     }
   }, [enabled, siteKey, scriptLoaded]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -108,7 +127,7 @@ export default function CaptchaWidget({ onVerify, hasError }) {
       />
       {scriptFailed && (
         <p className="text-red-500 text-[11px] font-bold mt-1.5 ml-1">
-          CAPTCHA gagal dimuat. Periksa koneksi atau nonaktifkan adblocker, lalu refresh halaman.
+          CAPTCHA tidak dapat dimuat (site key tidak valid / domain tidak diizinkan / koneksi terblokir). Periksa konfigurasi CAPTCHA di dashboard Cloudflare, atau hubungi administrator.
         </p>
       )}
       {expired && !scriptFailed && (

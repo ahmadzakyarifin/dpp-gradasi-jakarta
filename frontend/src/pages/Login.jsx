@@ -7,6 +7,7 @@ import { authContent } from '../content/authContent'
 import { authService } from '../services/authService'
 import { validateEmail } from '../utils/validation'
 import { useSettings } from '../context/useSettings'
+import { resolveAssetUrl } from '../utils/assetUrl'
 
 export default function Login() {
   const [searchParams] = useSearchParams()
@@ -32,7 +33,8 @@ export default function Login() {
 
   // Reset form setiap kali halaman login dimuat (termasuk setelah logout)
   useEffect(() => {
-    setLoginForm({ email: '', password: '', rememberMe: false })
+    const savedEmail = localStorage.getItem('remembered_email')
+    setLoginForm({ email: savedEmail || '', password: '', rememberMe: !!savedEmail })
     setCaptchaToken('')
     setCaptchaError(false)
   }, [])
@@ -98,11 +100,11 @@ export default function Login() {
         token = document.querySelector('input[name="cf-turnstile-response"]')?.value || ''
       }
     }
-    if (captchaEnabled && !token) {
-      setCaptchaError(true)
-      setNotice({ type: 'error', message: 'Silakan selesaikan kode CAPTCHA dengan benar.' })
-      return
-    }
+    // JANGAN hard-block submit di sini: backend yang memutuskan apakah CAPTCHA
+    // wajib (CAPTCHA_ENABLED=true + environment production). Kalau token kosong
+    // tapi backend tidak butuh (mode dev / captcha off), login tetap jalan.
+    // Kalau backend butuh dan token kosong, ia akan balas AUTH_CAPTCHA_REQUIRED
+    // yang ditampilkan di notice + reset widget.
 
     setIsSubmitting(true)
     try {
@@ -110,6 +112,14 @@ export default function Login() {
         ...loginForm,
         captcha_token: token
       })
+
+      // Simpan/hapus email berdasarkan rememberMe
+      if (loginForm.rememberMe) {
+        localStorage.setItem('remembered_email', loginForm.email)
+      } else {
+        localStorage.removeItem('remembered_email')
+      }
+
       // Kalau user wajib ganti password default (login pertama), arahkan ke halaman profil
       const user = useAuthStore.getState().user
       if (user?.must_change_password) {
@@ -118,6 +128,13 @@ export default function Login() {
         navigate(authContent.adminPath)
       }
     } catch (error) {
+      // CAPTCHA diminta backend tapi token kosong/tidak valid → reset widget
+      // supaya user bisa coba sekali lagi.
+      if (error?.code === 'AUTH_CAPTCHA_REQUIRED' || error?.data?.code === 'AUTH_CAPTCHA_REQUIRED') {
+        setCaptchaError(true)
+        setNotice({ type: 'error', message: 'Silakan selesaikan verifikasi CAPTCHA terlebih dahulu.' })
+        return
+      }
       if (error.retryAfter > 0) {
         setCooldown(error.retryAfter)
         setNotice({ type: 'error', message: 'Terlalu banyak percobaan. Silakan tunggu sebelum mencoba lagi.' })
@@ -142,9 +159,9 @@ export default function Login() {
     if (Object.keys(forgotErrors).length > 0) return
 
     if (captchaEnabled && !forgotCaptchaToken) {
-      setForgotCaptchaError(true)
-      setNotice({ type: 'error', message: 'Silakan selesaikan kode CAPTCHA dengan benar.' })
-      return
+      // JANGAN hard-block: backend yang memutuskan (dev mode = skip captcha).
+      // Kalau backend butuh captcha, ia balas AUTH_CAPTCHA_REQUIRED.
+      setForgotCaptchaError(false)
     }
 
     setIsSubmitting(true)
@@ -183,7 +200,7 @@ export default function Login() {
       <div className="w-full max-w-md mt-12 md:mt-0">
         <div className="mb-10 text-center md:text-left">
           <div className="md:hidden inline-flex w-16 h-16 bg-white rounded-xl p-2 shadow-lg mb-6 border border-slate-100">
-            <img src={authContent.logoUrl} alt={authContent.brandName} className="w-full h-full object-contain" />
+            <img src={settings?.logo_path ? resolveAssetUrl(settings.logo_path) : ""} alt={settings?.site_name || ""} className="w-full h-full object-contain" />
           </div>
           <h2 className="font-heading text-3xl font-extrabold text-slate-900 mb-2 tracking-tight">{content.title}</h2>
           <p className="text-slate-500 text-sm font-medium">{content.subtitle}</p>

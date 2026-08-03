@@ -26,9 +26,11 @@ export const useAuthStore = create((set, get) => ({
   markAppReady: () => set({ appReady: true }),
 
   setUser: (user) => {
-    const role = user?.role?.name || user?.role_name || null
+    // Terima bentuk apa pun: user langsung atau wrapper {user: {...}}
+    const u = user?.user || user
+    const role = u?.role?.name || u?.role_name || null
     if (role) localStorage.setItem('user_role', role)
-    set({ user, role })
+    set({ user: u, role })
   },
 
   logoutLocal: () => {
@@ -75,8 +77,9 @@ export const useAuthStore = create((set, get) => ({
     if (!get().token) return null
     try {
       const response = await authService.me()
-      if (response && response.data) {
-        const user = response.data
+      // apiRequest mengembalikan wrapper {success, data: {user: {...}}}
+      const user = response?.data?.user || response?.data || response?.user || null
+      if (user) {
         const role = user?.role?.name || user?.role_name || null
         if (role) localStorage.setItem('user_role', role)
         set({ user, role })

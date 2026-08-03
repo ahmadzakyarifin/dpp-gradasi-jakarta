@@ -12,12 +12,13 @@ import (
 )
 
 // RequiredCaptchaMiddleware memverifikasi Cloudflare Turnstile CAPTCHA.
-// Nonaktif otomatis jika CAPTCHA_ENABLED=false (mode dev).
+// Nonaktif otomatis jika CAPTCHA_ENABLED=false ATAU environment = development
+// (pola dev/prod: di dev tidak ada Turnstile terdaftar, admin tetap bisa login).
 // Token diambil dari body JSON: captcha_token / turnstile_token / turnstileToken
 // atau header: cf-turnstile-response.
 func RequiredCaptchaMiddleware(cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if cfg == nil || !cfg.Security.CaptchaEnabled {
+		if cfg == nil || !cfg.Security.CaptchaEnabled || cfg.App.Env == "development" {
 			c.Next()
 			return
 		}
