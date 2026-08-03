@@ -15,7 +15,7 @@ export default function SettingsAdmin() {
   const [formData, setFormData] = useState({
     site_name: '',
     tagline: '',
-    logo_url: '',
+    logo_path: '',
     contact_email: '',
     contact_phone: '',
     address: '',
@@ -23,7 +23,7 @@ export default function SettingsAdmin() {
     facebook_url: '',
     instagram_url: '',
     youtube_url: '',
-    video_profile_url: '',
+    video_profile_path: '',
     history: '',
     about_tutorial: '',
     about_formation_date: '',
@@ -34,7 +34,7 @@ export default function SettingsAdmin() {
     greeting_subtitle: '',
     greeting_date: '',
     greeting_content: '',
-    greeting_image_url: ''
+    greeting_image_path: ''
   })
 
   useEffect(() => {
@@ -85,7 +85,7 @@ export default function SettingsAdmin() {
     try {
       const res = await settingsService.uploadLogo(file)
       if (res.success && res.data) {
-        setFormData(prev => ({ ...prev, logo_url: res.data.logo_url }))
+        setFormData(prev => ({ ...prev, logo_path: res.data.logo_path }))
         showToast('Logo berhasil diunggah!')
         refresh()
       } else {
@@ -158,7 +158,7 @@ export default function SettingsAdmin() {
                 <div className="flex items-center gap-6">
                   <div className="w-40 h-40 bg-slate-50 border border-gray-200 rounded-2xl flex items-center justify-center overflow-hidden">
                     <img
-                      src={logoPreview || resolveAssetUrl(formData.logo_url) || 'https://via.placeholder.com/160'}
+                      src={logoPreview || resolveAssetUrl(formData.logo_path) || 'https://via.placeholder.com/160'}
                       alt="Preview Logo"
                       className="w-full h-full object-contain p-2"
                     />
@@ -170,8 +170,8 @@ export default function SettingsAdmin() {
                       <input type="file" accept="image/png,image/jpeg,image/webp" onChange={handleLogoChange} className="hidden" disabled={logoUploading} />
                     </label>
                     <span className="text-[11px] text-gray-400">PNG / JPG / WEBP · maks 2MB</span>
-                    {formData.logo_url && (
-                      <span className="text-[11px] text-gray-400 break-all">Path saat ini: {formData.logo_url}</span>
+                    {formData.logo_path && (
+                      <span className="text-[11px] text-gray-400 break-all">Path saat ini: {formData.logo_path}</span>
                     )}
                   </div>
                 </div>
@@ -241,7 +241,7 @@ export default function SettingsAdmin() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">URL Gambar / Poster Sambutan</label>
-                  <input type="text" value={formData.greeting_image_url} onChange={e => setFormData({...formData, greeting_image_url: e.target.value})} className={inputCls} />
+                  <input type="text" value={formData.greeting_image_path} onChange={e => setFormData({...formData, greeting_image_path: e.target.value})} className={inputCls} />
                 </div>
               </div>
             )}
@@ -287,7 +287,7 @@ export default function SettingsAdmin() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">Video Profile URL (Youtube Embed)</label>
-                  <input type="text" value={formData.video_profile_url} onChange={e => setFormData({...formData, video_profile_url: e.target.value})} className={inputCls} />
+                  <input type="text" value={formData.video_profile_path} onChange={e => setFormData({...formData, video_profile_path: e.target.value})} className={inputCls} />
                 </div>
               </div>
             )}

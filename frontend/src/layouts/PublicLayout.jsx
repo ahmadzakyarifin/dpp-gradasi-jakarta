@@ -27,7 +27,7 @@ export default function PublicLayout({ children }) {
           <div className="flex justify-between items-center py-4">
             {/* Logo Branding */}
             <Link to="/" className="flex-shrink-0 flex items-center gap-3 group">
-              <img src={resolveAssetUrl(settings.logo_url)} alt={`Logo ${settings.site_name}`} className="h-10 w-auto object-contain transition duration-300 group-hover:scale-105" />
+              <img src={resolveAssetUrl(settings.logo_path)} alt={`Logo ${settings.site_name}`} className="h-10 w-auto object-contain transition duration-300 group-hover:scale-105" />
               <div className="flex flex-col leading-tight">
                 <span className="font-heading font-extrabold text-base text-slate-900 tracking-tight group-hover:text-brand-700 transition">{settings.site_name}</span>
                 <span className="text-[9px] font-bold text-brand-600 tracking-wider uppercase">{settings.tagline}</span>
@@ -195,7 +195,7 @@ export default function PublicLayout({ children }) {
           <div className="flex flex-col md:flex-row justify-between items-center gap-8 border-b border-brand-800/50 pb-8 mb-8">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center p-1 shadow-inner">
-                <img src={resolveAssetUrl(settings.logo_url)} alt={`Logo ${settings.site_name}`} className="w-full h-full object-contain" />
+                <img src={resolveAssetUrl(settings.logo_path)} alt={`Logo ${settings.site_name}`} className="w-full h-full object-contain" />
               </div>
               <div>
                 <span className="text-white font-heading font-bold text-lg block leading-tight">{settings.site_name}</span>

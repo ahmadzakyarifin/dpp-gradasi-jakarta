@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import AdminLayout from '../../layouts/AdminLayout'
 import { kontakService } from '../../services/kontakService'
 
@@ -48,7 +48,7 @@ export default function KontakAdmin() {
     }, 3000)
   }
 
-  const fetchMessages = () => {
+  const fetchMessages = useCallback(() => {
     setLoading(true)
     kontakService.list({
       tab: currentTab,
@@ -73,45 +73,29 @@ export default function KontakAdmin() {
         setError(err.message || 'Kesalahan koneksi ke server')
       })
       .finally(() => setLoading(false))
-  }
+  }, [currentTab, search, filterStatus, page, limit])
 
   useEffect(() => {
     setSelectedIds([])
     setPage(1)
-    fetchMessages()
   }, [currentTab, filterStatus])
+
+  // Muat ulang data setiap page/search/filter berubah (pagination & filter)
+  useEffect(() => {
+    fetchMessages()
+  }, [fetchMessages])
 
   // Handles manual search submit
   const handleSearchSubmit = (e) => {
     e.preventDefault()
     setPage(1)
-    fetchMessages()
+    // fetchMessages() otomatis dipanggil via useEffect [fetchMessages] saat search/page berubah
   }
 
   const handleReset = () => {
     setSearch('')
     setFilterStatus('all')
     setPage(1)
-    setLoading(true)
-    kontakService.list({
-      tab: currentTab,
-      search: '',
-      status: currentTab === 'active' ? 'all' : undefined,
-      page: 1,
-      limit
-    })
-      .then(res => {
-        if (res.success && res.data) {
-          setMessages(res.data.items || [])
-          if (res.data.pagination) {
-            setTotal(res.data.pagination.total || 0)
-            setTotalPages(res.data.pagination.totalPages || 1)
-          }
-          setError(null)
-        }
-      })
-      .catch((err) => setError(err.message || 'Kesalahan koneksi ke server'))
-      .finally(() => setLoading(false))
   }
 
   // Row Selection logic

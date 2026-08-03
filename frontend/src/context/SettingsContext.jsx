@@ -4,7 +4,7 @@ import { settingsService } from '../services/settingsService'
 const DEFAULT_SETTINGS = {
   site_name: 'DPP GRADASI',
   tagline: 'Generasi Digital Indonesia',
-  logo_url: 'https://gradasi.org/uploads/img/logo/1737187847.png',
+  logo_path: 'https://gradasi.org/uploads/img/logo/1737187847.png',
   contact_email: 'dpp@gradasi.org',
   contact_phone: '+6281234567890',
   address: 'Office Park OL3-IZA The Bellagio Mall, Mega Kuningan, Jakarta Selatan',
@@ -12,7 +12,7 @@ const DEFAULT_SETTINGS = {
   facebook_url: 'https://www.facebook.com/gradasiofficial.id',
   instagram_url: 'https://www.instagram.com/dppgradasi',
   youtube_url: 'https://www.youtube.com/channel/UCwdjB4LkqcF4Kw5-PoyOb5A',
-  video_profile_url: 'https://gradasi.org/assets/video/gradasi.mp4',
+  video_profile_path: 'https://gradasi.org/assets/video/gradasi.mp4',
   history: 'Perkumpulan Generasi Digital Indonesia (GRADASI) didirikan pada 4 Februari 2019 sebagai organisasi independen yang berfokus pada pengembangan literasi digital, pemberdayaan UMKM, dan transformasi teknologi di Indonesia.',
   about_tutorial: 'Pengesahan Badan Hukum Kemenkumham RI.',
   about_formation_date: '4 Februari 2019',
@@ -23,7 +23,7 @@ const DEFAULT_SETTINGS = {
   greeting_subtitle: 'Resolusi & Harapan',
   greeting_date: '11 Februari 2026',
   greeting_content: 'Memasuki tahun 2026, GRADASI menetapkan pilar utama perjuangan: memastikan setiap masyarakat memiliki kecakapan digital (digital skills), serta mengembangkan program literasi yang berdampak nyata bagi pertumbuhan ekonomi lokal.',
-  greeting_image_url: 'https://gradasi.org/uploads/img/event-terkini/1767154211.jpg',
+  greeting_image_path: 'https://gradasi.org/uploads/img/event-terkini/1767154211.jpg',
 }
 
 const SettingsContext = createContext(null)

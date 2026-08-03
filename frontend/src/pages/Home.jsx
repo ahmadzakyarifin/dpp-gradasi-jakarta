@@ -291,7 +291,7 @@ export default function Home() {
               <div className="absolute inset-0 bg-brand-500/20 blur-[80px] rounded-full" />
               <div className="relative rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-white transform transition hover:-translate-y-2 duration-500">
                 <img 
-                  src={resolveAssetUrl(settings.greeting_image_url) || 'https://gradasi.org/uploads/img/event-terkini/1767154211.jpg'}
+                  src={resolveAssetUrl(settings.greeting_image_path) || 'https://gradasi.org/uploads/img/event-terkini/1767154211.jpg'}
                   alt="Poster Sambutan"
                   className="w-full h-auto object-contain"
                 />
@@ -329,7 +329,7 @@ export default function Home() {
               {/* Signature */}
               <div className="flex items-center gap-4 pt-4 border-t border-slate-100">
                 <div className="flex -space-x-4">
-                  <img src={resolveAssetUrl(settings.greeting_image_url) || "https://gradasi.org/uploads/img/s-anggota/ketua/1735027418.jpg"} alt="Upi" className="w-12 h-12 rounded-full border-2 border-white shadow-md relative z-20" />
+                  <img src={resolveAssetUrl(settings.greeting_image_path) || "https://gradasi.org/uploads/img/s-anggota/ketua/1735027418.jpg"} alt="Upi" className="w-12 h-12 rounded-full border-2 border-white shadow-md relative z-20" />
                   <div className="w-12 h-12 rounded-full bg-brand-100 border-2 border-white shadow-md flex items-center justify-center text-brand-700 font-bold text-xs relative z-10">JS</div>
                 </div>
                 <div>
@@ -358,7 +358,7 @@ export default function Home() {
               <div className="relative group">
                 <div className="w-72 aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl border-4 border-white mx-auto relative z-10 transform transition duration-500 group-hover:-translate-y-2">
                   <img 
-                    src={resolveAssetUrl(settings.greeting_image_url) || "https://gradasi.org/uploads/img/s-anggota/ketua/1735027418.jpg"}
+                    src={resolveAssetUrl(settings.greeting_image_path) || "https://gradasi.org/uploads/img/s-anggota/ketua/1735027418.jpg"}
                     alt="Upi Asmaradhana - Ketua Umum"
                     className="w-full h-full object-cover"
                   />
@@ -477,7 +477,7 @@ export default function Home() {
 
             {/* Logo Display Box */}
             <div className="bg-white rounded-3xl p-8 flex items-center justify-center border border-slate-100 shadow-md">
-              <img src={resolveAssetUrl(settings.logo_url)} alt="Logo" className="w-48 h-auto object-contain filter drop-shadow-lg" />
+              <img src={resolveAssetUrl(settings.logo_path)} alt="Logo" className="w-48 h-auto object-contain filter drop-shadow-lg" />
             </div>
 
             {/* Dynamic Missions */}
@@ -607,7 +607,7 @@ export default function Home() {
                 controls 
                 preload="metadata"
               >
-                <source src={resolveAssetUrl(settings.video_profile_url) || 'https://gradasi.org/assets/video/gradasi.mp4'} type="video/mp4" />
+                <source src={resolveAssetUrl(settings.video_profile_path) || 'https://gradasi.org/assets/video/gradasi.mp4'} type="video/mp4" />
                 Browser Anda tidak mendukung pemutar video.
               </video>
             </div>

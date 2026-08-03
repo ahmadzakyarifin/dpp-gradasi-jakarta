@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import AdminLayout from '../../layouts/AdminLayout'
 import { activityLogService } from '../../services/activityLogService'
 
@@ -19,7 +19,7 @@ export default function ActivityLogAdmin() {
   const [total, setTotal] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
 
-  const fetchLogs = () => {
+  const fetchLogs = useCallback(() => {
     setLoading(true)
     activityLogService.list({
       search,
@@ -45,16 +45,16 @@ export default function ActivityLogAdmin() {
         setError(err.message || 'Kesalahan koneksi ke server')
       })
       .finally(() => setLoading(false))
-  }
+  }, [search, filterRole, filterEntity, filterRisk, page, limit])
 
   useEffect(() => {
     fetchLogs()
-  }, [page, filterRole, filterEntity, filterRisk])
+  }, [fetchLogs])
 
   const handleSearchSubmit = (e) => {
     e.preventDefault()
     setPage(1)
-    fetchLogs()
+    // fetchLogs() otomatis dipanggil via useEffect [fetchLogs] saat search/page berubah
   }
 
   const handleReset = () => {
@@ -63,28 +63,6 @@ export default function ActivityLogAdmin() {
     setFilterEntity('')
     setFilterRisk('')
     setPage(1)
-    // We need to wait for states to reset or pass empty object directly to list
-    setLoading(true)
-    activityLogService.list({
-      search: '',
-      role: '',
-      entity: '',
-      risk: '',
-      page: 1,
-      limit
-    })
-      .then(res => {
-        if (res.success && res.data) {
-          setLogs(res.data.items || [])
-          if (res.data.pagination) {
-            setTotal(res.data.pagination.total || 0)
-            setTotalPages(res.data.pagination.totalPages || 1)
-          }
-          setError(null)
-        }
-      })
-      .catch((err) => setError(err.message || 'Kesalahan koneksi ke server'))
-      .finally(() => setLoading(false))
   }
 
   // Client-side CSV Download

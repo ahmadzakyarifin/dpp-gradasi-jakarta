@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import AdminLayout from '../../layouts/AdminLayout'
 import { userService } from '../../services/userService'
 import { roleService } from '../../services/roleService'
@@ -55,7 +55,7 @@ export default function UsersAdmin() {
     }, 3000)
   }
 
-  const fetchUsers = () => {
+  const fetchUsers = useCallback(() => {
     setLoading(true)
     userService.list({
       tab: currentTab,
@@ -78,13 +78,17 @@ export default function UsersAdmin() {
         setError(err.message || 'Kesalahan koneksi ke server')
       })
       .finally(() => setLoading(false))
-  }
+  }, [currentTab, search, page, limit])
 
   useEffect(() => {
     setSelectedIds([])
     setPage(1)
-    fetchUsers()
   }, [currentTab])
+
+  // Muat ulang data setiap page/currentTab/search berubah (pagination & filter)
+  useEffect(() => {
+    fetchUsers()
+  }, [fetchUsers])
 
   // Ambil daftar role untuk dropdown form (non super_admin)
   useEffect(() => {
@@ -99,30 +103,12 @@ export default function UsersAdmin() {
   const handleSearchSubmit = (e) => {
     e.preventDefault()
     setPage(1)
-    fetchUsers()
+    // fetchUsers() otomatis dipanggil via useEffect [fetchUsers] saat search/page berubah
   }
 
   const handleReset = () => {
     setSearch('')
     setPage(1)
-    setLoading(true)
-    userService.list({
-      tab: currentTab,
-      search: '',
-      page: 1,
-      limit
-    })
-      .then(res => {
-        if (res.success && res.data) {
-          setUsers(res.data.items || res.data.users || [])
-          const meta = res.data.meta || {}
-          if (meta.total !== undefined) setTotal(meta.total)
-          if (meta.total_pages !== undefined) setTotalPages(meta.total_pages)
-          setError(null)
-        }
-      })
-      .catch((err) => setError(err.message || 'Kesalahan koneksi ke server'))
-      .finally(() => setLoading(false))
   }
 
   // Row Selection logic
