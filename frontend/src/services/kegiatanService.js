@@ -57,6 +57,19 @@ export const kegiatanService = {
     })
   },
 
+  uploadImage(file) {
+    const fd = new FormData()
+    fd.append('image', file)
+    return apiRequest('/kegiatan/upload-image', {
+      method: 'POST',
+      body: fd,
+    })
+  },
+
+  removeGallery(galleryId) {
+    return apiRequest(`/kegiatan/gallery/${galleryId}`, { method: 'DELETE' })
+  },
+
   remove(id) {
     return apiRequest(`/kegiatan/${id}`, { method: 'DELETE' })
   },

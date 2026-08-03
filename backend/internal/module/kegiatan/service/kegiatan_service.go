@@ -3,8 +3,15 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io"
+	"mime/multipart"
+	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/helper"
 	activitylogdto "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/dto"
@@ -14,6 +21,7 @@ import (
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kegiatan/mapper"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kegiatan/repository"
 	"github.com/gosimple/slug"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -24,6 +32,7 @@ type KegiatanService interface {
 	GetByID(ctx context.Context, id uint) (*dto.KegiatanDetailResponse, error)
 	Create(ctx context.Context, req *dto.KegiatanCreateRequest, authorID uint) (*dto.KegiatanDetailResponse, error)
 	Update(ctx context.Context, id uint, req *dto.KegiatanUpdateRequest) (*dto.KegiatanDetailResponse, error)
+	UploadImage(ctx context.Context, file *multipart.FileHeader) (*dto.UploadImageResponse, error)
 	Delete(ctx context.Context, id uint) error
 	Restore(ctx context.Context, id uint) error
 	BulkDelete(ctx context.Context, ids []uint) error
@@ -33,13 +42,18 @@ type KegiatanService interface {
 }
 
 type kegiatanService struct {
-	db    *gorm.DB
-	repo  repository.KegiatanRepo
-	audit activitylogservice.ActivityLogService
+	db         *gorm.DB
+	repo       repository.KegiatanRepo
+	audit      activitylogservice.ActivityLogService
+	uploadPath string
 }
 
 func NewKegiatanService(db *gorm.DB, repo repository.KegiatanRepo, audit activitylogservice.ActivityLogService) KegiatanService {
-	return &kegiatanService{db: db, repo: repo, audit: audit}
+	uploadPath := "public/uploads/kegiatan"
+	if err := os.MkdirAll(uploadPath, 0o755); err != nil {
+		helper.Logger.Error("gagal buat direktori upload kegiatan", zap.Error(err))
+	}
+	return &kegiatanService{db: db, repo: repo, audit: audit, uploadPath: uploadPath}
 }
 
 func (s *kegiatanService) log(ctx context.Context, db *gorm.DB, input *activitylogdto.ActivityLogInput) {
@@ -284,6 +298,75 @@ func (s *kegiatanService) Update(ctx context.Context, id uint, req *dto.Kegiatan
 	}
 	resp := mapper.EntityToDetail(k)
 	return &resp, nil
+}
+
+// UploadImage menyimpan file gambar (cover/galeri kegiatan) ke public/uploads/kegiatan.
+// Mengembalikan path relatif yang bisa langsung dipakai di image_path / gallery.
+func (s *kegiatanService) UploadImage(ctx context.Context, file *multipart.FileHeader) (*dto.UploadImageResponse, error) {
+	if file == nil {
+		return nil, helper.NewServiceError("VALIDATION_ERROR", "File gambar wajib diunggah", nil)
+	}
+
+	// Validasi ukuran: maks 5MB
+	if file.Size > 5*1024*1024 {
+		return nil, helper.NewServiceError("VALIDATION_ERROR", "File gambar tidak valid. Maksimal 5MB dengan format PNG, JPG, atau WEBP.", nil)
+	}
+
+	// Validasi MIME type
+	src, err := file.Open()
+	if err != nil {
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal membaca file gambar.", err)
+	}
+	defer src.Close()
+
+	header := make([]byte, 512)
+	n, err := src.Read(header)
+	if err != nil && err != io.EOF {
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal membaca file gambar.", err)
+	}
+	// Reset reader agar bisa dibaca ulang saat copy
+	if _, err := src.Seek(0, io.SeekStart); err != nil {
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal membaca file gambar.", err)
+	}
+
+	mimeType := http.DetectContentType(header[:n])
+	switch mimeType {
+	case "image/png", "image/jpeg", "image/webp":
+	default:
+		return nil, helper.NewServiceError("VALIDATION_ERROR", "File gambar tidak valid. Maksimal 5MB dengan format PNG, JPG, atau WEBP.", nil)
+	}
+
+	ext := filepath.Ext(file.Filename)
+	if ext == "" {
+		switch mimeType {
+		case "image/png":
+			ext = ".png"
+		case "image/webp":
+			ext = ".webp"
+		default:
+			ext = ".jpg"
+		}
+	}
+	filename := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
+
+	// Pastikan direktori upload ada
+	if err := os.MkdirAll(s.uploadPath, 0o755); err != nil {
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal menyimpan file gambar.", err)
+	}
+
+	dst := filepath.Join(s.uploadPath, filename)
+	out, err := os.Create(dst)
+	if err != nil {
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal menyimpan file gambar.", err)
+	}
+	defer out.Close()
+
+	if _, err := io.Copy(out, src); err != nil {
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal menyimpan file gambar.", err)
+	}
+
+	imagePath := "/uploads/kegiatan/" + filename
+	return &dto.UploadImageResponse{ImagePath: imagePath}, nil
 }
 
 func (s *kegiatanService) Delete(ctx context.Context, id uint) error {

@@ -4,6 +4,7 @@ import { beritaService } from '../../services/beritaService'
 import { beritaContent } from '../../content/beritaContent'
 import ConfirmDialog from '../../components/admin/ConfirmDialog'
 import ToastNotification from '../../components/admin/ToastNotification'
+import { useFormErrors, useRateLimitCooldown } from '../../utils/parseApiError'
 
 const PAGE_SIZE = 5
 
@@ -71,6 +72,9 @@ export default function BeritaAdmin() {
   })
 
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
+  // Error dari backend: field errors inline + countdown rate limit
+  const { applyError, clearFieldError } = useFormErrors()
+  const { cooldown, isLimited, applyRateLimit } = useRateLimitCooldown()
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ show: true, message, type })
@@ -175,12 +179,13 @@ export default function BeritaAdmin() {
       setIsFormOpen(false)
       await loadBerita()
     } catch (err) {
-      // Tangkap DUPLICATE_TITLE dari BE → tampilkan di field title
-      if (err?.code === 'DUPLICATE_TITLE' || (err?.data?.errors && err.data.errors.some(x => x.field === 'title' && x.tag === 'duplicate_title'))) {
-        setFormErrors(prev => ({ ...prev, title: 'Judul sudah digunakan, gunakan judul lain.' }))
-        setTouched(prev => ({ ...prev, title: true }))
-      } else {
-        showToast(err.message || 'Gagal menyimpan berita.', 'error')
+      // Error validasi/bisnis dari backend → field errors inline + toast ringkas
+      const parsed = applyError(err)
+      applyRateLimit(err)
+      setFormErrors(prev => ({ ...prev, ...parsed.fieldErrors }))
+      setTouched(prev => ({ ...prev, ...Object.keys(parsed.fieldErrors).reduce((acc, k) => ({ ...acc, [k]: true }), {}) }))
+      if (Object.keys(parsed.fieldErrors).length === 0) {
+        showToast(parsed.message || 'Gagal menyimpan berita.', 'error')
       }
     } finally {
       setFormLoading(false)
@@ -532,6 +537,7 @@ export default function BeritaAdmin() {
                   value={formData.title}
                   onChange={e => {
                     setFormData({ ...formData, title: e.target.value })
+                    clearFieldError('title')
                     if (touched.title) {
                       const errs = validateForm({ ...formData, title: e.target.value })
                       setFormErrors(prev => ({ ...prev, title: errs.title }))
@@ -636,6 +642,7 @@ export default function BeritaAdmin() {
                   value={formData.content}
                   onChange={e => {
                     setFormData({ ...formData, content: e.target.value })
+                    clearFieldError('content')
                     if (touched.content) {
                       const errs = validateForm({ ...formData, content: e.target.value })
                       setFormErrors(prev => ({ ...prev, content: errs.content }))
@@ -665,11 +672,16 @@ export default function BeritaAdmin() {
                   Terbitkan langsung (Published)
                 </label>
               </div>
-              <div className="flex justify-end gap-2 pt-4 border-t">
-                <button type="button" onClick={() => setIsFormOpen(false)} disabled={formLoading} className="px-4 py-2 border rounded-xl text-sm font-semibold hover:bg-slate-50 disabled:opacity-50 transition-colors">Batal</button>
-                <button type="submit" disabled={formLoading} className="px-5 py-2 bg-brand-600 text-white rounded-xl text-sm font-semibold hover:bg-brand-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors flex items-center gap-2">
+              <div className="flex justify-end gap-2 pt-4 border-t items-center">
+                {isLimited && (
+                  <span className="text-xs text-amber-600 font-semibold mr-auto flex items-center gap-1">
+                    <i className="ph ph-timer text-sm" /> Terlalu banyak percobaan. Tunggu {cooldown}s
+                  </span>
+                )}
+                <button type="button" onClick={() => setIsFormOpen(false)} disabled={formLoading || isLimited} className="px-4 py-2 border rounded-xl text-sm font-semibold hover:bg-slate-50 disabled:opacity-50 transition-colors">Batal</button>
+                <button type="submit" disabled={formLoading || isLimited} className="px-5 py-2 bg-brand-600 text-white rounded-xl text-sm font-semibold hover:bg-brand-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors flex items-center gap-2">
                   {formLoading && <i className="ph-bold ph-circle-notch animate-spin text-sm" />}
-                  {formLoading ? 'Menyimpan...' : 'Simpan'}
+                  {formLoading ? 'Menyimpan...' : (isLimited ? `Tunggu ${cooldown}s` : 'Simpan')}
                 </button>
               </div>
             </form>

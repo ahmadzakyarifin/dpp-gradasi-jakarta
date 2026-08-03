@@ -24,6 +24,7 @@ func RegisterRoutes(api *gin.RouterGroup, h *handler.KegiatanHandler, jwtSecret 
 		admin.GET("/admin", h.ListAdmin)
 		admin.GET("/id/:id", h.GetByID)
 		admin.POST("", h.Create)
+		admin.POST("/upload-image", h.UploadImage)
 		admin.PUT("/:id", h.Update)
 		admin.POST("/bulk-delete", h.BulkDelete)
 		admin.POST("/bulk-restore", h.BulkRestore)

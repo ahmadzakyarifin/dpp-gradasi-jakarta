@@ -82,6 +82,11 @@ type GalleryInput struct {
 	SortOrder int    `json:"sort_order"`
 }
 
+// UploadImageResponse — hasil upload gambar kegiatan (cover/galeri)
+type UploadImageResponse struct {
+	ImagePath string `json:"image_path"`
+}
+
 type KegiatanListResponse struct {
 	Kegiatan []KegiatanListItem `json:"kegiatan"`
 	Meta     PaginationMeta     `json:"meta"`

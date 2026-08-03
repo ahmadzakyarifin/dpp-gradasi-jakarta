@@ -123,6 +123,25 @@ func (h *KegiatanHandler) Update(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "KEGIATAN_UPDATED", "Kegiatan berhasil diperbarui.", resp, nil)
 }
 
+// POST /api/v1/kegiatan/upload-image — admin (multipart field "image")
+// Upload gambar cover/galeri kegiatan → path relatif /uploads/kegiatan/<file>
+func (h *KegiatanHandler) UploadImage(c *gin.Context) {
+	file, err := c.FormFile("image")
+	if err != nil {
+		v := helper.NewValidationError()
+		v.Add("image", "File gambar wajib diunggah.")
+		helper.HandleServiceError(c, v)
+		return
+	}
+
+	resp, err := h.svc.UploadImage(c.Request.Context(), file)
+	if err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+	helper.SuccessResponse(c, http.StatusOK, "KEGIATAN_IMAGE_UPLOADED", "Gambar berhasil diunggah", resp, nil)
+}
+
 // DELETE /api/v1/kegiatan/:id — admin (soft delete)
 func (h *KegiatanHandler) Delete(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
