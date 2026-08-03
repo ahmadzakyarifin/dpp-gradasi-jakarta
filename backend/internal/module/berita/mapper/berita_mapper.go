@@ -48,7 +48,7 @@ func CreateReqToEntity(req *dto.BeritaCreateRequest) *entity.Berita {
 	if req == nil {
 		return nil
 	}
-	return &entity.Berita{
+	b := &entity.Berita{
 		Title:         req.Title,
 		Category:      req.Category,
 		PublishedDate: req.PublishedDate,
@@ -58,6 +58,17 @@ func CreateReqToEntity(req *dto.BeritaCreateRequest) *entity.Berita {
 		Content:       strPtr(req.Content),
 		Tags:          TagsToEntity(req.Tags),
 	}
+	// is_published & is_featured wajib di-map — default DB is_published=1
+	// membuat semua berita otomatis published kalau tidak di-set eksplisit.
+	if req.IsPublished != nil {
+		b.IsPublished = *req.IsPublished
+	} else {
+		b.IsPublished = false // default aman: draft sampai admin menerbitkan
+	}
+	if req.IsFeatured != nil {
+		b.IsFeatured = *req.IsFeatured
+	}
+	return b
 }
 
 // UpdateReqToEntity menerapkan field request (partial update) ke entity existing.
@@ -111,7 +122,7 @@ func EntityToModel(e *entity.Berita) *model.Berita {
 		Slug:          e.Slug,
 		Title:         e.Title,
 		Category:      e.Category,
-		PublishedDate: e.PublishedDate,
+		PublishedDate: normalizeDate(e.PublishedDate),
 		AuthorID:      e.AuthorID,
 		AuthorName:    e.AuthorName,
 		ImagePath:     e.ImagePath,
@@ -125,6 +136,27 @@ func EntityToModel(e *entity.Berita) *model.Berita {
 		UpdatedAt:     e.UpdatedAt,
 		DeletedAt:     toGormDeletedAt(e.DeletedAt),
 	}
+}
+
+// normalizeDate memastikan tanggal berformat YYYY-MM-DD.
+// GORM bisa meng-scan kolom DATE ke string dengan format RFC3339
+// (mis. "2026-08-03T00:00:00+07:00") — MySQL menolak itu di kolom DATE.
+func normalizeDate(s string) string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return s
+	}
+	// Ambil 10 karakter pertama (YYYY-MM-DD) kalau format lebih panjang
+	if len(s) > 10 {
+		if t, err := time.Parse(time.RFC3339, s); err == nil {
+			return t.Format("2006-01-02")
+		}
+		if t, err := time.Parse("2006-01-02 15:04:05", s); err == nil {
+			return t.Format("2006-01-02")
+		}
+		return s[:10]
+	}
+	return s
 }
 
 // ModelToEntity mengonversi model GORM menjadi entity.

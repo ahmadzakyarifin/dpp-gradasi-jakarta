@@ -8,6 +8,7 @@ import { slidersService } from '../services/slidersService'
 import { kegiatanService } from '../services/kegiatanService'
 import { beritaService } from '../services/beritaService'
 import { kontakService } from '../services/kontakService'
+import { pengurusService } from '../services/pengurusService'
 import useReveal from '../hooks/useReveal'
 
 export default function Home() {
@@ -22,6 +23,9 @@ export default function Home() {
   const [featuredKegiatan, setFeaturedKegiatan] = useState([])
 
   const [recentBerita, setRecentBerita] = useState([])
+
+  const [ketuaUmum, setKetuaUmum] = useState(null)
+  const [sekjen, setSekjen] = useState(null)
 
   const [currentSlide, setCurrentSlide] = useState(0)
   const [progress, setProgress] = useState(0)
@@ -72,6 +76,18 @@ export default function Home() {
         if (res.success && res.data) {
           const list = Array.isArray(res.data) ? res.data : (res.data.berita || [])
           setRecentBerita(list.map(b => ({ ...b, image_url: b.image_path || b.image_url })))
+        }
+      }).catch(() => {})
+
+    // Load Pengurus untuk Tanda Tangan Sambutan Ketua Umum
+    pengurusService.list({ limit: 100 })
+      .then(res => {
+        if (res.success && res.data) {
+          const list = Array.isArray(res.data) ? res.data : (res.data.data || res.data.pengurus || [])
+          const ketua = list.find(p => p.level === 'ketua')
+          const sek = list.find(p => (p.role || '').toLowerCase().includes('sekretaris jenderal') || (p.role || '').toLowerCase().includes('sekjen'))
+          setKetuaUmum(ketua)
+          setSekjen(sek)
         }
       }).catch(() => {})
   }, [])
@@ -152,20 +168,30 @@ export default function Home() {
     }
   }
 
-  const activeSlide = sliders[currentSlide] || sliders[0]
+  const activeSlide = (sliders && sliders.length > 0) ? (sliders[currentSlide] || sliders[0]) : {
+    title: '',
+    subtitle: '',
+    tag: '',
+    image_url: '',
+    is_new: false,
+    event_date: '',
+    location: '',
+    link_url: ''
+  }
 
   return (
     <PublicLayout>
       {/* 1. HERO CAROUSEL WITH 3D FLYER FOCUS */}
-      {activeSlide && (
       <section className="relative bg-brand-950 overflow-hidden pt-28 pb-20 md:pt-40 md:pb-24 border-b border-brand-900 min-h-screen flex items-center">
         {/* Slide Background Overlay */}
         <div className="absolute inset-0 z-0">
-          <img 
-            src={resolveAssetUrl(activeSlide.image_url)} 
-            alt={activeSlide.title} 
-            className="w-full h-full object-cover transition-all duration-700 blur-sm scale-110 opacity-40"
-          />
+          {activeSlide.image_url && (
+            <img 
+              src={resolveAssetUrl(activeSlide.image_url)} 
+              alt={activeSlide.title} 
+              className="w-full h-full object-cover transition-all duration-700 blur-sm scale-110 opacity-40"
+            />
+          )}
           <div className="absolute inset-0 bg-gradient-to-r from-brand-950 via-brand-950/90 to-brand-900/60" />
           <div className="absolute inset-0 bg-texture-dots opacity-20 mix-blend-overlay" />
           {/* Floating glow orbs — hidup */}
@@ -227,14 +253,16 @@ export default function Home() {
                 )}
               </div>
 
-              <div className="pt-2">
-                <a 
-                  href={activeSlide.link_url || '#'} 
-                  className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-8 py-3.5 rounded-xl font-bold text-sm transition-all shadow-sm hover:shadow-md transform hover:-translate-y-1"
-                >
-                  Lihat Detail Event <i className="ph-bold ph-arrow-right text-lg" />
-                </a>
-              </div>
+              {activeSlide.link_url && (
+                <div className="pt-2">
+                  <a 
+                    href={activeSlide.link_url || '#'} 
+                    className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-8 py-3.5 rounded-xl font-bold text-sm transition-all shadow-sm hover:shadow-md transform hover:-translate-y-1"
+                  >
+                    Lihat Detail Event <i className="ph-bold ph-arrow-right text-lg" />
+                  </a>
+                </div>
+              )}
             </div>
 
             {/* Right: 3D Stack Flyer Container */}
@@ -243,11 +271,13 @@ export default function Home() {
                 <div className="absolute inset-0 bg-brand-800/40 backdrop-blur-xl border border-white/10 rounded-3xl transform -rotate-6 scale-95 transition-transform duration-700 group-hover:-rotate-12 shadow-2xl origin-bottom-left" />
                 <div className="absolute inset-0 bg-gradient-to-br from-brand-600/30 to-amber-500/20 backdrop-blur-md border border-white/20 rounded-3xl transform rotate-3 scale-100 transition-transform duration-700 group-hover:rotate-6 shadow-xl origin-bottom-right" />
                 <div className="absolute inset-0 rounded-3xl overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.6)] border-[4px] border-white/10 transform transition-transform duration-700 hover:scale-[1.03] bg-brand-950">
-                  <img 
-                    src={resolveAssetUrl(activeSlide.image_url)} 
-                    alt={activeSlide.title} 
-                    className="w-full h-full object-cover"
-                  />
+                  {activeSlide.image_url && (
+                    <img 
+                      src={resolveAssetUrl(activeSlide.image_url)} 
+                      alt={activeSlide.title} 
+                      className="w-full h-full object-cover"
+                    />
+                  )}
                 </div>
               </div>
             </div>
@@ -255,41 +285,42 @@ export default function Home() {
         </div>
 
         {/* Carousel Controls */}
-        <div className="absolute bottom-8 left-0 right-0 z-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-            <div className="flex gap-3">
-              <button 
-                onClick={() => { setCurrentSlide((currentSlide - 1 + sliders.length) % sliders.length); setProgress(0); }}
-                className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center justify-center transition backdrop-blur-sm"
-              >
-                <i className="ph-bold ph-caret-left text-xl" />
-              </button>
-              <button 
-                onClick={() => { setCurrentSlide((currentSlide + 1) % sliders.length); setProgress(0); }}
-                className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center justify-center transition backdrop-blur-sm"
-              >
-                <i className="ph-bold ph-caret-right text-xl" />
-              </button>
-            </div>
-            
-            <div className="flex flex-col items-end gap-3">
-              <div className="flex gap-2">
-                {sliders.map((_, idx) => (
-                  <button 
-                    key={idx}
-                    onClick={() => { setCurrentSlide(idx); setProgress(0); }}
-                    className={`h-2.5 rounded-full transition-all duration-500 ${currentSlide === idx ? 'w-8 bg-amber-400' : 'w-2.5 bg-white/30 hover:bg-white/60'}`}
-                  />
-                ))}
+        {sliders.length > 1 && (
+          <div className="absolute bottom-8 left-0 right-0 z-20">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => { setCurrentSlide((currentSlide - 1 + sliders.length) % sliders.length); setProgress(0); }}
+                  className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center justify-center transition backdrop-blur-sm"
+                >
+                  <i className="ph-bold ph-caret-left text-xl" />
+                </button>
+                <button 
+                  onClick={() => { setCurrentSlide((currentSlide + 1) % sliders.length); setProgress(0); }}
+                  className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center justify-center transition backdrop-blur-sm"
+                >
+                  <i className="ph-bold ph-caret-right text-xl" />
+                </button>
               </div>
-              <div className="w-32 h-1 bg-white/10 rounded-full overflow-hidden">
-                <div className="h-full bg-brand-500 transition-all duration-100 ease-linear" style={{ width: `${progress}%` }} />
+              
+              <div className="flex flex-col items-end gap-3">
+                <div className="flex gap-2">
+                  {sliders.map((_, idx) => (
+                    <button 
+                      key={idx}
+                      onClick={() => { setCurrentSlide(idx); setProgress(0); }}
+                      className={`h-2.5 rounded-full transition-all duration-500 ${currentSlide === idx ? 'w-8 bg-amber-400' : 'w-2.5 bg-white/30 hover:bg-white/60'}`}
+                    />
+                  ))}
+                </div>
+                <div className="w-32 h-1 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-full bg-brand-500 transition-all duration-100 ease-linear" style={{ width: `${progress}%` }} />
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </section>
-      )}
 
       {/* 2. SAMBUTAN KETUA UMUM */}
       <section className="py-24 bg-white border-b border-slate-200 relative overflow-hidden">
@@ -301,7 +332,7 @@ export default function Home() {
               <div className="absolute inset-0 bg-brand-500/20 blur-[80px] rounded-full" />
               <div className="relative rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-white transform transition hover:-translate-y-2 duration-500">
                 <img 
-                  src={resolveAssetUrl(settings.greeting_image_path) || 'https://gradasi.org/uploads/img/event-terkini/1767154211.jpg'}
+                  src={resolveAssetUrl(settings.greeting_image_path) || ''}
                   alt="Poster Sambutan"
                   className="w-full h-auto object-contain"
                 />
@@ -311,8 +342,8 @@ export default function Home() {
                   <i className="ph-fill ph-star" />
                 </div>
                 <div>
-                  <p className="font-bold text-slate-800 text-sm">{settings.greeting_title || 'Tahun Baru 2026'}</p>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">{settings.greeting_subtitle || 'Resolusi & Harapan'}</p>
+                  <p className="font-bold text-slate-800 text-sm">{settings.greeting_title || ''}</p>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold">{settings.greeting_subtitle || ''}</p>
                 </div>
               </div>
             </div>
@@ -324,7 +355,7 @@ export default function Home() {
                   <i className="ph-fill ph-quotes" /> Refleksi Resmi
                 </span>
                 <h2 className="font-heading text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
-                  {settings.greeting_title || 'Memperjuangkan'} <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-amber-500">{settings.greeting_subtitle || 'Kedaulatan Digital'}</span> Bangsa
+                  {settings.greeting_title || ''} <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-amber-500">{settings.greeting_subtitle || ''}</span>{settings.greeting_title ? ' Bangsa' : ''}
                 </h2>
               </div>
 
@@ -332,21 +363,31 @@ export default function Home() {
               <div className="relative bg-slate-50 rounded-2xl p-8 border border-slate-200/60 shadow-inner">
                 <i className="ph-fill ph-quotes absolute -top-4 -left-2 text-6xl text-brand-200/50 transform -rotate-12" />
                 <p className="relative z-10 text-slate-700 text-lg leading-relaxed font-quote italic">
-                  "{settings.greeting_content || 'Tiada hadiah termahal di akhir tahun ini selain doa dan dukungan yang senantiasa mengiringi setiap langkah perjuangan kita. Tantangan teknologi bukan beban, melainkan proses pendewasaan agar kita tegak berdiri.'}"
+                  {settings.greeting_content ? `"${settings.greeting_content}"` : ""}
                 </p>
               </div>
 
               {/* Signature */}
-              <div className="flex items-center gap-4 pt-4 border-t border-slate-100">
-                <div className="flex -space-x-4">
-                  <img src={resolveAssetUrl(settings.greeting_image_path) || "https://gradasi.org/uploads/img/s-anggota/ketua/1735027418.jpg"} alt="Upi" className="w-12 h-12 rounded-full border-2 border-white shadow-md relative z-20" />
-                  <div className="w-12 h-12 rounded-full bg-brand-100 border-2 border-white shadow-md flex items-center justify-center text-brand-700 font-bold text-xs relative z-10">JS</div>
+              {(ketuaUmum || sekjen) && (
+                <div className="flex items-center gap-4 pt-4 border-t border-slate-100">
+                  <div className="flex -space-x-4">
+                    {ketuaUmum?.image_path && (
+                      <img src={resolveAssetUrl(ketuaUmum.image_path)} alt={ketuaUmum.name} className="w-12 h-12 rounded-full border-2 border-white shadow-md relative z-20 object-cover" />
+                    )}
+                    {sekjen?.name && (
+                      <div className="w-12 h-12 rounded-full bg-brand-100 border-2 border-white shadow-md flex items-center justify-center text-brand-700 font-bold text-xs relative z-10">
+                        {sekjen.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-heading font-bold text-slate-900 text-sm">{settings.site_name || ''}</p>
+                    <p className="text-xs text-brand-600 font-medium">
+                      {ketuaUmum?.name || ''} {sekjen?.name ? `& ${sekjen.name}` : ''}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-heading font-bold text-slate-900 text-sm">{settings.site_name || 'DPP GRADASI'}</p>
-                  <p className="text-xs text-brand-600 font-medium">Upi Asmaradhana & Junaidi, S.Kom</p>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
@@ -364,21 +405,23 @@ export default function Home() {
 
           <div className="flex flex-col lg:flex-row gap-16 items-center">
             {/* Foto Pimpinan */}
-            <div className="w-full lg:w-1/3 flex justify-center">
-              <div className="relative group">
-                <div className="w-72 aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl border-4 border-white mx-auto relative z-10 transform transition duration-500 group-hover:-translate-y-2">
-                  <img 
-                    src={resolveAssetUrl(settings.greeting_image_path) || "https://gradasi.org/uploads/img/s-anggota/ketua/1735027418.jpg"}
-                    alt="Upi Asmaradhana - Ketua Umum"
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent p-6 pt-12 text-center">
-                    <h4 className="font-heading font-bold text-white text-lg">Upi Asmaradhana</h4>
-                    <p className="text-[11px] text-brand-400 font-bold uppercase tracking-widest mt-1">Ketua Umum DPP</p>
+            {ketuaUmum && (
+              <div className="w-full lg:w-1/3 flex justify-center">
+                <div className="relative group">
+                  <div className="w-72 aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl border-4 border-white mx-auto relative z-10 transform transition duration-500 group-hover:-translate-y-2">
+                    <img 
+                      src={resolveAssetUrl(ketuaUmum.image_path) || ""}
+                      alt={ketuaUmum.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent p-6 pt-12 text-center">
+                      <h4 className="font-heading font-bold text-white text-lg">{ketuaUmum.name}</h4>
+                      <p className="text-[11px] text-brand-400 font-bold uppercase tracking-widest mt-1">{ketuaUmum.role}</p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Tabs Area */}
             <div className="w-full lg:w-2/3">
@@ -412,8 +455,8 @@ export default function Home() {
                       <i className="ph-fill ph-book-open-text text-brand-500" /> Tujuan Utama
                     </h3>
                     <div className="space-y-4 text-slate-600 text-sm sm:text-base leading-relaxed">
-                      <p>{settings.history || 'Perkumpulan Generasi Digital Indonesia (GRADASI) didirikan sebagai wadah kolaborasi untuk meningkatkan kecakapan digital bangsa secara merata.'}</p>
-                      <p>{settings.about_tutorial || 'Diinisiasi oleh para pegiat teknologi, GRADASI (Generasi Digital Indonesia) didirikan sebagai wadah kolaborasi untuk meningkatkan kecakapan digital bangsa secara merata.'}</p>
+                      <p>{settings.history || ''}</p>
+                      <p>{settings.about_tutorial || ''}</p>
                     </div>
                   </div>
                 )}
@@ -428,10 +471,10 @@ export default function Home() {
                         <i className="ph-fill ph-calendar-check text-2xl text-brand-600" />
                       </div>
                       <div>
-                        <h4 className="font-bold text-slate-900 text-lg mb-2">{settings.about_formation_date || '4 Februari 2019'}</h4>
+                        <h4 className="font-bold text-slate-900 text-lg mb-2">{settings.about_formation_date || ''}</h4>
                         <p className="text-slate-600 text-sm leading-relaxed mb-4">Secara resmi GRADASI disahkan melalui Surat Keputusan (SK) Kementerian Hukum dan HAM Republik Indonesia.</p>
                         <div className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-brand-200 shadow-sm text-xs font-mono font-bold text-brand-800">
-                          <i className="ph-bold ph-certificate" /> {settings.about_no_sk || 'AHU – 0000151.AH.01.07.2019'}
+                          <i className="ph-bold ph-certificate" /> {settings.about_no_sk || ''}
                         </div>
                       </div>
                     </div>
@@ -444,7 +487,7 @@ export default function Home() {
                       <i className="ph-fill ph-map-pin-line text-brand-500" /> Markas Pusat
                     </h3>
                     <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
-                      <h4 className="font-bold text-slate-900 text-base mb-3">Kantor Sekretariat DPP GRADASI</h4>
+                      <h4 className="font-bold text-slate-900 text-base mb-3">Kantor Sekretariat {settings.site_name || ''}</h4>
                       <div className="flex gap-3 text-slate-600 text-sm leading-relaxed">
                         <i className="ph-bold ph-map-pin text-brand-600 mt-1" />
                         <p>{settings.address}</p>
@@ -617,7 +660,7 @@ export default function Home() {
                 controls 
                 preload="metadata"
               >
-                <source src={resolveAssetUrl(settings.video_profile_path) || 'https://gradasi.org/assets/video/gradasi.mp4'} type="video/mp4" />
+                <source src={resolveAssetUrl(settings.video_profile_path) || ''} type="video/mp4" />
                 Browser Anda tidak mendukung pemutar video.
               </video>
             </div>
@@ -700,7 +743,7 @@ export default function Home() {
               {/* Google Maps Embed */}
               <div className="h-[400px] relative bg-white border border-slate-200 rounded-xl overflow-hidden shadow-inner">
                 <iframe
-                  src={resolveAssetUrl(settings.maps_embed_url) || "https://maps.google.com/maps?q=The%20Bellagio%20Mall%20Mega%20Kuningan%20Jakarta&t=&z=16&ie=UTF8&iwloc=&output=embed"}
+                  src={resolveAssetUrl(settings.maps_embed_url) || ""}
                   width="100%" 
                   height="100%" 
                   style={{ border: 0 }} 

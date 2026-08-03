@@ -19,7 +19,7 @@ export default function Kepengurusan() {
     pengurusService.list({ limit: 100 })
       .then(res => {
         if (res.success && res.data) {
-          const list = Array.isArray(res.data) ? res.data : (res.data.pengurus || [])
+          const list = Array.isArray(res.data) ? res.data : (res.data.data || res.data.pengurus || [])
           // Normalisasi: API kirim image_path → FE pakai image_url di JSX
           setAllPengurus(list.map(p => ({ ...p, image_url: p.image_path || p.image_url })))
         }
@@ -56,8 +56,10 @@ export default function Kepengurusan() {
     return matchesSearch && matchesProvinsi && matchesKabupaten
   }).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
 
-  const totalPages = Math.max(3, Math.ceil(filteredList.length / itemsPerPage))
+  const totalPages = Math.ceil(filteredList.length / itemsPerPage) || 1
   const paginatedList = filteredList.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1)
+  const showArrows = totalPages > 1 && filteredList.length >= 3
 
   const handleTabChange = (tab) => {
     setSearchParams({ tab })
@@ -165,72 +167,90 @@ export default function Kepengurusan() {
           {/* KETUA UMUM SPECIAL HERO CARD */}
           {activeTab === 'ketua' && (
             <div className="flex justify-center my-6">
-              {allPengurus.filter(item => item.level === 'ketua').map(item => (
-                <div key={item.id} className="bg-white rounded-3xl p-8 md:p-12 border border-slate-200/80 shadow-[0_15px_40px_rgba(0,0,0,0.06)] flex flex-col items-center text-center max-w-md w-full">
-                  <div className="w-40 h-40 rounded-full overflow-hidden mb-6 border-4 border-brand-100 p-1 shadow-md bg-slate-50">
-                    <img src={resolveAssetUrl(item.image_url || item.image_path)} alt={item.name} className="w-full h-full object-cover rounded-full" />
-                  </div>
-                  <h3 className="font-heading font-extrabold text-slate-900 text-2xl md:text-3xl mb-1 tracking-tight">{item.name}</h3>
-                  <p className="text-sm font-bold text-brand-600 tracking-wider uppercase mb-1">{item.role}</p>
-                  <p className="text-xs text-slate-400 font-semibold mb-6">Masa Bakti {item.periode || '2024 - 2029'}</p>
-                  
-                  <div className="flex justify-center gap-4 pt-6 border-t border-slate-100 w-full">
-                    {item.facebook_url && (
-                      <a href={item.facebook_url} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:bg-brand-600 hover:text-white flex items-center justify-center transition shadow-xs">
-                        <i className="ph-fill ph-facebook-logo text-lg" />
-                      </a>
-                    )}
-                    {item.instagram_url && (
-                      <a href={item.instagram_url} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:bg-brand-600 hover:text-white flex items-center justify-center transition shadow-xs">
-                        <i className="ph-fill ph-instagram-logo text-lg" />
-                      </a>
-                    )}
-                  </div>
+              {allPengurus.filter(item => item.level === 'ketua').length === 0 ? (
+                <div className="bg-white rounded-3xl p-8 md:p-12 border border-slate-200/80 shadow-[0_15px_40px_rgba(0,0,0,0.03)] flex flex-col items-center text-center max-w-md w-full">
+                  <i className="ph-bold ph-user-focus text-4xl text-slate-300 mb-3 block" />
+                  <h3 className="font-heading font-bold text-slate-800 text-lg mb-1">Ketua Umum belum diatur</h3>
+                  <p className="text-xs text-slate-400 font-semibold">Data Ketua Umum belum dimasukkan ke database.</p>
                 </div>
-              ))}
+              ) : (
+                allPengurus.filter(item => item.level === 'ketua').map(item => (
+                  <div key={item.id} className="bg-white rounded-3xl p-8 md:p-12 border border-slate-200/80 shadow-[0_15px_40px_rgba(0,0,0,0.06)] flex flex-col items-center text-center max-w-md w-full">
+                    <div className="w-40 h-40 rounded-full overflow-hidden mb-6 border-4 border-brand-100 p-1 shadow-md bg-slate-50">
+                      <img src={resolveAssetUrl(item.image_url || item.image_path)} alt={item.name} className="w-full h-full object-cover rounded-full" />
+                    </div>
+                    <h3 className="font-heading font-extrabold text-slate-900 text-2xl md:text-3xl mb-1 tracking-tight">{item.name}</h3>
+                    <p className="text-sm font-bold text-brand-600 tracking-wider uppercase mb-1">{item.role}</p>
+                    <p className="text-xs text-slate-400 font-semibold mb-6">Masa Bakti {item.periode || '2024 - 2029'}</p>
+                    
+                    <div className="flex justify-center gap-4 pt-6 border-t border-slate-100 w-full">
+                      {item.facebook_url && (
+                        <a href={item.facebook_url} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:bg-brand-600 hover:text-white flex items-center justify-center transition shadow-xs">
+                          <i className="ph-fill ph-facebook-logo text-lg" />
+                        </a>
+                      )}
+                      {item.instagram_url && (
+                        <a href={item.instagram_url} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:bg-brand-600 hover:text-white flex items-center justify-center transition shadow-xs">
+                          <i className="ph-fill ph-instagram-logo text-lg" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           )}
 
           {/* GRID CARD FOR DPP, DPD, DPC */}
           {activeTab !== 'ketua' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {paginatedList.map(item => (
-                <div key={item.id} className="card-lift bg-white rounded-2xl p-6 border border-slate-100 flex flex-col items-center text-center hover:border-brand-200 hover:shadow-[0_8px_30px_rgba(37,99,235,0.08)] transition-all duration-300 group">
-                  <div className="w-28 h-28 rounded-full overflow-hidden mb-5 border-4 border-slate-50 group-hover:border-brand-100 transition duration-300 shadow-sm">
-                    <img src={resolveAssetUrl(item.image_url || item.image_path)} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
-                  </div>
-                  <div className="flex-grow flex flex-col w-full">
-                    <h4 className="font-heading font-bold text-slate-900 text-base mb-1 group-hover:text-brand-600 transition">{item.name}</h4>
-                    <p className="text-xs font-semibold text-brand-600 mb-2">{item.role}</p>
-                    {item.provinsi && <p className="text-[11px] text-slate-400 font-medium mb-4">{item.provinsi} {item.kabupaten ? `• ${item.kabupaten}` : ''}</p>}
-                    
-                    <div className="flex justify-center gap-3 mt-auto pt-4 border-t border-slate-100">
-                      <a href="#" className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:text-brand-600 flex items-center justify-center transition">
-                        <i className="ph-fill ph-facebook-logo" />
-                      </a>
-                      <a href="#" className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:text-brand-600 flex items-center justify-center transition">
-                        <i className="ph-fill ph-instagram-logo" />
-                      </a>
+            filteredList.length === 0 ? (
+              <div className="py-16 text-center text-slate-500 bg-white rounded-2xl border border-slate-200/60 p-8 w-full max-w-lg mx-auto">
+                <i className="ph-bold ph-users text-4xl text-slate-300 mb-2 block" />
+                <p className="font-semibold text-slate-700">Tidak ada pengurus ditemukan</p>
+                <p className="text-xs text-slate-400 mt-1">Data pengurus untuk kategori ini belum tersedia atau tidak cocok dengan filter pencarian.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {paginatedList.map(item => (
+                  <div key={item.id} className="card-lift bg-white rounded-2xl p-6 border border-slate-100 flex flex-col items-center text-center hover:border-brand-200 hover:shadow-[0_8px_30px_rgba(37,99,235,0.08)] transition-all duration-300 group">
+                    <div className="w-28 h-28 rounded-full overflow-hidden mb-5 border-4 border-slate-50 group-hover:border-brand-100 transition duration-300 shadow-sm">
+                      <img src={resolveAssetUrl(item.image_url || item.image_path)} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
+                    </div>
+                    <div className="flex-grow flex flex-col w-full">
+                      <h4 className="font-heading font-bold text-slate-900 text-base mb-1 group-hover:text-brand-600 transition">{item.name}</h4>
+                      <p className="text-xs font-semibold text-brand-600 mb-2">{item.role}</p>
+                      {item.provinsi && <p className="text-[11px] text-slate-400 font-medium mb-4">{item.provinsi} {item.kabupaten ? `• ${item.kabupaten}` : ''}</p>}
+                      
+                      <div className="flex justify-center gap-3 mt-auto pt-4 border-t border-slate-100">
+                        <a href="#" className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:text-brand-600 flex items-center justify-center transition">
+                          <i className="ph-fill ph-facebook-logo" />
+                        </a>
+                        <a href="#" className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:text-brand-600 flex items-center justify-center transition">
+                          <i className="ph-fill ph-instagram-logo" />
+                        </a>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )
           )}
 
           {/* ALWAYS VISIBLE PAGINATION FOR DPP, DPD, DPC */}
-          {activeTab !== 'ketua' && (
+          {activeTab !== 'ketua' && filteredList.length > 0 && (
             <div className="mt-16 flex justify-center">
               <nav className="flex items-center gap-2">
-                <button 
-                  disabled={currentPage <= 1}
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} 
-                  className="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:border-brand-500 hover:text-brand-600 hover:bg-brand-50 transition disabled:opacity-40"
-                >
-                  <i className="ph-bold ph-caret-left" />
-                </button>
+                {showArrows && (
+                  <button 
+                    disabled={currentPage <= 1}
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} 
+                    className="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:border-brand-500 hover:text-brand-600 hover:bg-brand-50 transition disabled:opacity-40"
+                  >
+                    <i className="ph-bold ph-caret-left" />
+                  </button>
+                )}
                 
-                {[1, 2, 3].map(page => (
+                {pageNumbers.map(page => (
                   <button 
                     key={page} 
                     onClick={() => setCurrentPage(page)} 
@@ -240,13 +260,15 @@ export default function Kepengurusan() {
                   </button>
                 ))}
 
-                <button 
-                  disabled={currentPage >= totalPages}
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} 
-                  className="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:border-brand-500 hover:text-brand-600 hover:bg-brand-50 transition disabled:opacity-40"
-                >
-                  <i className="ph-bold ph-caret-right" />
-                </button>
+                {showArrows && (
+                  <button 
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} 
+                    className="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:border-brand-500 hover:text-brand-600 hover:bg-brand-50 transition disabled:opacity-40"
+                  >
+                    <i className="ph-bold ph-caret-right" />
+                  </button>
+                )}
               </nav>
             </div>
           )}

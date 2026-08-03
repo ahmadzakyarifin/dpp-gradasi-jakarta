@@ -13,10 +13,10 @@ export default function PublicLayout({ children }) {
   const location = useLocation()
 
   const socialLinks = [
-    { label: 'Facebook', icon: 'ph-facebook-logo', url: settings.facebook_url },
-    { label: 'Instagram', icon: 'ph-instagram-logo', url: settings.instagram_url },
-    { label: 'YouTube', icon: 'ph-youtube-logo', url: settings.youtube_url },
-  ].filter((item) => item.url)
+    { label: 'Facebook', icon: 'ph-facebook-logo', url: settings.facebook_url || '#' },
+    { label: 'Instagram', icon: 'ph-instagram-logo', url: settings.instagram_url || '#' },
+    { label: 'YouTube', icon: 'ph-youtube-logo', url: settings.youtube_url || '#' },
+  ]
 
   return (
     <div className="font-sans bg-slate-50 min-h-screen">
@@ -33,12 +33,7 @@ export default function PublicLayout({ children }) {
               </div>
             </Link>
 
-            {/* Berita Search (khusus halaman /berita — tengah navbar) */}
-            {location.pathname.startsWith('/berita') && (
-              <div className="hidden lg:flex flex-1 justify-center px-4">
-                <NavbarBeritaSearch />
-              </div>
-            )}
+
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center space-x-1">
@@ -211,7 +206,7 @@ export default function PublicLayout({ children }) {
           </div>
           <div className="flex flex-col md:flex-row justify-between items-center text-[13px] text-brand-200/70 border-t border-brand-800/50 pt-8 mt-8">
             <div className="flex flex-col text-center md:text-left gap-1 mb-4 md:mb-0">
-              <p>© 2026 {settings.site_name}. Dilindungi Undang-Undang.</p>
+              <p>© <span className="text-amber-500 font-semibold">{settings.site_name}</span>, Dilindungi undang-undang.</p>
               <p className="text-[11px] text-brand-300/50">{settings.address}</p>
             </div>
             <div className="flex gap-6 font-medium">

@@ -23,8 +23,10 @@ type Settings struct {
 	GreetingSubtitle   string `gorm:"size:255"`
 	GreetingDate       string `gorm:"size:100"`
 	GreetingContent    string `gorm:"type:text"`
-	GreetingImagePath  string `gorm:"size:500"`
-	CreatedAt          string
-	UpdatedAt          string
-	UpdatedBy          *uint `gorm:"column:updated_by"`
+	GreetingImagePath    string `gorm:"size:500"`
+	LoginHeroTitle       string `gorm:"size:255"`
+	LoginHeroDescription string `gorm:"type:text"`
+	CreatedAt            string
+	UpdatedAt            string
+	UpdatedBy            *uint `gorm:"column:updated_by"`
 }

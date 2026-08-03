@@ -16,7 +16,11 @@ export const pengurusService = {
   // Publik — daftar pengurus aktif (tanpa auth); filter level/provinsi/kabupaten
   list(params = {}) {
     return apiRequest(`/pengurus${toQuery(params)}`).then(res => {
-      if (Array.isArray(res?.data)) res.data = res.data.map(normalizeImage)
+      if (Array.isArray(res?.data)) {
+        res.data = res.data.map(normalizeImage)
+      } else if (res?.data && Array.isArray(res.data.data)) {
+        res.data.data = res.data.data.map(normalizeImage)
+      }
       return res
     })
   },
@@ -28,7 +32,11 @@ export const pengurusService = {
 
   listAdmin(params = {}) {
     return apiRequest(`/admin/pengurus${toQuery(params)}`).then(res => {
-      if (Array.isArray(res?.data)) res.data = res.data.map(normalizeImage)
+      if (Array.isArray(res?.data)) {
+        res.data = res.data.map(normalizeImage)
+      } else if (res?.data && Array.isArray(res.data.data)) {
+        res.data.data = res.data.data.map(normalizeImage)
+      }
       return res
     })
   },

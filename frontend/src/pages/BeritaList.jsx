@@ -11,16 +11,29 @@ export default function BeritaList() {
   const page = Number(searchParams.get('page') || 1)
   const searchQuery = searchParams.get('q') || ''
   const filterCategory = searchParams.get('category') || ''
+  const sortBy = searchParams.get('sort') || 'newest'
+  
   const [items, setItems] = useState([])
   const [meta, setMeta] = useState({ current_page: 1, total_pages: 1, total_data: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [categories, setCategories] = useState([])
   const currentPage = page
+
+  useEffect(() => {
+    beritaService.getCategories()
+      .then(res => {
+        if (res && res.data && Array.isArray(res.data)) {
+          setCategories(res.data)
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     setLoading(true)
     setError(null)
-    const params = { page: currentPage, limit: 6, sort: 'newest' }
+    const params = { page: currentPage, limit: 6, sort: sortBy }
     if (searchQuery.trim()) params.search = searchQuery.trim()
     if (filterCategory) params.category = filterCategory
     beritaService.list(params)
@@ -35,13 +48,23 @@ export default function BeritaList() {
         setItems([])
       })
       .finally(() => setLoading(false))
-  }, [currentPage, searchQuery, filterCategory])
+  }, [currentPage, searchQuery, filterCategory, sortBy])
 
   function goToPage(nextPage) {
     const params = new URLSearchParams(searchParams)
     params.set('page', String(nextPage))
     setSearchParams(params)
     window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function updateFilter(next) {
+    const params = new URLSearchParams(searchParams)
+    Object.entries(next).forEach(([k, v]) => {
+      if (v) params.set(k, v)
+      else params.delete(k)
+    })
+    params.set('page', '1')
+    setSearchParams(params)
   }
 
   const totalPages = meta.total_pages || 1
@@ -71,6 +94,43 @@ export default function BeritaList() {
 
       <section className="py-12 md:py-16 bg-slate-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          {/* Filter Bar */}
+          <div className="mb-10 flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-2xl border border-slate-100 shadow-sm w-full">
+            <div className="relative w-full md:max-w-md">
+              <i className="ph-bold ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg" />
+              <input 
+                type="text" 
+                placeholder="Cari berita atau informasi..." 
+                value={searchQuery}
+                onChange={(e) => updateFilter({ q: e.target.value })}
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all outline-none"
+              />
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+              <select 
+                value={filterCategory} 
+                onChange={(e) => updateFilter({ category: e.target.value })}
+                className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-600 outline-none cursor-pointer"
+              >
+                <option value="">Semua Kategori</option>
+                {categories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+
+              <select 
+                value={sortBy} 
+                onChange={(e) => updateFilter({ sort: e.target.value })}
+                className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-600 outline-none cursor-pointer"
+              >
+                <option value="newest">Urutkan: Terbaru</option>
+                <option value="oldest">Urutkan: Terlama</option>
+              </select>
+            </div>
+          </div>
+
           {loading && <div className="py-20 text-center text-slate-500">Memuat berita...</div>}
           {!loading && error && (
             <div className="py-20 text-center text-red-600 font-medium">
@@ -78,7 +138,11 @@ export default function BeritaList() {
             </div>
           )}
           {!loading && !error && items.length === 0 && (
-            <div className="py-20 text-center text-slate-500">Belum ada berita.</div>
+            <div className="py-16 text-center text-slate-500 bg-white rounded-2xl border border-slate-100 p-8">
+              <i className="ph-bold ph-newspaper-clipping text-4xl text-slate-300 mb-2 block" />
+              <p className="font-semibold text-slate-700">Tidak ada berita yang ditemukan</p>
+              <p className="text-xs text-slate-400 mt-1">Belum ada berita atau informasi yang dipublikasikan.</p>
+            </div>
           )}
           {!loading && !error && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

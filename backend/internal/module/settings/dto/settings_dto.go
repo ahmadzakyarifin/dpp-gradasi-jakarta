@@ -24,6 +24,8 @@ type SettingsResponse struct {
 	GreetingDate       string   `json:"greeting_date"`
 	GreetingContent    string   `json:"greeting_content"`
 	GreetingImagePath  string   `json:"greeting_image_path"`
+	LoginHeroTitle     string   `json:"login_hero_title"`
+	LoginHeroDescription string   `json:"login_hero_description"`
 	CreatedAt          string   `json:"created_at"`
 	UpdatedAt          string   `json:"updated_at,omitempty"`
 	UpdatedBy          *uint    `json:"updated_by,omitempty"`

@@ -25,7 +25,7 @@ func (r *settingsRepo) Get() (*model.Settings, error) {
 	if err == gorm.ErrRecordNotFound {
 		// Seed default if empty
 		settings = model.Settings{
-			SiteName:     "DPP GRADASI",
+			SiteName:     "",
 			ContactEmail: "admin@gradasi.org",
 			ContactPhone: "+628123456789",
 		}

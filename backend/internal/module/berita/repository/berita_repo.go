@@ -71,9 +71,11 @@ func (r *beritaRepo) query(publishedOnly bool, q dto.BeritaQuery) ([]entity.Beri
 			db = db.Where("berita.deleted_at IS NULL")
 		}
 	} else if q.Status == "trashed" {
-		db = db.Unscoped().Where("berita.deleted_at IS NOT NULL")
+		// Mode publik + status trashed → tetap hanya published (draft/trash tidak pernah publik)
+		db = db.Unscoped().Where("berita.deleted_at IS NOT NULL AND is_published = ?", true)
 	} else {
-		db = db.Where("berita.deleted_at IS NULL")
+		// Mode publik biasa → pastikan hanya yang published & tidak terhapus
+		db = db.Where("berita.deleted_at IS NULL AND is_published = ?", true)
 	}
 
 	if q.Search != "" {

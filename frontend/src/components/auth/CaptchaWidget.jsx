@@ -6,7 +6,7 @@ import { useSettings } from '../../context/useSettings'
 // - Load script dari challenges.cloudflare.com (hanya sekali)
 // - Render widget ke container; onVerify memberikan token ke parent
 const SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
-const SCRIPT_TIMEOUT_MS = 5000
+const SCRIPT_TIMEOUT_MS = 15000
 
 export default function CaptchaWidget({ onVerify, hasError }) {
   const containerRef = useRef(null)
@@ -79,20 +79,7 @@ export default function CaptchaWidget({ onVerify, hasError }) {
       })
       setWidgetId(id)
 
-      // Deteksi render gagal diam-diam: setelah ~2.5 detik, kalau widget
-      // TIDAK menghasilkan iframe challenge (site key invalid / domain tidak
-      // diizinkan / akun Cloudflare nonaktif), tampilkan pesan eksplisit.
-      // Turnstile render "berhasil" (return id) tapi iframe tidak pernah ada.
-      const checkTimer = setTimeout(() => {
-        const container = containerRef.current
-        if (container && !container.querySelector('iframe')) {
-          setScriptFailed(true)
-          onVerify?.('')
-        }
-      }, 2500)
-
       return () => {
-        clearTimeout(checkTimer)
         if (id && window.turnstile) {
           window.turnstile.remove(id)
         }
