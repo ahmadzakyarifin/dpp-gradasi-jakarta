@@ -32,30 +32,44 @@ func (s *dashboardService) GetSummary(ctx context.Context) (*dashdto.DashboardSu
 
 	// Berita (tidak terhapus)
 	var totalBerita int64
-	s.db.Model(&beritamodel.Berita{}).Where("deleted_at IS NULL").Count(&totalBerita)
+	if err := s.db.Model(&beritamodel.Berita{}).Where("deleted_at IS NULL").Count(&totalBerita).Error; err != nil {
+		return nil, err
+	}
 	res.TotalBerita = totalBerita
 
 	// Kegiatan
 	var totalKegiatan int64
-	s.db.Model(&kegiatanmodel.Kegiatan{}).Where("deleted_at IS NULL").Count(&totalKegiatan)
+	if err := s.db.Model(&kegiatanmodel.Kegiatan{}).Where("deleted_at IS NULL").Count(&totalKegiatan).Error; err != nil {
+		return nil, err
+	}
 	res.TotalKegiatan = totalKegiatan
 
 	// Pengurus
 	var totalPengurus int64
-	s.db.Model(&pengurusmodel.Pengurus{}).Where("deleted_at IS NULL").Count(&totalPengurus)
+	if err := s.db.Model(&pengurusmodel.Pengurus{}).Where("deleted_at IS NULL").Count(&totalPengurus).Error; err != nil {
+		return nil, err
+	}
 	res.TotalPengurus = totalPengurus
 
 	// Kontak
 	var totalKontak, unreadKontak int64
-	s.db.Model(&kontakmodel.PesanKontak{}).Where("deleted_at IS NULL").Count(&totalKontak)
-	s.db.Model(&kontakmodel.PesanKontak{}).Where("deleted_at IS NULL AND is_read = ?", false).Count(&unreadKontak)
+	if err := s.db.Model(&kontakmodel.PesanKontak{}).Where("deleted_at IS NULL").Count(&totalKontak).Error; err != nil {
+		return nil, err
+	}
+	if err := s.db.Model(&kontakmodel.PesanKontak{}).Where("deleted_at IS NULL AND is_read = ?", false).Count(&unreadKontak).Error; err != nil {
+		return nil, err
+	}
 	res.TotalKontak = totalKontak
 	res.UnreadKontak = unreadKontak
 
 	// Admin users (non-super, tidak terhapus)
 	var totalAdmin, pendingAdmin int64
-	s.db.Model(&usermodel.UserModel{}).Where("role_id <> ? AND deleted_at IS NULL", 1).Count(&totalAdmin)
-	s.db.Model(&usermodel.UserModel{}).Where("role_id <> ? AND deleted_at IS NULL AND status = ?", 1, "inactive").Count(&pendingAdmin)
+	if err := s.db.Model(&usermodel.UserModel{}).Where("role_id <> ? AND deleted_at IS NULL", 1).Count(&totalAdmin).Error; err != nil {
+		return nil, err
+	}
+	if err := s.db.Model(&usermodel.UserModel{}).Where("role_id <> ? AND deleted_at IS NULL AND status = ?", 1, "inactive").Count(&pendingAdmin).Error; err != nil {
+		return nil, err
+	}
 	res.TotalAdmin = totalAdmin
 	res.PendingAdmin = pendingAdmin
 

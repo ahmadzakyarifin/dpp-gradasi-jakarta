@@ -37,22 +37,23 @@ func ModelToUserEntity(m *model.UserModel) *entity.User {
 	}
 
 	return &entity.User{
-		ID:              m.ID,
-		RoleID:          m.RoleID,
-		IsSystem:        role != nil && role.IsSystem,
-		Role:            role,
-		RoleName:        roleName,
-		RoleDisplayName: roleDisplayName,
-		Name:            m.Name,
-		Email:           m.Email,
-		PhotoPath:       m.PhotoPath,
-		PasswordHash:    m.PasswordHash,
-		Status:          m.Status,
-		EmailVerifiedAt: m.EmailVerifiedAt,
-		LastLoginAt:     m.LastLoginAt,
-		CreatedAt:       m.CreatedAt,
-		UpdatedAt:       m.UpdatedAt,
-		DeletedAt:       deletedAt,
+		ID:                 m.ID,
+		RoleID:             m.RoleID,
+		IsSystem:           role != nil && role.IsSystem,
+		Role:               role,
+		RoleName:           roleName,
+		RoleDisplayName:    roleDisplayName,
+		Name:               m.Name,
+		Email:              m.Email,
+		PhotoPath:          m.PhotoPath,
+		Password:           m.Password,
+		Status:             m.Status,
+		MustChangePassword: m.MustChangePassword,
+		EmailVerifiedAt:    m.EmailVerifiedAt,
+		LastLoginAt:        m.LastLoginAt,
+		CreatedAt:          m.CreatedAt,
+		UpdatedAt:          m.UpdatedAt,
+		DeletedAt:          deletedAt,
 	}
 }
 
@@ -62,17 +63,18 @@ func EntityToUserModel(e *entity.User) *model.UserModel {
 	}
 
 	m := &model.UserModel{
-		ID:              e.ID,
-		RoleID:          e.RoleID,
-		Name:            e.Name,
-		Email:           e.Email,
-		PhotoPath:       e.PhotoPath,
-		PasswordHash:    e.PasswordHash,
-		Status:          e.Status,
-		EmailVerifiedAt: e.EmailVerifiedAt,
-		LastLoginAt:     e.LastLoginAt,
-		CreatedAt:       e.CreatedAt,
-		UpdatedAt:       e.UpdatedAt,
+		ID:                 e.ID,
+		RoleID:             e.RoleID,
+		Name:               e.Name,
+		Email:              e.Email,
+		PhotoPath:          e.PhotoPath,
+		Password:           e.Password,
+		Status:             e.Status,
+		MustChangePassword: e.MustChangePassword,
+		EmailVerifiedAt:    e.EmailVerifiedAt,
+		LastLoginAt:        e.LastLoginAt,
+		CreatedAt:          e.CreatedAt,
+		UpdatedAt:          e.UpdatedAt,
 	}
 	if e.DeletedAt != nil {
 		m.DeletedAt.Time = *e.DeletedAt

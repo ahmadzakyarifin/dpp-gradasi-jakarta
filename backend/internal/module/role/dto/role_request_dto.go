@@ -1,17 +1,15 @@
 package dto
 
 type RoleCreateReq struct {
-	Name          string `json:"name" binding:"required,max=50"`
-	DisplayName   string `json:"display_name" binding:"required,max=100"`
-	IsActive      bool   `json:"is_active"`
-	PermissionIDs []uint `json:"permission_ids"`
+	Name        string `json:"name" binding:"required,max=50"`
+	DisplayName string `json:"display_name" binding:"required,max=100"`
+	IsActive    bool   `json:"is_active"`
 }
 
 type RoleUpdateReq struct {
-	Name          string `json:"name" binding:"required,max=50"`
-	DisplayName   string `json:"display_name" binding:"required,max=100"`
-	IsActive      bool   `json:"is_active"`
-	PermissionIDs []uint `json:"permission_ids"`
+	Name        string `json:"name" binding:"required,max=50"`
+	DisplayName string `json:"display_name" binding:"required,max=100"`
+	IsActive    bool   `json:"is_active"`
 }
 
 type RoleStatusReq struct {

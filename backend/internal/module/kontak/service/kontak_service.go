@@ -2,13 +2,14 @@ package service
 
 import (
 	"context"
+	"errors"
 	"strconv"
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/helper"
 	activitylogdto "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/dto"
 	activitylogservice "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/service"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kontak/dto"
-	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kontak/model"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kontak/mapper"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kontak/repository"
 	"gorm.io/gorm"
 )
@@ -33,7 +34,7 @@ func NewKontakService(db *gorm.DB, repo repository.KontakRepo, audit activitylog
 	return &kontakService{db: db, repo: repo, audit: audit}
 }
 
-func (s *kontakService) log(ctx context.Context, input *activitylogdto.ActivityLogInput) {
+func (s *kontakService) log(ctx context.Context, db *gorm.DB, input *activitylogdto.ActivityLogInput) {
 	if s.audit == nil {
 		return
 	}
@@ -54,7 +55,7 @@ func (s *kontakService) log(ctx context.Context, input *activitylogdto.ActivityL
 		input.UserAgent = userAgent
 	}
 
-	_ = s.audit.Log(ctx, s.db, input)
+	_ = s.audit.Log(ctx, db, input)
 }
 
 func (s *kontakService) GetAll(ctx context.Context, q dto.KontakQuery) (*dto.KontakListResponse, error) {
@@ -63,12 +64,18 @@ func (s *kontakService) GetAll(ctx context.Context, q dto.KontakQuery) (*dto.Kon
 		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil data pesan.", err)
 	}
 
-	page := maxInt(q.Page, 1)
-	limit := maxInt(q.Limit, 10)
+	page := q.Page
+	if page <= 0 {
+		page = 1
+	}
+	limit := q.Limit
+	if limit <= 0 {
+		limit = 10
+	}
 	totalPages := (int(total) + limit - 1) / limit
 
 	resp := &dto.KontakListResponse{
-		Kontak: make([]dto.KontakListItem, 0),
+		Kontak: mapper.EntityListToItem(items),
 		Meta: dto.PaginationMeta{
 			CurrentPage: page,
 			Limit:       limit,
@@ -76,16 +83,16 @@ func (s *kontakService) GetAll(ctx context.Context, q dto.KontakQuery) (*dto.Kon
 			TotalPages:  totalPages,
 		},
 	}
-	for _, p := range items {
-		resp.Kontak = append(resp.Kontak, toListItem(p))
-	}
 	return resp, nil
 }
 
 func (s *kontakService) GetByID(ctx context.Context, id uint) (*dto.KontakDetailResponse, error) {
 	p, err := s.repo.FindByID(id)
 	if err != nil {
-		return nil, helper.NewServiceError("NOT_FOUND", "Pesan tidak ditemukan.", err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, helper.NewNotFoundError("Pesan tidak ditemukan")
+		}
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil pesan.", err)
 	}
 
 	// Auto mark as read
@@ -96,30 +103,28 @@ func (s *kontakService) GetByID(ctx context.Context, id uint) (*dto.KontakDetail
 		p.IsRead = true
 	}
 
-	resp := toDetail(*p)
+	resp := mapper.EntityToDetail(p)
 	return &resp, nil
 }
 
 func (s *kontakService) Submit(ctx context.Context, req *dto.KontakRequest) error {
-	p := &model.PesanKontak{
-		Nama:   req.Nama,
-		Email:  req.Email,
-		Subjek: req.Subjek,
-		Pesan:  req.Pesan,
-	}
+	p := mapper.CreateReqToEntity(req)
 	return s.repo.Create(p)
 }
 
 func (s *kontakService) Delete(ctx context.Context, id uint) error {
 	p, err := s.repo.FindByID(id)
 	if err != nil {
-		return helper.NewServiceError("NOT_FOUND", "Pesan tidak ditemukan.", err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return helper.NewNotFoundError("Pesan tidak ditemukan")
+		}
+		return helper.NewServiceError("SERVER_ERROR", "Gagal mengambil pesan.", err)
 	}
 	if err := s.repo.Delete(id); err != nil {
 		return helper.NewServiceError("SERVER_ERROR", "Gagal menghapus pesan.", err)
 	}
 
-	s.log(ctx, &activitylogdto.ActivityLogInput{
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		Action:      "kontak.delete",
 		EntityType:  "kontak",
 		EntityID:    &id,
@@ -135,7 +140,7 @@ func (s *kontakService) Restore(ctx context.Context, id uint) error {
 		return helper.NewServiceError("SERVER_ERROR", "Gagal memulihkan pesan.", err)
 	}
 
-	s.log(ctx, &activitylogdto.ActivityLogInput{
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		Action:      "kontak.restore",
 		EntityType:  "kontak",
 		EntityID:    &id,
@@ -153,7 +158,7 @@ func (s *kontakService) BulkDelete(ctx context.Context, ids []uint) error {
 		return helper.NewServiceError("SERVER_ERROR", "Gagal menghapus pesan.", err)
 	}
 
-	s.log(ctx, &activitylogdto.ActivityLogInput{
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		Action:      "kontak.bulk_delete",
 		EntityType:  "kontak",
 		Description: "Menghapus " + strconv.FormatUint(uint64(len(ids)), 10) + " pesan kontak (soft delete)",
@@ -173,7 +178,7 @@ func (s *kontakService) BulkRestore(ctx context.Context, ids []uint) error {
 		return helper.NewServiceError("SERVER_ERROR", "Gagal memulihkan pesan.", err)
 	}
 
-	s.log(ctx, &activitylogdto.ActivityLogInput{
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		Action:      "kontak.bulk_restore",
 		EntityType:  "kontak",
 		Description: "Memulihkan " + strconv.FormatUint(uint64(len(ids)), 10) + " pesan kontak",
@@ -183,39 +188,4 @@ func (s *kontakService) BulkRestore(ctx context.Context, ids []uint) error {
 	})
 
 	return nil
-}
-
-func toListItem(p model.PesanKontak) dto.KontakListItem {
-	return dto.KontakListItem{
-		ID:        p.ID,
-		Nama:      p.Nama,
-		Email:     p.Email,
-		Subjek:    p.Subjek,
-		IsRead:    p.IsRead,
-		CreatedAt: p.CreatedAt.Format("2006-01-02T15:04:05Z"),
-	}
-}
-
-func toDetail(p model.PesanKontak) dto.KontakDetailResponse {
-	resp := dto.KontakDetailResponse{
-		ID:        p.ID,
-		Nama:      p.Nama,
-		Email:     p.Email,
-		Subjek:    p.Subjek,
-		Pesan:     p.Pesan,
-		IsRead:    p.IsRead,
-		CreatedAt: p.CreatedAt.Format("2006-01-02T15:04:05Z"),
-		UpdatedAt: p.UpdatedAt.Format("2006-01-02T15:04:05Z"),
-	}
-	if p.ResponseNote != nil {
-		resp.ResponseNote = *p.ResponseNote
-	}
-	return resp
-}
-
-func maxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }

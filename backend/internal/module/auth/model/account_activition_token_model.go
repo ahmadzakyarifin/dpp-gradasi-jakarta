@@ -13,4 +13,4 @@ type AccountActivationTokenModel struct {
 	CreatedAt time.Time  `gorm:"column:created_at;not null;autoCreateTime"`
 }
 
-func (AccountActivationTokenModel) TableName() string { return "account_activation_tokens" }
+func (AccountActivationTokenModel) TableName() string { return "activation_tokens" }

@@ -15,10 +15,10 @@ func RegisterRoutes(api *gin.RouterGroup, h *handler.KegiatanHandler, jwtSecret 
 		kgt.GET("/:slug", h.GetBySlug)
 	}
 
-	// Admin — super_admin, admin, admin_kegiatan
+	// Admin — super_admin, admin, editor
 	admin := kgt.Group("")
 	admin.Use(middleware.AuthMiddleware(jwtSecret))
-	admin.Use(middleware.RoleMiddleware("super_admin", "admin", "admin_kegiatan"))
+	admin.Use(middleware.RoleMiddleware("super_admin", "admin", "editor"))
 	admin.Use(middleware.RateLimitPerUser("kegiatan-crud", 30))
 	{
 		admin.GET("/admin", h.ListAdmin)

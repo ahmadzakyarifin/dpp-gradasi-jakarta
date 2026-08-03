@@ -4,16 +4,18 @@ import (
 	"strings"
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/pengurus/dto"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/pengurus/entity"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/pengurus/mapper"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/pengurus/model"
 	"gorm.io/gorm"
 )
 
 type PengurusRepo interface {
-	FindAll(query dto.PengurusQuery, adminMode bool) ([]model.Pengurus, int64, error)
-	GetRegions() ([]model.Pengurus, error)
-	FindByID(id uint) (*model.Pengurus, error)
-	Create(pengurus *model.Pengurus) error
-	Update(pengurus *model.Pengurus) error
+	FindAll(query dto.PengurusQuery, adminMode bool) ([]entity.Pengurus, int64, error)
+	GetRegions() ([]entity.Pengurus, error)
+	FindByID(id uint) (*entity.Pengurus, error)
+	Create(pengurus *entity.Pengurus) error
+	Update(pengurus *entity.Pengurus) error
 	SoftDelete(id uint) error
 	Restore(id uint) error
 	BulkSoftDelete(ids []uint) error
@@ -28,7 +30,7 @@ func NewPengurusRepo(db *gorm.DB) PengurusRepo {
 	return &pengurusRepo{db: db}
 }
 
-func (r *pengurusRepo) FindAll(q dto.PengurusQuery, adminMode bool) ([]model.Pengurus, int64, error) {
+func (r *pengurusRepo) FindAll(q dto.PengurusQuery, adminMode bool) ([]entity.Pengurus, int64, error) {
 	var results []model.Pengurus
 	var total int64
 
@@ -89,34 +91,34 @@ func (r *pengurusRepo) FindAll(q dto.PengurusQuery, adminMode bool) ([]model.Pen
 	offset := (page - 1) * limit
 
 	err := db.Limit(limit).Offset(offset).Find(&results).Error
-	return results, total, err
+	return mapper.ModelListToEntity(results), total, err
 }
 
-func (r *pengurusRepo) GetRegions() ([]model.Pengurus, error) {
+func (r *pengurusRepo) GetRegions() ([]entity.Pengurus, error) {
 	var results []model.Pengurus
 	// Hanya ambil data unik provinsi & kabupaten dari pengurus aktif
 	err := r.db.Select("provinsi, kabupaten").
 		Where("is_active = ? AND deleted_at IS NULL", true).
 		Group("provinsi, kabupaten").
 		Find(&results).Error
-	return results, err
+	return mapper.ModelListToEntity(results), err
 }
 
-func (r *pengurusRepo) FindByID(id uint) (*model.Pengurus, error) {
+func (r *pengurusRepo) FindByID(id uint) (*entity.Pengurus, error) {
 	var p model.Pengurus
 	err := r.db.First(&p, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &p, nil
+	return mapper.ModelToEntity(&p), nil
 }
 
-func (r *pengurusRepo) Create(pengurus *model.Pengurus) error {
-	return r.db.Create(pengurus).Error
+func (r *pengurusRepo) Create(pengurus *entity.Pengurus) error {
+	return r.db.Create(mapper.EntityToModel(pengurus)).Error
 }
 
-func (r *pengurusRepo) Update(pengurus *model.Pengurus) error {
-	return r.db.Save(pengurus).Error
+func (r *pengurusRepo) Update(pengurus *entity.Pengurus) error {
+	return r.db.Save(mapper.EntityToModel(pengurus)).Error
 }
 
 func (r *pengurusRepo) SoftDelete(id uint) error {

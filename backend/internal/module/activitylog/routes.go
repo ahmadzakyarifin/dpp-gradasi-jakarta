@@ -19,6 +19,7 @@ func RegisterRoutes(
 	g.Use(requireAuth)
 	{
 		g.GET("", middleware.RoleMiddleware("super_admin"), h.List)
+		g.GET("/summary", middleware.RoleMiddleware("super_admin"), h.Summary)
 		g.GET("/:id", middleware.RoleMiddleware("super_admin"), h.Detail)
 		g.GET("/entity/:entityType/:entityID", middleware.RoleMiddleware("super_admin"), h.EntityLogs)
 	}

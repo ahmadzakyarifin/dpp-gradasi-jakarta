@@ -1,7 +1,6 @@
 package mapper
 
 import (
-	"fmt"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/dto"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/entity"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/model"
@@ -102,18 +101,20 @@ func EntityToModel(e *entity.ActivityLog) *model.ActivityLog {
 
 func EntityToResponse(e *entity.ActivityLog) dto.ActivityLogItemRes {
 	return dto.ActivityLogItemRes{
-		ID:          fmt.Sprintf("%d", e.ID),
-		Time:        e.CreatedAt.Format("2006-01-02 15:04:05"),
-		Actor:       e.ActorName,
-		Role:        e.ActorRole,
+		ID:          e.ID,
+		ActorID:     e.ActorID,
+		ActorName:   e.ActorName,
+		ActorRole:   e.ActorRole,
 		Action:      e.Action,
-		Entity:      e.EntityType,
+		EntityType:  e.EntityType,
+		EntityID:    e.EntityID,
 		EntityLabel: e.EntityLabel,
+		RiskLevel:   e.RiskLevel,
 		Description: e.Description,
-		IP:          e.IPAddress,
-		Device:      e.UserAgent,
-		Risk:        e.RiskLevel,
+		IPAddress:   e.IPAddress,
+		UserAgent:   e.UserAgent,
 		Metadata:    e.Metadata,
+		CreatedAt:   e.CreatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 }
 
@@ -123,17 +124,19 @@ func EntityToResponse(e *entity.ActivityLog) dto.ActivityLogItemRes {
 
 func EntityToDetailResponse(e *entity.ActivityLog) dto.ActivityLogDetailRes {
 	return dto.ActivityLogDetailRes{
-		ID:          fmt.Sprintf("%d", e.ID),
-		Time:        e.CreatedAt.Format("2006-01-02 15:04:05"),
-		Actor:       e.ActorName,
-		Role:        e.ActorRole,
+		ID:          e.ID,
+		ActorID:     e.ActorID,
+		ActorName:   e.ActorName,
+		ActorRole:   e.ActorRole,
 		Action:      e.Action,
-		Entity:      e.EntityType,
+		EntityType:  e.EntityType,
+		EntityID:    e.EntityID,
 		EntityLabel: e.EntityLabel,
+		RiskLevel:   e.RiskLevel,
 		Description: e.Description,
-		IP:          e.IPAddress,
-		Device:      e.UserAgent,
-		Risk:        e.RiskLevel,
+		IPAddress:   e.IPAddress,
+		UserAgent:   e.UserAgent,
 		Metadata:    e.Metadata,
+		CreatedAt:   e.CreatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 }

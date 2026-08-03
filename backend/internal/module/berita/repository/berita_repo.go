@@ -5,19 +5,21 @@ import (
 	"strings"
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/berita/dto"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/berita/entity"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/berita/mapper"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/berita/model"
 	"gorm.io/gorm"
 )
 
 type BeritaRepo interface {
-	FindPublished(query dto.BeritaQuery) ([]model.Berita, int64, error)
-	FindAll(query dto.BeritaQuery) ([]model.Berita, int64, error)
-	FindBySlug(slug string) (*model.Berita, error)
+	FindPublished(query dto.BeritaQuery) ([]entity.Berita, int64, error)
+	FindAll(query dto.BeritaQuery) ([]entity.Berita, int64, error)
+	FindBySlug(slug string) (*entity.Berita, error)
 	FindUniqueSlug(slug string) (string, error)
 	ExistsTitle(title string, excludeID uint) (bool, error)
-	FindByID(id uint) (*model.Berita, error)
-	Create(berita *model.Berita) error
-	Update(berita *model.Berita) error
+	FindByID(id uint) (*entity.Berita, error)
+	Create(berita *entity.Berita) error
+	Update(berita *entity.Berita) error
 	SoftDelete(id uint) error
 	Restore(id uint) error
 	BulkSoftDelete(ids []uint) error
@@ -35,15 +37,15 @@ func NewBeritaRepo(db *gorm.DB) BeritaRepo {
 	return &beritaRepo{db: db}
 }
 
-func (r *beritaRepo) FindPublished(query dto.BeritaQuery) ([]model.Berita, int64, error) {
+func (r *beritaRepo) FindPublished(query dto.BeritaQuery) ([]entity.Berita, int64, error) {
 	return r.query(true, query)
 }
 
-func (r *beritaRepo) FindAll(query dto.BeritaQuery) ([]model.Berita, int64, error) {
+func (r *beritaRepo) FindAll(query dto.BeritaQuery) ([]entity.Berita, int64, error) {
 	return r.query(false, query)
 }
 
-func (r *beritaRepo) query(publishedOnly bool, q dto.BeritaQuery) ([]model.Berita, int64, error) {
+func (r *beritaRepo) query(publishedOnly bool, q dto.BeritaQuery) ([]entity.Berita, int64, error) {
 	var beritas []model.Berita
 	var total int64
 
@@ -75,8 +77,8 @@ func (r *beritaRepo) query(publishedOnly bool, q dto.BeritaQuery) ([]model.Berit
 	}
 
 	if q.Search != "" {
-		search := "%" + strings.TrimSpace(q.Search) + "%"
-		db = db.Where("title LIKE ? OR content LIKE ?", search, search)
+		search := strings.TrimSpace(q.Search)
+		db = db.Where("MATCH(title, content) AGAINST (? IN BOOLEAN MODE)", search+"*")
 	}
 
 	if q.Category != "" {
@@ -112,10 +114,10 @@ func (r *beritaRepo) query(publishedOnly bool, q dto.BeritaQuery) ([]model.Berit
 	offset := (page - 1) * limit
 
 	err := db.Preload("Tags").Limit(limit).Offset(offset).Find(&beritas).Error
-	return beritas, total, err
+	return mapper.ModelListToEntity(beritas), total, err
 }
 
-func (r *beritaRepo) FindBySlug(slug string) (*model.Berita, error) {
+func (r *beritaRepo) FindBySlug(slug string) (*entity.Berita, error) {
 	var b model.Berita
 	err := r.db.Model(&model.Berita{}).
 		Select("berita.*, users.name as author_name").
@@ -124,7 +126,7 @@ func (r *beritaRepo) FindBySlug(slug string) (*model.Berita, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &b, nil
+	return mapper.ModelToEntity(&b), nil
 }
 
 // FindUniqueSlug mengembalikan slug unik dengan suffix -2, -3, dst jika slug sudah dipakai.
@@ -159,7 +161,7 @@ func (r *beritaRepo) ExistsTitle(title string, excludeID uint) (bool, error) {
 	return count > 0, nil
 }
 
-func (r *beritaRepo) FindByID(id uint) (*model.Berita, error) {
+func (r *beritaRepo) FindByID(id uint) (*entity.Berita, error) {
 	var b model.Berita
 	err := r.db.Model(&model.Berita{}).
 		Select("berita.*, users.name as author_name").
@@ -168,15 +170,15 @@ func (r *beritaRepo) FindByID(id uint) (*model.Berita, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &b, nil
+	return mapper.ModelToEntity(&b), nil
 }
 
-func (r *beritaRepo) Create(berita *model.Berita) error {
-	return r.db.Create(berita).Error
+func (r *beritaRepo) Create(berita *entity.Berita) error {
+	return r.db.Create(mapper.EntityToModel(berita)).Error
 }
 
-func (r *beritaRepo) Update(berita *model.Berita) error {
-	return r.db.Save(berita).Error
+func (r *beritaRepo) Update(berita *entity.Berita) error {
+	return r.db.Save(mapper.EntityToModel(berita)).Error
 }
 
 func (r *beritaRepo) SoftDelete(id uint) error {

@@ -15,6 +15,7 @@ import (
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/auth/dto"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/auth/mapper"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/auth/repository"
+	userentity "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/user/entity"
 	emailtemplate "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/template_message/email"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -103,7 +104,7 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest, ip string
 		return nil, &helper.AuthenticationError{Message: "Akun Anda belum aktif atau telah dinonaktifkan. Silakan hubungi Admin.", Code: "AUTH_ACCOUNT_INACTIVE"}
 	}
 
-	if !helper.CheckPassword(req.Password, user.PasswordHash) {
+	if !helper.CheckPassword(req.Password, user.Password) {
 		s.log(ctx, s.r.GetDB(), &activitylogdto.ActivityLogInput{
 			ActorID:     &user.ID,
 			ActorName:   user.Name,
@@ -142,11 +143,6 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest, ip string
 		return nil, errors.New("gagal menyimpan session")
 	}
 
-	perms, _ := s.r.GetPermissionsByRoleID(ctx, user.RoleID)
-	if perms == nil {
-		perms = []string{}
-	}
-
 	s.log(ctx, s.r.GetDB(), &activitylogdto.ActivityLogInput{
 		ActorID:     &user.ID,
 		ActorName:   user.Name,
@@ -168,7 +164,7 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest, ip string
 		AccessToken:        accessToken,
 		RefreshToken:       refreshToken,
 		RefreshTokenExpiry: expiry,
-		User:               mapper.UserEntityToAuth(*user, perms),
+		User:               mapper.UserEntityToAuth(*user),
 	}, nil
 }
 
@@ -201,11 +197,6 @@ func (s *authService) RefreshToken(ctx context.Context, refreshToken string) (*d
 		return nil, errors.New("gagal membuat access token baru")
 	}
 
-	perms, _ := s.r.GetPermissionsByRoleID(ctx, user.RoleID)
-	if perms == nil {
-		perms = []string{}
-	}
-
 	_, _, _, ipAddress, userAgent := helper.GetAuditMeta(ctx)
 	s.log(ctx, s.r.GetDB(), &activitylogdto.ActivityLogInput{
 		ActorID:     &user.ID,
@@ -227,7 +218,7 @@ func (s *authService) RefreshToken(ctx context.Context, refreshToken string) (*d
 		AccessToken:        newAccessToken,
 		RefreshToken:       newToken,
 		RefreshTokenExpiry: newExpiry,
-		User:               mapper.UserEntityToAuth(*user, perms),
+		User:               mapper.UserEntityToAuth(*user),
 	}, nil
 }
 
@@ -373,7 +364,7 @@ func (s *authService) ChangePassword(ctx context.Context, userID uint, req dto.C
 		return helper.NewNotFoundError("user tidak ditemukan")
 	}
 
-	if !helper.CheckPassword(req.CurrentPassword, user.PasswordHash) {
+	if !helper.CheckPassword(req.CurrentPassword, user.Password) {
 		s.log(ctx, s.r.GetDB(), &activitylogdto.ActivityLogInput{
 			ActorID:     &user.ID,
 			ActorName:   user.Name,
@@ -460,4 +451,83 @@ func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 	}
 
 	return nil
+}
+
+// SaveRefreshToken menyimpan refresh token untuk user.
+func (s *authService) SaveRefreshToken(ctx context.Context, userID uint, token string, expiresAt time.Time) error {
+	return s.r.SaveRefreshToken(ctx, userID, token, expiresAt, "", "", "")
+}
+
+// Me mengambil data user + role dari token login.
+func (s *authService) Me(ctx context.Context, userID uint) (*userentity.User, error) {
+	user, err := s.r.FindUserByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+// ValidateActivationToken memvalidasi token aktivasi akun.
+func (s *authService) ValidateActivationToken(ctx context.Context, token string) error {
+	if token == "" {
+		return &helper.AuthenticationError{Message: "Token aktivasi tidak valid atau telah kedaluwarsa.", Code: "AUTH_TOKEN_INVALID_OR_EXPIRED"}
+	}
+
+	_, err := s.r.FindAuthToken(ctx, token, "activation")
+	if err != nil {
+		return &helper.AuthenticationError{Message: "Token aktivasi tidak valid atau telah kedaluwarsa.", Code: "AUTH_TOKEN_INVALID_OR_EXPIRED"}
+	}
+
+	return nil
+}
+
+// ActivateAccount mengaktifkan akun via token aktivasi (path kontrak /auth/activate-account).
+func (s *authService) ActivateAccount(ctx context.Context, token string, password string) (*userentity.User, error) {
+	userID, err := s.r.FindAuthToken(ctx, token, "activation")
+	if err != nil {
+		return nil, &helper.AuthenticationError{Message: "Token aktivasi tidak valid atau telah kedaluwarsa.", Code: "AUTH_TOKEN_INVALID_OR_EXPIRED"}
+	}
+
+	user, err := s.r.FindUserByID(ctx, userID)
+	if err != nil {
+		return nil, helper.NewNotFoundError("Pengguna tidak ditemukan")
+	}
+
+	hashed, err := helper.HashPassword(password)
+	if err != nil {
+		return nil, errors.New("gagal memproses password baru")
+	}
+
+	err = s.r.GetDB().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := s.r.WithTx(tx).UpdatePassword(ctx, userID, hashed); err != nil {
+			return err
+		}
+		if err := tx.Model(&userentity.User{}).Where("id = ?", userID).Updates(map[string]any{
+			"status":               "active",
+			"email_verified_at":    time.Now(),
+			"must_change_password": false,
+		}).Error; err != nil {
+			return err
+		}
+		return s.r.WithTx(tx).DeleteAuthToken(ctx, token, "activation")
+	})
+	if err != nil {
+		return nil, errors.New("gagal mengaktifkan akun")
+	}
+
+	s.log(ctx, s.r.GetDB(), &activitylogdto.ActivityLogInput{
+		ActorID:     &user.ID,
+		ActorName:   user.Name,
+		ActorRole:   user.RoleName,
+		Action:      "users.activate",
+		EntityType:  "users",
+		EntityID:    &user.ID,
+		EntityLabel: user.Name,
+		Description: fmt.Sprintf("Akun diaktifkan: %s", user.Name),
+		Metadata: map[string]any{
+			"email": user.Email,
+		},
+	})
+
+	return user, nil
 }

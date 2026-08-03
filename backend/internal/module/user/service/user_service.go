@@ -39,6 +39,9 @@ type UserService interface {
 	GetDependencyInfo(ctx context.Context, id uint) (map[string]interface{}, error)
 	CheckUnique(ctx context.Context, field string, value string, excludeID uint) (bool, error)
 	UpdateProfile(ctx context.Context, id uint, name string) (*entity.User, error)
+	GetProfile(ctx context.Context, userID uint) (*entity.User, error)
+	ChangePassword(ctx context.Context, userID uint, oldPassword string, newPassword string) error
+	VerifyEmail(ctx context.Context, userID uint, token string) error
 }
 
 type userService struct {
@@ -411,7 +414,7 @@ func (s *userService) BulkResendNotification(ctx context.Context, ids []uint) (*
 }
 
 func userHasPassword(user *entity.User) bool {
-	return user != nil && strings.TrimSpace(user.PasswordHash) != ""
+	return user != nil && strings.TrimSpace(user.Password) != ""
 }
 
 // ActivateAccount mengaktifkan akun via token aktivasi.
@@ -528,4 +531,96 @@ func (s *userService) UpdateProfile(ctx context.Context, id uint, name string) (
 	})
 
 	return user, nil
+}
+
+// GetProfile mengembalikan profil user berdasarkan ID dari token login.
+func (s *userService) GetProfile(ctx context.Context, userID uint) (*entity.User, error) {
+	user, err := s.repo.FindByID(ctx, userID)
+	if err != nil {
+		return nil, helper.NewNotFoundError("Pengguna tidak ditemukan")
+	}
+	return user, nil
+}
+
+// ChangePassword mengganti password akun sendiri. Wajib old_password benar.
+// Setelah sukses: must_change_password di-reset false + semua refresh token di-revoke.
+func (s *userService) ChangePassword(ctx context.Context, userID uint, oldPassword string, newPassword string) error {
+	user, err := s.repo.FindByID(ctx, userID)
+	if err != nil || user == nil {
+		return helper.NewNotFoundError("Pengguna tidak ditemukan")
+	}
+
+	if !helper.CheckPassword(oldPassword, user.Password) {
+		return &helper.AuthenticationError{Message: "Password lama salah", Code: "INVALID_PASSWORD"}
+	}
+
+	hashed, err := helper.HashPassword(newPassword)
+	if err != nil {
+		return errors.New("gagal memproses password baru")
+	}
+
+	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := s.repo.UpdatePassword(ctx, userID, hashed); err != nil {
+			return err
+		}
+		// Reset flag must_change_password + revoke semua refresh token (logout semua perangkat)
+		if err := tx.Model(&entity.User{}).Where("id = ?", userID).Update("must_change_password", false).Error; err != nil {
+			return err
+		}
+		return s.authRepo.DeleteAllUserRefreshTokens(ctx, userID)
+	})
+	if err != nil {
+		return errors.New("gagal mengubah password")
+	}
+
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
+		ActorID:     &userID,
+		ActorName:   user.Name,
+		ActorRole:   user.RoleName,
+		Action:      "users.change_password",
+		EntityType:  "users",
+		EntityID:    &userID,
+		EntityLabel: user.Name,
+		Description: fmt.Sprintf("Mengubah password akun: %s", user.Name),
+	})
+
+	return nil
+}
+
+// VerifyEmail memverifikasi token aktivasi email untuk user yang sedang login.
+// Menggunakan tabel activation_tokens (project Redis-free), bukan Redis.
+func (s *userService) VerifyEmail(ctx context.Context, userID uint, token string) error {
+	tokenUserID, err := s.authRepo.FindAuthToken(ctx, token, "activation")
+	if err != nil {
+		return &helper.AuthenticationError{Message: "Token verifikasi tidak valid atau telah kedaluwarsa.", Code: "AUTH_TOKEN_INVALID_OR_EXPIRED"}
+	}
+	if tokenUserID != userID {
+		return &helper.AuthenticationError{Message: "Token verifikasi tidak valid atau telah kedaluwarsa.", Code: "AUTH_TOKEN_INVALID_OR_EXPIRED"}
+	}
+
+	now := time.Now()
+	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&entity.User{}).Where("id = ?", userID).Update("email_verified_at", now).Error; err != nil {
+			return err
+		}
+		return s.authRepo.DeleteAuthToken(ctx, token, "activation")
+	}); err != nil {
+		return errors.New("gagal memverifikasi email")
+	}
+
+	user, _ := s.repo.FindByID(ctx, userID)
+	if user != nil {
+		s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
+			ActorID:     &userID,
+			ActorName:   user.Name,
+			ActorRole:   user.RoleName,
+			Action:      "users.verify_email",
+			EntityType:  "users",
+			EntityID:    &userID,
+			EntityLabel: user.Name,
+			Description: fmt.Sprintf("Email diverifikasi: %s", user.Name),
+		})
+	}
+
+	return nil
 }

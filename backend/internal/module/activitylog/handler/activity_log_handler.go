@@ -34,15 +34,23 @@ func (h *ActivityLogHandler) List(c *gin.Context) {
 		return
 	}
 
-	filters := map[string]any{
-		"search": req.Search,
-		"action": req.Action,
-		"entity": req.Entity,
-		"role":   req.Role,
-		"risk":   req.Risk,
+	helper.SuccessResponse(c, http.StatusOK, "ACTIVITY_LOG_LIST", "Daftar log aktivitas berhasil diambil", res, nil)
+}
+
+func (h *ActivityLogHandler) Summary(c *gin.Context) {
+	var req dto.ActivityLogQueryReq
+	if err := c.ShouldBindQuery(&req); err != nil {
+		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "validasi gagal", validator.Errors(err))
+		return
 	}
-	meta := helper.GetPaginationMeta(int(res.Pagination.Total), res.Pagination.Page, res.Pagination.Limit, filters)
-	helper.SuccessResponse(c, http.StatusOK, "ACTIVITY_LOG_LIST", "berhasil mengambil daftar aktivitas", res, meta)
+
+	res, err := h.service.Summary(c.Request.Context(), &req)
+	if err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+
+	helper.SuccessResponse(c, http.StatusOK, "ACTIVITY_LOG_SUMMARY", "Ringkasan log aktivitas berhasil diambil", res, nil)
 }
 
 func (h *ActivityLogHandler) Detail(c *gin.Context) {

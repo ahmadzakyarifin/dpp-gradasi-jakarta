@@ -86,11 +86,17 @@ func (r *RateLimiter) Use(scope string, rules ...Rule) gin.HandlerFunc {
 				continue
 			}
 
-			blocked, retryAfter, _ := r.limiter.check(
+			blocked, retryAfter, remaining := r.limiter.check(
 				key,
 				item.rule.Limit,
 				item.rule.Period,
 			)
+
+			// Header informasi rate limit (pelengkap Retry-After).
+			c.Header("X-RateLimit-Limit", strconv.FormatInt(item.rule.Limit, 10))
+			c.Header("X-RateLimit-Remaining", strconv.FormatInt(remaining, 10))
+			c.Header("X-RateLimit-Reset", strconv.FormatInt(time.Now().Add(time.Duration(retryAfter)*time.Second).Unix(), 10))
+
 			if blocked {
 				abortTooManyRequests(c, time.Now().Add(time.Duration(retryAfter)*time.Second).Unix())
 				return

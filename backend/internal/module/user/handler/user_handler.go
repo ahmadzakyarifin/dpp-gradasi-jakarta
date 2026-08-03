@@ -49,7 +49,10 @@ func (h *UserHandler) GetAll(c *gin.Context) {
 		"sort":   req.Sort,
 	}
 	meta := helper.GetPaginationMeta(int(total), req.Page, req.Limit, filters)
-	helper.SuccessResponse(c, http.StatusOK, "USER_LIST", "berhasil mengambil data", mapper.UsersEntityToResponse(users), meta)
+	helper.SuccessResponse(c, http.StatusOK, "ADMIN_LIST", "Daftar admin berhasil diambil", gin.H{
+		"items": mapper.UsersEntityToResponse(users),
+		"meta":  meta,
+	}, nil)
 }
 
 func (h *UserHandler) GetByID(c *gin.Context) {
@@ -348,4 +351,90 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "USER_PROFILE_UPDATED", "profil berhasil diperbarui", gin.H{
 		"user": mapper.UserEntityToResponse(*updated),
 	}, nil)
+}
+
+// GetProfile mengembalikan profil user yang sedang login (dari token).
+func (h *UserHandler) GetProfile(c *gin.Context) {
+	value, exists := c.Get("user_id")
+	if !exists {
+		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED_ACTION", "akses tidak sah", nil)
+		return
+	}
+
+	userID, ok := value.(uint)
+	if !ok {
+		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED_ACTION", "user tidak valid", nil)
+		return
+	}
+
+	user, err := h.s.GetProfile(c.Request.Context(), userID)
+	if err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+
+	helper.SuccessResponse(c, http.StatusOK, "PROFILE_RETRIEVED", "Profil berhasil diambil", gin.H{
+		"user": mapper.UserEntityToResponse(*user),
+	}, nil)
+}
+
+// ChangePassword mengganti password akun sendiri (old_password + new_password).
+func (h *UserHandler) ChangePassword(c *gin.Context) {
+	var req struct {
+		OldPassword string `json:"old_password" binding:"required"`
+		NewPassword string `json:"new_password" binding:"required,min=6"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "validasi gagal", validator.Errors(err))
+		return
+	}
+
+	value, exists := c.Get("user_id")
+	if !exists {
+		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED_ACTION", "akses tidak sah", nil)
+		return
+	}
+
+	userID, ok := value.(uint)
+	if !ok {
+		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED_ACTION", "user tidak valid", nil)
+		return
+	}
+
+	if err := h.s.ChangePassword(c.Request.Context(), userID, req.OldPassword, req.NewPassword); err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+
+	helper.SuccessResponse(c, http.StatusOK, "PASSWORD_CHANGED", "Password berhasil diubah", nil, nil)
+}
+
+// VerifyEmail memverifikasi token aktivasi email untuk user yang sedang login.
+func (h *UserHandler) VerifyEmail(c *gin.Context) {
+	var req struct {
+		Token string `json:"token" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "validasi gagal", validator.Errors(err))
+		return
+	}
+
+	value, exists := c.Get("user_id")
+	if !exists {
+		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED_ACTION", "akses tidak sah", nil)
+		return
+	}
+
+	userID, ok := value.(uint)
+	if !ok {
+		helper.ErrorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED_ACTION", "user tidak valid", nil)
+		return
+	}
+
+	if err := h.s.VerifyEmail(c.Request.Context(), userID, req.Token); err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+
+	helper.SuccessResponse(c, http.StatusOK, "EMAIL_VERIFIED", "Email berhasil diverifikasi dan diperbarui", nil, nil)
 }

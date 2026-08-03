@@ -19,7 +19,7 @@ func NewDashboardHandler(s dashservice.DashboardService) *DashboardHandler {
 func (h *DashboardHandler) Summary(c *gin.Context) {
 	res, err := h.service.GetSummary(c.Request.Context())
 	if err != nil {
-		helper.ErrorResponse(c, http.StatusInternalServerError, "SERVER_ERROR", err.Error(), nil)
+		helper.HandleServiceError(c, err)
 		return
 	}
 	helper.SuccessResponse(c, http.StatusOK, "DASHBOARD_SUMMARY", "Ringkasan dashboard berhasil diambil", res, nil)

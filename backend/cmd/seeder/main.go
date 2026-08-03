@@ -70,7 +70,7 @@ func main() {
 		{Name: "super_admin", DisplayName: "Super Administrator", IsSystem: true, IsActive: true},
 		{Name: "admin", DisplayName: "Admin", IsSystem: false, IsActive: true},
 		{Name: "admin_berita", DisplayName: "Admin Berita", IsSystem: false, IsActive: true},
-		{Name: "admin_kegiatan", DisplayName: "Admin Kegiatan", IsSystem: false, IsActive: true},
+		{Name: "editor", DisplayName: "Editor", IsSystem: false, IsActive: true},
 	}
 	db.Create(&roles)
 
@@ -95,12 +95,12 @@ func main() {
 	}
 
 	adminUser := userModel.UserModel{
-		RoleID:       roles[0].ID,
-		Name:         adminName,
-		Email:        adminEmail,
-		PasswordHash: string(hash),
-		Status:       "active",
-		PhotoPath:    strPtr("https://ui-avatars.com/api/?name=Super+Admin&background=0D8ABC&color=fff"),
+		RoleID:    roles[0].ID,
+		Name:      adminName,
+		Email:     adminEmail,
+		Password:  string(hash),
+		Status:    "active",
+		PhotoPath: strPtr("https://ui-avatars.com/api/?name=Super+Admin&background=0D8ABC&color=fff"),
 	}
 	db.Create(&adminUser)
 

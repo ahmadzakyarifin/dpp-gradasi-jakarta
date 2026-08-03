@@ -92,22 +92,6 @@ func RateLimitResponse(c *gin.Context, code string, message string, retryAfter i
 	})
 }
 
-type ValidationErrorItem struct {
-	Field   string `json:"field"`
-	Tag     string `json:"tag"`
-	Param   string `json:"param,omitempty"`
-	Message string `json:"message"`
-}
-
-func ValidationErrorResponse(c *gin.Context, errors []ValidationErrorItem) {
-	c.JSON(422, Response{
-		Success: false,
-		Code:    "VALIDATION_ERROR",
-		Message: "Validasi gagal.",
-		Errors:  errors,
-	})
-}
-
 // --- VALIDATION HELPERS ---
 
 var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,4}$`)
@@ -119,17 +103,4 @@ func IsValidEmail(email string) bool {
 // Basic URL validation
 func IsValidURL(url string) bool {
 	return strings.HasPrefix(url, "http://") || strings.HasPrefix(url, "https://")
-}
-
-// Generates a validation message from a map of errors
-func GenerateValidationMessage(errors map[string]string) []ValidationErrorItem {
-	var validationErrors []ValidationErrorItem
-	for field, msg := range errors {
-		validationErrors = append(validationErrors, ValidationErrorItem{
-			Field:   field,
-			Message: msg,
-			Tag:     "invalid", // Generic tag for custom validation errors
-		})
-	}
-	return validationErrors
 }

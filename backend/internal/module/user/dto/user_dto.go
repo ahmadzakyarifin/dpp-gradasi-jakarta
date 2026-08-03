@@ -68,6 +68,7 @@ func (q *UserQueryReq) Normalize() {
 type UserResponse struct {
 	ID              uint    `json:"id"`
 	RoleID          uint    `json:"role_id"`
+	Role            string  `json:"role"`
 	IsSystem        bool    `json:"is_system"`
 	RoleName        string  `json:"role_name"`
 	RoleDisplayName string  `json:"role_display_name"`
@@ -76,7 +77,8 @@ type UserResponse struct {
 	PhotoPath       *string `json:"photo_path"`
 	Status          string  `json:"status"`
 
-	HasPassword bool `json:"has_password"`
+	HasPassword        bool `json:"has_password"`
+	MustChangePassword bool `json:"must_change_password"`
 
 	EmailVerifiedAt *string `json:"email_verified_at,omitempty"`
 	LastLoginAt     *string `json:"last_login_at,omitempty"`

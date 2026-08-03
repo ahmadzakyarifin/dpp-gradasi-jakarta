@@ -35,6 +35,13 @@
       "Endpoint publik untuk pengunjung website mengirim pesan kontak.",
       "Tidak memerlukan autentikasi."
     ],
+    "security": {
+      "rate_limit": {
+        "enabled": true,
+        "key": "IP",
+        "limit": "5 requests / minute"
+      }
+    },
     "responses": {
       "200": {
         "description": "Pesan berhasil dikirim",
@@ -42,6 +49,15 @@
           "success": true,
           "code": "KONTAK_SUBMITTED",
           "message": "Pesan Anda berhasil dikirim. Terima kasih!"
+        }
+      },
+      "429": {
+        "description": "Terlalu banyak request (rate limit IP 5/menit)",
+        "body": {
+          "success": false,
+          "code": "AUTH_RATE_LIMIT_EXCEEDED",
+          "message": "Terlalu banyak percobaan. Silakan coba lagi nanti.",
+          "retry_after": 30
         }
       },
       "422": {

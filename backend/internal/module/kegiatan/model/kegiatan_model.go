@@ -7,43 +7,43 @@ import (
 )
 
 type Kegiatan struct {
-	ID          uint              `gorm:"primaryKey;autoIncrement" json:"id"`
-	Slug        string            `gorm:"uniqueIndex;size:250;not null" json:"slug"`
-	Title       string            `gorm:"size:300;not null" json:"title"`
-	Category    string            `gorm:"size:100;default:'Kegiatan'" json:"category"`
-	EventDate   string            `gorm:"size:20" json:"event_date"`
-	Location    string            `gorm:"size:200" json:"location"`
-	Organizer   string            `gorm:"size:200" json:"organizer"`
-	AuthorID    *uint             `json:"author_id,omitempty"`
-	AuthorName  string            `gorm:"->;-:migration" json:"author_name,omitempty"`
-	ImagePath   *string           `gorm:"size:500" json:"image_path,omitempty"`
-	Excerpt     *string           `gorm:"type:text" json:"excerpt,omitempty"`
-	Content     *string           `gorm:"type:longtext" json:"content,omitempty"`
-	IsPublished bool              `gorm:"default:true" json:"is_published"`
-	Views       int               `gorm:"default:0" json:"views"`
-	CreatedAt   time.Time         `json:"created_at"`
-	UpdatedAt   time.Time         `json:"updated_at"`
-	DeletedAt   gorm.DeletedAt    `gorm:"index" json:"-"`
-	Tags        []KegiatanTag     `gorm:"foreignKey:KegiatanID" json:"tags,omitempty"`
-	Gallery     []KegiatanGallery `gorm:"foreignKey:KegiatanID" json:"gallery,omitempty"`
+	ID          uint   `gorm:"primaryKey;autoIncrement"`
+	Slug        string `gorm:"uniqueIndex;size:250;not null"`
+	Title       string `gorm:"size:300;not null"`
+	Category    string `gorm:"size:100;default:'Kegiatan'"`
+	EventDate   string `gorm:"size:20"`
+	Location    string `gorm:"size:200"`
+	Organizer   string `gorm:"size:200"`
+	AuthorID    *uint
+	AuthorName  string  `gorm:"->;-:migration"`
+	ImagePath   *string `gorm:"size:500"`
+	Excerpt     *string `gorm:"type:text"`
+	Content     *string `gorm:"type:longtext"`
+	IsPublished bool    `gorm:"default:true"`
+	Views       int     `gorm:"default:0"`
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	DeletedAt   gorm.DeletedAt    `gorm:"index"`
+	Tags        []KegiatanTag     `gorm:"foreignKey:KegiatanID"`
+	Gallery     []KegiatanGallery `gorm:"foreignKey:KegiatanID"`
 }
 
 func (Kegiatan) TableName() string { return "kegiatan" }
 
 type KegiatanTag struct {
-	ID         uint   `gorm:"primaryKey;autoIncrement" json:"id"`
-	KegiatanID uint   `gorm:"not null;index" json:"kegiatan_id"`
-	Tag        string `gorm:"size:100;not null" json:"tag"`
+	ID         uint   `gorm:"primaryKey;autoIncrement"`
+	KegiatanID uint   `gorm:"not null;index"`
+	Tag        string `gorm:"size:100;not null"`
 }
 
 func (KegiatanTag) TableName() string { return "kegiatan_tags" }
 
 type KegiatanGallery struct {
-	ID         uint   `gorm:"primaryKey;autoIncrement" json:"id"`
-	KegiatanID uint   `gorm:"not null;index" json:"kegiatan_id"`
-	ImagePath  string `gorm:"size:500;not null" json:"image_path"`
-	Caption    string `gorm:"size:200" json:"caption"`
-	SortOrder  int    `gorm:"default:0" json:"sort_order"`
+	ID         uint   `gorm:"primaryKey;autoIncrement"`
+	KegiatanID uint   `gorm:"not null;index"`
+	ImagePath  string `gorm:"size:500;not null"`
+	Caption    string `gorm:"size:200"`
+	SortOrder  int    `gorm:"default:0"`
 }
 
 func (KegiatanGallery) TableName() string { return "kegiatan_gallery" }

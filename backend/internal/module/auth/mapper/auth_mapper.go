@@ -2,29 +2,22 @@ package mapper
 
 import (
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/auth/dto"
-	roleentity "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/role/entity"
 	userentity "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/user/entity"
 )
 
-func UserEntityToAuth(user userentity.User, permissions []string) dto.AuthUser {
+func UserEntityToAuth(user userentity.User) dto.AuthUser {
 	return dto.AuthUser{
-		ID:    user.ID,
-		Name:  user.Name,
-		Email: user.Email,
+		ID:        user.ID,
+		Name:      user.Name,
+		Email:     user.Email,
+		PhotoPath: user.PhotoPath,
 		Role: dto.AuthRole{
 			ID:          user.RoleID,
 			Name:        user.RoleName,
 			DisplayName: user.RoleDisplayName,
 		},
-		Permissions: permissions,
-		Status:      user.Status,
+		Status:             user.Status,
+		MustChangePassword: user.MustChangePassword,
+		CreatedAt:          user.CreatedAt.Format("2006-01-02T15:04:05Z"),
 	}
-}
-
-func PermissionsToNames(perms []roleentity.Permission) []string {
-	names := make([]string, len(perms))
-	for i := range perms {
-		names[i] = perms[i].Name
-	}
-	return names
 }

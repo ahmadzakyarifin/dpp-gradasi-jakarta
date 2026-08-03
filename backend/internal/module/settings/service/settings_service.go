@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -18,7 +17,7 @@ import (
 	activitylogdto "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/dto"
 	activitylogservice "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/service"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/settings/dto"
-	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/settings/model"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/settings/mapper"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/settings/repository"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -45,7 +44,7 @@ func NewSettingsService(db *gorm.DB, repo repository.SettingsRepo, audit activit
 	return &settingsService{db: db, repo: repo, audit: audit, uploadPath: uploadPath}
 }
 
-func (s *settingsService) log(ctx context.Context, input *activitylogdto.ActivityLogInput) {
+func (s *settingsService) log(ctx context.Context, db *gorm.DB, input *activitylogdto.ActivityLogInput) {
 	if s.audit == nil {
 		return
 	}
@@ -66,24 +65,24 @@ func (s *settingsService) log(ctx context.Context, input *activitylogdto.Activit
 		input.UserAgent = userAgent
 	}
 
-	_ = s.audit.Log(ctx, s.db, input)
+	_ = s.audit.Log(ctx, db, input)
 }
 
 func (s *settingsService) GetSettings(ctx context.Context) (*dto.SettingsResponse, error) {
 	settings, err := s.repo.Get()
 	if err != nil {
-		return nil, err
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil konfigurasi website.", err)
 	}
-	return toResponse(*settings), nil
+	return mapper.EntityToResponse(mapper.ModelToEntity(settings)), nil
 }
 
 // UpdateSettings menerima key-value snake_case (sesuai JSON tag) dan menyimpan
-// ke database. Key yang tidak dikenal ditolak (400).
+// ke database. Key yang tidak dikenal ditolak (VALIDATION_ERROR).
 func (s *settingsService) UpdateSettings(ctx context.Context, values map[string]interface{}, updatedBy *uint) (*dto.SettingsResponse, error) {
 	errorsMap := make(map[string]string)
-	settingsModelType := reflect.TypeOf(model.Settings{})
-
 	// Map key JSON (snake_case) -> field Go (mis. "site_name" -> "SiteName")
+	// Acuan kontrak: dto.SettingsResponse (json tag), bukan model (model murni gorm).
+	settingsModelType := reflect.TypeOf(dto.SettingsResponse{})
 	jsonToField := make(map[string]string)
 	for i := 0; i < settingsModelType.NumField(); i++ {
 		field := settingsModelType.Field(i)
@@ -118,20 +117,22 @@ func (s *settingsService) UpdateSettings(ctx context.Context, values map[string]
 				continue
 			}
 			stringList := make([]string, len(missionList))
+			valid := true
 			for i, v := range missionList {
 				str, isString := v.(string)
 				if !isString {
 					errorsMap[key] = "about_mission harus berupa array of string atau null"
+					valid = false
 					break
 				}
 				stringList[i] = str
 			}
-			if errorsMap[key] != "" {
+			if !valid {
 				continue
 			}
 			jsonMission, err := json.Marshal(stringList)
 			if err != nil {
-				return nil, errors.New("Gagal memproses about_mission")
+				return nil, helper.NewServiceError("SERVER_ERROR", "Gagal memproses about_mission.", err)
 			}
 			updates[key] = string(jsonMission)
 			continue
@@ -157,7 +158,11 @@ func (s *settingsService) UpdateSettings(ctx context.Context, values map[string]
 	}
 
 	if len(errorsMap) > 0 {
-		return nil, fmt.Errorf("Validasi gagal: %v", errorsMap)
+		v := helper.NewValidationError()
+		for field, msg := range errorsMap {
+			v.Add(field, msg)
+		}
+		return nil, v
 	}
 
 	if len(updates) > 0 {
@@ -165,13 +170,13 @@ func (s *settingsService) UpdateSettings(ctx context.Context, values map[string]
 			updates["updated_by"] = *updatedBy
 		}
 		if err := s.repo.Update(updates); err != nil {
-			return nil, err
+			return nil, helper.NewServiceError("SERVER_ERROR", "Gagal memperbarui konfigurasi website.", err)
 		}
 	}
 
 	updatedSettings, err := s.repo.Get()
 	if err != nil {
-		return nil, err
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil konfigurasi website.", err)
 	}
 
 	if len(updates) > 0 {
@@ -179,7 +184,7 @@ func (s *settingsService) UpdateSettings(ctx context.Context, values map[string]
 		for k := range updates {
 			keys = append(keys, k)
 		}
-		s.log(ctx, &activitylogdto.ActivityLogInput{
+		s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 			Action:      "settings.update",
 			EntityType:  "settings",
 			EntityID:    &updatedSettings.ID,
@@ -191,42 +196,42 @@ func (s *settingsService) UpdateSettings(ctx context.Context, values map[string]
 		})
 	}
 
-	return toResponse(*updatedSettings), nil
+	return mapper.EntityToResponse(mapper.ModelToEntity(updatedSettings)), nil
 }
 
 // UploadLogo menyimpan file logo ke disk lokal dan memperbarui logo_path di DB.
 func (s *settingsService) UploadLogo(ctx context.Context, file *multipart.FileHeader, updatedBy *uint) (*dto.SettingsResponse, error) {
 	if file == nil {
-		return nil, errors.New("File logo wajib diunggah")
+		return nil, helper.NewServiceError("VALIDATION_ERROR", "File logo wajib diunggah", nil)
 	}
 
 	// Validasi ukuran: maks 2MB
 	if file.Size > 2*1024*1024 {
-		return nil, errors.New("File logo tidak valid. Maksimal 2MB dengan format PNG, JPG, atau WEBP.")
+		return nil, helper.NewServiceError("VALIDATION_ERROR", "File logo tidak valid. Maksimal 2MB dengan format PNG, JPG, atau WEBP.", nil)
 	}
 
 	// Validasi MIME type
 	src, err := file.Open()
 	if err != nil {
-		return nil, err
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal membaca file logo.", err)
 	}
 	defer src.Close()
 
 	header := make([]byte, 512)
 	n, err := src.Read(header)
 	if err != nil && err != io.EOF {
-		return nil, err
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal membaca file logo.", err)
 	}
 	// Reset reader agar bisa dibaca ulang saat copy
 	if _, err := src.Seek(0, io.SeekStart); err != nil {
-		return nil, err
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal membaca file logo.", err)
 	}
 
 	mimeType := http.DetectContentType(header[:n])
 	switch mimeType {
 	case "image/png", "image/jpeg", "image/webp":
 	default:
-		return nil, errors.New("File logo tidak valid. Maksimal 2MB dengan format PNG, JPG, atau WEBP.")
+		return nil, helper.NewServiceError("VALIDATION_ERROR", "File logo tidak valid. Maksimal 2MB dengan format PNG, JPG, atau WEBP.", nil)
 	}
 
 	ext := filepath.Ext(file.Filename)
@@ -244,27 +249,27 @@ func (s *settingsService) UploadLogo(ctx context.Context, file *multipart.FileHe
 
 	// Pastikan direktori upload ada
 	if err := os.MkdirAll(s.uploadPath, 0o755); err != nil {
-		return nil, err
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal menyimpan file logo.", err)
 	}
 
 	dst := filepath.Join(s.uploadPath, filename)
 	out, err := os.Create(dst)
 	if err != nil {
-		return nil, err
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal menyimpan file logo.", err)
 	}
 	defer out.Close()
 
 	if _, err := io.Copy(out, src); err != nil {
-		return nil, err
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal menyimpan file logo.", err)
 	}
 
 	logoPath := "/uploads/settings/" + filename
 	if err := s.repo.UpdateLogo(logoPath, updatedBy); err != nil {
-		return nil, err
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal memperbarui logo website.", err)
 	}
 
 	settingsID := uint(1)
-	s.log(ctx, &activitylogdto.ActivityLogInput{
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		Action:      "settings.update",
 		EntityType:  "settings",
 		EntityID:    &settingsID,
@@ -276,46 +281,4 @@ func (s *settingsService) UploadLogo(ctx context.Context, file *multipart.FileHe
 	})
 
 	return s.GetSettings(ctx)
-}
-
-func toResponse(settings model.Settings) *dto.SettingsResponse {
-	var mission []string
-	if settings.AboutMission != "" {
-		err := json.Unmarshal([]byte(settings.AboutMission), &mission)
-		if err != nil {
-			helper.Logger.Error("Failed to unmarshal AboutMission", zap.Error(err))
-		}
-	}
-	if mission == nil {
-		mission = make([]string, 0)
-	}
-
-	return &dto.SettingsResponse{
-		ID:                 settings.ID,
-		SiteName:           settings.SiteName,
-		Tagline:            settings.Tagline,
-		LogoPath:           settings.LogoPath,
-		ContactEmail:       settings.ContactEmail,
-		ContactPhone:       settings.ContactPhone,
-		Address:            settings.Address,
-		MapsEmbedURL:       settings.MapsEmbedURL,
-		FacebookURL:        settings.FacebookURL,
-		InstagramURL:       settings.InstagramURL,
-		YoutubeURL:         settings.YoutubeURL,
-		VideoProfilePath:   settings.VideoProfilePath,
-		History:            settings.History,
-		AboutTutorial:      settings.AboutTutorial,
-		AboutFormationDate: settings.AboutFormationDate,
-		AboutNoSK:          settings.AboutNoSK,
-		AboutVision:        settings.AboutVision,
-		AboutMission:       mission,
-		GreetingTitle:      settings.GreetingTitle,
-		GreetingSubtitle:   settings.GreetingSubtitle,
-		GreetingDate:       settings.GreetingDate,
-		GreetingContent:    settings.GreetingContent,
-		GreetingImagePath:  settings.GreetingImagePath,
-		CreatedAt:          settings.CreatedAt,
-		UpdatedAt:          settings.UpdatedAt,
-		UpdatedBy:          settings.UpdatedBy,
-	}
 }

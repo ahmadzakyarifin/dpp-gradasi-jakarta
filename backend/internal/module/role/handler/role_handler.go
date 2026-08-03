@@ -60,16 +60,6 @@ func (h *RoleHandler) GetByID(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "ROLE_DETAIL", "berhasil mengambil data role", mapper.EntityToResponse(role), nil)
 }
 
-func (h *RoleHandler) GetPermissions(c *gin.Context) {
-	perms, err := h.s.GetPermissions(c.Request.Context())
-	if err != nil {
-		helper.HandleServiceError(c, err)
-		return
-	}
-
-	helper.SuccessResponse(c, http.StatusOK, "ROLE_PERMISSIONS", "berhasil mengambil data permission", mapper.PermissionsEntityToResponse(perms), nil)
-}
-
 func (h *RoleHandler) Create(c *gin.Context) {
 	var req dto.RoleCreateReq
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -77,7 +67,7 @@ func (h *RoleHandler) Create(c *gin.Context) {
 		return
 	}
 
-	created, err := h.s.CreateRole(c.Request.Context(), req, req.PermissionIDs)
+	created, err := h.s.CreateRole(c.Request.Context(), req)
 	if err != nil {
 		helper.HandleServiceError(c, err)
 		return
@@ -99,7 +89,7 @@ func (h *RoleHandler) Update(c *gin.Context) {
 		return
 	}
 
-	updated, err := h.s.UpdateRole(c.Request.Context(), uint(id), req, req.PermissionIDs)
+	updated, err := h.s.UpdateRole(c.Request.Context(), uint(id), req)
 	if err != nil {
 		helper.HandleServiceError(c, err)
 		return

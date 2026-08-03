@@ -7,7 +7,7 @@ import (
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/user/entity"
 )
 
-const dateTimeLayout = "2006-01-02 15:04:05"
+const dateTimeLayout = "2006-01-02T15:04:05Z"
 
 // CreateReqToEntity memetakan request pembuatan user ke domain entity.
 func CreateReqToEntity(req *dto.UserCreateReq) *entity.User {
@@ -43,6 +43,7 @@ func UserEntityToResponse(user entity.User) dto.UserResponse {
 	return dto.UserResponse{
 		ID:              user.ID,
 		RoleID:          user.RoleID,
+		Role:            user.RoleName,
 		IsSystem:        user.IsSystem,
 		RoleName:        user.RoleName,
 		RoleDisplayName: user.RoleDisplayName,
@@ -51,13 +52,14 @@ func UserEntityToResponse(user entity.User) dto.UserResponse {
 		PhotoPath:       user.PhotoPath,
 		Status:          user.Status,
 
-		HasPassword: user.PasswordHash != "",
+		HasPassword:        user.Password != "",
+		MustChangePassword: user.MustChangePassword,
 
 		EmailVerifiedAt: formatTimePtr(user.EmailVerifiedAt),
 		LastLoginAt:     formatTimePtr(user.LastLoginAt),
 
-		CreatedAt: user.CreatedAt.Format("02/01/2006 15:04"),
-		UpdatedAt: user.UpdatedAt.Format("02/01/2006 15:04"),
+		CreatedAt: user.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		UpdatedAt: user.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 }
 

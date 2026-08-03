@@ -19,11 +19,11 @@ type TurnstileVerifyResult struct {
 
 // VerifyTurnstile memvalidasi token Turnstile ke Cloudflare siteverify.
 // Mengembalikan (true, nil) jika valid; (false, err) jika gagal/error.
+// Fail-closed: jika secret kosong (misconfig), captcha dianggap GAGAL,
+// bukan otomatis lolos.
 func VerifyTurnstile(ctx context.Context, secret, token, remoteIP, verifyURL string) (bool, error) {
-	// Dev bypass: jika secret kosong di development, lewati verifikasi
-	// (berguna saat backend jalan tanpa key Turnstile sungguhan).
-	if secret == "" && verifyURL == "" {
-		return true, nil
+	if secret == "" {
+		return false, fmt.Errorf("CAPTCHA_SECRET_KEY tidak terkonfigurasi")
 	}
 
 	if token == "" {

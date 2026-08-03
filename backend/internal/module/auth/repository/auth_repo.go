@@ -40,10 +40,6 @@ func (r *authRepo) GetDB() *gorm.DB {
 	return r.db
 }
 
-func (r *authRepo) GetPermissionsByRoleID(ctx context.Context, roleID uint) ([]string, error) {
-	return fetchRolePermissionsFromDB(ctx, r.db, roleID)
-}
-
 func (r *authRepo) FindByEmail(ctx context.Context, email string) (*userentity.User, error) {
 	var u usermodel.UserModel
 	err := r.db.WithContext(ctx).Unscoped().Preload("Role").Where("users.email = ?", email).First(&u).Error
@@ -132,7 +128,7 @@ func (r *authRepo) UpdatePassword(ctx context.Context, userID uint, hashedPasswo
 	res := r.db.WithContext(ctx).
 		Model(&usermodel.UserModel{}).
 		Where("id = ?", userID).
-		Update("password_hash", hashedPassword)
+		Update("password", hashedPassword)
 	return res.Error
 }
 
@@ -140,11 +136,8 @@ func (r *authRepo) UpdateUserContact(ctx context.Context, userID uint, field str
 	updates := map[string]any{
 		field: value,
 	}
-	switch field {
-	case "email":
+	if field == "email" {
 		updates["email_verified_at"] = verifiedAt
-	case "phone":
-		updates["phone_verified_at"] = verifiedAt
 	}
 
 	return r.db.WithContext(ctx).
@@ -256,15 +249,4 @@ func (r *authRepo) DeleteAuthToken(ctx context.Context, token string, tokenType 
 			"unknown token type",
 		)
 	}
-}
-
-func fetchRolePermissionsFromDB(ctx context.Context, db *gorm.DB, roleID uint) ([]string, error) {
-	var names []string
-	err := db.WithContext(ctx).
-		Table("role_permissions AS rp").
-		Select("p.name").
-		Joins("JOIN permissions AS p ON rp.permission_id = p.id").
-		Where("rp.role_id = ?", roleID).
-		Scan(&names).Error
-	return names, err
 }

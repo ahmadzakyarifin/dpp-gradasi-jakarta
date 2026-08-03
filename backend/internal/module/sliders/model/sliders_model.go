@@ -7,21 +7,21 @@ import (
 )
 
 type Slider struct {
-	ID        uint           `gorm:"primaryKey;autoIncrement" json:"id"`
-	Title     string         `gorm:"size:200;not null" json:"title"`
-	Subtitle  *string        `gorm:"type:text" json:"subtitle,omitempty"`
-	Tag       *string        `gorm:"size:50" json:"tag,omitempty"`
-	IsNew     bool           `gorm:"default:false" json:"is_new"`
-	EventDate *string        `gorm:"size:100" json:"event_date,omitempty"`
-	Location  *string        `gorm:"size:200" json:"location,omitempty"`
-	ImagePath string         `gorm:"size:500;not null" json:"image_path"`
-	LinkURL   *string        `gorm:"size:500" json:"link_url,omitempty"`
-	SortOrder int            `gorm:"default:0" json:"sort_order"`
-	IsActive  bool           `gorm:"default:true" json:"is_active"`
-	CreatedBy *uint          `json:"created_by,omitempty"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	ID        uint    `gorm:"primaryKey;autoIncrement"`
+	Title     string  `gorm:"size:200;not null"`
+	Subtitle  *string `gorm:"type:text"`
+	Tag       *string `gorm:"size:50"`
+	IsNew     bool    `gorm:"default:false"`
+	EventDate *string `gorm:"size:100"`
+	Location  *string `gorm:"size:200"`
+	ImagePath string  `gorm:"size:500;not null"`
+	LinkURL   *string `gorm:"size:500"`
+	SortOrder int     `gorm:"default:0"`
+	IsActive  bool    `gorm:"default:true"`
+	CreatedBy *uint
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
 func (Slider) TableName() string {

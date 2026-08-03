@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/auth/dto"
+	userentity "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/user/entity"
 )
 
 type AuthService interface {
@@ -14,4 +16,8 @@ type AuthService interface {
 	ValidateResetToken(ctx context.Context, token string) error
 	ChangePassword(ctx context.Context, userID uint, req dto.ChangePasswordRequest) error
 	Logout(ctx context.Context, refreshToken string) error
+	Me(ctx context.Context, userID uint) (*userentity.User, error)
+	ValidateActivationToken(ctx context.Context, token string) error
+	ActivateAccount(ctx context.Context, token string, password string) (*userentity.User, error)
+	SaveRefreshToken(ctx context.Context, userID uint, token string, expiresAt time.Time) error
 }

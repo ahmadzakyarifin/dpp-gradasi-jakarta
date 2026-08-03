@@ -8,7 +8,8 @@ import (
 	activitylogdto "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/dto"
 	activitylogservice "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/service"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/sliders/dto"
-	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/sliders/model"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/sliders/entity"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/sliders/mapper"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/sliders/repository"
 	"gorm.io/gorm"
 )
@@ -35,7 +36,7 @@ func NewSlidersService(db *gorm.DB, repo repository.SlidersRepo, audit activityl
 	return &slidersService{db: db, repo: repo, audit: audit}
 }
 
-func (s *slidersService) log(ctx context.Context, input *activitylogdto.ActivityLogInput) {
+func (s *slidersService) log(ctx context.Context, db *gorm.DB, input *activitylogdto.ActivityLogInput) {
 	if s.audit == nil {
 		return
 	}
@@ -56,7 +57,7 @@ func (s *slidersService) log(ctx context.Context, input *activitylogdto.Activity
 		input.UserAgent = userAgent
 	}
 
-	_ = s.audit.Log(ctx, s.db, input)
+	_ = s.audit.Log(ctx, db, input)
 }
 
 func (s *slidersService) GetAll(ctx context.Context, activeOnly bool) (*dto.SliderListResponse, error) {
@@ -65,10 +66,14 @@ func (s *slidersService) GetAll(ctx context.Context, activeOnly bool) (*dto.Slid
 		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil data slider.", err)
 	}
 
-	resp := &dto.SliderListResponse{}
-	resp.Total = int64(len(sliders))
-	for _, sl := range sliders {
-		resp.Sliders = append(resp.Sliders, toResponse(sl))
+	entities := make([]entity.Slider, 0, len(sliders))
+	for i := range sliders {
+		entities = append(entities, *mapper.ModelToEntity(&sliders[i]))
+	}
+
+	resp := &dto.SliderListResponse{
+		Sliders: mapper.EntityListToResponse(entities),
+		Total:   int64(len(entities)),
 	}
 	return resp, nil
 }
@@ -76,32 +81,21 @@ func (s *slidersService) GetAll(ctx context.Context, activeOnly bool) (*dto.Slid
 func (s *slidersService) GetByID(ctx context.Context, id uint) (*dto.SliderResponse, error) {
 	sl, err := s.repo.FindByID(id)
 	if err != nil {
-		return nil, helper.NewServiceError("NOT_FOUND", "Slider tidak ditemukan.", err)
+		return nil, helper.NewNotFoundError("Slider tidak ditemukan")
 	}
-	resp := toResponse(*sl)
+	resp := mapper.EntityToResponse(mapper.ModelToEntity(sl))
 	return &resp, nil
 }
 
 func (s *slidersService) Create(ctx context.Context, req *dto.SliderRequest, createdBy uint) (*dto.SliderResponse, error) {
-	sl := &model.Slider{
-		Title:     req.Title,
-		Subtitle:  req.Subtitle,
-		Tag:       req.Tag,
-		IsNew:     req.IsNew,
-		EventDate: req.EventDate,
-		Location:  req.Location,
-		ImagePath: req.ImagePath,
-		LinkURL:   req.LinkURL,
-		SortOrder: req.SortOrder,
-		IsActive:  req.IsActive,
-		CreatedBy: &createdBy,
-	}
+	sl := mapper.CreateReqToEntity(req)
+	sl.CreatedBy = &createdBy
 
-	if err := s.repo.Create(sl); err != nil {
+	if err := s.repo.Create(mapper.EntityToModel(sl)); err != nil {
 		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal membuat slider.", err)
 	}
 
-	s.log(ctx, &activitylogdto.ActivityLogInput{
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		Action:      "slider.create",
 		EntityType:  "slider",
 		EntityID:    &sl.ID,
@@ -112,56 +106,48 @@ func (s *slidersService) Create(ctx context.Context, req *dto.SliderRequest, cre
 		},
 	})
 
-	resp := toResponse(*sl)
+	resp := mapper.EntityToResponse(sl)
 	return &resp, nil
 }
 
 func (s *slidersService) Update(ctx context.Context, id uint, req *dto.SliderRequest) (*dto.SliderResponse, error) {
 	sl, err := s.repo.FindByID(id)
 	if err != nil {
-		return nil, helper.NewServiceError("NOT_FOUND", "Slider tidak ditemukan.", err)
+		return nil, helper.NewNotFoundError("Slider tidak ditemukan")
 	}
 
-	sl.Title = req.Title
-	sl.Subtitle = req.Subtitle
-	sl.Tag = req.Tag
-	sl.IsNew = req.IsNew
-	sl.EventDate = req.EventDate
-	sl.Location = req.Location
-	sl.ImagePath = req.ImagePath
-	sl.LinkURL = req.LinkURL
-	sl.SortOrder = req.SortOrder
-	sl.IsActive = req.IsActive
+	e := mapper.ModelToEntity(sl)
+	mapper.UpdateReqToEntity(req, e)
 
-	if err := s.repo.Update(sl); err != nil {
+	if err := s.repo.Update(mapper.EntityToModel(e)); err != nil {
 		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengupdate slider.", err)
 	}
 
-	s.log(ctx, &activitylogdto.ActivityLogInput{
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		Action:      "slider.update",
 		EntityType:  "slider",
-		EntityID:    &sl.ID,
-		EntityLabel: sl.Title,
-		Description: "Memperbarui slider: " + sl.Title,
+		EntityID:    &e.ID,
+		EntityLabel: e.Title,
+		Description: "Memperbarui slider: " + e.Title,
 		Metadata: map[string]any{
-			"title": sl.Title,
+			"title": e.Title,
 		},
 	})
 
-	resp := toResponse(*sl)
+	resp := mapper.EntityToResponse(e)
 	return &resp, nil
 }
 
 func (s *slidersService) Delete(ctx context.Context, id uint) error {
 	sl, err := s.repo.FindByID(id)
 	if err != nil {
-		return helper.NewServiceError("NOT_FOUND", "Slider tidak ditemukan.", err)
+		return helper.NewNotFoundError("Slider tidak ditemukan")
 	}
 	if err := s.repo.Delete(id); err != nil {
 		return helper.NewServiceError("SERVER_ERROR", "Gagal menghapus slider.", err)
 	}
 
-	s.log(ctx, &activitylogdto.ActivityLogInput{
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		Action:      "slider.delete",
 		EntityType:  "slider",
 		EntityID:    &id,
@@ -177,7 +163,7 @@ func (s *slidersService) Reorder(ctx context.Context, ids []uint) error {
 		return helper.NewServiceError("SERVER_ERROR", "Gagal mengubah urutan slider.", err)
 	}
 
-	s.log(ctx, &activitylogdto.ActivityLogInput{
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		Action:      "slider.update",
 		EntityType:  "slider",
 		Description: "Mengubah urutan (reorder) slider",
@@ -194,7 +180,7 @@ func (s *slidersService) Restore(ctx context.Context, id uint) error {
 		return helper.NewServiceError("SERVER_ERROR", "Gagal memulihkan slider.", err)
 	}
 
-	s.log(ctx, &activitylogdto.ActivityLogInput{
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		Action:      "slider.restore",
 		EntityType:  "slider",
 		EntityID:    &id,
@@ -212,7 +198,7 @@ func (s *slidersService) BulkDelete(ctx context.Context, ids []uint) error {
 		return helper.NewServiceError("SERVER_ERROR", "Gagal menghapus slider.", err)
 	}
 
-	s.log(ctx, &activitylogdto.ActivityLogInput{
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		Action:      "slider.bulk_delete",
 		EntityType:  "slider",
 		Description: "Menghapus " + strconv.FormatUint(uint64(len(ids)), 10) + " slider (soft delete)",
@@ -232,7 +218,7 @@ func (s *slidersService) BulkRestore(ctx context.Context, ids []uint) error {
 		return helper.NewServiceError("SERVER_ERROR", "Gagal memulihkan slider.", err)
 	}
 
-	s.log(ctx, &activitylogdto.ActivityLogInput{
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		Action:      "slider.bulk_restore",
 		EntityType:  "slider",
 		Description: "Memulihkan " + strconv.FormatUint(uint64(len(ids)), 10) + " slider",
@@ -242,31 +228,4 @@ func (s *slidersService) BulkRestore(ctx context.Context, ids []uint) error {
 	})
 
 	return nil
-}
-
-func toResponse(sl model.Slider) dto.SliderResponse {
-	r := dto.SliderResponse{
-		ID:        sl.ID,
-		Title:     sl.Title,
-		IsNew:     sl.IsNew,
-		ImagePath: sl.ImagePath,
-		SortOrder: sl.SortOrder,
-		IsActive:  sl.IsActive,
-	}
-	if sl.Subtitle != nil {
-		r.Subtitle = *sl.Subtitle
-	}
-	if sl.Tag != nil {
-		r.Tag = *sl.Tag
-	}
-	if sl.EventDate != nil {
-		r.EventDate = *sl.EventDate
-	}
-	if sl.Location != nil {
-		r.Location = *sl.Location
-	}
-	if sl.LinkURL != nil {
-		r.LinkURL = *sl.LinkURL
-	}
-	return r
 }

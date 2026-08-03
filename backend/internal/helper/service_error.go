@@ -3,6 +3,7 @@ package helper
 import (
 	"net/http"
 
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/validator"
 	"github.com/gin-gonic/gin"
 )
 
@@ -90,7 +91,7 @@ func ServiceErrorToHTTP(code string) int {
 		return http.StatusNotFound
 	case "VALIDATION_ERROR":
 		return http.StatusUnprocessableEntity
-	case "AUTH_EMAIL_EXISTS", "DUPLICATE_ENTRY":
+	case "AUTH_EMAIL_EXISTS", "DUPLICATE_ENTRY", "DUPLICATE_TITLE":
 		return http.StatusConflict
 	default:
 		return http.StatusInternalServerError
@@ -108,9 +109,9 @@ func HandleServiceError(c *gin.Context, err error) {
 	case *ServiceError:
 		ErrorResponse(c, ServiceErrorToHTTP(e.Code), e.Code, e.Message, nil)
 	case *ValidationError:
-		items := make([]ValidationErrorItem, 0, len(e.Fields))
+		items := make([]validator.ValidationErrorItem, 0, len(e.Fields))
 		for field, msg := range e.Fields {
-			items = append(items, ValidationErrorItem{Field: field, Message: msg})
+			items = append(items, validator.ValidationErrorItem{Field: field, Message: msg})
 		}
 		ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "validasi gagal", items)
 	case *AuthenticationError:

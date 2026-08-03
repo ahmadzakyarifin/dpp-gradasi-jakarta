@@ -12,7 +12,6 @@ type AuthRepo interface {
 	FindByEmail(ctx context.Context, email string) (*userentity.User, error)
 	FindUserByID(ctx context.Context, id uint) (*userentity.User, error)
 	UpdatePassword(ctx context.Context, userID uint, hashedPassword string) error
-	GetPermissionsByRoleID(ctx context.Context, roleID uint) ([]string, error)
 
 	SaveRefreshToken(ctx context.Context, userID uint, token string, expiresAt time.Time, ip string, userAgent string, device string) error
 	FindUserByRefreshToken(ctx context.Context, token string) (*userentity.User, time.Time, error)

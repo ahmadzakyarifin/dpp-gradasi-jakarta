@@ -64,9 +64,7 @@ func (r *activityLogRepository) List(
 		limit = 10
 	}
 
-	q = q.
-		Order("created_at DESC").
-		Order("id DESC").
+	q = r.buildOrderQuery(q, req).
 		Limit(limit).
 		Offset((page - 1) * limit)
 
@@ -131,6 +129,18 @@ func (r *activityLogRepository) buildQuery(
 		)
 	}
 
+	if req.ActorID > 0 {
+		q = q.Where("actor_id = ?", req.ActorID)
+	}
+
+	if req.StartDate != "" {
+		q = q.Where("created_at >= ?", req.StartDate+" 00:00:00")
+	}
+
+	if req.EndDate != "" {
+		q = q.Where("created_at <= ?", req.EndDate+" 23:59:59")
+	}
+
 	if req.Search != "" {
 
 		search := "%" + req.Search + "%"
@@ -142,6 +152,28 @@ func (r *activityLogRepository) buildQuery(
 	}
 
 	return q
+}
+
+// buildOrderQuery menambahkan ordering dengan whitelist sort_by.
+func (r *activityLogRepository) buildOrderQuery(
+	q *gorm.DB,
+	req *dto.ActivityLogQueryReq,
+) *gorm.DB {
+
+	sortBy := req.SortBy
+	if sortBy == "" || !dto.ActivityLogSortWhitelist[sortBy] {
+		sortBy = "created_at"
+	}
+
+	order := req.Order
+	if order == "" {
+		order = "desc"
+	}
+	if order != "asc" {
+		order = "desc"
+	}
+
+	return q.Order(sortBy + " " + order).Order("id DESC")
 }
 
 // GetSummary mengambil statistik dashboard.
@@ -174,6 +206,15 @@ func (r *activityLogRepository) GetSummary(
 	}
 
 	summary.FailedLogin = failedLogin
+
+	// Aktivitas CMS = semua aksi admin selain failed login (dashboard admin).
+	cms, err := r.countQuery(ctx, r.buildQuery(req).
+		Where("action <> ?", "auth.failed_login"))
+	if err != nil {
+		return summary, err
+	}
+
+	summary.CMSAction = cms
 
 	finance, err := r.countQuery(ctx, r.buildQuery(req).
 		Where("entity_type IN ?", []string{

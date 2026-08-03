@@ -7,6 +7,7 @@ import (
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/helper"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/pengurus/dto"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/pengurus/service"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/validator"
 	"github.com/gin-gonic/gin"
 )
 
@@ -58,18 +59,18 @@ func (h *PengurusHandler) ListAdmin(c *gin.Context) {
 func (h *PengurusHandler) Create(c *gin.Context) {
 	var req dto.PengurusRequest
 	if err := c.ShouldBind(&req); err != nil { // ShouldBind for form-data
-		helper.ValidationErrorResponse(c, []helper.ValidationErrorItem{
-			{Field: "form", Tag: "invalid", Message: "Data form tidak valid atau tidak lengkap."},
-		})
+		v := helper.NewValidationError()
+		v.Add("form", "Data form tidak valid atau tidak lengkap.")
+		helper.HandleServiceError(c, v)
 		return
 	}
 
 	// Validate required file manually since gin binding file is tricky sometimes
 	file, err := c.FormFile("image")
 	if err != nil {
-		helper.ValidationErrorResponse(c, []helper.ValidationErrorItem{
-			{Field: "image", Tag: "required", Message: "Image wajib diunggah."},
-		})
+		v := helper.NewValidationError()
+		v.Add("image", "Image wajib diunggah.")
+		helper.HandleServiceError(c, v)
 		return
 	}
 	req.Image = file
@@ -86,15 +87,15 @@ func (h *PengurusHandler) Create(c *gin.Context) {
 func (h *PengurusHandler) Update(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		helper.ErrorResponse(c, http.StatusBadRequest, "INVALID_ID", "ID pengurus tidak valid.", nil)
+		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "ID tidak valid", nil)
 		return
 	}
 
 	var req dto.PengurusRequest
 	if err := c.ShouldBind(&req); err != nil {
-		helper.ValidationErrorResponse(c, []helper.ValidationErrorItem{
-			{Field: "form", Tag: "invalid", Message: "Data form tidak valid atau tidak lengkap."},
-		})
+		v := helper.NewValidationError()
+		v.Add("form", "Data form tidak valid atau tidak lengkap.")
+		helper.HandleServiceError(c, v)
 		return
 	}
 
@@ -116,7 +117,7 @@ func (h *PengurusHandler) Update(c *gin.Context) {
 func (h *PengurusHandler) Delete(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		helper.ErrorResponse(c, http.StatusBadRequest, "INVALID_ID", "ID pengurus tidak valid.", nil)
+		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "ID tidak valid", nil)
 		return
 	}
 	if err := h.svc.Delete(c.Request.Context(), uint(id)); err != nil {
@@ -130,7 +131,7 @@ func (h *PengurusHandler) Delete(c *gin.Context) {
 func (h *PengurusHandler) Restore(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		helper.ErrorResponse(c, http.StatusBadRequest, "INVALID_ID", "ID pengurus tidak valid.", nil)
+		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "ID tidak valid", nil)
 		return
 	}
 	if err := h.svc.Restore(c.Request.Context(), uint(id)); err != nil {
@@ -144,9 +145,7 @@ func (h *PengurusHandler) Restore(c *gin.Context) {
 func (h *PengurusHandler) BulkDelete(c *gin.Context) {
 	var req dto.BulkRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.ValidationErrorResponse(c, []helper.ValidationErrorItem{
-			{Field: "ids", Tag: "required", Message: "IDs wajib diisi minimal 1."},
-		})
+		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "validasi gagal", validator.Errors(err))
 		return
 	}
 	if err := h.svc.BulkDelete(c.Request.Context(), req.IDs); err != nil {
@@ -160,9 +159,7 @@ func (h *PengurusHandler) BulkDelete(c *gin.Context) {
 func (h *PengurusHandler) BulkRestore(c *gin.Context) {
 	var req dto.BulkRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		helper.ValidationErrorResponse(c, []helper.ValidationErrorItem{
-			{Field: "ids", Tag: "required", Message: "IDs wajib diisi minimal 1."},
-		})
+		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "validasi gagal", validator.Errors(err))
 		return
 	}
 	if err := h.svc.BulkRestore(c.Request.Context(), req.IDs); err != nil {

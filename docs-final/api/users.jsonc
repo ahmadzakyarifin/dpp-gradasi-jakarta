@@ -50,27 +50,26 @@
     "update": {
       "method": "PUT",
       "endpoint": "/api/v1/profile",
-      "consumes": "multipart/form-data",
+      "consumes": "application/json",
       "produces": "application/json",
       "authentication": {
         "type": "Bearer Access Token"
       },
       "headers": {
         "Accept": "application/json",
+        "Content-Type": "application/json",
         "Authorization": "Bearer <access_token>"
       },
       "request": {
-        "name": "Administrator Baru",
-        "email": "admin.new@gradasi.org",
-        "photo": "(binary file image/jpeg, image/png)"
+        "name": "Administrator Baru"
       },
       "validation": {
-        "name": "required,min=3,max=100",
-        "email": "required,email,max=150"
+        "name": "required,min=2,max=100"
       },
       "notes": [
-        "Update profil milik sendiri. Jika alamat email diubah, maka email di database tidak langsung berubah.",
-        "Sistem akan mengirimkan token verifikasi (6 digit) ke email baru tersebut, dan email baru akan aktif setelah verifikasi via endpoint /verify-email."
+        "Update nama profil milik sendiri (handler hanya membaca field name — lihat UserHandler.UpdateProfile).",
+        "Email TIDAK bisa diubah oleh user sendiri — dikelola admin melalui modul user management (admin/users).",
+        "Foto profil juga tidak dikelola lewat endpoint ini (photo_path dikelola admin)."
       ],
       "responses": {
         "200": {
@@ -78,33 +77,25 @@
           "body": {
             "success": true,
             "code": "PROFILE_UPDATED",
-            "message": "Profil berhasil diperbarui. Karena Anda mengubah email, silakan periksa email baru Anda untuk kode verifikasi.",
+            "message": "Profil berhasil diperbarui",
             "data": {
               "id": 1,
               "role_id": 1,
               "name": "Administrator Baru",
-              "email": "admin@gradasi.org", // Belum berubah karena butuh verifikasi
-              "photo_path": "/uploads/users/987654321.png",
+              "email": "admin@gradasi.org",
+              "photo_path": "/uploads/users/123456789.png",
               "status": "active"
             }
           }
         },
-        "400": {
-          "description": "Email baru sudah dipakai user lain",
-          "body": {
-            "success": false,
-            "code": "EMAIL_TAKEN",
-            "message": "Email sudah terdaftar"
-          }
-        },
         "422": {
-          "description": "Body/form tidak valid (name atau email kosong/format salah)",
+          "description": "Body JSON tidak valid (name kosong/format salah)",
           "body": {
             "success": false,
             "code": "VALIDATION_ERROR",
-            "message": "Validasi gagal.",
+            "message": "validasi gagal",
             "errors": [
-              { "field": "input", "tag": "invalid", "message": "Key: 'ProfileUpdateRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag" }
+              { "field": "name", "tag": "required", "message": "Key: 'ProfileUpdateRequest.Name' Error:Field validation for 'Name' failed on the 'required' tag" }
             ]
           }
         }
@@ -127,13 +118,15 @@
         "Authorization": "Bearer <access_token>"
       },
       "request": {
-        "token": "123456"
+        "token": "0c4e2f9a-8b3d-4f5e-9a1c-2d3e4f5a6b7c"
       },
       "validation": {
         "token": "required"
       },
       "notes": [
-        "Mengecek token 6 digit dari Redis. Jika cocok, maka field email di database akan diperbarui dan email_verified_at akan diset."
+        "Menandai email akun saat ini sebagai terverifikasi (set email_verified_at). BUKAN untuk ganti email — email dikelola admin melalui user management.",
+        "Token berupa UUID (dari helper.GenerateActivationToken) yang dikirim sistem ke email, disimpan di database tabel activation_tokens (bukan Redis).",
+        "Token berlaku 72 jam sejak dibuat; setelah dipakai, token dihapus."
       ],
       "responses": {
         "200": {
@@ -141,7 +134,7 @@
           "body": {
             "success": true,
             "code": "EMAIL_VERIFIED",
-            "message": "Email berhasil diverifikasi dan diperbarui"
+            "message": "Email berhasil diverifikasi"
           }
         }
       }
@@ -482,6 +475,45 @@
     // ======================================================
     // UPDATE ADMIN STATUS (Hanya Super Admin)
     // ======================================================
+    "get_by_id": {
+      "method": "GET",
+      "endpoint": "/api/v1/admin/users/:id",
+      "consumes": null,
+      "produces": "application/json",
+      "authentication": {
+        "type": "Bearer Access Token"
+      },
+      "headers": {
+        "Accept": "application/json",
+        "Authorization": "Bearer <access_token>"
+      },
+      "roles": ["super_admin"],
+      "notes": [
+        "Mengambil detail satu admin berdasarkan ID. Endpoint ini ada di implementasi backend dan didokumentasikan di sini supaya tidak undocumented."
+      ],
+      "responses": {
+        "200": {
+          "description": "Detail admin berhasil diambil",
+          "body": {
+            "success": true,
+            "code": "USER_DETAIL",
+            "message": "berhasil mengambil data user",
+            "data": {
+              "user": {
+                "id": 2,
+                "role_id": 2,
+                "role": "admin",
+                "name": "Admin Sekretariat",
+                "email": "admin@gradasi.org",
+                "photo_path": null,
+                "status": "active",
+                "must_change_password": false
+              }
+            }
+          }
+        }
+      }
+    },
     "update_status": {
       "method": "PUT",
       "endpoint": "/api/v1/admin/users/:id/status",

@@ -35,5 +35,8 @@ func RegisterRoutes(
 		auth.POST("/reset-password", authH.ResetPassword)
 		auth.GET("/validate-reset-token", authH.ValidateResetToken)
 		auth.POST("/change-password", requireAuth, authH.ChangePassword)
+		auth.GET("/me", requireAuth, authH.Me)
+		auth.POST("/activate-account", authH.ActivateAccount)
+		auth.GET("/validate-activation-token", authH.ValidateActivationToken)
 	}
 }

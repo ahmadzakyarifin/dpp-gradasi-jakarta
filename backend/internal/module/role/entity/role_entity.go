@@ -2,17 +2,6 @@ package entity
 
 import "time"
 
-// Permission adalah representasi domain dari tabel permissions.
-type Permission struct {
-	ID          uint
-	Name        string
-	DisplayName string
-	Module      string
-	Description string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-}
-
 // Role adalah representasi domain dari tabel roles.
 type Role struct {
 	ID          uint
@@ -20,7 +9,7 @@ type Role struct {
 	DisplayName string
 	IsSystem    bool
 	IsActive    bool
-	Permissions []Permission
+	UserCount   int
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	DeletedAt   *time.Time

@@ -72,13 +72,13 @@ func (s *activityLogService) List(
 
 	return &dto.ActivityLogListRes{
 		Summary: summary,
-		Pagination: dto.ActivityLogPaginationRes{
-			Page:       req.Page,
-			Limit:      req.Limit,
-			Total:      total,
-			TotalPages: totalPages,
+		Items:   items,
+		Meta: dto.ActivityLogPaginationRes{
+			CurrentPage: req.Page,
+			Limit:       req.Limit,
+			TotalData:   total,
+			TotalPages:  totalPages,
 		},
-		Items: items,
 	}, nil
 }
 

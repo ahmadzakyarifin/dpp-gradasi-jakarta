@@ -23,10 +23,12 @@ type AuthRole struct {
 }
 
 type AuthUser struct {
-	ID          uint     `json:"id"`
-	Name        string   `json:"name"`
-	Email       string   `json:"email"`
-	Role        AuthRole `json:"role"`
-	Permissions []string `json:"permissions"`
-	Status      string   `json:"status"`
+	ID                 uint     `json:"id"`
+	Name               string   `json:"name"`
+	Email              string   `json:"email"`
+	PhotoPath          *string  `json:"photo_path"`
+	Role               AuthRole `json:"role"`
+	Status             string   `json:"status"`
+	MustChangePassword bool     `json:"must_change_password"`
+	CreatedAt          string   `json:"created_at"`
 }

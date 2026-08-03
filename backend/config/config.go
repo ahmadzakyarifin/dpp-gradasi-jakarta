@@ -10,7 +10,6 @@ import (
 type Config struct {
 	App      AppConfig
 	Database DatabaseConfig
-	Redis    RedisConfig
 	JWT      JWTConfig
 	Cookie   CookieConfig
 	Security SecurityConfig

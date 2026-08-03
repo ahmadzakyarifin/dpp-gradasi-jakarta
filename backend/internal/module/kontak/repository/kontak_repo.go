@@ -4,14 +4,16 @@ import (
 	"strings"
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kontak/dto"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kontak/entity"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kontak/mapper"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kontak/model"
 	"gorm.io/gorm"
 )
 
 type KontakRepo interface {
-	FindAll(q dto.KontakQuery) ([]model.PesanKontak, int64, error)
-	FindByID(id uint) (*model.PesanKontak, error)
-	Create(p *model.PesanKontak) error
+	FindAll(q dto.KontakQuery) ([]entity.PesanKontak, int64, error)
+	FindByID(id uint) (*entity.PesanKontak, error)
+	Create(p *entity.PesanKontak) error
 	MarkAsRead(id uint) error
 	Delete(id uint) error
 	Restore(id uint) error
@@ -25,7 +27,7 @@ func NewKontakRepo(db *gorm.DB) KontakRepo {
 	return &kontakRepo{db: db}
 }
 
-func (r *kontakRepo) FindAll(q dto.KontakQuery) ([]model.PesanKontak, int64, error) {
+func (r *kontakRepo) FindAll(q dto.KontakQuery) ([]entity.PesanKontak, int64, error) {
 	var items []model.PesanKontak
 	var total int64
 
@@ -46,7 +48,7 @@ func (r *kontakRepo) FindAll(q dto.KontakQuery) ([]model.PesanKontak, int64, err
 		db = r.db.Unscoped().Model(&model.PesanKontak{}).Where("deleted_at IS NOT NULL")
 		db.Count(&total)
 		err := db.Order("deleted_at DESC").Find(&items).Error
-		return items, total, err
+		return mapper.ModelListToEntity(items), total, err
 	}
 
 	db = db.Where("deleted_at IS NULL")
@@ -59,25 +61,31 @@ func (r *kontakRepo) FindAll(q dto.KontakQuery) ([]model.PesanKontak, int64, err
 		db = db.Order("created_at DESC")
 	}
 
-	page := maxInt(q.Page, 1)
-	limit := maxInt(q.Limit, 10)
+	page := q.Page
+	if page <= 0 {
+		page = 1
+	}
+	limit := q.Limit
+	if limit <= 0 {
+		limit = 10
+	}
 	offset := (page - 1) * limit
 
 	err := db.Limit(limit).Offset(offset).Find(&items).Error
-	return items, total, err
+	return mapper.ModelListToEntity(items), total, err
 }
 
-func (r *kontakRepo) FindByID(id uint) (*model.PesanKontak, error) {
+func (r *kontakRepo) FindByID(id uint) (*entity.PesanKontak, error) {
 	var p model.PesanKontak
 	err := r.db.First(&p, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &p, nil
+	return mapper.ModelToEntity(&p), nil
 }
 
-func (r *kontakRepo) Create(p *model.PesanKontak) error {
-	return r.db.Create(p).Error
+func (r *kontakRepo) Create(p *entity.PesanKontak) error {
+	return r.db.Create(mapper.EntityToModel(p)).Error
 }
 
 func (r *kontakRepo) MarkAsRead(id uint) error {
@@ -99,11 +107,4 @@ func (r *kontakRepo) BulkSoftDelete(ids []uint) error {
 
 func (r *kontakRepo) BulkRestore(ids []uint) error {
 	return r.db.Unscoped().Model(&model.PesanKontak{}).Where("id IN ?", ids).Update("deleted_at", nil).Error
-}
-
-func maxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }

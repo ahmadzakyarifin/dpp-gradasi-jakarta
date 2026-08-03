@@ -18,7 +18,6 @@ func RegisterRoutes(
 	{
 		// role.view
 		roles.GET("", middleware.RoleMiddleware("super_admin", "admin"), h.GetAll)
-		roles.GET("/permissions", middleware.RoleMiddleware("super_admin", "admin"), h.GetPermissions)
 		roles.GET("/check-unique", middleware.RoleMiddleware("super_admin", "admin"), h.CheckUnique)
 		roles.GET("/:id", middleware.RoleMiddleware("super_admin", "admin"), h.GetByID)
 		roles.GET("/:id/dependency-info", middleware.RoleMiddleware("super_admin", "admin"), h.GetDependencyInfo)

@@ -24,8 +24,6 @@ type UserRepo interface {
 	ToggleStatus(ctx context.Context, id uint) error
 	FindPaginated(ctx context.Context, page, limit int, search, roleIDStr, status, sort string, trashed bool) ([]entity.User, int, error)
 	CountActive(ctx context.Context) (int, error)
-	HasRolePermissions(ctx context.Context, roleID uint, permissions []string) (bool, error)
-	HasAnyRolePermission(ctx context.Context, roleID uint, permissions []string) (bool, error)
 	BulkDelete(ctx context.Context, ids []uint) error
 	Restore(ctx context.Context, id uint) error
 	BulkRestore(ctx context.Context, ids []uint) error
@@ -168,8 +166,8 @@ func (r *userRepo) UpdatePassword(ctx context.Context, id uint, hash string) err
 	res := r.db.WithContext(ctx).Model(&model.UserModel{}).
 		Where("id = ?", id).
 		Updates(map[string]any{
-			"password_hash": hash,
-			"status":        "active",
+			"password": hash,
+			"status":   "active",
 		})
 	if res.Error != nil {
 		return res.Error
@@ -255,55 +253,4 @@ func (r *userRepo) CountActive(ctx context.Context) (int, error) {
 	var count int64
 	err := r.db.WithContext(ctx).Model(&model.UserModel{}).Where("status = ?", "active").Count(&count).Error
 	return int(count), err
-}
-
-func (r *userRepo) HasRolePermissions(ctx context.Context, roleID uint, permissions []string) (bool, error) {
-	if len(permissions) == 0 {
-		return false, nil
-	}
-	perms, err := fetchRolePermissionsFromDB(ctx, r.db, roleID)
-	if err != nil {
-		return false, err
-	}
-	permMap := make(map[string]bool)
-	for _, p := range perms {
-		permMap[p] = true
-	}
-	for _, p := range permissions {
-		if !permMap[p] {
-			return false, nil
-		}
-	}
-	return true, nil
-}
-
-func (r *userRepo) HasAnyRolePermission(ctx context.Context, roleID uint, permissions []string) (bool, error) {
-	if len(permissions) == 0 {
-		return false, nil
-	}
-	perms, err := fetchRolePermissionsFromDB(ctx, r.db, roleID)
-	if err != nil {
-		return false, err
-	}
-	permMap := make(map[string]bool)
-	for _, p := range perms {
-		permMap[p] = true
-	}
-	for _, p := range permissions {
-		if permMap[p] {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-func fetchRolePermissionsFromDB(ctx context.Context, db *gorm.DB, roleID uint) ([]string, error) {
-	var names []string
-	err := db.WithContext(ctx).
-		Table("role_permissions AS rp").
-		Select("p.name").
-		Joins("JOIN permissions AS p ON rp.permission_id = p.id").
-		Where("rp.role_id = ?", roleID).
-		Scan(&names).Error
-	return names, err
 }

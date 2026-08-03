@@ -16,6 +16,12 @@ func main() {
 
 	cfg := config.MustLoad()
 
+	// Fail-closed: CAPTCHA aktif wajib punya secret key — jangan biarkan
+	// captcha "menyala" tanpa verifikasi sungguhan (bypass tersembunyi).
+	if cfg.Security.CaptchaEnabled && cfg.Security.TurnstileSecretKey == "" {
+		log.Fatal("CAPTCHA_ENABLED=true tetapi CAPTCHA_SECRET_KEY kosong. Set CAPTCHA_SECRET_KEY atau matikan CAPTCHA_ENABLED.")
+	}
+
 	validator.RegisterValidator()
 
 	db, err := infrastructure.ConnectDB(cfg)

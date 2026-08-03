@@ -2,18 +2,20 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/helper"
 	activitylogdto "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/dto"
 	activitylogservice "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/service"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/pengurus/dto"
-	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/pengurus/model"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/pengurus/mapper"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/pengurus/repository"
 	"gorm.io/gorm"
 )
@@ -45,7 +47,7 @@ func NewPengurusService(db *gorm.DB, repo repository.PengurusRepo, audit activit
 	return &pengurusService{db: db, repo: repo, audit: audit, uploadPath: uploadPath}
 }
 
-func (s *pengurusService) log(ctx context.Context, input *activitylogdto.ActivityLogInput) {
+func (s *pengurusService) log(ctx context.Context, db *gorm.DB, input *activitylogdto.ActivityLogInput) {
 	if s.audit == nil {
 		return
 	}
@@ -66,7 +68,7 @@ func (s *pengurusService) log(ctx context.Context, input *activitylogdto.Activit
 		input.UserAgent = userAgent
 	}
 
-	_ = s.audit.Log(ctx, s.db, input)
+	_ = s.audit.Log(ctx, db, input)
 }
 
 func (s *pengurusService) GetAllPublic(ctx context.Context, query dto.PengurusQuery) (*dto.PengurusListResponse, error) {
@@ -94,17 +96,13 @@ func (s *pengurusService) list(ctx context.Context, q dto.PengurusQuery, adminMo
 	totalPages := (int(total) + limit - 1) / limit
 
 	resp := &dto.PengurusListResponse{
-		Data: make([]dto.PengurusResponse, 0),
+		Data: mapper.EntityListToResponse(results),
 		Meta: dto.PaginationMeta{
 			CurrentPage: page,
 			Limit:       limit,
 			TotalData:   int(total),
 			TotalPages:  totalPages,
 		},
-	}
-
-	for _, p := range results {
-		resp.Data = append(resp.Data, toResponse(p))
 	}
 	return resp, nil
 }
@@ -149,16 +147,23 @@ func (s *pengurusService) GetRegions(ctx context.Context) (*dto.RegionsResponse,
 func (s *pengurusService) GetByID(ctx context.Context, id uint) (*dto.PengurusResponse, error) {
 	p, err := s.repo.FindByID(id)
 	if err != nil {
-		return nil, helper.NewServiceError("NOT_FOUND", "Pengurus tidak ditemukan.", err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, helper.NewNotFoundError("Pengurus tidak ditemukan")
+		}
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil data pengurus.", err)
 	}
-	resp := toResponse(*p)
+	resp := mapper.EntityToResponse(p)
 	return &resp, nil
 }
 
 func (s *pengurusService) Create(ctx context.Context, req *dto.PengurusRequest) (*dto.PengurusResponse, error) {
 	// Validasi wilayah sesuai level (contract: required_if)
 	if verr := req.ValidateRegionRules(); len(verr) > 0 {
-		return nil, helper.NewServiceError("VALIDATION_ERROR", "validasi gagal", nil)
+		v := helper.NewValidationError()
+		for field, msg := range verr {
+			v.Add(field, msg)
+		}
+		return nil, v
 	}
 
 	imageURL, err := s.handleUpload(req.Image)
@@ -175,28 +180,13 @@ func (s *pengurusService) Create(ctx context.Context, req *dto.PengurusRequest) 
 		isActive = *req.IsActive
 	}
 
-	p := &model.Pengurus{
-		Name:         req.Name,
-		Role:         req.Role,
-		Department:   strPtr(req.Department),
-		Level:        req.Level,
-		Provinsi:     strPtr(req.Provinsi),
-		Kabupaten:    strPtr(req.Kabupaten),
-		ImagePath:    imageURL,
-		FacebookURL:  strPtr(req.FacebookURL),
-		InstagramURL: strPtr(req.InstagramURL),
-		LinkedinURL:  strPtr(req.LinkedinURL),
-		Whatsapp:     strPtr(req.Whatsapp),
-		Periode:      req.Periode,
-		SortOrder:    req.SortOrder,
-		IsActive:     isActive,
-	}
+	p := mapper.CreateReqToEntity(req, imageURL, isActive)
 
 	if err := s.repo.Create(p); err != nil {
 		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal membuat data pengurus.", err)
 	}
 
-	s.log(ctx, &activitylogdto.ActivityLogInput{
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		Action:      "pengurus.create",
 		EntityType:  "pengurus",
 		EntityID:    &p.ID,
@@ -208,19 +198,26 @@ func (s *pengurusService) Create(ctx context.Context, req *dto.PengurusRequest) 
 		},
 	})
 
-	resp := toResponse(*p)
+	resp := mapper.EntityToResponse(p)
 	return &resp, nil
 }
 
 func (s *pengurusService) Update(ctx context.Context, id uint, req *dto.PengurusRequest) (*dto.PengurusResponse, error) {
 	// Validasi wilayah sesuai level (contract: required_if)
 	if verr := req.ValidateRegionRules(); len(verr) > 0 {
-		return nil, helper.NewServiceError("VALIDATION_ERROR", "validasi gagal", nil)
+		v := helper.NewValidationError()
+		for field, msg := range verr {
+			v.Add(field, msg)
+		}
+		return nil, v
 	}
 
 	p, err := s.repo.FindByID(id)
 	if err != nil {
-		return nil, helper.NewServiceError("NOT_FOUND", "Pengurus tidak ditemukan.", err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, helper.NewNotFoundError("Pengurus tidak ditemukan")
+		}
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil data pengurus.", err)
 	}
 
 	if req.Image != nil {
@@ -230,28 +227,13 @@ func (s *pengurusService) Update(ctx context.Context, id uint, req *dto.Pengurus
 		}
 	}
 
-	p.Name = req.Name
-	p.Role = req.Role
-	p.Department = strPtr(req.Department)
-	p.Level = req.Level
-	p.Provinsi = strPtr(req.Provinsi)
-	p.Kabupaten = strPtr(req.Kabupaten)
-	p.FacebookURL = strPtr(req.FacebookURL)
-	p.InstagramURL = strPtr(req.InstagramURL)
-	p.LinkedinURL = strPtr(req.LinkedinURL)
-	p.Whatsapp = strPtr(req.Whatsapp)
-	p.Periode = req.Periode
-	p.SortOrder = req.SortOrder
-
-	if req.IsActive != nil {
-		p.IsActive = *req.IsActive
-	}
+	mapper.ApplyUpdate(p, req)
 
 	if err := s.repo.Update(p); err != nil {
 		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengupdate data pengurus.", err)
 	}
 
-	s.log(ctx, &activitylogdto.ActivityLogInput{
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		Action:      "pengurus.update",
 		EntityType:  "pengurus",
 		EntityID:    &p.ID,
@@ -263,21 +245,24 @@ func (s *pengurusService) Update(ctx context.Context, id uint, req *dto.Pengurus
 		},
 	})
 
-	resp := toResponse(*p)
+	resp := mapper.EntityToResponse(p)
 	return &resp, nil
 }
 
 func (s *pengurusService) Delete(ctx context.Context, id uint) error {
 	p, err := s.repo.FindByID(id)
 	if err != nil {
-		return helper.NewServiceError("NOT_FOUND", "Pengurus tidak ditemukan.", err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return helper.NewNotFoundError("Pengurus tidak ditemukan")
+		}
+		return helper.NewServiceError("SERVER_ERROR", "Gagal mengambil data pengurus.", err)
 	}
 
 	if err := s.repo.SoftDelete(id); err != nil {
 		return helper.NewServiceError("SERVER_ERROR", "Gagal menghapus data pengurus.", err)
 	}
 
-	s.log(ctx, &activitylogdto.ActivityLogInput{
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		Action:      "pengurus.delete",
 		EntityType:  "pengurus",
 		EntityID:    &id,
@@ -293,11 +278,11 @@ func (s *pengurusService) Restore(ctx context.Context, id uint) error {
 		return helper.NewServiceError("SERVER_ERROR", "Gagal memulihkan data pengurus.", err)
 	}
 
-	s.log(ctx, &activitylogdto.ActivityLogInput{
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		Action:      "pengurus.restore",
 		EntityType:  "pengurus",
 		EntityID:    &id,
-		Description: "Memulihkan pengurus (ID: " + fmt.Sprint(id) + ")",
+		Description: "Memulihkan pengurus (ID: " + strconv.FormatUint(uint64(id), 10) + ")",
 	})
 
 	return nil
@@ -311,10 +296,10 @@ func (s *pengurusService) BulkDelete(ctx context.Context, ids []uint) error {
 		return helper.NewServiceError("SERVER_ERROR", "Gagal menghapus data pengurus.", err)
 	}
 
-	s.log(ctx, &activitylogdto.ActivityLogInput{
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		Action:      "pengurus.bulk_delete",
 		EntityType:  "pengurus",
-		Description: "Menghapus " + fmt.Sprint(len(ids)) + " pengurus (soft delete)",
+		Description: "Menghapus " + strconv.FormatUint(uint64(len(ids)), 10) + " pengurus (soft delete)",
 		Metadata: map[string]any{
 			"ids": ids,
 		},
@@ -331,10 +316,10 @@ func (s *pengurusService) BulkRestore(ctx context.Context, ids []uint) error {
 		return helper.NewServiceError("SERVER_ERROR", "Gagal memulihkan data pengurus.", err)
 	}
 
-	s.log(ctx, &activitylogdto.ActivityLogInput{
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		Action:      "pengurus.bulk_restore",
 		EntityType:  "pengurus",
-		Description: "Memulihkan " + fmt.Sprint(len(ids)) + " pengurus",
+		Description: "Memulihkan " + strconv.FormatUint(uint64(len(ids)), 10) + " pengurus",
 		Metadata: map[string]any{
 			"ids": ids,
 		},
@@ -376,48 +361,4 @@ func (s *pengurusService) handleUpload(file *multipart.FileHeader) (string, erro
 
 	// URL path to be saved in DB
 	return "/uploads/pengurus/" + filename, nil
-}
-
-func toResponse(p model.Pengurus) dto.PengurusResponse {
-	resp := dto.PengurusResponse{
-		ID:        p.ID,
-		Name:      p.Name,
-		Role:      p.Role,
-		Level:     p.Level,
-		ImagePath: p.ImagePath,
-		Periode:   p.Periode,
-		SortOrder: p.SortOrder,
-		IsActive:  p.IsActive,
-		CreatedAt: p.CreatedAt.Format(time.RFC3339),
-		UpdatedAt: p.UpdatedAt.Format(time.RFC3339),
-	}
-	if p.Department != nil {
-		resp.Department = *p.Department
-	}
-	if p.Provinsi != nil {
-		resp.Provinsi = *p.Provinsi
-	}
-	if p.Kabupaten != nil {
-		resp.Kabupaten = *p.Kabupaten
-	}
-	if p.FacebookURL != nil {
-		resp.FacebookURL = *p.FacebookURL
-	}
-	if p.InstagramURL != nil {
-		resp.InstagramURL = *p.InstagramURL
-	}
-	if p.LinkedinURL != nil {
-		resp.LinkedinURL = *p.LinkedinURL
-	}
-	if p.Whatsapp != nil {
-		resp.Whatsapp = *p.Whatsapp
-	}
-	return resp
-}
-
-func strPtr(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
 }

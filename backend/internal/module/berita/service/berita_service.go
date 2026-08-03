@@ -2,14 +2,16 @@ package service
 
 import (
 	"context"
+	"errors"
+	"strconv"
 	"strings"
-	"time"
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/helper"
 	activitylogdto "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/dto"
 	activitylogservice "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/service"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/berita/dto"
-	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/berita/model"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/berita/entity"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/berita/mapper"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/berita/repository"
 	"github.com/gosimple/slug"
 	"gorm.io/gorm"
@@ -39,7 +41,7 @@ func NewBeritaService(db *gorm.DB, repo repository.BeritaRepo, audit activitylog
 	return &beritaService{db: db, repo: repo, audit: audit}
 }
 
-func (s *beritaService) log(ctx context.Context, input *activitylogdto.ActivityLogInput) {
+func (s *beritaService) log(ctx context.Context, db *gorm.DB, input *activitylogdto.ActivityLogInput) {
 	if s.audit == nil {
 		return
 	}
@@ -60,7 +62,7 @@ func (s *beritaService) log(ctx context.Context, input *activitylogdto.ActivityL
 		input.UserAgent = userAgent
 	}
 
-	_ = s.audit.Log(ctx, s.db, input)
+	_ = s.audit.Log(ctx, db, input)
 }
 
 func (s *beritaService) GetPublished(ctx context.Context, query dto.BeritaQuery) (*dto.BeritaListResponse, error) {
@@ -72,7 +74,7 @@ func (s *beritaService) GetAll(ctx context.Context, query dto.BeritaQuery) (*dto
 }
 
 func (s *beritaService) list(ctx context.Context, publishedOnly bool, q dto.BeritaQuery) (*dto.BeritaListResponse, error) {
-	var beritas []model.Berita
+	var beritas []entity.Berita
 	var total int64
 	var err error
 
@@ -96,7 +98,7 @@ func (s *beritaService) list(ctx context.Context, publishedOnly bool, q dto.Beri
 	totalPages := (int(total) + limit - 1) / limit
 
 	resp := &dto.BeritaListResponse{
-		Berita: make([]dto.BeritaListItem, 0),
+		Berita: mapper.EntityListToItem(beritas),
 		Meta: dto.PaginationMeta{
 			CurrentPage: page,
 			Limit:       limit,
@@ -104,45 +106,51 @@ func (s *beritaService) list(ctx context.Context, publishedOnly bool, q dto.Beri
 			TotalPages:  totalPages,
 		},
 	}
-
-	for _, b := range beritas {
-		resp.Berita = append(resp.Berita, toListItem(b))
-	}
-
 	return resp, nil
 }
 
 func (s *beritaService) GetBySlug(ctx context.Context, slug string) (*dto.BeritaDetailResponse, error) {
 	b, err := s.repo.FindBySlug(slug)
 	if err != nil {
-		return nil, helper.NewServiceError("NOT_FOUND", "Berita tidak ditemukan.", err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, helper.NewNotFoundError("Berita tidak ditemukan")
+		}
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil berita.", err)
 	}
 
 	// Increment views (async-safe enough)
 	_ = s.repo.IncrementViews(b.ID)
 	b.Views++
 
-	resp := toDetail(*b)
+	resp := mapper.EntityToDetail(b)
 	return &resp, nil
 }
 
 func (s *beritaService) GetByID(ctx context.Context, id uint) (*dto.BeritaDetailResponse, error) {
 	b, err := s.repo.FindByID(id)
 	if err != nil {
-		return nil, helper.NewServiceError("NOT_FOUND", "Berita tidak ditemukan.", err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, helper.NewNotFoundError("Berita tidak ditemukan")
+		}
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil berita.", err)
 	}
-	resp := toDetail(*b)
+	resp := mapper.EntityToDetail(b)
 	return &resp, nil
 }
 
 func (s *beritaService) Create(ctx context.Context, req *dto.BeritaCreateRequest, authorID uint) (*dto.BeritaDetailResponse, error) {
+	v := helper.NewValidationError()
+
 	title := strings.TrimSpace(req.Title)
 	if title == "" {
-		return nil, helper.NewServiceError("VALIDATION_ERROR", "Judul wajib diisi.", nil)
+		v.Add("title", "Judul wajib diisi.")
 	}
 	content := strings.TrimSpace(req.Content)
 	if content == "" {
-		return nil, helper.NewServiceError("VALIDATION_ERROR", "Konten lengkap wajib diisi.", nil)
+		v.Add("content", "Konten lengkap wajib diisi.")
+	}
+	if len(v.Errors) > 0 {
+		return nil, v
 	}
 
 	// Validasi judul duplikat — error jelas (bukan auto-suffix)
@@ -161,27 +169,10 @@ func (s *beritaService) Create(ctx context.Context, req *dto.BeritaCreateRequest
 		cat = "Berita Organisasi"
 	}
 
-	var isFeatured, isPublished bool
-	if req.IsFeatured != nil {
-		isFeatured = *req.IsFeatured
-	}
-	if req.IsPublished != nil {
-		isPublished = *req.IsPublished
-	} else {
-		isPublished = true
-	}
-
-	b := &model.Berita{
-		Slug:          slugStr,
-		Title:         title,
-		Category:      cat,
-		PublishedDate: req.PublishedDate,
-		ImagePath:     strPtr(req.ImagePath),
-		Excerpt:       strPtr(req.Excerpt),
-		Content:       strPtr(req.Content),
-		IsFeatured:    isFeatured,
-		IsPublished:   isPublished,
-	}
+	b := mapper.CreateReqToEntity(req)
+	b.Slug = slugStr
+	b.Title = title
+	b.Category = cat
 
 	if req.AuthorID != nil {
 		b.AuthorID = req.AuthorID
@@ -195,11 +186,10 @@ func (s *beritaService) Create(ctx context.Context, req *dto.BeritaCreateRequest
 
 	// Save tags
 	if req.Tags != "" {
-		tags := parseTags(req.Tags)
-		_ = s.repo.SaveTags(b.ID, tags)
+		_ = s.repo.SaveTags(b.ID, mapper.ParseTags(req.Tags))
 	}
 
-	s.log(ctx, &activitylogdto.ActivityLogInput{
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		Action:      "berita.create",
 		EntityType:  "berita",
 		EntityID:    &b.ID,
@@ -212,23 +202,31 @@ func (s *beritaService) Create(ctx context.Context, req *dto.BeritaCreateRequest
 	})
 
 	// Reload with tags
-	b, _ = s.repo.FindByID(b.ID)
+	created, err := s.repo.FindByID(b.ID)
+	if err == nil {
+		b = created
+	}
 
-	resp := toDetail(*b)
+	resp := mapper.EntityToDetail(b)
 	return &resp, nil
 }
 
 func (s *beritaService) Update(ctx context.Context, id uint, req *dto.BeritaUpdateRequest) (*dto.BeritaDetailResponse, error) {
 	b, err := s.repo.FindByID(id)
 	if err != nil {
-		return nil, helper.NewServiceError("NOT_FOUND", "Berita tidak ditemukan.", err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, helper.NewNotFoundError("Berita tidak ditemukan")
+		}
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil berita.", err)
 	}
 
 	// Partial update: hanya field yang dikirim yang diubah
 	if req.Title != "" {
 		title := strings.TrimSpace(req.Title)
 		if title == "" {
-			return nil, helper.NewServiceError("VALIDATION_ERROR", "Judul wajib diisi.", nil)
+			v := helper.NewValidationError()
+			v.Add("title", "Judul wajib diisi.")
+			return nil, v
 		}
 		// Cek duplikat judul (kecuali id ini sendiri)
 		dup, err := s.repo.ExistsTitle(title, id)
@@ -238,34 +236,9 @@ func (s *beritaService) Update(ctx context.Context, id uint, req *dto.BeritaUpda
 		if dup {
 			return nil, helper.NewServiceError("DUPLICATE_TITLE", "Judul sudah digunakan, gunakan judul lain.", nil)
 		}
-		b.Title = title
 	}
 
-	cat := strings.TrimSpace(req.Category)
-	if cat != "" {
-		b.Category = cat
-	}
-	if req.PublishedDate != "" {
-		b.PublishedDate = req.PublishedDate
-	}
-	if req.ImagePath != "" {
-		b.ImagePath = strPtr(req.ImagePath)
-	}
-	if req.Excerpt != "" {
-		b.Excerpt = strPtr(req.Excerpt)
-	}
-	if req.Content != "" {
-		b.Content = strPtr(req.Content)
-	}
-	if req.IsFeatured != nil {
-		b.IsFeatured = *req.IsFeatured
-	}
-	if req.IsPublished != nil {
-		b.IsPublished = *req.IsPublished
-	}
-	if req.AuthorID != nil {
-		b.AuthorID = req.AuthorID
-	}
+	mapper.UpdateReqToEntity(req, b)
 
 	if err := s.repo.Update(b); err != nil {
 		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengupdate berita.", err)
@@ -273,11 +246,10 @@ func (s *beritaService) Update(ctx context.Context, id uint, req *dto.BeritaUpda
 
 	// Save tags
 	if req.Tags != "" {
-		tags := parseTags(req.Tags)
-		_ = s.repo.SaveTags(b.ID, tags)
+		_ = s.repo.SaveTags(b.ID, mapper.ParseTags(req.Tags))
 	}
 
-	s.log(ctx, &activitylogdto.ActivityLogInput{
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		Action:      "berita.update",
 		EntityType:  "berita",
 		EntityID:    &b.ID,
@@ -288,22 +260,28 @@ func (s *beritaService) Update(ctx context.Context, id uint, req *dto.BeritaUpda
 		},
 	})
 
-	b, _ = s.repo.FindByID(b.ID)
-	resp := toDetail(*b)
+	updated, err := s.repo.FindByID(b.ID)
+	if err == nil {
+		b = updated
+	}
+	resp := mapper.EntityToDetail(b)
 	return &resp, nil
 }
 
 func (s *beritaService) Delete(ctx context.Context, id uint) error {
 	b, err := s.repo.FindByID(id)
 	if err != nil {
-		return helper.NewServiceError("NOT_FOUND", "Berita tidak ditemukan.", err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return helper.NewNotFoundError("Berita tidak ditemukan")
+		}
+		return helper.NewServiceError("SERVER_ERROR", "Gagal mengambil berita.", err)
 	}
 
 	if err := s.repo.SoftDelete(id); err != nil {
 		return helper.NewServiceError("SERVER_ERROR", "Gagal menghapus berita.", err)
 	}
 
-	s.log(ctx, &activitylogdto.ActivityLogInput{
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		Action:      "berita.delete",
 		EntityType:  "berita",
 		EntityID:    &id,
@@ -319,11 +297,11 @@ func (s *beritaService) Restore(ctx context.Context, id uint) error {
 		return helper.NewServiceError("SERVER_ERROR", "Gagal memulihkan berita.", err)
 	}
 
-	s.log(ctx, &activitylogdto.ActivityLogInput{
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		Action:      "berita.restore",
 		EntityType:  "berita",
 		EntityID:    &id,
-		Description: "Memulihkan berita (ID: " + fmtUint(id) + ")",
+		Description: "Memulihkan berita (ID: " + strconv.FormatUint(uint64(id), 10) + ")",
 	})
 
 	return nil
@@ -337,10 +315,10 @@ func (s *beritaService) BulkDelete(ctx context.Context, ids []uint) error {
 		return helper.NewServiceError("SERVER_ERROR", "Gagal menghapus berita.", err)
 	}
 
-	s.log(ctx, &activitylogdto.ActivityLogInput{
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		Action:      "berita.bulk_delete",
 		EntityType:  "berita",
-		Description: "Menghapus " + fmtUint(uint(len(ids))) + " berita (soft delete)",
+		Description: "Menghapus " + strconv.FormatUint(uint64(len(ids)), 10) + " berita (soft delete)",
 		Metadata: map[string]any{
 			"ids": ids,
 		},
@@ -357,10 +335,10 @@ func (s *beritaService) BulkRestore(ctx context.Context, ids []uint) error {
 		return helper.NewServiceError("SERVER_ERROR", "Gagal memulihkan berita.", err)
 	}
 
-	s.log(ctx, &activitylogdto.ActivityLogInput{
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		Action:      "berita.bulk_restore",
 		EntityType:  "berita",
-		Description: "Memulihkan " + fmtUint(uint(len(ids))) + " berita",
+		Description: "Memulihkan " + strconv.FormatUint(uint64(len(ids)), 10) + " berita",
 		Metadata: map[string]any{
 			"ids": ids,
 		},
@@ -369,113 +347,11 @@ func (s *beritaService) BulkRestore(ctx context.Context, ids []uint) error {
 	return nil
 }
 
-func fmtUint(v uint) string {
-	return strconvFormatUint(v)
-}
-
-func strconvFormatUint(v uint) string {
-	if v == 0 {
-		return "0"
-	}
-	var buf [20]byte
-	i := len(buf)
-	for v > 0 {
-		i--
-		buf[i] = byte('0' + v%10)
-		v /= 10
-	}
-	return string(buf[i:])
-}
-
-func toListItem(b model.Berita) dto.BeritaListItem {
-	item := dto.BeritaListItem{
-		ID:            b.ID,
-		Title:         b.Title,
-		Slug:          b.Slug,
-		Category:      b.Category,
-		PublishedDate: formatDate(b.PublishedDate),
-		IsFeatured:    b.IsFeatured,
-		Views:         b.Views,
-		AuthorName:    b.AuthorName,
-		CreatedAt:     b.CreatedAt.Format("2006-01-02T15:04:05Z"),
-		UpdatedAt:     b.UpdatedAt.Format("2006-01-02T15:04:05Z"),
-	}
-	if b.ImagePath != nil {
-		item.ImagePath = *b.ImagePath
-	}
-	if b.Excerpt != nil {
-		item.Excerpt = *b.Excerpt
-	}
-	return item
-}
-
-func toDetail(b model.Berita) dto.BeritaDetailResponse {
-	resp := dto.BeritaDetailResponse{
-		ID:            b.ID,
-		Title:         b.Title,
-		Slug:          b.Slug,
-		Category:      b.Category,
-		PublishedDate: formatDate(b.PublishedDate),
-		IsFeatured:    b.IsFeatured,
-		IsPublished:   b.IsPublished,
-		Views:         b.Views,
-		AuthorName:    b.AuthorName,
-		CreatedAt:     b.CreatedAt.Format("2006-01-02T15:04:05Z"),
-		Tags:          make([]string, 0),
-	}
-	if b.ImagePath != nil {
-		resp.ImagePath = *b.ImagePath
-	}
-	if b.Excerpt != nil {
-		resp.Excerpt = *b.Excerpt
-	}
-	if b.Content != nil {
-		resp.Content = *b.Content
-	}
-	for _, t := range b.Tags {
-		resp.Tags = append(resp.Tags, t.Tag)
-	}
-	return resp
-}
-
-func parseTags(tags string) []string {
-	parts := strings.Split(tags, ",")
-	result := make([]string, 0, len(parts))
-	for _, p := range parts {
-		p = strings.TrimSpace(p)
-		if p != "" {
-			result = append(result, p)
-		}
-	}
-	return result
-}
-
-func strPtr(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
-}
-
-func formatDate(v string) string {
-	if v == "" {
-		return ""
-	}
-	t, err := time.Parse("2006-01-02T15:04:05Z07:00", v)
-	if err == nil {
-		return t.Format("2006-01-02")
-	}
-	if _, err = time.Parse("2006-01-02", v); err == nil {
-		return v
-	}
-	// Return as-is if can't parse (e.g. already date string)
-	if len(v) >= 10 {
-		return v[:10]
-	}
-	return v
-}
-
 // GetCategories mengembalikan daftar kategori unik untuk dropdown admin.
 func (s *beritaService) GetCategories(ctx context.Context) ([]string, error) {
-	return s.repo.GetCategories()
+	categories, err := s.repo.GetCategories()
+	if err != nil {
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil daftar kategori.", err)
+	}
+	return categories, nil
 }

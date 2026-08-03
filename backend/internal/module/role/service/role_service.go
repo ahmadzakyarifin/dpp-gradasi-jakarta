@@ -18,9 +18,8 @@ import (
 type RoleService interface {
 	GetAllRoles(ctx context.Context, req dto.RoleQueryReq) ([]entity.Role, int, error)
 	GetRoleByID(ctx context.Context, id uint) (*entity.Role, error)
-	GetPermissions(ctx context.Context) ([]entity.Permission, error)
-	CreateRole(ctx context.Context, req dto.RoleCreateReq, permissionIDs []uint) (*entity.Role, error)
-	UpdateRole(ctx context.Context, id uint, req dto.RoleUpdateReq, permissionIDs []uint) (*entity.Role, error)
+	CreateRole(ctx context.Context, req dto.RoleCreateReq) (*entity.Role, error)
+	UpdateRole(ctx context.Context, id uint, req dto.RoleUpdateReq) (*entity.Role, error)
 	DeleteRole(ctx context.Context, id uint) error
 	RestoreRole(ctx context.Context, id uint) error
 	UpdateStatus(ctx context.Context, id uint, req dto.RoleStatusReq) error
@@ -68,7 +67,21 @@ func roleDependencyMessage(userCount int) string {
 
 func (s *roleService) GetAllRoles(ctx context.Context, req dto.RoleQueryReq) ([]entity.Role, int, error) {
 	req.Normalize()
-	return s.repo.GetAllRoles(ctx, req.Page, req.Limit, req.Search, req.Status, req.Sort)
+	roles, total, err := s.repo.GetAllRoles(ctx, req.Page, req.Limit, req.Search, req.Status, req.Sort)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Populate user_count per role (N+1 diterima — data role sedikit).
+	for i := range roles {
+		count, err := s.repo.CountUsers(ctx, roles[i].ID)
+		if err != nil {
+			return nil, 0, err
+		}
+		roles[i].UserCount = count
+	}
+
+	return roles, total, nil
 }
 
 func (s *roleService) GetRoleByID(ctx context.Context, id uint) (*entity.Role, error) {
@@ -79,14 +92,15 @@ func (s *roleService) GetRoleByID(ctx context.Context, id uint) (*entity.Role, e
 	if existing == nil {
 		return nil, helper.NewNotFoundError("Role tidak ditemukan")
 	}
+	count, err := s.repo.CountUsers(ctx, existing.ID)
+	if err != nil {
+		return nil, err
+	}
+	existing.UserCount = count
 	return existing, nil
 }
 
-func (s *roleService) GetPermissions(ctx context.Context) ([]entity.Permission, error) {
-	return s.repo.GetPermissions(ctx)
-}
-
-func (s *roleService) CreateRole(ctx context.Context, req dto.RoleCreateReq, permissionIDs []uint) (*entity.Role, error) {
+func (s *roleService) CreateRole(ctx context.Context, req dto.RoleCreateReq) (*entity.Role, error) {
 	v := helper.NewValidationError()
 
 	req.Name = strings.TrimSpace(req.Name)
@@ -120,7 +134,7 @@ func (s *roleService) CreateRole(ctx context.Context, req dto.RoleCreateReq, per
 
 	role := mapper.CreateReqToEntity(&req)
 
-	err = s.repo.CreateRole(ctx, role, permissionIDs)
+	err = s.repo.CreateRole(ctx, role)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +157,7 @@ func (s *roleService) CreateRole(ctx context.Context, req dto.RoleCreateReq, per
 	return role, nil
 }
 
-func (s *roleService) UpdateRole(ctx context.Context, id uint, req dto.RoleUpdateReq, permissionIDs []uint) (*entity.Role, error) {
+func (s *roleService) UpdateRole(ctx context.Context, id uint, req dto.RoleUpdateReq) (*entity.Role, error) {
 	existing, err := s.repo.GetRoleByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -200,7 +214,7 @@ func (s *roleService) UpdateRole(ctx context.Context, id uint, req dto.RoleUpdat
 
 	mapper.UpdateReqToEntity(&req, existing)
 
-	err = s.repo.UpdateRole(ctx, existing, permissionIDs)
+	err = s.repo.UpdateRole(ctx, existing)
 	if err != nil {
 		return nil, err
 	}
@@ -336,7 +350,7 @@ func (s *roleService) UpdateStatus(ctx context.Context, id uint, req dto.RoleSta
 
 	mapper.StatusReqToEntity(&req, existing)
 
-	err = s.repo.UpdateRole(ctx, existing, nil)
+	err = s.repo.UpdateRole(ctx, existing)
 	if err != nil {
 		return err
 	}
@@ -417,6 +431,8 @@ func (s *roleService) CheckUnique(ctx context.Context, field string, value strin
 	case "display_name":
 		return s.repo.ExistsByDisplayName(ctx, value, excludeID)
 	default:
-		return false, fmt.Errorf("field %s is not supported for uniqueness check", field)
+		v := helper.NewValidationError()
+		v.Add("field", "field harus name atau display_name")
+		return false, v
 	}
 }

@@ -1,24 +1,25 @@
 package repository
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kegiatan/dto"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kegiatan/entity"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kegiatan/mapper"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kegiatan/model"
 	"gorm.io/gorm"
 )
 
 type KegiatanRepo interface {
-	FindPublished(q dto.KegiatanQuery) ([]model.Kegiatan, int64, error)
-	FindAll(q dto.KegiatanQuery) ([]model.Kegiatan, int64, error)
-	FindBySlug(slug string) (*model.Kegiatan, error)
+	FindPublished(q dto.KegiatanQuery) ([]entity.Kegiatan, int64, error)
+	FindAll(q dto.KegiatanQuery) ([]entity.Kegiatan, int64, error)
+	FindBySlug(slug string) (*entity.Kegiatan, error)
 	FindUniqueSlug(slug string) (string, error)
 	ExistsTitle(title string, excludeID uint) (bool, error)
-	FindByID(id uint) (*model.Kegiatan, error)
-	Create(k *model.Kegiatan) error
-	Update(k *model.Kegiatan) error
+	FindByID(id uint) (*entity.Kegiatan, error)
+	Create(k *entity.Kegiatan) error
+	Update(k *entity.Kegiatan) error
 	SoftDelete(id uint) error
 	Restore(id uint) error
 	BulkSoftDelete(ids []uint) error
@@ -36,15 +37,15 @@ func NewKegiatanRepo(db *gorm.DB) KegiatanRepo {
 	return &kegiatanRepo{db: db}
 }
 
-func (r *kegiatanRepo) FindPublished(q dto.KegiatanQuery) ([]model.Kegiatan, int64, error) {
+func (r *kegiatanRepo) FindPublished(q dto.KegiatanQuery) ([]entity.Kegiatan, int64, error) {
 	return r.query(true, q)
 }
 
-func (r *kegiatanRepo) FindAll(q dto.KegiatanQuery) ([]model.Kegiatan, int64, error) {
+func (r *kegiatanRepo) FindAll(q dto.KegiatanQuery) ([]entity.Kegiatan, int64, error) {
 	return r.query(false, q)
 }
 
-func (r *kegiatanRepo) query(publishedOnly bool, q dto.KegiatanQuery) ([]model.Kegiatan, int64, error) {
+func (r *kegiatanRepo) query(publishedOnly bool, q dto.KegiatanQuery) ([]entity.Kegiatan, int64, error) {
 	var items []model.Kegiatan
 	var total int64
 
@@ -76,8 +77,8 @@ func (r *kegiatanRepo) query(publishedOnly bool, q dto.KegiatanQuery) ([]model.K
 	}
 
 	if q.Search != "" {
-		s := "%" + strings.TrimSpace(q.Search) + "%"
-		db = db.Where("title LIKE ? OR content LIKE ?", s, s)
+		s := strings.TrimSpace(q.Search)
+		db = db.Where("MATCH(title, content) AGAINST (? IN BOOLEAN MODE)", s+"*")
 	}
 	if q.Category != "" {
 		db = db.Where("category = ?", q.Category)
@@ -94,7 +95,10 @@ func (r *kegiatanRepo) query(publishedOnly bool, q dto.KegiatanQuery) ([]model.K
 		db = db.Order("event_date DESC, created_at DESC")
 	}
 
-	page := maxInt(q.Page, 1)
+	page := q.Page
+	if page <= 0 {
+		page = 1
+	}
 	limit := q.Limit
 	if limit <= 0 {
 		limit = 10
@@ -102,10 +106,10 @@ func (r *kegiatanRepo) query(publishedOnly bool, q dto.KegiatanQuery) ([]model.K
 	offset := (page - 1) * limit
 
 	err := db.Preload("Tags").Limit(limit).Offset(offset).Find(&items).Error
-	return items, total, err
+	return mapper.ModelListToEntity(items), total, err
 }
 
-func (r *kegiatanRepo) FindBySlug(slug string) (*model.Kegiatan, error) {
+func (r *kegiatanRepo) FindBySlug(slug string) (*entity.Kegiatan, error) {
 	var k model.Kegiatan
 	err := r.db.Model(&model.Kegiatan{}).
 		Select("kegiatan.*, users.name as author_name").
@@ -117,7 +121,7 @@ func (r *kegiatanRepo) FindBySlug(slug string) (*model.Kegiatan, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &k, nil
+	return mapper.ModelToEntity(&k), nil
 }
 
 // FindUniqueSlug mengembalikan slug unik dengan suffix -2, -3, dst jika slug sudah dipakai.
@@ -152,7 +156,7 @@ func (r *kegiatanRepo) ExistsTitle(title string, excludeID uint) (bool, error) {
 	return count > 0, nil
 }
 
-func (r *kegiatanRepo) FindByID(id uint) (*model.Kegiatan, error) {
+func (r *kegiatanRepo) FindByID(id uint) (*entity.Kegiatan, error) {
 	var k model.Kegiatan
 	err := r.db.Model(&model.Kegiatan{}).
 		Select("kegiatan.*, users.name as author_name").
@@ -163,15 +167,15 @@ func (r *kegiatanRepo) FindByID(id uint) (*model.Kegiatan, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &k, nil
+	return mapper.ModelToEntity(&k), nil
 }
 
-func (r *kegiatanRepo) Create(k *model.Kegiatan) error {
-	return r.db.Create(k).Error
+func (r *kegiatanRepo) Create(k *entity.Kegiatan) error {
+	return r.db.Create(mapper.EntityToModel(k)).Error
 }
 
-func (r *kegiatanRepo) Update(k *model.Kegiatan) error {
-	return r.db.Save(k).Error
+func (r *kegiatanRepo) Update(k *entity.Kegiatan) error {
+	return r.db.Save(mapper.EntityToModel(k)).Error
 }
 
 func (r *kegiatanRepo) SoftDelete(id uint) error {
@@ -236,23 +240,4 @@ func (r *kegiatanRepo) GetCategories() ([]string, error) {
 		Order("category ASC").
 		Pluck("category", &categories).Error
 	return categories, err
-}
-
-func maxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-// ParseGalleryJSON parses gallery JSON string into GalleryInput slice
-func ParseGalleryJSON(s string) ([]dto.GalleryInput, error) {
-	if s == "" {
-		return nil, nil
-	}
-	var items []dto.GalleryInput
-	if err := json.Unmarshal([]byte(s), &items); err != nil {
-		return nil, err
-	}
-	return items, nil
 }
