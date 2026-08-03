@@ -1,33 +1,59 @@
 import { useEffect, useRef, useState } from 'react'
+import { useSettings } from '../../context/useSettings'
 
 // Cloudflare Turnstile Widget
+// - Sumber kebenaran status CAPTCHA = config backend (GET /settings), bukan env VITE_*.
 // - Load script dari challenges.cloudflare.com (hanya sekali)
 // - Render widget ke container; onVerify memberikan token ke parent
-// - Mode development: VITE_CAPTCHA_ENABLED=false => widget tidak dirender
-//   (backend juga bypass ketika CAPTCHA_ENABLED=false)
 const SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
+const SCRIPT_TIMEOUT_MS = 5000
 
 export default function CaptchaWidget({ onVerify, hasError }) {
   const containerRef = useRef(null)
   const [scriptLoaded, setScriptLoaded] = useState(false)
+  const [scriptFailed, setScriptFailed] = useState(false)
   const [widgetId, setWidgetId] = useState(null)
   const [expired, setExpired] = useState(false)
 
-  const siteKey = import.meta.env.VITE_CAPTCHA_SITE_KEY || ''
-  const enabled = import.meta.env.VITE_CAPTCHA_ENABLED === 'true' || import.meta.env.VITE_CAPTCHA_ENABLED === true
+  // Status CAPTCHA dari backend (single source of truth — tidak ada lagi
+  // kemungkinan FE aktif tapi BE tidak aktif atau sebaliknya).
+  const { settings } = useSettings()
+  const enabled = !!settings?.captcha_enabled
+  const siteKey = settings?.captcha_site_key || ''
 
-  // Load Turnstile script sekali
+  // Load Turnstile script sekali + timeout: kalau gagal dimuat (adblocker/
+  // jaringan), tampilkan pesan eksplisit, jangan biarkan widget kosong diam-diam.
   useEffect(() => {
     if (!enabled || !siteKey) return
     if (window.turnstile) {
       setScriptLoaded(true)
       return
     }
+    let timedOut = false
+    const timer = setTimeout(() => {
+      if (!window.turnstile) {
+        timedOut = true
+        setScriptFailed(true)
+      }
+    }, SCRIPT_TIMEOUT_MS)
     const script = document.createElement('script')
     script.src = SCRIPT_SRC
     script.async = true
-    script.onload = () => setScriptLoaded(true)
+    script.onload = () => {
+      clearTimeout(timer)
+      setScriptLoaded(true)
+    }
+    script.onerror = () => {
+      clearTimeout(timer)
+      timedOut = true
+      setScriptFailed(true)
+    }
     document.head.appendChild(script)
+    return () => {
+      clearTimeout(timer)
+      // eslint-disable-next-line no-unused-expressions
+      timedOut
+    }
   }, [enabled, siteKey])
 
   // Render widget saat script siap
@@ -80,7 +106,12 @@ export default function CaptchaWidget({ onVerify, hasError }) {
           hasError || expired ? 'border-red-400 ring-2 ring-red-500/20' : 'border-slate-200'
         }`}
       />
-      {expired && (
+      {scriptFailed && (
+        <p className="text-red-500 text-[11px] font-bold mt-1.5 ml-1">
+          CAPTCHA gagal dimuat. Periksa koneksi atau nonaktifkan adblocker, lalu refresh halaman.
+        </p>
+      )}
+      {expired && !scriptFailed && (
         <p className="text-red-500 text-[11px] font-bold mt-1.5 ml-1">
           Kode verifikasi kedaluwarsa. Silakan selesaikan kembali.
         </p>

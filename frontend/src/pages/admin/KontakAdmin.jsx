@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import AdminLayout from '../../layouts/AdminLayout'
 import { kontakService } from '../../services/kontakService'
+import { useFormErrors } from '../../utils/parseApiError'
 
 export default function KontakAdmin() {
   const [messages, setMessages] = useState([])
@@ -38,8 +39,10 @@ export default function KontakAdmin() {
   const [toast, setToast] = useState({
     show: false,
     message: '',
-    type: 'success' // success, error
+    type: 'success'
   })
+  // Error backend: field errors inline
+  const { applyError } = useFormErrors()
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type })
@@ -189,7 +192,10 @@ export default function KontakAdmin() {
       }
       fetchMessages()
     } catch (err) {
-      showToast(err.message || 'Gagal melakukan aksi.', 'error')
+      const parsed = applyError(err)
+      if (Object.keys(parsed.fieldErrors).length === 0) {
+        showToast(parsed.message || 'Gagal melakukan aksi.', 'error')
+      }
     }
   }
 

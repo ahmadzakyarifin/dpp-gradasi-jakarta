@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/config"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/helper"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kontak/dto"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kontak/service"
@@ -13,10 +14,15 @@ import (
 
 type KontakHandler struct {
 	svc service.KontakService
+	cfg *config.Config
 }
 
-func NewKontakHandler(svc service.KontakService) *KontakHandler {
-	return &KontakHandler{svc: svc}
+func NewKontakHandler(svc service.KontakService, cfg *config.Config) *KontakHandler {
+	return &KontakHandler{svc: svc, cfg: cfg}
+}
+
+func (h *KontakHandler) Cfg() *config.Config {
+	return h.cfg
 }
 
 // POST /api/v1/kontak — publik submit

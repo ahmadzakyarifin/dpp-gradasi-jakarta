@@ -4,6 +4,7 @@ import { slidersService } from '../../services/slidersService'
 import ConfirmDialog from '../../components/admin/ConfirmDialog'
 import ToastNotification from '../../components/admin/ToastNotification'
 import { resolveAssetUrl } from '../../utils/assetUrl'
+import { useFormErrors, useRateLimitCooldown } from '../../utils/parseApiError'
 
 const PAGE_SIZE = 5
 
@@ -36,6 +37,9 @@ export default function SlidersAdmin() {
 
   const [confirm, setConfirm] = useState({ isOpen: false, type: 'danger', title: '', message: '', action: null })
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
+  // Error backend: pesan error dari helper + countdown rate limit
+  const { applyError } = useFormErrors()
+  const { applyRateLimit } = useRateLimitCooldown()
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ show: true, message, type })
@@ -154,7 +158,11 @@ export default function SlidersAdmin() {
       setIsFormOpen(false)
       loadSliders()
     } catch (err) {
-      showToast(err.message || 'Gagal menyimpan slider', 'error')
+      const parsed = applyError(err)
+      applyRateLimit(err)
+      if (Object.keys(parsed.fieldErrors).length === 0) {
+        showToast(parsed.message || 'Gagal menyimpan slider', 'error')
+      }
     }
   }
 

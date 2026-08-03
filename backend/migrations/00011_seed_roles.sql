@@ -6,9 +6,6 @@
 INSERT INTO roles (name, display_name, description, is_active) VALUES
     ('super_admin', 'Super Administrator', 'Akses penuh ke seluruh modul, termasuk manajemen admin lain dan activity logs.', TRUE),
     ('admin', 'Administrator', 'Akses ke modul konten (berita, kegiatan, pengurus, sliders, kontak, settings).', TRUE),
-    ('editor', 'Editor', 'Akses terbatas untuk membuat dan mengelola konten kegiatan/berita.', TRUE),
-    ('admin_berita', 'Admin Berita', 'Akses khusus untuk mengelola modul berita saja.', TRUE);
--- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin

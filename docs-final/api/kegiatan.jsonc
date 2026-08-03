@@ -649,6 +649,65 @@
     }
   },
 
+  // ======================================================
+  // UPLOAD IMAGE KEGIATAN (Admin/Editor) — cover & galeri
+  // ======================================================
+  "upload_image": {
+    "method": "POST",
+    "endpoint": "/api/v1/kegiatan/upload-image",
+    "consumes": "multipart/form-data",
+    "produces": "application/json",
+    "authentication": {
+      "type": "Bearer Access Token"
+    },
+    "headers": {
+      "Accept": "application/json",
+      "Authorization": "Bearer <access_token>"
+    },
+    "security": {
+      "roles": ["super_admin", "admin", "editor"],
+      "rate_limit": "kegiatan-crud: 30 req/menit per user"
+    },
+    "request": {
+      "form_data": {
+        "image": "(file) PNG/JPG/WEBP, maks 5MB"
+      }
+    },
+    "notes": [
+      "Upload gambar cover/galeri kegiatan. Mengembalikan image_path yang bisa langsung dipakai di field image_path / gallery[].image_path saat create/update.",
+      "Rate limit mengikuti kegiatan-crud (30 req/menit per user) karena route berada di grup admin."
+    ],
+    "responses": {
+      "200": {
+        "description": "Gambar berhasil diunggah",
+        "body": {
+          "success": true,
+          "code": "IMAGE_UPLOADED",
+          "message": "Gambar berhasil diunggah.",
+          "data": {
+            "image_path": "/uploads/kegiatan/1767154211.png"
+          }
+        }
+      },
+      "400": {
+        "description": "File tidak valid (bukan gambar / terlalu besar)",
+        "body": {
+          "success": false,
+          "code": "VALIDATION_ERROR",
+          "message": "File harus berupa gambar PNG, JPG, atau WEBP maksimal 5MB"
+        }
+      },
+      "401": {
+        "description": "Token tidak valid / sesi berakhir",
+        "body": {
+          "success": false,
+          "code": "AUTH_TOKEN_INVALID_OR_EXPIRED",
+          "message": "Sesi login telah berakhir. Silakan login kembali."
+        }
+      }
+    }
+  },
+
     // ======================================================
     // BULK DELETE KEGIATAN
     // ======================================================

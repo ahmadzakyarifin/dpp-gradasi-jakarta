@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import PublicLayout from '../layouts/PublicLayout'
-import { useSettings } from '../context/SettingsContext'
+import { useSettings } from '../context/useSettings'
 import { resolveAssetUrl } from '../utils/assetUrl'
 import { beritaContent } from '../content/beritaContent'
 import { beritaService } from '../services/beritaService'

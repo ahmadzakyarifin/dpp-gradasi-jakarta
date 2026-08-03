@@ -13,7 +13,10 @@ func RegisterRoutes(api *gin.RouterGroup, h *handler.KontakHandler, jwtSecret st
 	kontakLimit := middleware.RateLimitRules("kontak_submit",
 		middleware.IP(5, time.Minute),
 	)
-	api.POST("/kontak", kontakLimit, h.Submit)
+	// Captcha juga untuk form kontak publik (target spam klasik tanpa login),
+	// hanya aktif kalau CAPTCHA_ENABLED=true + secret terisi di backend.
+	needCaptcha := middleware.RequiredCaptchaMiddleware(h.Cfg())
+	api.POST("/kontak", needCaptcha, kontakLimit, h.Submit)
 
 	// Admin — super_admin, admin
 	admin := api.Group("/admin/kontak")

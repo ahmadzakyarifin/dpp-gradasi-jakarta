@@ -27,4 +27,8 @@ type SettingsResponse struct {
 	CreatedAt          string   `json:"created_at"`
 	UpdatedAt          string   `json:"updated_at,omitempty"`
 	UpdatedBy          *uint    `json:"updated_by,omitempty"`
+
+	// Status CAPTCHA dari config backend — dibaca frontend (single source of truth)
+	CaptchaEnabled bool   `json:"captcha_enabled,omitempty"`
+	CaptchaSiteKey string `json:"captcha_site_key,omitempty"`
 }

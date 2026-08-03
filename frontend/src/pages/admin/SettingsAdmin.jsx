@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react'
 import AdminLayout from '../../layouts/AdminLayout'
 import { settingsService } from '../../services/settingsService'
-import { useSettings } from '../../context/SettingsContext'
+import { useSettings } from '../../context/useSettings'
 import { resolveAssetUrl } from '../../utils/assetUrl'
+import { useFormErrors, useRateLimitCooldown } from '../../utils/parseApiError'
 
 export default function SettingsAdmin() {
   const { refresh } = useSettings()
   const [currentTab, setCurrentTab] = useState('profil')
   const [loading, setLoading] = useState(false)
+  // Error backend: field errors inline + countdown rate limit
+  const { applyError } = useFormErrors()
+  const { applyRateLimit } = useRateLimitCooldown()
   const [logoUploading, setLogoUploading] = useState(false)
   const [logoPreview, setLogoPreview] = useState(null)
   const [saved, setSaved] = useState(false)
@@ -92,7 +96,11 @@ export default function SettingsAdmin() {
         showToast(res.message || 'Gagal mengunggah logo.', true)
       }
     } catch (err) {
-      showToast(err.message || 'Terjadi kesalahan saat mengunggah logo.', true)
+      const parsed = applyError(err)
+      applyRateLimit(err)
+      if (Object.keys(parsed.fieldErrors).length === 0) {
+        showToast(parsed.message || 'Terjadi kesalahan saat mengunggah logo.', true)
+      }
     } finally {
       setLogoUploading(false)
     }
@@ -104,7 +112,7 @@ export default function SettingsAdmin() {
 
     // Buang field meta yang tidak boleh dikirim (backend: id/updated_by harus string/null,
     // dan itu bukan kontrak update) + konversi about_mission ke array of string
-    const { id, created_at, updated_at, updated_by, ...rest } = formData
+    const { id: _id, created_at: _ca, updated_at: _ua, updated_by: _ub, ...rest } = formData
     const payload = {
       ...rest,
       about_mission: (rest.about_mission || '')
@@ -120,7 +128,11 @@ export default function SettingsAdmin() {
         showToast('Gagal menyimpan: ' + res.message, true)
       }
     } catch (err) {
-      showToast(err?.message || 'Terjadi kesalahan saat menyimpan pengaturan', true)
+      const parsed = applyError(err)
+      applyRateLimit(err)
+      if (Object.keys(parsed.fieldErrors).length === 0) {
+        showToast(parsed.message || 'Terjadi kesalahan saat menyimpan pengaturan', true)
+      }
     } finally {
       setLoading(false)
     }

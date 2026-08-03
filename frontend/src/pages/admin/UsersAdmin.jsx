@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import AdminLayout from '../../layouts/AdminLayout'
 import { userService } from '../../services/userService'
 import { roleService } from '../../services/roleService'
+import { useFormErrors, useRateLimitCooldown } from '../../utils/parseApiError'
 
 export default function UsersAdmin() {
   const [users, setUsers] = useState([])
@@ -45,8 +46,11 @@ export default function UsersAdmin() {
   const [toast, setToast] = useState({
     show: false,
     message: '',
-    type: 'success' // success, error
+    type: 'success'
   })
+  // Error backend: pesan error dari helper + countdown rate limit
+  const { applyError } = useFormErrors()
+  const { applyRateLimit } = useRateLimitCooldown()
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type })
@@ -142,7 +146,11 @@ export default function UsersAdmin() {
       showToast('Admin berhasil dibuat. Kredensial login dikirim ke email admin!', 'success')
       fetchUsers()
     } catch (err) {
-      showToast(err.message || 'Gagal mengirim undangan admin baru.', 'error')
+      const parsed = applyError(err)
+      applyRateLimit(err)
+      if (Object.keys(parsed.fieldErrors).length === 0) {
+        showToast(parsed.message || 'Gagal mengirim undangan admin baru.', 'error')
+      }
     }
   }
 

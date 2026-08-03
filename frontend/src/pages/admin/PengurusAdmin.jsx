@@ -4,6 +4,7 @@ import { pengurusService } from '../../services/pengurusService'
 import ConfirmDialog from '../../components/admin/ConfirmDialog'
 import ToastNotification from '../../components/admin/ToastNotification'
 import { resolveAssetUrl } from '../../utils/assetUrl'
+import { useFormErrors, useRateLimitCooldown } from '../../utils/parseApiError'
 
 const PAGE_SIZE = 10
 
@@ -41,6 +42,9 @@ export default function PengurusAdmin() {
 
   const [confirm, setConfirm] = useState({ isOpen: false, type: 'danger', title: '', message: '', action: null })
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
+  // Error backend: pesan error dari helper + countdown rate limit
+  const { applyError } = useFormErrors()
+  const { applyRateLimit } = useRateLimitCooldown()
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ show: true, message, type })
@@ -137,7 +141,11 @@ export default function PengurusAdmin() {
         setIsFormOpen(false)
         loadPengurus()
       } catch (err) {
-        showToast(err.message || 'Gagal menyimpan pengurus', 'error')
+        const parsed = applyError(err)
+        applyRateLimit(err)
+        if (Object.keys(parsed.fieldErrors).length === 0) {
+          showToast(parsed.message || 'Gagal menyimpan pengurus', 'error')
+        }
       }
     } else {
       try {
@@ -146,7 +154,11 @@ export default function PengurusAdmin() {
         setIsFormOpen(false)
         loadPengurus()
       } catch (err) {
-        showToast(err.message || 'Gagal menyimpan pengurus', 'error')
+        const parsed = applyError(err)
+        applyRateLimit(err)
+        if (Object.keys(parsed.fieldErrors).length === 0) {
+          showToast(parsed.message || 'Gagal menyimpan pengurus', 'error')
+        }
       }
     }
   }

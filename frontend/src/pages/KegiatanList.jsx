@@ -9,7 +9,6 @@ export default function KegiatanList() {
   const categoryParam = searchParams.get('category') || ''
 
   const [items, setItems] = useState([])
-  const [loading, setLoading] = useState(true)
 
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState(categoryParam)
@@ -30,7 +29,6 @@ export default function KegiatanList() {
         }
       })
       .catch(() => {})
-      .finally(() => setLoading(false))
   }, [])
 
   useEffect(() => {

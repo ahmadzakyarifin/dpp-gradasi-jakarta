@@ -138,7 +138,7 @@ export function useRateLimitCooldown() {
       setCooldown((c) => (c > 1 ? c - 1 : 0))
     }, 1000)
     return () => clearInterval(timer)
-  }, [cooldown > 0])
+  }, [cooldown])
 
   const applyRateLimit = useCallback((err) => {
     const retryAfter = Number(err?.retryAfter) || Number(err?.data?.retry_after) || 0

@@ -8,7 +8,6 @@ export default function Kepengurusan() {
   const activeTab = searchParams.get('tab') || 'ketua'
   
   const [allPengurus, setAllPengurus] = useState([])
-  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedProvinsi, setSelectedProvinsi] = useState('')
   const [selectedKabupaten, setSelectedKabupaten] = useState('')
@@ -25,7 +24,6 @@ export default function Kepengurusan() {
         }
       })
       .catch(() => {})
-      .finally(() => setLoading(false))
   }, [])
 
   useEffect(() => {

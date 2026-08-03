@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { useSettings } from '../context/SettingsContext'
+import { useSettings } from '../context/useSettings'
 import { resolveAssetUrl } from '../utils/assetUrl'
 import NavbarBeritaSearch from '../components/NavbarBeritaSearch'
 
@@ -9,7 +9,6 @@ export default function PublicLayout({ children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [kegiatanDropdown, setKegiatanDropdown] = useState(false)
   const [informasiDropdown, setInformasiDropdown] = useState(false)
-  const [pengurusDropdown, setPengurusDropdown] = useState(false)
 
   const location = useLocation()
 

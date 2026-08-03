@@ -1,5 +1,7 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { createContext, useEffect, useState, useCallback } from 'react'
 import { settingsService } from '../services/settingsService'
+
+export const SettingsContext = createContext(null)
 
 const DEFAULT_SETTINGS = {
   site_name: 'DPP GRADASI',
@@ -24,9 +26,11 @@ const DEFAULT_SETTINGS = {
   greeting_date: '11 Februari 2026',
   greeting_content: 'Memasuki tahun 2026, GRADASI menetapkan pilar utama perjuangan: memastikan setiap masyarakat memiliki kecakapan digital (digital skills), serta mengembangkan program literasi yang berdampak nyata bagi pertumbuhan ekonomi lokal.',
   greeting_image_path: 'https://gradasi.org/uploads/img/event-terkini/1767154211.jpg',
+  // Status CAPTCHA dari backend (single source of truth) — diisi oleh fetch,
+  // default false supaya aman kalau backend belum menyediakan.
+  captcha_enabled: false,
+  captcha_site_key: '',
 }
-
-const SettingsContext = createContext(null)
 
 export function SettingsProvider({ children }) {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS)
@@ -55,10 +59,4 @@ export function SettingsProvider({ children }) {
       {children}
     </SettingsContext.Provider>
   )
-}
-
-export function useSettings() {
-  const ctx = useContext(SettingsContext)
-  if (!ctx) throw new Error('useSettings harus dipakai di dalam SettingsProvider')
-  return ctx
 }

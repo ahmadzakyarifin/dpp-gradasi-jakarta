@@ -281,14 +281,7 @@ export default function BeritaAdmin() {
     showToast('Filter direset.', 'info')
   }
 
-  const filteredItems = items.filter(item => {
-    const matchesSearch = !searchQuery || item.title.toLowerCase().includes(searchQuery.toLowerCase())
-    let matchesStatus = true
-    if (filterStatus === 'published' && !item.is_published) matchesStatus = false
-    if (filterStatus === 'draft' && item.is_published) matchesStatus = false
-    return matchesSearch && matchesStatus
-  })
-
+  // Filter/search ditangani backend via query param — lihat loadBerita().
   const paginatedItems = items
   const totalPages = meta.total_pages || 1
 

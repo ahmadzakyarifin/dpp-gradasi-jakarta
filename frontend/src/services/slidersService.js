@@ -1,17 +1,6 @@
 import { apiRequest } from '../api'
 import { normalizeImage } from '../utils/normalizeImage'
 
-function toQuery(params = {}) {
-  const query = new URLSearchParams()
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      query.set(key, value)
-    }
-  })
-  const text = query.toString()
-  return text ? `?${text}` : ''
-}
-
 export const slidersService = {
   // Publik — hanya slider aktif (tanpa param query, sesuai kontrak)
   list() {

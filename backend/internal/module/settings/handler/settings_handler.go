@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/config"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/helper"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/middleware"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/settings/service"
@@ -16,11 +17,12 @@ type SettingsHandler interface {
 }
 
 type settingsHandler struct {
-	service service.SettingsService
+	service  service.SettingsService
+	security config.SecurityConfig
 }
 
-func NewSettingsHandler(service service.SettingsService) SettingsHandler {
-	return &settingsHandler{service}
+func NewSettingsHandler(service service.SettingsService, security config.SecurityConfig) SettingsHandler {
+	return &settingsHandler{service: service, security: security}
 }
 
 func (h *settingsHandler) GetSettings(c *gin.Context) {
@@ -29,6 +31,12 @@ func (h *settingsHandler) GetSettings(c *gin.Context) {
 		helper.HandleServiceError(c, err)
 		return
 	}
+
+	// Tambahkan status CAPTCHA dari config backend (single source of truth) —
+	// frontend membaca ini alih-alih env VITE_* sendiri, supaya tidak mungkin
+	// FE aktif tapi BE tidak (atau sebaliknya).
+	settings.CaptchaEnabled = h.security.CaptchaEnabled
+	settings.CaptchaSiteKey = h.security.TurnstileSiteKey
 
 	helper.SuccessResponse(c, http.StatusOK, "SETTINGS_RETRIEVED", "Konfigurasi website berhasil diambil", settings, nil)
 }

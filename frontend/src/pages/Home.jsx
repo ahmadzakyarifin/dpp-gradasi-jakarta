@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import PublicLayout from '../layouts/PublicLayout'
-import { useSettings } from '../context/SettingsContext'
+import { useSettings } from '../context/useSettings'
+import CaptchaWidget from '../components/auth/CaptchaWidget'
 import { resolveAssetUrl } from '../utils/assetUrl'
 import { slidersService } from '../services/slidersService'
 import { kegiatanService } from '../services/kegiatanService'
@@ -30,6 +31,9 @@ export default function Home() {
   const [contactForm, setContactForm] = useState({ nama: '', email: '', subjek: '', pesan: '' })
   const [contactSuccess, setContactSuccess] = useState(false)
   const [contactLoading, setContactLoading] = useState(false)
+  const [contactCaptchaToken, setContactCaptchaToken] = useState('')
+  const [contactCaptchaError, setContactCaptchaError] = useState(false)
+  const captchaEnabled = !!settings?.captcha_enabled
 
   // Floating Headset Contact Toggle
   const [floatingOpen, setFloatingOpen] = useState(false)
@@ -129,11 +133,17 @@ export default function Home() {
   const handleContactSubmit = async (e) => {
     e.preventDefault()
     if (!contactForm.nama || !contactForm.email || !contactForm.pesan) return
+    if (captchaEnabled && !contactCaptchaToken) {
+      setContactCaptchaError(true)
+      return
+    }
     setContactLoading(true)
     try {
-      await kontakService.submit(contactForm)
+      await kontakService.submit({ ...contactForm, captcha_token: contactCaptchaToken || undefined })
       setContactSuccess(true)
       setContactForm({ nama: '', email: '', subjek: '', pesan: '' })
+      setContactCaptchaToken('')
+      setContactCaptchaError(false)
       setTimeout(() => setContactSuccess(false), 5000)
     } catch (err) {
       alert('Gagal mengirim pesan: ' + (err.response?.data?.message || err.message))
@@ -754,6 +764,9 @@ export default function Home() {
                       className="w-full px-4 py-3 rounded-lg border border-slate-200 text-sm focus:border-brand-500 focus:outline-none bg-white transition resize-none"
                     />
                   </div>
+                  {captchaEnabled && (
+                    <CaptchaWidget onVerify={(token) => { setContactCaptchaToken(token); setContactCaptchaError(false) }} hasError={contactCaptchaError} />
+                  )}
                   <button 
                     type="submit" 
                     disabled={contactLoading}

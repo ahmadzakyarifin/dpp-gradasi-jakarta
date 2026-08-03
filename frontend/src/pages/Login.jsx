@@ -6,13 +6,15 @@ import CaptchaWidget from '../components/auth/CaptchaWidget'
 import { authContent } from '../content/authContent'
 import { authService } from '../services/authService'
 import { validateEmail } from '../utils/validation'
+import { useSettings } from '../context/useSettings'
 
 export default function Login() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const login = useAuthStore((state) => state.login)
-
-  const captchaEnabled = import.meta.env.VITE_CAPTCHA_ENABLED === 'true' || import.meta.env.VITE_CAPTCHA_ENABLED === true
+  // Status CAPTCHA dari backend (single source of truth)
+  const { settings } = useSettings()
+  const captchaEnabled = !!settings?.captcha_enabled
 
   const initialView = searchParams.get('view') === 'forgot' ? 'forgot' : 'login'
   const [view, setView] = useState(initialView)

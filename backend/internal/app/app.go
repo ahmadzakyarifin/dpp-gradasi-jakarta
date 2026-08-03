@@ -1,6 +1,7 @@
 package app
 
 import (
+	"strings"
 	"time"
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/config"
@@ -80,10 +81,24 @@ func NewApp(database *gorm.DB, appConfig *config.Config) *App {
 		configureCloudflareClientIP(routerEngine)
 	}
 
-	// Enable CORS
+	// Enable CORS — whitelist origin dari env ALLOWED_ORIGINS (comma-separated).
+	// Development default: http://localhost:5173 (Vite). Production wajib diisi
+	// daftar origin frontend yang sah — jangan pernah wildcard dengan credentials.
+	allowedOrigins := strings.Split(appConfig.App.AllowedOrigins, ",")
+	for i := range allowedOrigins {
+		allowedOrigins[i] = strings.TrimSpace(allowedOrigins[i])
+	}
 	routerEngine.Use(cors.New(cors.Config{
 		AllowOriginFunc: func(origin string) bool {
-			return true
+			if origin == "" {
+				return true // non-browser request (curl, server-to-server)
+			}
+			for _, allowed := range allowedOrigins {
+				if allowed != "" && origin == allowed {
+					return true
+				}
+			}
+			return false
 		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"},
@@ -129,7 +144,7 @@ func NewApp(database *gorm.DB, appConfig *config.Config) *App {
 	// Kontak
 	kontakRepo := kontakrepo.NewKontakRepo(database)
 	kontakSvc := kontakservice.NewKontakService(database, kontakRepo, activityLogSvc)
-	kontakHandler := kontakhandler.NewKontakHandler(kontakSvc)
+	kontakHandler := kontakhandler.NewKontakHandler(kontakSvc, appConfig)
 
 	// Pengurus
 	pengurusRepo := pengurusrepo.NewPengurusRepo(database)
@@ -149,7 +164,7 @@ func NewApp(database *gorm.DB, appConfig *config.Config) *App {
 	// Settings
 	settingsRepo := settingsrepo.NewSettingsRepo(database)
 	settingsSvc := settingsservice.NewSettingsService(database, settingsRepo, activityLogSvc)
-	settingsHandler := settingshandler.NewSettingsHandler(settingsSvc)
+	settingsHandler := settingshandler.NewSettingsHandler(settingsSvc, appConfig.Security)
 
 	// Dashboard
 	dashboardSvc := dashboardservice.NewDashboardService(database, activityLogSvc)
