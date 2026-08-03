@@ -19,9 +19,22 @@ export const useAuthStore = create((set, get) => ({
     set({ token })
   },
 
+  // Setelah inisialisasi awal selesai (fetchMe global di App), flag ini true.
+  // Dipakai untuk menghindari flash: AdminLayout menampilkan skeleton sidebar
+  // selama role belum diketahui, bukan fallback "tampilkan semua menu".
+  appReady: false,
+  markAppReady: () => set({ appReady: true }),
+
   setUser: (user) => {
     const role = user?.role?.name || user?.role_name || null
+    if (role) localStorage.setItem('user_role', role)
     set({ user, role })
+  },
+
+  logoutLocal: () => {
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('user_role')
+    set({ token: null, user: null, role: null, appReady: true, error: null })
   },
 
   login: async ({ email, password, rememberMe = false, captcha_token = '' }) => {
@@ -43,6 +56,7 @@ export const useAuthStore = create((set, get) => ({
 
       localStorage.setItem('access_token', token)
       const role = user?.role?.name || user?.role_name || null
+      if (role) localStorage.setItem('user_role', role)
       set({
         token,
         user,
@@ -64,18 +78,17 @@ export const useAuthStore = create((set, get) => ({
       if (response && response.data) {
         const user = response.data
         const role = user?.role?.name || user?.role_name || null
+        if (role) localStorage.setItem('user_role', role)
         set({ user, role })
         return user
       }
     } catch {
-      // Return local user fallback
+      // Token invalid/expired → bersihkan sesi lokal
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('user_role')
+      set({ token: null, user: null, role: null })
     }
     return get().user
-  },
-
-  logoutLocal: () => {
-    localStorage.removeItem('access_token')
-    set({ token: null, user: null, error: null })
   },
 
   logout: async () => {

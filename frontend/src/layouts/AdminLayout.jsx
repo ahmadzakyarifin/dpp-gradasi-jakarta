@@ -1,6 +1,7 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import { useAuthStore } from '../store/useAuthStore'
+import { resolveAssetUrl } from '../utils/assetUrl'
 
 const sidebarLinks = [
   { path: '/dashboard', label: 'Dashboard', icon: 'ph-squares-four' },
@@ -18,10 +19,50 @@ export default function AdminLayout({ children, title = 'Admin Panel', headerCon
   const navigate = useNavigate()
   const location = useLocation()
   const logout = useAuthStore((state) => state.logout)
+  const user = useAuthStore((state) => state.user)
   const role = useAuthStore((state) => state.role)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
-  const visibleLinks = role ? sidebarLinks.filter((l) => !l.roles || l.roles.includes(role)) : sidebarLinks
+  // Selama role belum diketahui (baru refresh, fetchMe masih jalan),
+  // jangan fallback ke "tampilkan semua menu" — tampilkan skeleton.
+  if (!role) {
+    return (
+      <div className="font-sans antialiased overflow-hidden flex h-screen bg-gray-50 text-gray-800">
+        <aside className="w-64 bg-brand-900 text-white flex flex-col h-full shrink-0 shadow-lg z-10">
+          <div className="h-16 flex items-center px-6 border-b border-white/10 shrink-0">
+            <span className="font-heading font-bold text-xl tracking-wide">
+              GRADASI<span className="text-brand-400">Admin</span>
+            </span>
+          </div>
+          <nav className="flex-1 overflow-y-auto py-4 space-y-2 px-3">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-10 rounded-lg bg-white/10 animate-pulse" />
+            ))}
+          </nav>
+          <div className="p-4 border-t border-white/10 shrink-0">
+            <div className="h-10 rounded-lg bg-white/10 animate-pulse" />
+          </div>
+        </aside>
+        <main className="flex-1 flex flex-col h-full overflow-hidden">
+          <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shrink-0 shadow-sm z-10">
+            <h1 className="font-heading font-semibold text-gray-800 text-lg shrink-0">{title}</h1>
+          </header>
+          <div className="flex-1 overflow-auto bg-gray-50 p-8">
+            <div className="max-w-7xl mx-auto space-y-6">
+              <div className="h-40 rounded-2xl bg-white animate-pulse" />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="h-32 rounded-2xl bg-white animate-pulse" />
+                ))}
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  const visibleLinks = sidebarLinks.filter((l) => !l.roles || l.roles.includes(role))
 
   function handleLogout() {
     logout()
@@ -85,11 +126,11 @@ export default function AdminLayout({ children, title = 'Admin Panel', headerCon
                 className="flex items-center gap-2 hover:bg-gray-100 p-2 rounded-lg transition-all"
               >
                 <img
-                  src="https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff"
-                  className="w-8 h-8 rounded-full border border-gray-200"
-                  alt="Admin"
+                  src={user?.photo_path ? resolveAssetUrl(user.photo_path) : `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'Admin')}&background=0D8ABC&color=fff`}
+                  className="w-8 h-8 rounded-full border border-gray-200 object-cover"
+                  alt={user?.name || 'Admin'}
                 />
-                <span className="text-sm font-medium text-gray-700">Admin</span>
+                <span className="text-sm font-medium text-gray-700">{user?.name || 'Admin'}</span>
                 <i className="ph ph-caret-down text-gray-500" />
               </button>
               {userMenuOpen && (
