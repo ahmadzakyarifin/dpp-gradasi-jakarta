@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import PublicLayout from '../layouts/PublicLayout'
 import { pengurusService } from '../services/pengurusService'
+import { resolveAssetUrl } from '../utils/assetUrl'
 
 export default function Kepengurusan() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -167,7 +168,7 @@ export default function Kepengurusan() {
               {allPengurus.filter(item => item.level === 'ketua').map(item => (
                 <div key={item.id} className="bg-white rounded-3xl p-8 md:p-12 border border-slate-200/80 shadow-[0_15px_40px_rgba(0,0,0,0.06)] flex flex-col items-center text-center max-w-md w-full">
                   <div className="w-40 h-40 rounded-full overflow-hidden mb-6 border-4 border-brand-100 p-1 shadow-md bg-slate-50">
-                    <img src={item.image_url.startsWith('http') ? item.image_url : `http://127.0.0.1:8080${item.image_url}`} alt={item.name} className="w-full h-full object-cover rounded-full" />
+                    <img src={resolveAssetUrl(item.image_url || item.image_path)} alt={item.name} className="w-full h-full object-cover rounded-full" />
                   </div>
                   <h3 className="font-heading font-extrabold text-slate-900 text-2xl md:text-3xl mb-1 tracking-tight">{item.name}</h3>
                   <p className="text-sm font-bold text-brand-600 tracking-wider uppercase mb-1">{item.role}</p>
@@ -196,7 +197,7 @@ export default function Kepengurusan() {
               {paginatedList.map(item => (
                 <div key={item.id} className="card-lift bg-white rounded-2xl p-6 border border-slate-100 flex flex-col items-center text-center hover:border-brand-200 hover:shadow-[0_8px_30px_rgba(37,99,235,0.08)] transition-all duration-300 group">
                   <div className="w-28 h-28 rounded-full overflow-hidden mb-5 border-4 border-slate-50 group-hover:border-brand-100 transition duration-300 shadow-sm">
-                    <img src={item.image_url.startsWith('http') ? item.image_url : `http://127.0.0.1:8080${item.image_url}`} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
+                    <img src={resolveAssetUrl(item.image_url || item.image_path)} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
                   </div>
                   <div className="flex-grow flex flex-col w-full">
                     <h4 className="font-heading font-bold text-slate-900 text-base mb-1 group-hover:text-brand-600 transition">{item.name}</h4>

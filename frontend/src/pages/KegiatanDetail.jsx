@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import PublicLayout from '../layouts/PublicLayout'
 import { kegiatanService } from '../services/kegiatanService'
+import { resolveAssetUrl } from '../utils/assetUrl'
 
 export default function KegiatanDetail() {
   const { slug } = useParams()
@@ -64,7 +65,7 @@ export default function KegiatanDetail() {
               {kegiatan.image_url && (
                 <div className="rounded-2xl overflow-hidden max-h-[450px]">
                   <img 
-                    src={kegiatan.image_url.startsWith('http') ? kegiatan.image_url : `http://127.0.0.1:8080${kegiatan.image_url}`} 
+                    src={resolveAssetUrl(kegiatan.image_url)} 
                     alt={kegiatan.title} 
                     className="w-full h-full object-cover"
                   />
@@ -104,7 +105,7 @@ export default function KegiatanDetail() {
                     {kegiatan.gallery.map(img => (
                       <div key={img.id} className="rounded-xl overflow-hidden border border-slate-200 shadow-sm aspect-video bg-slate-50">
                         <img 
-                          src={img.image_url.startsWith('http') ? img.image_url : `http://127.0.0.1:8080${img.image_url}`} 
+                          src={resolveAssetUrl(img.image_url || img.image_path)} 
                           alt={img.caption || kegiatan.title} 
                           className="w-full h-full object-cover hover:scale-105 transition duration-300"
                         />
