@@ -19,6 +19,7 @@ import KegiatanAdmin from './pages/admin/KegiatanAdmin'
 import PengurusAdmin from './pages/admin/PengurusAdmin'
 import KontakAdmin from './pages/admin/KontakAdmin'
 import UsersAdmin from './pages/admin/UsersAdmin'
+import RoleAdmin from './pages/admin/RoleAdmin'
 import ActivityLogAdmin from './pages/admin/ActivityLogAdmin'
 
 import { useAuthStore } from './store/useAuthStore'
@@ -151,6 +152,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={ROLES.USERS}>
                 <UsersAdmin />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/roles"
+            element={
+              <ProtectedRoute allowedRoles={ROLES.USERS}>
+                <RoleAdmin />
               </ProtectedRoute>
             }
           />
