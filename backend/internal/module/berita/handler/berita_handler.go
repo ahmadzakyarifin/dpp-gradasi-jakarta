@@ -97,6 +97,25 @@ func (h *BeritaHandler) Create(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusCreated, "BERITA_CREATED", "Berita berhasil diterbitkan.", resp, nil)
 }
 
+// POST /api/v1/berita/upload-image — admin (multipart field "image")
+// Upload gambar cover berita → path relatif /uploads/berita/<file>
+func (h *BeritaHandler) UploadImage(c *gin.Context) {
+	file, err := c.FormFile("image")
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "File gambar wajib diunggah (field 'image')", nil)
+		return
+	}
+
+	userID, _ := middleware.GetUserID(c)
+	_ = userID // upload tidak mencatat audit per-user (hanya simpan file)
+	resp, err := h.svc.UploadImage(c.Request.Context(), file)
+	if err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+	helper.SuccessResponse(c, http.StatusOK, "BERITA_IMAGE_UPLOADED", "Gambar berhasil diunggah.", resp, nil)
+}
+
 // PUT /api/v1/berita/:id — admin
 func (h *BeritaHandler) Update(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)

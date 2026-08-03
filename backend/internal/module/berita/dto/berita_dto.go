@@ -86,3 +86,8 @@ type BeritaQuery struct {
 type BulkRequest struct {
 	IDs []uint `json:"ids" binding:"required,min=1"`
 }
+
+// UploadImageResponse — hasil upload gambar berita (cover)
+type UploadImageResponse struct {
+	ImagePath string `json:"image_path"`
+}

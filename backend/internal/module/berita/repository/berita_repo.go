@@ -122,7 +122,8 @@ func (r *beritaRepo) FindBySlug(slug string) (*entity.Berita, error) {
 	err := r.db.Model(&model.Berita{}).
 		Select("berita.*, users.name as author_name").
 		Joins("LEFT JOIN users ON users.id = berita.author_id").
-		Where("berita.slug = ?", slug).Preload("Tags").First(&b).Error
+		Where("berita.slug = ? AND berita.is_published = ?", slug, true).
+		Preload("Tags").First(&b).Error
 	if err != nil {
 		return nil, err
 	}

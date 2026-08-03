@@ -1,5 +1,5 @@
 import { useContext } from 'react'
-import { SettingsContext } from './SettingsContext'
+import { SettingsContext } from './settingsContextObject'
 
 // Dipisah dari SettingsContext.jsx supaya fast-refresh React tidak rusak
 // (file dengan export context provider + hook dalam satu modul).

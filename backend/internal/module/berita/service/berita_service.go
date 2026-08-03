@@ -3,8 +3,15 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io"
+	"mime/multipart"
+	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/helper"
 	activitylogdto "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/dto"
@@ -29,16 +36,23 @@ type BeritaService interface {
 	BulkDelete(ctx context.Context, ids []uint) error
 	BulkRestore(ctx context.Context, ids []uint) error
 	GetCategories(ctx context.Context) ([]string, error)
+	UploadImage(ctx context.Context, file *multipart.FileHeader) (*dto.UploadImageResponse, error)
 }
 
 type beritaService struct {
-	db    *gorm.DB
-	repo  repository.BeritaRepo
-	audit activitylogservice.ActivityLogService
+	db         *gorm.DB
+	repo       repository.BeritaRepo
+	audit      activitylogservice.ActivityLogService
+	uploadPath string
 }
 
 func NewBeritaService(db *gorm.DB, repo repository.BeritaRepo, audit activitylogservice.ActivityLogService) BeritaService {
-	return &beritaService{db: db, repo: repo, audit: audit}
+	return &beritaService{
+		db:         db,
+		repo:       repo,
+		audit:      audit,
+		uploadPath: "public/uploads/berita",
+	}
 }
 
 func (s *beritaService) log(ctx context.Context, db *gorm.DB, input *activitylogdto.ActivityLogInput) {
@@ -136,6 +150,75 @@ func (s *beritaService) GetByID(ctx context.Context, id uint) (*dto.BeritaDetail
 	}
 	resp := mapper.EntityToDetail(b)
 	return &resp, nil
+}
+
+// UploadImage menyimpan file gambar cover berita ke public/uploads/berita.
+// Mengembalikan path relatif yang bisa langsung dipakai di image_path.
+func (s *beritaService) UploadImage(ctx context.Context, file *multipart.FileHeader) (*dto.UploadImageResponse, error) {
+	if file == nil {
+		return nil, helper.NewServiceError("VALIDATION_ERROR", "File gambar wajib diunggah", nil)
+	}
+
+	// Validasi ukuran: maks 5MB
+	if file.Size > 5*1024*1024 {
+		return nil, helper.NewServiceError("VALIDATION_ERROR", "File gambar tidak valid. Maksimal 5MB dengan format PNG, JPG, atau WEBP.", nil)
+	}
+
+	// Validasi MIME type
+	src, err := file.Open()
+	if err != nil {
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal membaca file gambar.", err)
+	}
+	defer src.Close()
+
+	header := make([]byte, 512)
+	n, err := src.Read(header)
+	if err != nil && err != io.EOF {
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal membaca file gambar.", err)
+	}
+	// Reset reader agar bisa dibaca ulang saat copy
+	if _, err := src.Seek(0, io.SeekStart); err != nil {
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal membaca file gambar.", err)
+	}
+
+	mimeType := http.DetectContentType(header[:n])
+	switch mimeType {
+	case "image/png", "image/jpeg", "image/webp":
+	default:
+		return nil, helper.NewServiceError("VALIDATION_ERROR", "File gambar tidak valid. Maksimal 5MB dengan format PNG, JPG, atau WEBP.", nil)
+	}
+
+	ext := filepath.Ext(file.Filename)
+	if ext == "" {
+		switch mimeType {
+		case "image/png":
+			ext = ".png"
+		case "image/webp":
+			ext = ".webp"
+		default:
+			ext = ".jpg"
+		}
+	}
+	filename := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
+
+	// Pastikan direktori upload ada
+	if err := os.MkdirAll(s.uploadPath, 0o755); err != nil {
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal menyimpan file gambar.", err)
+	}
+
+	dst := filepath.Join(s.uploadPath, filename)
+	out, err := os.Create(dst)
+	if err != nil {
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal menyimpan file gambar.", err)
+	}
+	defer out.Close()
+
+	if _, err := io.Copy(out, src); err != nil {
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal menyimpan file gambar.", err)
+	}
+
+	imagePath := "/uploads/berita/" + filename
+	return &dto.UploadImageResponse{ImagePath: imagePath}, nil
 }
 
 func (s *beritaService) Create(ctx context.Context, req *dto.BeritaCreateRequest, authorID uint) (*dto.BeritaDetailResponse, error) {

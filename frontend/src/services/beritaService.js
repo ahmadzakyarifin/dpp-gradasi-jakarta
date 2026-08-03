@@ -50,6 +50,15 @@ export const beritaService = {
     })
   },
 
+  uploadImage(file) {
+    const fd = new FormData()
+    fd.append('image', file)
+    return apiRequest('/berita/upload-image', {
+      method: 'POST',
+      body: fd,
+    })
+  },
+
   update(id, payload) {
     return apiRequest(`/berita/${id}`, {
       method: 'PUT',

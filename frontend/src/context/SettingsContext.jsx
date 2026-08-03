@@ -1,7 +1,6 @@
-import { createContext, useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { settingsService } from '../services/settingsService'
-
-export const SettingsContext = createContext(null)
+import { SettingsContext } from './settingsContextObject'
 
 const DEFAULT_SETTINGS = {
   site_name: 'DPP GRADASI',

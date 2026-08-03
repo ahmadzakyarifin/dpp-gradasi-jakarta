@@ -5,6 +5,7 @@ import { beritaContent } from '../../content/beritaContent'
 import ConfirmDialog from '../../components/admin/ConfirmDialog'
 import ToastNotification from '../../components/admin/ToastNotification'
 import { useFormErrors, useRateLimitCooldown } from '../../utils/parseApiError'
+import { resolveAssetUrl } from '../../utils/assetUrl'
 
 const PAGE_SIZE = 5
 
@@ -75,10 +76,31 @@ export default function BeritaAdmin() {
   // Error dari backend: field errors inline + countdown rate limit
   const { applyError, clearFieldError } = useFormErrors()
   const { cooldown, isLimited, applyRateLimit } = useRateLimitCooldown()
+  // Upload foto cover
+  const [imageUploading, setImageUploading] = useState(false)
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ show: true, message, type })
   }, [])
+
+  // Upload gambar cover berita → set formData.image_path dari path relatif backend
+  const handleImageUpload = async (file) => {
+    if (!file) return
+    setImageUploading(true)
+    try {
+      const res = await beritaService.uploadImage(file)
+      if (res?.data?.image_path) {
+        setFormData(prev => ({ ...prev, image_path: res.data.image_path }))
+        showToast('Gambar berhasil diunggah.')
+      } else {
+        showToast('Gagal mengunggah gambar.', 'error')
+      }
+    } catch (err) {
+      showToast(err?.message || 'Gagal mengunggah gambar.', 'error')
+    } finally {
+      setImageUploading(false)
+    }
+  }
 
   const loadBerita = useCallback(async () => {
     setLoading(true)
@@ -418,7 +440,13 @@ export default function BeritaAdmin() {
                     </td>
                     <td className="p-4">
                       <div className="flex items-start gap-3">
-                        <img src={item.image_url} alt="" className="w-16 h-12 rounded-lg object-cover border border-slate-200 shrink-0" />
+                        {item.image_url || item.image_path ? (
+                          <img src={resolveAssetUrl(item.image_url || item.image_path)} alt="" className="w-16 h-12 rounded-lg object-cover border border-slate-200 shrink-0" />
+                        ) : (
+                          <div className="w-16 h-12 rounded-lg bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center text-slate-300">
+                            <i className="ph ph-image text-lg" />
+                          </div>
+                        )}
                         <div>
                           <p className="font-semibold text-slate-900 leading-snug line-clamp-1">{item.title}</p>
                           <span className="inline-block bg-slate-100 text-slate-600 text-[10px] font-semibold px-2 py-0.5 rounded-full mt-1">
@@ -621,8 +649,37 @@ export default function BeritaAdmin() {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">URL Gambar</label>
-                <input type="text" value={formData.image_path} onChange={e => setFormData({ ...formData, image_path: e.target.value })} className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Gambar Cover</label>
+                <div className="flex items-center gap-3">
+                  {formData.image_path && (
+                    <img src={resolveAssetUrl(formData.image_path)} alt="Cover" className="w-24 h-16 rounded-lg object-cover border border-slate-200 shrink-0" />
+                  )}
+                  <label className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 text-sm font-semibold cursor-pointer transition shrink-0">
+                    <i className="ph-bold ph-upload-simple" />
+                    {imageUploading ? 'Mengunggah...' : (formData.image_path ? 'Ganti Gambar' : 'Upload Gambar')}
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="hidden"
+                      disabled={imageUploading}
+                      onChange={e => {
+                        const file = e.target.files?.[0]
+                        if (file) handleImageUpload(file)
+                        e.target.value = ''
+                      }}
+                    />
+                  </label>
+                  {formData.image_path && (
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, image_path: '' })}
+                      className="text-xs text-red-500 hover:text-red-700 font-medium"
+                    >
+                      Hapus
+                    </button>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1.5">PNG / JPG / WEBP · maks 5MB.</p>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1">Ringkasan (Excerpt)</label>
