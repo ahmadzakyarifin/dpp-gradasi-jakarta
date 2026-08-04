@@ -200,7 +200,7 @@ func (r *activityLogRepository) GetSummary(
 	summary.HighRisk = highRisk
 
 	failedLogin, err := r.countQuery(ctx, r.buildQuery(req).
-		Where("action = ?", "auth.failed_login"))
+		Where("action = ?", "auth.login_failed"))
 	if err != nil {
 		return summary, err
 	}
@@ -209,7 +209,7 @@ func (r *activityLogRepository) GetSummary(
 
 	// Aktivitas CMS = semua aksi admin selain failed login (dashboard admin).
 	cms, err := r.countQuery(ctx, r.buildQuery(req).
-		Where("action <> ?", "auth.failed_login"))
+		Where("action <> ?", "auth.login_failed"))
 	if err != nil {
 		return summary, err
 	}

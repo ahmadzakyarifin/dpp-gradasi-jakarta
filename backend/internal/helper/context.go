@@ -8,7 +8,6 @@ type contextKey string
 // middleware) supaya bisa dipakai helper & middleware tanpa circular import.
 const (
 	ContextUserID    contextKey = "user_id"
-	ContextRoleID    contextKey = "role_id"
 	ContextEmail     contextKey = "email"
 	ContextRoleName  contextKey = "role_name"
 	ContextUserName  contextKey = "user_name"

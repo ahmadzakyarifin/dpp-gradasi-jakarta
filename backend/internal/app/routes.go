@@ -8,7 +8,6 @@ import (
 	kegiatan "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kegiatan"
 	kontak "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kontak"
 	pengurus "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/pengurus"
-	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/role"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/settings"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/sliders"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/user"
@@ -23,7 +22,6 @@ func registerRoutes(app *App) {
 	kegiatan.RegisterRoutes(api, app.kegiatanHandler, app.Cfg.JWT.Secret)
 	kontak.RegisterRoutes(api, app.kontakHandler, app.Cfg.JWT.Secret)
 	pengurus.RegisterRoutes(api, app.pengurusHandler, app.Cfg.JWT.Secret)
-	role.RegisterRoutes(api, app.roleHandler, app.Cfg.JWT.Secret)
 	user.RegisterRoutes(api, app.userHandler, app.Cfg.JWT.Secret)
 	settings.RegisterRoutes(api, app.settingsHandler, app.Cfg.JWT.Secret)
 	activitylog.RegisterRoutes(api, app.activityLogHandler, app.Cfg.JWT.Secret)

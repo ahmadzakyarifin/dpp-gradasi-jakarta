@@ -7,14 +7,14 @@ import (
 type UserCreateReq struct {
 	Name   string `json:"name" binding:"required,min=2"`
 	Email  string `json:"email" binding:"required,email"`
-	RoleID uint   `json:"role_id" binding:"required"`
+	Role   string `json:"role" binding:"required,oneof=super_admin admin"`
 	Status string `json:"status" binding:"omitempty,oneof=active inactive"`
 }
 
 type UserUpdateReq struct {
 	Name   string `json:"name" binding:"required,min=2"`
 	Email  string `json:"email" binding:"required,email"`
-	RoleID uint   `json:"role_id" binding:"required"`
+	Role   string `json:"role" binding:"required,oneof=super_admin admin"`
 	Status string `json:"status" binding:"omitempty,oneof=active inactive"`
 }
 
@@ -26,7 +26,7 @@ func (req *UserCreateReq) ToEntity() *entity.User {
 	return &entity.User{
 		Name:   req.Name,
 		Email:  req.Email,
-		RoleID: req.RoleID,
+		Role:   req.Role,
 		Status: status,
 	}
 }
@@ -37,7 +37,7 @@ func (req *UserUpdateReq) Apply(e *entity.User) {
 	}
 	e.Name = req.Name
 	e.Email = req.Email
-	e.RoleID = req.RoleID
+	e.Role = req.Role
 	if req.Status != "" {
 		e.Status = req.Status
 	}
@@ -67,7 +67,6 @@ func (q *UserQueryReq) Normalize() {
 
 type UserResponse struct {
 	ID              uint    `json:"id"`
-	RoleID          uint    `json:"role_id"`
 	Role            string  `json:"role"`
 	IsSystem        bool    `json:"is_system"`
 	RoleName        string  `json:"role_name"`

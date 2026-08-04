@@ -2,17 +2,12 @@ package entity
 
 import (
 	"time"
-
-	roleentity "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/role/entity"
 )
 
 type User struct {
 	ID                 uint
-	RoleID             uint
+	Role               string // super_admin | admin (enum users.role)
 	IsSystem           bool
-	RoleName           string
-	RoleDisplayName    string
-	Role               *roleentity.Role
 	Name               string
 	Email              string
 	PhotoPath          *string

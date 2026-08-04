@@ -40,13 +40,17 @@ func UpdateReqToEntity(req *dto.UserUpdateReq, user *entity.User) {
 }
 
 func UserEntityToResponse(user entity.User) dto.UserResponse {
+	roleName := user.Role
+	roleDisplayName := "Admin"
+	if user.Role == "super_admin" {
+		roleDisplayName = "Super Administrator"
+	}
 	return dto.UserResponse{
 		ID:              user.ID,
-		RoleID:          user.RoleID,
-		Role:            user.RoleName,
+		Role:            user.Role,
 		IsSystem:        user.IsSystem,
-		RoleName:        user.RoleName,
-		RoleDisplayName: user.RoleDisplayName,
+		RoleName:        roleName,
+		RoleDisplayName: roleDisplayName,
 		Name:            user.Name,
 		Email:           user.Email,
 		PhotoPath:       user.PhotoPath,

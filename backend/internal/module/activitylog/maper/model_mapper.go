@@ -4,6 +4,7 @@ import (
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/dto"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/entity"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/model"
+	"time"
 )
 
 // =========================================
@@ -114,7 +115,7 @@ func EntityToResponse(e *entity.ActivityLog) dto.ActivityLogItemRes {
 		IPAddress:   e.IPAddress,
 		UserAgent:   e.UserAgent,
 		Metadata:    e.Metadata,
-		CreatedAt:   e.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		CreatedAt:   e.CreatedAt.UTC().Format(time.RFC3339),
 	}
 }
 
@@ -137,6 +138,6 @@ func EntityToDetailResponse(e *entity.ActivityLog) dto.ActivityLogDetailRes {
 		IPAddress:   e.IPAddress,
 		UserAgent:   e.UserAgent,
 		Metadata:    e.Metadata,
-		CreatedAt:   e.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		CreatedAt:   e.CreatedAt.UTC().Format(time.RFC3339),
 	}
 }

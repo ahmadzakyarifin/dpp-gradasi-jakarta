@@ -22,7 +22,6 @@ const KegiatanAdmin = lazy(() => import('./pages/admin/KegiatanAdmin'))
 const PengurusAdmin = lazy(() => import('./pages/admin/PengurusAdmin'))
 const KontakAdmin = lazy(() => import('./pages/admin/KontakAdmin'))
 const UsersAdmin = lazy(() => import('./pages/admin/UsersAdmin'))
-const RoleAdmin = lazy(() => import('./pages/admin/RoleAdmin'))
 const ActivityLogAdmin = lazy(() => import('./pages/admin/ActivityLogAdmin'))
 
 import { useAuthStore } from './store/useAuthStore'
@@ -31,15 +30,12 @@ import ProtectedRoute from './components/ProtectedRoute'
 
 // Mapping role per route — cocokkan dengan middleware RoleMiddleware di backend:
 //   dashboard & activitylog & user : super_admin
-//   berita  : super_admin, admin, admin_berita
-//   kegiatan: super_admin, admin, editor
-//   settings/sliders/kontak/pengurus : super_admin, admin
-//   role (manajemen role) : super_admin, admin
+//   berita/kegiatan/pengurus/sliders/kontak/settings : super_admin, admin
 //   profile : semua role yang sudah login
 const ROLES = {
   DASHBOARD: ['super_admin'],
-  BERITA: ['super_admin', 'admin', 'admin_berita'],
-  KEGIATAN: ['super_admin', 'admin', 'editor'],
+  BERITA: ['super_admin', 'admin'],
+  KEGIATAN: ['super_admin', 'admin'],
   PENGURUS: ['super_admin', 'admin'],
   SLIDERS: ['super_admin', 'admin'],
   KONTAK: ['super_admin', 'admin'],
@@ -167,14 +163,6 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={ROLES.USERS}>
                   <UsersAdmin />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/roles"
-              element={
-                <ProtectedRoute allowedRoles={ROLES.USERS}>
-                  <RoleAdmin />
                 </ProtectedRoute>
               }
             />

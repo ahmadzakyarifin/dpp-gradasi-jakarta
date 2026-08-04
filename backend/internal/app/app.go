@@ -22,9 +22,6 @@ import (
 	pengurushandler "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/pengurus/handler"
 	pengurusrepo "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/pengurus/repository"
 	pengurusservice "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/pengurus/service"
-	rolehandler "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/role/handler"
-	rolerepo "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/role/repository"
-	roleservice "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/role/service"
 	settingshandler "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/settings/handler"
 	settingsrepo "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/settings/repository"
 	settingsservice "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/settings/service"
@@ -58,7 +55,6 @@ type App struct {
 	kontakHandler      *kontakhandler.KontakHandler
 	pengurusHandler    *pengurushandler.PengurusHandler
 	userHandler        *userhandler.UserHandler
-	roleHandler        *rolehandler.RoleHandler
 	settingsHandler    settingshandler.SettingsHandler
 	activityLogHandler *activityloghandler.ActivityLogHandler
 	ActivityLogSvc     activitylogservice.ActivityLogService
@@ -156,11 +152,6 @@ func NewApp(database *gorm.DB, appConfig *config.Config) *App {
 	userSvc := userservice.NewUserService(database, userRepo, authRepo, activityLogSvc, mailer, appConfig)
 	userHandler := userhandler.NewUserHandler(userSvc, appConfig)
 
-	// Role
-	roleRepo := rolerepo.NewRoleRepo(database)
-	roleSvc := roleservice.NewRoleService(database, roleRepo, activityLogSvc)
-	roleHandler := rolehandler.NewRoleHandler(roleSvc)
-
 	// Settings
 	settingsRepo := settingsrepo.NewSettingsRepo(database)
 	settingsSvc := settingsservice.NewSettingsService(database, settingsRepo, activityLogSvc)
@@ -182,7 +173,6 @@ func NewApp(database *gorm.DB, appConfig *config.Config) *App {
 		kontakHandler:      kontakHandler,
 		pengurusHandler:    pengurusHandler,
 		userHandler:        userHandler,
-		roleHandler:        roleHandler,
 		settingsHandler:    settingsHandler,
 		activityLogHandler: activityLogHandler,
 		ActivityLogSvc:     activityLogSvc,

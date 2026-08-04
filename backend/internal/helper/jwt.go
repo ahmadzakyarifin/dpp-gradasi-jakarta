@@ -11,19 +11,17 @@ import (
 type JWTClaims struct {
 	UserID   uint   `json:"user_id"`
 	Email    string `json:"email"`
-	RoleID   uint   `json:"role_id"`
-	Name     string `json:"name"`
 	RoleName string `json:"role_name"`
+	Name     string `json:"name"`
 	jwt.RegisteredClaims
 }
 
-func GenerateAccessToken(userID uint, email string, roleID uint, name string, roleName string, secret string, ttlMins int) (string, error) {
+func GenerateAccessToken(userID uint, email string, name string, role string, secret string, ttlMins int) (string, error) {
 	claims := &JWTClaims{
 		UserID:   userID,
 		Email:    email,
-		RoleID:   roleID,
+		RoleName: role,
 		Name:     name,
-		RoleName: roleName,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(ttlMins) * time.Minute)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

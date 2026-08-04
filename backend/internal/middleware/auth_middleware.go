@@ -44,14 +44,13 @@ func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
 			return
 		}
 
-		if claims.RoleID == 0 {
+		if claims.RoleName == "" {
 			helper.ErrorResponse(c, http.StatusForbidden, "AUTH_TOKEN_INVALID_OR_EXPIRED", "Role pengguna tidak valid.", nil)
 			c.Abort()
 			return
 		}
 
 		c.Set(helper.ContextUserID, claims.UserID)
-		c.Set(helper.ContextRoleID, claims.RoleID)
 		c.Set(helper.ContextEmail, claims.Email)
 		c.Set(helper.ContextUserName, claims.Name)
 		c.Set(helper.ContextRoleName, claims.RoleName)
@@ -61,7 +60,6 @@ func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
 
 		ctx := c.Request.Context()
 		ctx = context.WithValue(ctx, helper.ContextUserID, claims.UserID)
-		ctx = context.WithValue(ctx, helper.ContextRoleID, claims.RoleID)
 		ctx = context.WithValue(ctx, helper.ContextEmail, claims.Email)
 		ctx = context.WithValue(ctx, helper.ContextUserName, claims.Name)
 		ctx = context.WithValue(ctx, helper.ContextRoleName, claims.RoleName)
@@ -78,15 +76,6 @@ func GetUserID(c *gin.Context) (uint, bool) {
 	}
 	userID, ok := id.(uint)
 	return userID, ok
-}
-
-func GetRoleID(c *gin.Context) (uint, bool) {
-	id, ok := c.Get(helper.ContextRoleID)
-	if !ok {
-		return 0, false
-	}
-	roleID, ok := id.(uint)
-	return roleID, ok
 }
 
 func GetEmail(c *gin.Context) (string, bool) {

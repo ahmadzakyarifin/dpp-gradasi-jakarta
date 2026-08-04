@@ -13,7 +13,7 @@ import (
 type UserRepo interface {
 	Create(ctx context.Context, db *gorm.DB, user *entity.User) error
 	CreateTx(ctx context.Context, user *entity.User) error
-	FindAll(ctx context.Context, roleID uint) ([]entity.User, error)
+	FindAll(ctx context.Context, role string) ([]entity.User, error)
 	FindByID(ctx context.Context, id uint) (*entity.User, error)
 	FindByEmail(ctx context.Context, email string) (*entity.User, error)
 	Update(ctx context.Context, db *gorm.DB, user *entity.User) error
@@ -22,7 +22,7 @@ type UserRepo interface {
 	UpdatePassword(ctx context.Context, id uint, passwordHash string) error
 	Activate(ctx context.Context, id uint) error
 	ToggleStatus(ctx context.Context, id uint) error
-	FindPaginated(ctx context.Context, page, limit int, search, roleIDStr, status, sort string, trashed bool) ([]entity.User, int, error)
+	FindPaginated(ctx context.Context, page, limit int, search, role, status, sort string, trashed bool) ([]entity.User, int, error)
 	CountActive(ctx context.Context) (int, error)
 	BulkDelete(ctx context.Context, ids []uint) error
 	Restore(ctx context.Context, id uint) error
@@ -51,10 +51,10 @@ func (r *userRepo) Create(ctx context.Context, db *gorm.DB, u *entity.User) erro
 	return nil
 }
 
-func (r *userRepo) FindAll(ctx context.Context, roleID uint) ([]entity.User, error) {
-	q := r.db.WithContext(ctx).Preload("Role")
-	if roleID != 0 {
-		q = q.Where("role_id = ?", roleID)
+func (r *userRepo) FindAll(ctx context.Context, role string) ([]entity.User, error) {
+	q := r.db.WithContext(ctx)
+	if role != "" {
+		q = q.Where("role = ?", role)
 	}
 	var models []model.UserModel
 	if err := q.Find(&models).Error; err != nil {
@@ -69,7 +69,7 @@ func (r *userRepo) FindAll(ctx context.Context, roleID uint) ([]entity.User, err
 
 func (r *userRepo) FindByID(ctx context.Context, id uint) (*entity.User, error) {
 	var m model.UserModel
-	err := r.db.WithContext(ctx).Unscoped().Preload("Role").Where("users.id = ?", id).First(&m).Error
+	err := r.db.WithContext(ctx).Unscoped().Where("users.id = ?", id).First(&m).Error
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func (r *userRepo) FindByID(ctx context.Context, id uint) (*entity.User, error) 
 
 func (r *userRepo) FindByEmail(ctx context.Context, email string) (*entity.User, error) {
 	var m model.UserModel
-	err := r.db.WithContext(ctx).Unscoped().Preload("Role").Where("email = ?", email).First(&m).Error
+	err := r.db.WithContext(ctx).Unscoped().Where("email = ?", email).First(&m).Error
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func (r *userRepo) Update(ctx context.Context, db *gorm.DB, u *entity.User) erro
 	}
 	m := mapper.EntityToUserModel(u)
 	updates := map[string]any{
-		"role_id":    m.RoleID,
+		"role":       m.Role,
 		"name":       m.Name,
 		"email":      m.Email,
 		"photo_path": m.PhotoPath,
@@ -190,7 +190,7 @@ func (r *userRepo) ToggleStatus(ctx context.Context, id uint) error {
 		Update("status", gorm.Expr("CASE WHEN status = 'active' THEN 'inactive' ELSE 'active' END")).Error
 }
 
-func (r *userRepo) FindPaginated(ctx context.Context, page, limit int, search, roleIDStr, status, sort string, trashed bool) ([]entity.User, int, error) {
+func (r *userRepo) FindPaginated(ctx context.Context, page, limit int, search, role, status, sort string, trashed bool) ([]entity.User, int, error) {
 	q := r.db.WithContext(ctx).Model(&model.UserModel{})
 
 	if trashed {
@@ -209,8 +209,8 @@ func (r *userRepo) FindPaginated(ctx context.Context, page, limit int, search, r
 		q = q.Where("users.name LIKE ? OR users.email LIKE ?", s, s)
 	}
 
-	if roleIDStr != "" {
-		q = q.Where("users.role_id = ?", roleIDStr)
+	if role != "" {
+		q = q.Where("users.role = ?", role)
 	}
 
 	var total int64
@@ -233,7 +233,6 @@ func (r *userRepo) FindPaginated(ctx context.Context, page, limit int, search, r
 
 	var models []model.UserModel
 	err := q.
-		Preload("Role").
 		Limit(limit).
 		Offset((page - 1) * limit).
 		Find(&models).Error

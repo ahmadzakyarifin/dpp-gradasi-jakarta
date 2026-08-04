@@ -5,13 +5,12 @@ import { resolveAssetUrl } from '../utils/assetUrl'
 
 const sidebarLinks = [
   { path: '/dashboard', label: 'Dashboard', icon: 'ph-squares-four' },
-  { path: '/admin/berita', label: 'Berita', icon: 'ph-article', roles: ['super_admin', 'admin', 'admin_berita'] },
-  { path: '/admin/kegiatan', label: 'Kegiatan', icon: 'ph-calendar-check', roles: ['super_admin', 'admin', 'editor'] },
+  { path: '/admin/berita', label: 'Berita', icon: 'ph-article', roles: ['super_admin', 'admin'] },
+  { path: '/admin/kegiatan', label: 'Kegiatan', icon: 'ph-calendar-check', roles: ['super_admin', 'admin'] },
   { path: '/admin/pengurus', label: 'Pengurus', icon: 'ph-users-three' },
   { path: '/admin/sliders', label: 'Sliders', icon: 'ph-image' },
   { path: '/admin/kontak', label: 'Pesan Kontak', icon: 'ph-envelope-simple' },
   { path: '/admin/users', label: 'Manajemen Admin', icon: 'ph-user-gear', roles: ['super_admin'] },
-  { path: '/admin/roles', label: 'Manajemen Role', icon: 'ph-shield-star', roles: ['super_admin'] },
   { path: '/admin/activity-log', label: 'Activity Log', icon: 'ph-clock-counter-clockwise', roles: ['super_admin'] },
   { path: '/admin/settings', label: 'Pengaturan Website', icon: 'ph-gear' },
 ]

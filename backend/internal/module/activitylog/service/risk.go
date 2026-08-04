@@ -15,11 +15,6 @@ var highRisk = map[string]struct{}{
 	"users.bulk_delete":   {},
 	"users.toggle_status": {},
 	"users.change_role":   {},
-
-	// Roles
-	"roles.update":      {},
-	"roles.delete":      {},
-	"roles.bulk_delete": {},
 }
 
 // mediumRisk: aksi perubahan data yang berdampak sedang.
@@ -38,12 +33,6 @@ var mediumRisk = map[string]struct{}{
 	"users.activate":          {},
 	"users.update_profile":    {},
 	"users.resend_activation": {},
-
-	// Roles
-	"roles.create":        {},
-	"roles.restore":       {},
-	"roles.bulk_restore":  {},
-	"roles.status_update": {},
 
 	// CMS — Berita
 	"berita.create":       {},

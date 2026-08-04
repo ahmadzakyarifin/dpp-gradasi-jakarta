@@ -16,9 +16,20 @@ function formatCreatedAt(isoString) {
   if (!isoString) {
     return { datePart: '', hourPart: '' }
   }
-  const date = new Date(isoString)
+  let date = new Date(isoString)
   if (Number.isNaN(date.getTime())) {
     return { datePart: '', hourPart: '' }
+  }
+  // Backend (model_mapper.go) sekarang mengirim RFC3339 UTC jujur (…Z / +07:00).
+  // Untuk data lama yang mungkin dikirim sebagai local-time tanpa offset
+  // (…T11:07:58 tanpa Z), jangan biarkan JS menganggapnya UTC lalu +7 jam:
+  // parse manual, dan kalau tidak ada offset/Z, perlakukan sebagai waktu lokal.
+  if (!/Z|[+-]\d{2}:?\d{2}$/.test(isoString.trim())) {
+    const m = isoString.trim().match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/)
+    if (m) {
+      const [, y, mo, d, h, mi, s = '0'] = m
+      date = new Date(+y, +mo - 1, +d, +h, +mi, +s)
+    }
   }
   const datePart = date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
   const hourPart = date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })

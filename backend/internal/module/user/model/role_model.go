@@ -7,6 +7,7 @@ import (
 )
 
 // RoleModel memetakan tabel roles.
+// Disalin dari modul role (dipakai join user->role untuk role_name/is_system).
 type RoleModel struct {
 	ID          uint           `gorm:"column:id;primaryKey;autoIncrement"`
 	Name        string         `gorm:"column:name;not null"`

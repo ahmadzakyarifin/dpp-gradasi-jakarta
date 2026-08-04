@@ -3,8 +3,6 @@ package mapper
 import (
 	"time"
 
-	roleentity "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/role/entity"
-	rolemapper "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/role/mapper"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/user/entity"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/user/model"
 )
@@ -18,18 +16,6 @@ func ModelToUserEntity(m *model.UserModel) *entity.User {
 		return nil
 	}
 
-	var role *roleentity.Role
-	roleName := ""
-	roleDisplayName := ""
-
-	if m.Role != nil {
-		role = rolemapper.ModelToEntity(m.Role)
-		if role != nil {
-			roleName = role.Name
-			roleDisplayName = role.DisplayName
-		}
-	}
-
 	var deletedAt *time.Time
 	if m.DeletedAt.Valid {
 		t := m.DeletedAt.Time
@@ -38,11 +24,8 @@ func ModelToUserEntity(m *model.UserModel) *entity.User {
 
 	return &entity.User{
 		ID:                 m.ID,
-		RoleID:             m.RoleID,
-		IsSystem:           role != nil && role.IsSystem,
-		Role:               role,
-		RoleName:           roleName,
-		RoleDisplayName:    roleDisplayName,
+		Role:               m.Role,
+		IsSystem:           m.Role == "super_admin",
 		Name:               m.Name,
 		Email:              m.Email,
 		PhotoPath:          m.PhotoPath,
@@ -64,7 +47,7 @@ func EntityToUserModel(e *entity.User) *model.UserModel {
 
 	m := &model.UserModel{
 		ID:                 e.ID,
-		RoleID:             e.RoleID,
+		Role:               e.Role,
 		Name:               e.Name,
 		Email:              e.Email,
 		PhotoPath:          e.PhotoPath,

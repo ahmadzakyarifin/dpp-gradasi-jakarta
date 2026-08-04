@@ -3,16 +3,14 @@ package model
 import (
 	"time"
 
-	rolemodel "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/role/model"
 	"gorm.io/gorm"
 )
 
 // UserModel memetakan tabel users.
 type UserModel struct {
-	ID                 uint                 `gorm:"column:id;primaryKey;autoIncrement"`
-	RoleID             uint                 `gorm:"column:role_id;not null"`
-	Role               *rolemodel.RoleModel `gorm:"foreignKey:RoleID;references:ID"`
-	Name               string               `gorm:"column:name;not null"`
+	ID                 uint           `gorm:"column:id;primaryKey;autoIncrement"`
+	Role               string         `gorm:"column:role;not null;type:enum('super_admin','admin');default:admin"`
+	Name               string         `gorm:"column:name;not null"`
 	Email              string               `gorm:"column:email;unique;not null"`
 	Password           string               `gorm:"column:password"`
 	PhotoPath          *string              `gorm:"column:photo_path"`

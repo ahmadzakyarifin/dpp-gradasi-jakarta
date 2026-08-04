@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import AdminLayout from '../../layouts/AdminLayout'
 import { userService } from '../../services/userService'
-import { roleService } from '../../services/roleService'
 import { useFormErrors, useRateLimitCooldown } from '../../utils/parseApiError'
 
 export default function UsersAdmin() {
@@ -11,7 +10,6 @@ export default function UsersAdmin() {
 
   const [currentTab, setCurrentTab] = useState('active') // active, pending, trash
   const [search, setSearch] = useState('')
-  const [filterRole, setFilterRole] = useState('')
 
   // Pagination
   const [page, setPage] = useState(1)
@@ -22,16 +20,12 @@ export default function UsersAdmin() {
   // Selection
   const [selectedIds, setSelectedIds] = useState([])
 
-  // Roles (untuk dropdown form) — diambil dari GET /roles
-  const [roles, setRoles] = useState([])
-  const [allRoles, setAllRoles] = useState([])
-
-  // Modal Form (Create)
+  // Modal Form (Create) — hanya 2 role: super_admin (1) & admin (2)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    role_id: '' // diisi dari dropdown roles dinamis
+    role_id: '2' // default: Admin
   })
 
   // Confirm Modal
@@ -84,7 +78,6 @@ export default function UsersAdmin() {
     setLoading(true)
     const params = {
       search: search.trim(),
-      role: filterRole,
       page,
       limit
     }
@@ -116,7 +109,7 @@ export default function UsersAdmin() {
         setError(err.message || 'Kesalahan koneksi ke server')
       })
       .finally(() => setLoading(false))
-  }, [currentTab, search, filterRole, page, limit])
+  }, [currentTab, search, page, limit])
 
   useEffect(() => {
     setSelectedIds([])
@@ -127,21 +120,6 @@ export default function UsersAdmin() {
   useEffect(() => {
     fetchUsers()
   }, [fetchUsers])
-
-  // Ambil daftar role untuk dropdown form & filter
-  useEffect(() => {
-    roleService.list()
-      .then(res => {
-        const list = Array.isArray(res?.data) ? res.data : (res?.data?.roles || [])
-        setAllRoles(list)
-        const filtered = list.filter(r => r.name !== 'super_admin')
-        setRoles(filtered)
-        if (filtered.length > 0) {
-          setFormData(prev => ({ ...prev, role_id: filtered[0].id || '' }))
-        }
-      })
-      .catch(() => {}) // fallback: dropdown kosong, validasi BE akan menolak
-  }, [])
 
   const handleSearchSubmit = (e) => {
     e.preventDefault()
@@ -190,7 +168,7 @@ export default function UsersAdmin() {
     try {
       await userService.create(formData)
       setIsFormOpen(false)
-      setFormData({ name: '', email: '', role_id: roles[0]?.id || '' })
+      setFormData({ name: '', email: '', role_id: '2' })
       setTouched({})
       setFormErrors({})
       showToast('Admin berhasil dibuat. Kredensial login dikirim ke email admin!', 'success')
@@ -313,19 +291,6 @@ export default function UsersAdmin() {
           className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors"
         />
       </div>
-      <select
-        value={filterRole}
-        onChange={(e) => {
-          setFilterRole(e.target.value)
-          setPage(1)
-        }}
-        className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
-      >
-        <option value="">Semua Role</option>
-        {allRoles.map(role => (
-          <option key={role.id} value={role.id}>{role.display_name}</option>
-        ))}
-      </select>
       <button
         onClick={handleReset}
         className="shrink-0 bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all btn-press"
@@ -377,7 +342,7 @@ export default function UsersAdmin() {
           {currentTab === 'active' && (
             <button
               onClick={() => {
-                setFormData({ name: '', email: '', role_id: roles[0]?.id || '' })
+                setFormData({ name: '', email: '', role_id: '2' })
                 setFormErrors({})
                 setTouched({})
                 resetFieldErrors()
@@ -696,17 +661,15 @@ export default function UsersAdmin() {
                   }}
                   className={`w-full px-3 py-2 border rounded-xl focus:ring-brand-500 focus:border-brand-500 text-sm bg-white outline-none transition-colors ${touched.role_id && formErrors.role_id ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-gray-300'}`}
                 >
-                  {roles.length === 0 && <option value="">Pilih Role...</option>}
-                  {roles.map(r => (
-                    <option key={r.id} value={r.id}>{r.display_name || r.name}</option>
-                  ))}
+                  <option value="1">Super Admin</option>
+                  <option value="2">Admin</option>
                 </select>
                 {touched.role_id && formErrors.role_id && (
                   <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
                     <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.role_id}
                   </p>
                 )}
-                <p className="text-[10px] text-gray-400 mt-1">Super Admin (sistem) tidak bisa dibuat via undangan.</p>
+                <p className="text-[10px] text-gray-400 mt-1">Super Admin punya akses penuh (termasuk manajemen admin & log). Admin mengelola konten.</p>
               </div>
               <div className="flex justify-end gap-2 pt-4 border-t items-center mt-4">
                 <button
