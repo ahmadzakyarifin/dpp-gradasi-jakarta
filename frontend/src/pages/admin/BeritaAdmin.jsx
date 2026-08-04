@@ -48,6 +48,11 @@ export default function BeritaAdmin() {
   const [formErrors, setFormErrors] = useState({})
   const [touched, setTouched] = useState({})
 
+  // Modal Detail (read-only)
+  const [isDetailOpen, setIsDetailOpen] = useState(false)
+  const [detailData, setDetailData] = useState(null)
+  const [detailLoading, setDetailLoading] = useState(false)
+
   // Validasi custom — Bahasa Indonesia, per-field
   const validateForm = useCallback((data = formData) => {
     const errors = {}
@@ -153,22 +158,34 @@ export default function BeritaAdmin() {
     setSelectedItems([])
   }, [currentTab, searchQuery, filterStatus, filterSort])
 
-  function openForm(item = null) {
+  async function openForm(item = null) {
     setFormErrors({})
     setTouched({})
     if (item) {
       setFormMode('edit')
-      setFormData({
-        id: item.id,
-        title: item.title,
-        category: item.category,
-        published_date: item.published_date,
-        image_path: item.image_path || '',
-        excerpt: item.excerpt || '',
-        content: item.content || '',
-        tags: item.tags || '',
-        is_published: item.is_published,
-      })
+      // List admin (tabel) tidak membawa field content & tags, jadi ambil detail
+      // lengkap dari server supaya form edit terisi penuh (termasuk konten & tags).
+      setFormLoading(true)
+      try {
+        const res = await beritaService.detailById(item.id)
+        const d = res?.data || item
+        setFormData({
+          id: d.id ?? item.id,
+          title: d.title ?? item.title ?? '',
+          category: d.category ?? item.category ?? '',
+          published_date: d.published_date ?? item.published_date ?? '',
+          image_path: d.image_path ?? item.image_path ?? '',
+          excerpt: d.excerpt ?? item.excerpt ?? '',
+          content: d.content ?? '',
+          tags: Array.isArray(d.tags) ? d.tags.join(', ') : (d.tags ?? ''),
+          is_published: typeof d.is_published === 'boolean' ? d.is_published : !!item.is_published,
+        })
+        setIsFormOpen(true)
+      } catch (err) {
+        showToast(err?.message || 'Gagal memuat detail berita.', 'error')
+      } finally {
+        setFormLoading(false)
+      }
     } else {
       setFormMode('create')
       setFormData({
@@ -182,8 +199,22 @@ export default function BeritaAdmin() {
         tags: '',
         is_published: true,
       })
+      setIsFormOpen(true)
     }
-    setIsFormOpen(true)
+  }
+
+  async function openDetail(item) {
+    setIsDetailOpen(true)
+    setDetailLoading(true)
+    setDetailData(item)
+    try {
+      const res = await beritaService.detailById(item.id)
+      if (res?.data) setDetailData(res.data)
+    } catch (err) {
+      showToast(err?.message || 'Gagal memuat detail berita.', 'error')
+    } finally {
+      setDetailLoading(false)
+    }
   }
 
   async function handleSubmit(e) {
@@ -325,23 +356,27 @@ export default function BeritaAdmin() {
           className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors"
         />
       </div>
-      <select
-        value={filterStatus}
-        onChange={e => setFilterStatus(e.target.value)}
-        className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
-      >
-        <option value="">{beritaContent.admin.allStatus}</option>
-        <option value="published">Public</option>
-        <option value="draft">Draft</option>
-      </select>
-      <select
-        value={filterSort}
-        onChange={e => setFilterSort(e.target.value)}
-        className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
-      >
-        <option value="newest">Terbaru</option>
-        <option value="oldest">Terlama</option>
-      </select>
+      {currentTab !== 'trash' && (
+        <select
+          value={filterStatus}
+          onChange={e => setFilterStatus(e.target.value)}
+          className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
+        >
+          <option value="">{beritaContent.admin.allStatus}</option>
+          <option value="published">Public</option>
+          <option value="draft">Draft</option>
+        </select>
+      )}
+      {currentTab !== 'trash' && (
+        <select
+          value={filterSort}
+          onChange={e => setFilterSort(e.target.value)}
+          className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
+        >
+          <option value="newest">Terbaru</option>
+          <option value="oldest">Terlama</option>
+        </select>
+      )}
       <button
         onClick={resetFilter}
         className="shrink-0 bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all btn-press"
@@ -436,7 +471,6 @@ export default function BeritaAdmin() {
                   <th className="p-4">Kategori</th>
                   <th className="p-4">Penulis</th>
                   <th className="p-4">Tanggal Terbit</th>
-                  <th className="p-4 text-center">Dilihat</th>
                   <th className="p-4">Status</th>
                   <th className="p-4 text-right">Aksi</th>
                 </tr>
@@ -475,12 +509,6 @@ export default function BeritaAdmin() {
                       </div>
                     </td>
                     <td className="p-4 text-slate-500 text-xs whitespace-nowrap">{item.published_date}</td>
-                    <td className="p-4 text-center text-slate-500 text-xs font-semibold">
-                      <div className="flex items-center justify-center gap-1">
-                        <i className="ph ph-eye text-sm text-slate-400" />
-                        {item.views || 0}
-                      </div>
-                    </td>
                     <td className="p-4">
                       {currentTab === 'trash' ? (
                         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-500">
@@ -499,16 +527,19 @@ export default function BeritaAdmin() {
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-1">
+                        <button onClick={() => openDetail(item)} className="p-2 text-slate-400 hover:text-brand-600 rounded-lg" title="Detail">
+                          <i className="ph ph-eye text-base" />
+                        </button>
                         {currentTab === 'trash' ? (
                           <button onClick={() => confirmAction('restore', item.id)} className="p-2 text-slate-400 hover:text-emerald-600 rounded-lg" title="Pulihkan">
                             <i className="ph ph-arrow-counter-clockwise text-base" />
                           </button>
                         ) : (
                           <>
-                            <button onClick={() => openForm(item)} className="p-2 text-slate-400 hover:text-brand-600 rounded-lg">
+                            <button onClick={() => openForm(item)} className="p-2 text-slate-400 hover:text-brand-600 rounded-lg" title="Edit">
                               <i className="ph ph-pencil-simple text-base" />
                             </button>
-                            <button onClick={() => confirmAction('delete', item.id)} className="p-2 text-slate-400 hover:text-red-600 rounded-lg">
+                            <button onClick={() => confirmAction('delete', item.id)} className="p-2 text-slate-400 hover:text-red-600 rounded-lg" title="Hapus">
                               <i className="ph ph-trash text-base" />
                             </button>
                           </>
@@ -779,6 +810,76 @@ export default function BeritaAdmin() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* DETAIL MODAL (read-only) */}
+      {isDetailOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setIsDetailOpen(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden z-10">
+            <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
+              <h3 className="font-heading font-bold text-slate-900 text-lg">Detail Berita</h3>
+              <button onClick={() => setIsDetailOpen(false)} className="text-slate-400 hover:text-slate-600 p-1">
+                <i className="ph-bold ph-x text-lg" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto">
+              {detailLoading ? (
+                <div className="py-16 text-center text-slate-500">Memuat detail...</div>
+              ) : detailData ? (
+                <div className="space-y-4">
+                  {(detailData.image_url || detailData.image_path) && (
+                    <img src={resolveAssetUrl(detailData.image_url || detailData.image_path)} alt="" className="w-full h-48 object-cover rounded-xl border border-slate-200" />
+                  )}
+                  <div>
+                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Judul</span>
+                    <p className="font-bold text-slate-900 text-lg leading-snug">{detailData.title}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Kategori</span>
+                      <p className="text-slate-700 text-sm">{detailData.category || '-'}</p>
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Tanggal Terbit</span>
+                      <p className="text-slate-700 text-sm">{detailData.published_date || '-'}</p>
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Penulis</span>
+                      <p className="text-slate-700 text-sm">{detailData.author_name || 'Admin'}</p>
+                    </div>
+                  </div>
+                  {detailData.excerpt && (
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Ringkasan</span>
+                      <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-line">{detailData.excerpt}</p>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Konten Lengkap</span>
+                    <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-line break-words">{detailData.content || '-'}</p>
+                  </div>
+                  {Array.isArray(detailData.tags) && detailData.tags.length > 0 && (
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Tags</span>
+                      <div className="flex flex-wrap gap-1.5 mt-1">
+                        {detailData.tags.map(tag => (
+                          <span key={tag} className="bg-slate-100 text-slate-600 text-[11px] font-semibold px-2.5 py-1 rounded-full">{tag}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Status</span>
+                    <p className="text-slate-700 text-sm">{detailData.is_published ? 'Published' : 'Draft'}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="py-16 text-center text-slate-500">Data tidak ditemukan.</div>
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -84,20 +84,29 @@ func ModelListToEntity(models []model.PesanKontak) []entity.PesanKontak {
 	return list
 }
 
+// Koneksi DB memakai loc=Local, jadi time.Time di sini bukan UTC. Pakai RFC3339
+// yang menyertakan offset zona ("+07:00") — kalau di-hardcode "Z", frontend akan
+// menganggapnya UTC dan menggeser jam yang ditampilkan.
+const dateTimeLayout = time.RFC3339
+
 // EntityToListItem mengonversi entity menjadi list item response.
 func EntityToListItem(e *entity.PesanKontak) dto.KontakListItem {
 	if e == nil {
 		return dto.KontakListItem{}
 	}
-	return dto.KontakListItem{
+	item := dto.KontakListItem{
 		ID:        e.ID,
 		Nama:      e.Nama,
 		Email:     e.Email,
 		Subjek:    e.Subjek,
 		Pesan:     e.Pesan,
 		IsRead:    e.IsRead,
-		CreatedAt: e.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		CreatedAt: e.CreatedAt.Format(dateTimeLayout),
 	}
+	if e.DeletedAt != nil {
+		item.DeletedAt = e.DeletedAt.Format(dateTimeLayout)
+	}
+	return item
 }
 
 // EntityListToItem mengonversi daftar entity menjadi daftar list item response.
@@ -121,11 +130,14 @@ func EntityToDetail(e *entity.PesanKontak) dto.KontakDetailResponse {
 		Subjek:    e.Subjek,
 		Pesan:     e.Pesan,
 		IsRead:    e.IsRead,
-		CreatedAt: e.CreatedAt.Format("2006-01-02T15:04:05Z"),
-		UpdatedAt: e.UpdatedAt.Format("2006-01-02T15:04:05Z"),
+		CreatedAt: e.CreatedAt.Format(dateTimeLayout),
+		UpdatedAt: e.UpdatedAt.Format(dateTimeLayout),
 	}
 	if e.ResponseNote != nil {
 		resp.ResponseNote = *e.ResponseNote
+	}
+	if e.DeletedAt != nil {
+		resp.DeletedAt = e.DeletedAt.Format(dateTimeLayout)
 	}
 	return resp
 }

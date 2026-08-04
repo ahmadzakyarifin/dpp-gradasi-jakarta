@@ -98,7 +98,23 @@ func (s *settingsService) UpdateSettings(ctx context.Context, values map[string]
 
 	updates := make(map[string]interface{})
 
+	// Field yang dikirim balik FE dari hasil GET /settings tapi BUKAN kolom yang
+	// boleh diupdate lewat endpoint ini: id/created_at/updated_at/updated_by adalah
+	// field meta, sedangkan captcha_enabled/captcha_site_key dihitung dari config
+	// backend saat GET (lihat settings_handler.go), bukan kolom di tabel settings.
+	// Dilewati diam-diam supaya FE boleh mengirim balik object hasil GET tanpa
+	// harus membuang field-field ini satu per satu (sebelumnya captcha_enabled yang
+	// bertipe bool selalu ditolak sebagai "Tipe data tidak valid" dan membuat
+	// SELURUH proses simpan pengaturan gagal setiap kali).
+	ignoredKeys := map[string]bool{
+		"id": true, "created_at": true, "updated_at": true, "updated_by": true,
+		"captcha_enabled": true, "captcha_site_key": true,
+	}
+
 	for key, val := range values {
+		if ignoredKeys[key] {
+			continue
+		}
 		fieldName, found := jsonToField[key]
 		if !found {
 			errorsMap[key] = "Field tidak dikenal"
@@ -145,13 +161,17 @@ func (s *settingsService) UpdateSettings(ctx context.Context, values map[string]
 			continue
 		}
 
-		if strings.HasSuffix(key, "_email") && !helper.IsValidEmail(strVal) {
-			errorsMap[key] = "Format email tidak valid"
-			continue
-		}
-		if strings.HasSuffix(key, "_url") && !helper.IsValidURL(strVal) {
-			errorsMap[key] = "Format URL tidak valid"
-			continue
+		// String kosong berarti field opsional ini sengaja dikosongkan oleh admin —
+		// valid, jangan divalidasi format (kosong bukan berarti format email/URL salah).
+		if strVal != "" {
+			if strings.HasSuffix(key, "_email") && !helper.IsValidEmail(strVal) {
+				errorsMap[key] = "Format email tidak valid"
+				continue
+			}
+			if strings.HasSuffix(key, "_url") && !helper.IsValidURL(strVal) {
+				errorsMap[key] = "Format URL tidak valid"
+				continue
+			}
 		}
 
 		updates[key] = strVal

@@ -13,12 +13,15 @@ import (
 type KontakRepo interface {
 	FindAll(q dto.KontakQuery) ([]entity.PesanKontak, int64, error)
 	FindByID(id uint) (*entity.PesanKontak, error)
+	// FindAnyByID mengabaikan soft delete — dipakai untuk detail & restore pesan di Sampah.
+	FindAnyByID(id uint) (*entity.PesanKontak, error)
 	Create(p *entity.PesanKontak) error
 	MarkAsRead(id uint) error
 	Delete(id uint) error
 	Restore(id uint) error
-	BulkSoftDelete(ids []uint) error
-	BulkRestore(ids []uint) error
+	// Bulk* mengembalikan jumlah baris yang benar-benar berubah.
+	BulkSoftDelete(ids []uint) (int64, error)
+	BulkRestore(ids []uint) (int64, error)
 }
 
 type kontakRepo struct{ db *gorm.DB }
@@ -31,53 +34,80 @@ func (r *kontakRepo) FindAll(q dto.KontakQuery) ([]entity.PesanKontak, int64, er
 	var items []model.PesanKontak
 	var total int64
 
-	db := r.db.Model(&model.PesanKontak{})
+	trashed := q.IsTrashed()
 
-	if q.Status == "unread" {
-		db = db.Where("is_read = ?", false)
-	} else if q.Status == "read" {
-		db = db.Where("is_read = ?", true)
+	tx := r.db.Model(&model.PesanKontak{})
+
+	if trashed {
+		// Sampah: matikan soft-delete scope GORM, ambil hanya baris yang sudah dihapus.
+		tx = tx.Unscoped().Where("deleted_at IS NOT NULL")
+	} else {
+		// Kotak Masuk: soft-delete scope GORM sudah menambahkan "deleted_at IS NULL".
+		// Filter dibaca/belum dibaca hanya relevan di kotak masuk.
+		switch q.Status {
+		case "unread":
+			tx = tx.Where("is_read = ?", false)
+		case "read":
+			tx = tx.Where("is_read = ?", true)
+		}
 	}
 
-	if q.Search != "" {
-		s := "%" + strings.TrimSpace(q.Search) + "%"
-		db = db.Where("nama LIKE ? OR email LIKE ? OR subjek LIKE ? OR pesan LIKE ?", s, s, s, s)
+	// Pencarian berlaku di kedua tab. Kurungan wajib eksplisit supaya OR tidak
+	// "menelan" kondisi status/soft-delete di atas.
+	if s := strings.TrimSpace(q.Search); s != "" {
+		like := "%" + s + "%"
+		tx = tx.Where(
+			"(nama LIKE ? OR email LIKE ? OR subjek LIKE ? OR pesan LIKE ?)",
+			like, like, like, like,
+		)
 	}
 
-	if q.Status == "trashed" {
-		db = r.db.Unscoped().Model(&model.PesanKontak{}).Where("deleted_at IS NOT NULL")
-		db.Count(&total)
-		err := db.Order("deleted_at DESC").Find(&items).Error
-		return mapper.ModelListToEntity(items), total, err
+	// Session() membuat statement di-clone tiap finisher, jadi Count tidak
+	// meninggalkan SQL "SELECT count(*)" yang terpakai ulang oleh Find.
+	tx = tx.Session(&gorm.Session{})
+
+	if err := tx.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	if total == 0 {
+		return []entity.PesanKontak{}, 0, nil
 	}
 
-	db = db.Where("deleted_at IS NULL")
-	db.Count(&total)
-
-	switch q.Sort {
-	case "oldest":
-		db = db.Order("created_at ASC")
-	default:
-		db = db.Order("created_at DESC")
+	// Di Sampah, yang relevan adalah kapan pesan dibuang, bukan kapan dibuat.
+	orderColumn := "created_at"
+	if trashed {
+		orderColumn = "deleted_at"
+	}
+	direction := "DESC"
+	if q.Sort == "oldest" {
+		direction = "ASC"
 	}
 
-	page := q.Page
-	if page <= 0 {
-		page = 1
-	}
-	limit := q.Limit
-	if limit <= 0 {
-		limit = 10
-	}
-	offset := (page - 1) * limit
+	_, limit, offset := q.Pagination()
 
-	err := db.Limit(limit).Offset(offset).Find(&items).Error
-	return mapper.ModelListToEntity(items), total, err
+	err := tx.Order(orderColumn + " " + direction).
+		Limit(limit).
+		Offset(offset).
+		Find(&items).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return mapper.ModelListToEntity(items), total, nil
 }
 
 func (r *kontakRepo) FindByID(id uint) (*entity.PesanKontak, error) {
 	var p model.PesanKontak
 	err := r.db.First(&p, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return mapper.ModelToEntity(&p), nil
+}
+
+func (r *kontakRepo) FindAnyByID(id uint) (*entity.PesanKontak, error) {
+	var p model.PesanKontak
+	err := r.db.Unscoped().First(&p, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -98,13 +128,24 @@ func (r *kontakRepo) Delete(id uint) error {
 }
 
 func (r *kontakRepo) Restore(id uint) error {
-	return r.db.Unscoped().Model(&model.PesanKontak{}).Where("id = ?", id).Update("deleted_at", nil).Error
+	return r.db.Unscoped().Model(&model.PesanKontak{}).
+		Where("id = ? AND deleted_at IS NOT NULL", id).
+		Update("deleted_at", nil).Error
 }
 
-func (r *kontakRepo) BulkSoftDelete(ids []uint) error {
-	return r.db.Where("id IN ?", ids).Delete(&model.PesanKontak{}).Error
+// BulkSoftDelete hanya menghitung baris yang tadinya masih di kotak masuk —
+// scope soft-delete GORM otomatis menambahkan "deleted_at IS NULL".
+func (r *kontakRepo) BulkSoftDelete(ids []uint) (int64, error) {
+	tx := r.db.Where("id IN ?", ids).Delete(&model.PesanKontak{})
+	return tx.RowsAffected, tx.Error
 }
 
-func (r *kontakRepo) BulkRestore(ids []uint) error {
-	return r.db.Unscoped().Model(&model.PesanKontak{}).Where("id IN ?", ids).Update("deleted_at", nil).Error
+// BulkRestore hanya menyentuh baris yang benar-benar ada di Sampah, supaya
+// pesan yang masih di kotak masuk tidak ikut ter-update. Mengembalikan jumlah
+// baris yang berhasil dipulihkan.
+func (r *kontakRepo) BulkRestore(ids []uint) (int64, error) {
+	tx := r.db.Unscoped().Model(&model.PesanKontak{}).
+		Where("id IN ? AND deleted_at IS NOT NULL", ids).
+		Update("deleted_at", nil)
+	return tx.RowsAffected, tx.Error
 }

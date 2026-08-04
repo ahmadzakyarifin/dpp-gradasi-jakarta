@@ -140,8 +140,9 @@ export default function SettingsAdmin() {
     setLoading(true)
 
     // Buang field meta yang tidak boleh dikirim (backend: id/updated_by harus string/null,
-    // dan itu bukan kontrak update) + konversi about_mission ke array of string
-    const { id: _id, created_at: _ca, updated_at: _ua, updated_by: _ub, ...rest } = formData
+    // dan itu bukan kontrak update) + field hasil komputasi backend (captcha_*, bukan
+    // kolom settings) + konversi about_mission ke array of string
+    const { id: _id, created_at: _ca, updated_at: _ua, updated_by: _ub, captcha_enabled: _ce, captcha_site_key: _csk, ...rest } = formData
     const payload = {
       ...rest,
       about_mission: (rest.about_mission || '')

@@ -194,6 +194,11 @@ export default function Kepengurusan() {
                           <i className="ph-fill ph-instagram-logo text-lg" />
                         </a>
                       )}
+                      {item.linkedin_url && (
+                        <a href={item.linkedin_url} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:bg-brand-600 hover:text-white flex items-center justify-center transition shadow-xs">
+                          <i className="ph-fill ph-linkedin-logo text-lg" />
+                        </a>
+                      )}
                     </div>
                   </div>
                 ))
@@ -222,12 +227,21 @@ export default function Kepengurusan() {
                       {item.provinsi && <p className="text-[11px] text-slate-400 font-medium mb-4">{item.provinsi} {item.kabupaten ? `• ${item.kabupaten}` : ''}</p>}
                       
                       <div className="flex justify-center gap-3 mt-auto pt-4 border-t border-slate-100">
-                        <a href="#" className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:text-brand-600 flex items-center justify-center transition">
-                          <i className="ph-fill ph-facebook-logo" />
-                        </a>
-                        <a href="#" className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:text-brand-600 flex items-center justify-center transition">
-                          <i className="ph-fill ph-instagram-logo" />
-                        </a>
+                        {item.facebook_url && (
+                          <a href={item.facebook_url} target="_blank" rel="noreferrer" className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:text-brand-600 flex items-center justify-center transition">
+                            <i className="ph-fill ph-facebook-logo" />
+                          </a>
+                        )}
+                        {item.instagram_url && (
+                          <a href={item.instagram_url} target="_blank" rel="noreferrer" className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:text-brand-600 flex items-center justify-center transition">
+                            <i className="ph-fill ph-instagram-logo" />
+                          </a>
+                        )}
+                        {item.linkedin_url && (
+                          <a href={item.linkedin_url} target="_blank" rel="noreferrer" className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:text-brand-600 flex items-center justify-center transition">
+                            <i className="ph-fill ph-linkedin-logo" />
+                          </a>
+                        )}
                       </div>
                     </div>
                   </div>

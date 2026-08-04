@@ -57,6 +57,11 @@ export default function KegiatanAdmin() {
   const [formErrors, setFormErrors] = useState({})
   const [touched, setTouched] = useState({})
 
+  // Modal Detail (read-only)
+  const [isDetailOpen, setIsDetailOpen] = useState(false)
+  const [detailData, setDetailData] = useState(null)
+  const [detailLoading, setDetailLoading] = useState(false)
+
   const validateForm = useCallback((data = formData) => {
     const errors = {}
     if (!data.title || !data.title.trim()) {
@@ -189,6 +194,20 @@ export default function KegiatanAdmin() {
       setGallery([])
     }
     setIsFormOpen(true)
+  }
+
+  async function openDetail(item) {
+    setIsDetailOpen(true)
+    setDetailLoading(true)
+    setDetailData(item)
+    try {
+      const res = await kegiatanService.detailById(item.id)
+      if (res?.data) setDetailData(res.data)
+    } catch (err) {
+      showToast(err?.message || 'Gagal memuat detail kegiatan.', 'error')
+    } finally {
+      setDetailLoading(false)
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -386,23 +405,27 @@ export default function KegiatanAdmin() {
           className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors"
         />
       </div>
-      <select
-        value={filterStatus}
-        onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }}
-        className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
-      >
-        <option value="">Semua Status</option>
-        <option value="published">Terbit</option>
-        <option value="draft">Draft</option>
-      </select>
-      <select
-        value={filterSort}
-        onChange={e => { setFilterSort(e.target.value); setCurrentPage(1); }}
-        className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
-      >
-        <option value="newest">Terbaru</option>
-        <option value="oldest">Terlama</option>
-      </select>
+      {currentTab !== 'trash' && (
+        <select
+          value={filterStatus}
+          onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }}
+          className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
+        >
+          <option value="">Semua Status</option>
+          <option value="published">Terbit</option>
+          <option value="draft">Draft</option>
+        </select>
+      )}
+      {currentTab !== 'trash' && (
+        <select
+          value={filterSort}
+          onChange={e => { setFilterSort(e.target.value); setCurrentPage(1); }}
+          className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
+        >
+          <option value="newest">Terbaru</option>
+          <option value="oldest">Terlama</option>
+        </select>
+      )}
       <button
         onClick={resetFilter}
         className="shrink-0 bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all btn-press"
@@ -538,16 +561,19 @@ export default function KegiatanAdmin() {
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex justify-end gap-2">
+                        <button onClick={() => openDetail(item)} className="p-2 text-slate-400 hover:text-brand-600 rounded-lg" title="Detail">
+                          <i className="ph ph-eye text-base" />
+                        </button>
                         {currentTab === 'trash' ? (
                           <button onClick={() => confirmAction('restore', item.id)} className="p-2 text-slate-400 hover:text-emerald-600 rounded-lg" title="Pulihkan">
                             <i className="ph ph-arrow-counter-clockwise text-base" /> Pulihkan
                           </button>
                         ) : (
                           <>
-                            <button onClick={() => openForm(item)} className="p-2 text-slate-400 hover:text-brand-600 rounded-lg">
+                            <button onClick={() => openForm(item)} className="p-2 text-slate-400 hover:text-brand-600 rounded-lg" title="Edit">
                               <i className="ph ph-pencil-simple text-base" />
                             </button>
-                            <button onClick={() => confirmAction('delete', item.id)} className="p-2 text-slate-400 hover:text-red-600 rounded-lg">
+                            <button onClick={() => confirmAction('delete', item.id)} className="p-2 text-slate-400 hover:text-red-600 rounded-lg" title="Hapus">
                               <i className="ph ph-trash text-base" />
                             </button>
                           </>
@@ -833,6 +859,98 @@ export default function KegiatanAdmin() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* DETAIL MODAL (read-only) */}
+      {isDetailOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setIsDetailOpen(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden z-10">
+            <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
+              <h3 className="font-heading font-bold text-slate-900 text-lg">Detail Kegiatan</h3>
+              <button onClick={() => setIsDetailOpen(false)} className="text-slate-400 hover:text-slate-600 p-1">
+                <i className="ph-bold ph-x text-lg" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto">
+              {detailLoading ? (
+                <div className="py-16 text-center text-slate-500">Memuat detail...</div>
+              ) : detailData ? (
+                <div className="space-y-4">
+                  {(detailData.image_url || detailData.image_path) && (
+                    <img src={resolveAssetUrl(detailData.image_url || detailData.image_path)} alt="" className="w-full h-48 object-cover rounded-xl border border-slate-200" />
+                  )}
+                  <div>
+                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Judul</span>
+                    <p className="font-bold text-slate-900 text-lg leading-snug">{detailData.title}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Kategori</span>
+                      <p className="text-slate-700 text-sm">{detailData.category || '-'}</p>
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Tanggal Event</span>
+                      <p className="text-slate-700 text-sm">{detailData.event_date || '-'}</p>
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Lokasi</span>
+                      <p className="text-slate-700 text-sm">{detailData.location || '-'}</p>
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Penyelenggara</span>
+                      <p className="text-slate-700 text-sm">{detailData.organizer || '-'}</p>
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Penulis</span>
+                      <p className="text-slate-700 text-sm">{detailData.author_name || 'Admin'}</p>
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Dilihat</span>
+                      <p className="text-slate-700 text-sm">{detailData.views ?? 0} kali</p>
+                    </div>
+                  </div>
+                  {detailData.excerpt && (
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Ringkasan</span>
+                      <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-line">{detailData.excerpt}</p>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Konten Lengkap</span>
+                    <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-line break-words">{detailData.content || '-'}</p>
+                  </div>
+                  {Array.isArray(detailData.gallery) && detailData.gallery.length > 0 && (
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Galeri Foto</span>
+                      <div className="grid grid-cols-3 gap-2 mt-1.5">
+                        {detailData.gallery.map(g => (
+                          <img key={g.id} src={resolveAssetUrl(g.image_path)} alt={g.caption || ''} className="w-full h-20 object-cover rounded-lg border border-slate-200" />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {Array.isArray(detailData.tags) && detailData.tags.length > 0 && (
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Tags</span>
+                      <div className="flex flex-wrap gap-1.5 mt-1">
+                        {detailData.tags.map(tag => (
+                          <span key={tag} className="bg-slate-100 text-slate-600 text-[11px] font-semibold px-2.5 py-1 rounded-full">{tag}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Status</span>
+                    <p className="text-slate-700 text-sm">{detailData.is_published ? 'Terbit' : 'Draft'}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="py-16 text-center text-slate-500">Data tidak ditemukan.</div>
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -84,13 +84,13 @@ export default function BeritaDetail() {
                 </span>
               </div>
 
-              <h1 className="font-heading text-3xl md:text-4xl lg:text-[2.75rem] font-extrabold text-slate-900 leading-tight tracking-tight mb-6">
+              <h1 className="font-heading text-3xl md:text-4xl lg:text-[2.75rem] font-extrabold text-slate-900 leading-tight tracking-tight mb-6 break-words">
                 {article.title}
               </h1>
 
               {article.image_url && (
                 <div className="relative overflow-hidden rounded-2xl mb-8">
-                  <img src={article.image_url} alt={article.title} className="w-full h-64 md:h-96 lg:h-[480px] object-cover rounded-2xl" />
+                  <img src={resolveAssetUrl(article.image_url)} alt={article.title} className="w-full h-64 md:h-96 lg:h-[480px] object-cover rounded-2xl" />
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/30 to-transparent h-24 rounded-b-2xl" />
                 </div>
               )}
@@ -100,8 +100,10 @@ export default function BeritaDetail() {
           <section className="pb-16 bg-white">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex flex-col lg:flex-row gap-10">
-                <article className="w-full lg:w-2/3">
-                  <div className="article-content text-[15px] sm:text-base" dangerouslySetInnerHTML={{ __html: article.content || article.excerpt || '' }} />
+                <article className="w-full lg:w-2/3 min-w-0">
+                  <p className="article-content text-[15px] sm:text-base text-slate-700 leading-relaxed whitespace-pre-line break-words">
+                    {article.content || article.excerpt || ''}
+                  </p>
 
                   <div className="mt-10 pt-8 border-t border-slate-100">
                     <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">

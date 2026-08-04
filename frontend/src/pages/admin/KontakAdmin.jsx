@@ -1,244 +1,368 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import AdminLayout from '../../layouts/AdminLayout'
 import { kontakService } from '../../services/kontakService'
-import { useFormErrors } from '../../utils/parseApiError'
+import ConfirmDialog from '../../components/admin/ConfirmDialog'
+import ToastNotification from '../../components/admin/ToastNotification'
+import { parseApiError } from '../../utils/parseApiError'
+
+const PAGE_SIZE = 10
+const SEARCH_DEBOUNCE_MS = 350
+
+// Tanggal + jam — untuk pesan masuk, jam ikut relevan (beda dengan berita/kegiatan).
+function formatDateTime(value) {
+  if (!value) return '-'
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return value
+  return parsed.toLocaleString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
 
 export default function KontakAdmin() {
   const [messages, setMessages] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  const [currentTab, setCurrentTab] = useState('active') // active, trash
-  const [search, setSearch] = useState('')
-  const [filterStatus, setFilterStatus] = useState('all') // all, read, unread
+  const [currentTab, setCurrentTab] = useState('active') // active | trash
 
-  // Pagination
+  // searchInput = yang diketik user, search = nilai ter-debounce yang dikirim ke API.
+  const [searchInput, setSearchInput] = useState('')
+  const [search, setSearch] = useState('')
+  const [filterStatus, setFilterStatus] = useState('all') // all | unread | read
+  const [filterSort, setFilterSort] = useState('newest') // newest | oldest
+
+  // Pagination (server-side)
   const [page, setPage] = useState(1)
-  const [limit] = useState(10)
   const [total, setTotal] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
 
-  // Selection
+  // Selection (hanya baris di halaman yang sedang tampil)
   const [selectedIds, setSelectedIds] = useState([])
 
-  // Modal Detail
+  // Modal detail
   const [viewData, setViewData] = useState(null)
   const [isViewOpen, setIsViewOpen] = useState(false)
+  const [viewLoading, setViewLoading] = useState(false)
 
-  // Confirm Dialog
   const [confirm, setConfirm] = useState({
     isOpen: false,
-    type: '', // delete, restore, bulk_delete, bulk_restore
-    id: null,
+    type: 'danger',
     title: '',
     message: '',
-    icon: ''
+    action: null,
   })
 
-  // Toast
-  const [toast, setToast] = useState({
-    show: false,
-    message: '',
-    type: 'success'
-  })
-  // Error backend: field errors inline
-  const { applyError } = useFormErrors()
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
 
-  const showToast = (message, type = 'success') => {
+  const selectAllRef = useRef(null)
+  // Kata kunci yang sudah benar-benar dikirim ke API — pembanding supaya debounce
+  // tidak memicu reset halaman/refetch saat nilainya tidak berubah.
+  const appliedSearchRef = useRef('')
+  // Token urutan request: klik Prev/Next cepat bisa membuat respons datang tidak
+  // berurutan. Hanya respons dari request terakhir yang boleh dipakai.
+  const listTokenRef = useRef(0)
+  const detailTokenRef = useRef(0)
+
+  const showToast = useCallback((message, type = 'success') => {
     setToast({ show: true, message, type })
-    setTimeout(() => {
-      setToast(prev => ({ ...prev, show: false }))
-    }, 3000)
-  }
+  }, [])
+
+  // --- Debounce pencarian: satu request setelah user berhenti mengetik ---
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const next = searchInput.trim()
+      if (appliedSearchRef.current === next) return
+      appliedSearchRef.current = next
+      setSearch(next)
+      setPage(1)
+    }, SEARCH_DEBOUNCE_MS)
+    return () => clearTimeout(timer)
+  }, [searchInput])
 
   const fetchMessages = useCallback(() => {
+    const token = ++listTokenRef.current
     setLoading(true)
-    kontakService.list({
+    setError(null)
+
+    const params = {
       tab: currentTab,
-      search,
-      status: currentTab === 'active' ? filterStatus : undefined,
       page,
-      limit
-    })
+      limit: PAGE_SIZE,
+      sort: filterSort,
+    }
+    if (search) params.search = search
+    // Filter dibaca/belum dibaca hanya berlaku di Kotak Masuk.
+    if (currentTab === 'active' && filterStatus !== 'all') params.status = filterStatus
+
+    kontakService.list(params)
       .then(res => {
-        if (res.success && res.data) {
-          setMessages(res.data.items || [])
-          if (res.data.pagination) {
-            setTotal(res.data.pagination.total || 0)
-            setTotalPages(res.data.pagination.totalPages || 1)
-          }
-          setError(null)
-        } else {
-          setError('Gagal memuat pesan masuk')
-        }
-      })
-      .catch((err) => {
-        setError(err.message || 'Kesalahan koneksi ke server')
-      })
-      .finally(() => setLoading(false))
-  }, [currentTab, search, filterStatus, page, limit])
+        if (token !== listTokenRef.current) return // respons basi
+        const data = res?.data || {}
+        // Backend mengembalikan { kontak: [...], meta: {...} } (lihat KontakListResponse).
+        const list = Array.isArray(data) ? data : (data.kontak || data.items || [])
+        setMessages(list)
 
-  useEffect(() => {
-    setSelectedIds([])
-    setPage(1)
-  }, [currentTab, filterStatus])
+        // Buang id terpilih yang sudah tidak ada di halaman ini (mis. dihapus
+        // dari sesi lain), supaya aksi massal tidak mengirim id hantu.
+        setSelectedIds(prev => {
+          if (prev.length === 0) return prev
+          const visible = new Set(list.map(m => m.id))
+          const next = prev.filter(id => visible.has(id))
+          return next.length === prev.length ? prev : next
+        })
 
-  // Muat ulang data setiap page/search/filter berubah (pagination & filter)
+        const meta = data.meta || {}
+        const totalData = Number(meta.total_data ?? meta.total ?? list.length) || 0
+        const pages = Number(meta.total_pages) || (totalData > 0 ? Math.ceil(totalData / PAGE_SIZE) : 1)
+
+        setTotal(totalData)
+        setTotalPages(pages)
+        // Jaring pengaman: halaman di luar jangkauan (mis. data menyusut dari
+        // sesi lain) ditarik kembali ke halaman terakhir yang valid.
+        if (page > pages) setPage(pages)
+      })
+      .catch(err => {
+        if (token !== listTokenRef.current) return
+        setMessages([])
+        setTotal(0)
+        setTotalPages(1)
+        setError(parseApiError(err).message || 'Gagal memuat pesan masuk.')
+      })
+      .finally(() => {
+        if (token !== listTokenRef.current) return
+        setLoading(false)
+      })
+  }, [currentTab, search, filterStatus, filterSort, page])
+
   useEffect(() => {
     fetchMessages()
   }, [fetchMessages])
 
-  // Handles manual search submit
-  const handleSearchSubmit = (e) => {
-    e.preventDefault()
+  // Pilihan tidak boleh terbawa antar tab maupun antar halaman.
+  useEffect(() => {
+    setSelectedIds([])
+  }, [currentTab, filterStatus, filterSort, search, page])
+
+  // Ganti tab/filter selalu dibarengi reset halaman di handler-nya (bukan lewat
+  // effect terpisah) supaya tidak ada request ganda dengan page yang basi.
+  function changeTab(tab) {
+    if (tab === currentTab) return
+    setCurrentTab(tab)
     setPage(1)
-    // fetchMessages() otomatis dipanggil via useEffect [fetchMessages] saat search/page berubah
   }
 
-  const handleReset = () => {
+  function changeStatus(value) {
+    setFilterStatus(value)
+    setPage(1)
+  }
+
+  function changeSort(value) {
+    setFilterSort(value)
+    setPage(1)
+  }
+
+  function resetFilter() {
+    appliedSearchRef.current = ''
+    setSearchInput('')
     setSearch('')
     setFilterStatus('all')
+    setFilterSort('newest')
     setPage(1)
+    showToast('Filter direset.', 'info')
   }
 
-  // Row Selection logic
-  const handleSelectAll = (e) => {
-    if (e.target.checked) {
-      setSelectedIds(messages.map(m => m.id))
-    } else {
-      setSelectedIds([])
-    }
-  }
+  // Urutan bukan filter, dan filter status tidak dikirim di tab Sampah — keduanya
+  // tidak boleh membuat daftar diklaim "terfilter".
+  const hasActiveFilter = Boolean(search) || (currentTab === 'active' && filterStatus !== 'all')
 
-  const handleSelectItem = (id) => {
-    setSelectedIds(prev => 
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
-    )
-  }
-
+  // --- Selection ---
   const isAllSelected = messages.length > 0 && selectedIds.length === messages.length
+  const isPartiallySelected = selectedIds.length > 0 && !isAllSelected
 
-  // View modal detail (marks message as read if active tab)
-  const openViewModal = (item) => {
-    if (currentTab === 'trash') return
+  useEffect(() => {
+    // messages.length ikut jadi dependency: checkbox header baru ada di DOM setelah
+    // tabel ter-render, jadi state indeterminate perlu dipasang ulang tiap data berubah.
+    if (selectAllRef.current) selectAllRef.current.indeterminate = isPartiallySelected
+  }, [isPartiallySelected, messages.length])
+
+  const toggleAll = () => {
+    setSelectedIds(isAllSelected ? [] : messages.map(m => m.id))
+  }
+
+  const toggleOne = (id) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  }
+
+  // --- Detail ---
+  const openViewModal = async (item) => {
+    const token = ++detailTokenRef.current
     setViewData(item)
     setIsViewOpen(true)
-    
-    // Call detail API to mark it read on the backend (or detail fetches read state update)
-    kontakService.getById(item.id)
-      .then(res => {
-        if (res.success) {
-          // Update local status of is_read
-          setMessages(prev => prev.map(m => m.id === item.id ? { ...m, is_read: true } : m))
-        }
-      })
-      .catch(() => {})
-  }
-
-  // Trigger Confirm Modal
-  const triggerConfirm = (type, id = null) => {
-    let title = ''
-    let message = ''
-    let icon = ''
-
-    if (type === 'delete') {
-      title = 'Hapus Pesan'
-      message = 'Pesan ini akan dipindahkan ke Sampah.'
-      icon = 'ph-trash'
-    } else if (type === 'restore') {
-      title = 'Pulihkan Pesan'
-      message = 'Pesan ini akan dikembalikan ke Kotak Masuk.'
-      icon = 'ph-arrow-counter-clockwise'
-    } else if (type === 'bulk_delete') {
-      title = 'Hapus Massal'
-      message = `Anda akan memindahkan ${selectedIds.length} pesan ke Sampah. Lanjutkan?`
-      icon = 'ph-trash'
-    } else if (type === 'bulk_restore') {
-      title = 'Pulihkan Massal'
-      message = `Anda akan memulihkan ${selectedIds.length} pesan. Lanjutkan?`
-      icon = 'ph-arrow-counter-clockwise'
-    }
-
-    setConfirm({
-      isOpen: true,
-      type,
-      id,
-      title,
-      message,
-      icon
-    })
-  }
-
-  const executeAction = async () => {
-    const { type, id } = confirm
-    setConfirm(prev => ({ ...prev, isOpen: false }))
-    setIsViewOpen(false)
-
+    setViewLoading(true)
     try {
-      if (type === 'delete') {
-        await kontakService.remove(id)
-        showToast('Pesan berhasil dihapus.', 'success')
-      } else if (type === 'restore') {
-        await kontakService.restore(id)
-        showToast('Pesan berhasil dipulihkan.', 'success')
-      } else if (type === 'bulk_delete') {
-        await kontakService.bulkDelete(selectedIds)
-        setSelectedIds([])
-        showToast('Pesan massal berhasil dihapus.', 'success')
-      } else if (type === 'bulk_restore') {
-        await kontakService.bulkRestore(selectedIds)
-        setSelectedIds([])
-        showToast('Pesan massal berhasil dipulihkan.', 'success')
+      // Detail dipanggil ke server: isinya lengkap sekaligus menandai pesan sudah dibaca.
+      const res = await kontakService.getById(item.id)
+      if (token !== detailTokenRef.current) return // baris lain sudah diklik
+      const detail = res?.data
+      if (detail) {
+        setViewData(detail)
+        if (detail.is_read) {
+          setMessages(prev => prev.map(m => (m.id === item.id ? { ...m, is_read: true } : m)))
+        }
       }
-      fetchMessages()
     } catch (err) {
-      const parsed = applyError(err)
-      if (Object.keys(parsed.fieldErrors).length === 0) {
-        showToast(parsed.message || 'Gagal melakukan aksi.', 'error')
-      }
+      if (token !== detailTokenRef.current) return
+      showToast(parseApiError(err).message || 'Gagal memuat detail pesan.', 'error')
+    } finally {
+      if (token === detailTokenRef.current) setViewLoading(false)
     }
   }
 
-  const renderPagination = () => {
-    const pages = []
-    for (let i = 1; i <= totalPages; i++) {
-      pages.push(
-        <button
-          key={i}
-          onClick={() => setPage(i)}
-          className={`px-3 py-1 border rounded transition ${
-            page === i
-              ? 'border-brand-500 bg-brand-50 text-brand-600 font-medium'
-              : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'
-          }`}
-        >
-          {i}
-        </button>
-      )
-    }
-    return pages
+  const closeViewModal = () => {
+    setIsViewOpen(false)
+    // Membuka pesan otomatis menandainya "dibaca". Saat filter "Belum Dibaca" aktif,
+    // daftar perlu dimuat ulang supaya tidak menampilkan pesan yang sudah tak cocok.
+    if (currentTab === 'active' && filterStatus === 'unread') fetchMessages()
   }
+
+  // --- Confirm actions (pola sama dengan modul admin lain) ---
+
+  // Setelah sejumlah pesan hilang dari halaman ini: kalau halaman jadi kosong dan
+  // bukan halaman pertama, mundur satu halaman. setPage memicu refetch lewat
+  // dependency fetchMessages, jadi cukup satu request — bukan render kosong dulu
+  // lalu refetch lagi.
+  const refreshAfterRemoval = (removedCount) => {
+    if (page > 1 && messages.length - removedCount <= 0) {
+      setPage(p => Math.max(p - 1, 1))
+    } else {
+      fetchMessages()
+    }
+  }
+
+  // Backend melaporkan jumlah baris yang benar-benar terpengaruh; kalau ada yang
+  // sudah diproses lewat sesi lain, angkanya bisa lebih kecil dari yang dipilih.
+  const affectedCount = (res, fallback) => Number(res?.data?.affected ?? fallback) || fallback
+
+  function confirmAction(type, id = null) {
+    const selectedCount = selectedIds.length
+
+    const configs = {
+      delete: {
+        type: 'danger',
+        title: 'Hapus Pesan',
+        message: 'Pesan ini akan dipindahkan ke Sampah. Lanjutkan?',
+        action: async () => {
+          await kontakService.remove(id)
+          setIsViewOpen(false)
+          setSelectedIds(prev => prev.filter(x => x !== id))
+          refreshAfterRemoval(1)
+          showToast('Pesan berhasil dipindahkan ke Sampah.')
+        },
+      },
+      restore: {
+        type: 'success',
+        title: 'Pulihkan Pesan',
+        message: 'Pesan ini akan dikembalikan ke Kotak Masuk. Lanjutkan?',
+        action: async () => {
+          await kontakService.restore(id)
+          setIsViewOpen(false)
+          setSelectedIds(prev => prev.filter(x => x !== id))
+          refreshAfterRemoval(1)
+          showToast('Pesan berhasil dipulihkan.')
+        },
+      },
+      bulk_delete: {
+        type: 'danger',
+        title: 'Hapus Massal',
+        message: `${selectedCount} pesan akan dipindahkan ke Sampah. Lanjutkan?`,
+        action: async () => {
+          const res = await kontakService.bulkDelete(selectedIds)
+          const n = affectedCount(res, selectedCount)
+          setSelectedIds([])
+          refreshAfterRemoval(n)
+          showToast(`${n} pesan berhasil dipindahkan ke Sampah.`)
+        },
+      },
+      bulk_restore: {
+        type: 'success',
+        title: 'Pulihkan Massal',
+        message: `${selectedCount} pesan akan dikembalikan ke Kotak Masuk. Lanjutkan?`,
+        action: async () => {
+          const res = await kontakService.bulkRestore(selectedIds)
+          const n = affectedCount(res, selectedCount)
+          setSelectedIds([])
+          refreshAfterRemoval(n)
+          showToast(`${n} pesan berhasil dipulihkan.`)
+        },
+      },
+    }
+
+    const cfg = configs[type]
+    if (!cfg) return
+    setConfirm({ isOpen: true, type: cfg.type, title: cfg.title, message: cfg.message, action: cfg.action })
+  }
+
+  async function executeConfirm() {
+    const action = confirm.action
+    setConfirm(prev => ({ ...prev, isOpen: false, action: null }))
+    if (!action) return
+    try {
+      await action()
+    } catch (err) {
+      showToast(parseApiError(err).message || 'Gagal melakukan aksi.', 'error')
+    }
+  }
+
+  // --- Pagination ---
+  const pageNumbers = useMemo(() => {
+    const maxButtons = 5
+    if (totalPages <= maxButtons) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1)
+    }
+    const end = Math.min(totalPages, Math.max(page + 2, maxButtons))
+    const start = Math.max(1, end - maxButtons + 1)
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i)
+  }, [page, totalPages])
+
+  const showingFrom = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1
+  const showingTo = Math.min(page * PAGE_SIZE, total)
+
+  // Status pesan di modal dibaca dari payload, bukan dari tab yang sedang dibuka:
+  // kalau fetch detail gagal, UI tidak boleh mengklaim pesan sudah ditandai dibaca.
+  const viewIsTrashed = Boolean(viewData?.deleted_at) || currentTab === 'trash'
+  const viewIsRead = Boolean(viewData?.is_read)
+
+  const emptyStateText = search
+    ? `Tidak ada pesan yang cocok dengan "${search}".`
+    : currentTab === 'trash'
+      ? 'Sampah kosong.'
+      : filterStatus === 'unread'
+        ? 'Semua pesan sudah dibaca.'
+        : 'Belum ada pesan masuk.'
 
   const headerContent = (
-    <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 w-full max-w-2xl animate-fade-in-up">
+    <div className="flex items-center gap-2 w-full max-w-3xl animate-fade-in-up">
       <div className="relative w-full">
         <i className="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         <input
           type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Cari nama / email..."
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="Cari nama / email / subjek / isi pesan..."
+          aria-label="Cari pesan masuk"
           className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors"
         />
       </div>
-      
+
       {currentTab === 'active' && (
         <select
           value={filterStatus}
-          onChange={(e) => {
-            setFilterStatus(e.target.value)
-            setPage(1)
-          }}
+          onChange={(e) => changeStatus(e.target.value)}
+          aria-label="Filter status dibaca"
           className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
         >
           <option value="all">Semua Status</option>
@@ -247,32 +371,49 @@ export default function KontakAdmin() {
         </select>
       )}
 
-      <button
-        type="submit"
-        className="bg-brand-600 hover:bg-brand-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all btn-press shrink-0"
+      <select
+        value={filterSort}
+        onChange={(e) => changeSort(e.target.value)}
+        aria-label="Urutkan pesan"
+        className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
       >
-        Cari
-      </button>
+        <option value="newest">Terbaru</option>
+        <option value="oldest">Terlama</option>
+      </select>
+
       <button
         type="button"
-        onClick={handleReset}
+        onClick={resetFilter}
         className="shrink-0 bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all btn-press"
-        title="Reset Filter"
       >
-        <i className="ph ph-arrows-counter-clockwise text-lg" />
+        <i className="ph ph-arrows-counter-clockwise text-lg" /> Reset
       </button>
-    </form>
+    </div>
   )
 
   return (
     <AdminLayout title="Kelola Pesan Kontak" headerContent={headerContent}>
+      <ToastNotification
+        show={toast.show}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast(prev => ({ ...prev, show: false }))}
+      />
+      <ConfirmDialog
+        isOpen={confirm.isOpen}
+        type={confirm.type}
+        title={confirm.title}
+        message={confirm.message}
+        onConfirm={executeConfirm}
+        onClose={() => setConfirm(prev => ({ ...prev, isOpen: false, action: null }))}
+      />
+
       <div className="max-w-7xl mx-auto space-y-6 animate-fade-in-up">
-        {/* Header Actions & Filter */}
+        {/* Tabs */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          {/* Tabs */}
           <div className="flex bg-white rounded-lg p-1 border border-gray-200 shadow-sm">
             <button
-              onClick={() => setCurrentTab('active')}
+              onClick={() => changeTab('active')}
               className={`px-4 py-1.5 rounded-md text-sm transition-all duration-200 ${
                 currentTab === 'active'
                   ? 'bg-brand-50 text-brand-600 shadow-sm font-medium'
@@ -282,7 +423,7 @@ export default function KontakAdmin() {
               Kotak Masuk
             </button>
             <button
-              onClick={() => setCurrentTab('trash')}
+              onClick={() => changeTab('trash')}
               className={`px-4 py-1.5 rounded-md text-sm transition-all duration-200 flex items-center gap-2 ${
                 currentTab === 'trash'
                   ? 'bg-red-50 text-red-600 shadow-sm font-medium'
@@ -292,6 +433,12 @@ export default function KontakAdmin() {
               <i className="ph ph-trash" /> Sampah
             </button>
           </div>
+
+          {!loading && !error && (
+            <span className="text-sm text-gray-500">
+              {total} pesan{hasActiveFilter ? ' (terfilter)' : ''}
+            </span>
+          )}
         </div>
 
         {/* Bulk Actions Bar */}
@@ -301,14 +448,14 @@ export default function KontakAdmin() {
             <div className="flex gap-2">
               {currentTab === 'active' ? (
                 <button
-                  onClick={() => triggerConfirm('bulk_delete')}
+                  onClick={() => confirmAction('bulk_delete')}
                   className="bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors"
                 >
                   <i className="ph ph-trash" /> Hapus Massal
                 </button>
               ) : (
                 <button
-                  onClick={() => triggerConfirm('bulk_restore')}
+                  onClick={() => confirmAction('bulk_restore')}
                   className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors"
                 >
                   <i className="ph ph-arrow-counter-clockwise" /> Pulihkan Massal
@@ -322,30 +469,52 @@ export default function KontakAdmin() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             {loading ? (
-              <div className="py-12 text-center text-gray-500">Memuat pesan...</div>
+              <div className="py-12 text-center text-gray-500" role="status" aria-live="polite">
+                <i className="ph ph-spinner text-2xl animate-spin block mx-auto mb-2" />
+                Memuat pesan...
+              </div>
             ) : error ? (
-              <div className="py-12 text-center text-red-500">{error}</div>
+              <div className="py-12 text-center" role="alert">
+                <i className="ph ph-warning-circle text-4xl text-red-300 mb-2 block mx-auto" />
+                <p className="text-red-600">{error}</p>
+                <button
+                  onClick={fetchMessages}
+                  className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <i className="ph ph-arrows-clockwise" /> Coba lagi
+                </button>
+              </div>
             ) : messages.length === 0 ? (
               <div className="py-12 text-center text-gray-500">
                 <i className="ph ph-envelope-open text-4xl text-gray-300 mb-2 block mx-auto" />
-                Tidak ada pesan untuk ditampilkan.
+                {emptyStateText}
+                {hasActiveFilter && (
+                  <button
+                    onClick={resetFilter}
+                    className="mt-3 block mx-auto text-sm text-brand-600 hover:text-brand-700 font-medium"
+                  >
+                    Reset filter
+                  </button>
+                )}
               </div>
             ) : (
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wider text-gray-500 font-semibold">
-                    <th className="p-4 w-12 text-center">
+                    <th scope="col" className="p-4 w-12 text-center">
                       <input
+                        ref={selectAllRef}
                         type="checkbox"
-                        onChange={handleSelectAll}
+                        onChange={toggleAll}
                         checked={isAllSelected}
+                        aria-label="Pilih semua pesan di halaman ini"
                         className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
                       />
                     </th>
-                    <th className="p-4">Pengirim</th>
-                    <th className="p-4">Subjek</th>
-                    <th className="p-4 w-40">Tanggal</th>
-                    <th className="p-4 text-right">Aksi</th>
+                    <th scope="col" className="p-4">Pengirim</th>
+                    <th scope="col" className="p-4">Subjek</th>
+                    <th scope="col" className="p-4 w-48">{currentTab === 'trash' ? 'Dihapus' : 'Tanggal'}</th>
+                    <th scope="col" className="p-4 text-right">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-sm">
@@ -363,49 +532,53 @@ export default function KontakAdmin() {
                           <input
                             type="checkbox"
                             checked={selectedIds.includes(item.id)}
-                            onChange={() => handleSelectItem(item.id)}
+                            onChange={() => toggleOne(item.id)}
+                            aria-label={`Pilih pesan dari ${item.nama || 'pengirim'}`}
                             className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
                           />
                         </td>
                         <td className="p-4">
                           <div className="flex flex-col">
-                            <span className="truncate max-w-[200px]">{item.name}</span>
-                            <span className="text-xs font-normal text-gray-500">{item.email}</span>
+                            <span className="truncate max-w-[200px]">{item.nama || '-'}</span>
+                            <span className="text-xs font-normal text-gray-500">{item.email || '-'}</span>
                           </div>
                         </td>
                         <td className="p-4">
                           <div className="flex items-center gap-2">
-                            {isUnread && <span className="w-2 h-2 rounded-full bg-brand-500 shrink-0" />}
-                            <span className="truncate max-w-xs">{item.subject}</span>
+                            {isUnread && <span className="w-2 h-2 rounded-full bg-brand-500 shrink-0" title="Belum dibaca" />}
+                            <span className="truncate max-w-xs">{item.subjek || '-'}</span>
                           </div>
                         </td>
                         <td className="p-4">
-                          <span className="text-gray-500 font-normal">{item.date}</span>
+                          <span className="text-gray-500 font-normal">
+                            {formatDateTime(currentTab === 'trash' ? (item.deleted_at || item.created_at) : item.created_at)}
+                          </span>
                         </td>
                         <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => openViewModal(item)}
+                              className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded"
+                              title="Lihat Detail"
+                              aria-label="Lihat detail pesan"
+                            >
+                              <i className="ph ph-eye text-lg" />
+                            </button>
                             {currentTab === 'active' ? (
-                              <>
-                                <button
-                                  onClick={() => openViewModal(item)}
-                                  className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded"
-                                  title="Lihat Detail"
-                                >
-                                  <i className="ph ph-eye text-lg" />
-                                </button>
-                                <button
-                                  onClick={() => triggerConfirm('delete', item.id)}
-                                  className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
-                                  title="Hapus"
-                                >
-                                  <i className="ph ph-trash text-lg" />
-                                </button>
-                              </>
+                              <button
+                                onClick={() => confirmAction('delete', item.id)}
+                                className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
+                                title="Hapus"
+                                aria-label="Hapus pesan"
+                              >
+                                <i className="ph ph-trash text-lg" />
+                              </button>
                             ) : (
                               <button
-                                onClick={() => triggerConfirm('restore', item.id)}
+                                onClick={() => confirmAction('restore', item.id)}
                                 className="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded"
                                 title="Pulihkan"
+                                aria-label="Pulihkan pesan"
                               >
                                 <i className="ph ph-arrow-counter-clockwise text-lg" />
                               </button>
@@ -422,152 +595,146 @@ export default function KontakAdmin() {
 
           {/* Pagination */}
           {!loading && !error && messages.length > 0 && (
-            <div className="bg-gray-50 border-t border-gray-200 px-4 py-3 flex items-center justify-between sm:px-6 rounded-b-xl">
+            <div className="bg-gray-50 border-t border-gray-200 px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 sm:px-6 rounded-b-xl">
               <div className="text-sm text-gray-500">
-                Menampilkan <span className="font-medium text-gray-900">{(page - 1) * limit + 1}</span> sampai <span className="font-medium text-gray-900">{Math.min(page * limit, total)}</span> dari <span className="font-medium text-gray-900">{total}</span> hasil
+                Menampilkan <span className="font-medium text-gray-900">{showingFrom}</span> sampai{' '}
+                <span className="font-medium text-gray-900">{showingTo}</span> dari{' '}
+                <span className="font-medium text-gray-900">{total}</span> pesan
               </div>
-              <div className="flex gap-1">
+              <nav className="flex gap-1" aria-label="Navigasi halaman">
                 <button
                   onClick={() => setPage(p => Math.max(p - 1, 1))}
-                  disabled={page === 1}
-                  className="px-3 py-1 border border-gray-200 bg-white text-gray-500 rounded hover:bg-gray-50 disabled:opacity-50 transition"
+                  disabled={page <= 1}
+                  className="px-3 py-1 border border-gray-200 bg-white text-gray-500 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
                 >
                   Prev
                 </button>
-                
-                {renderPagination()}
-
+                {pageNumbers.map(n => (
+                  <button
+                    key={n}
+                    onClick={() => setPage(n)}
+                    aria-current={page === n ? 'page' : undefined}
+                    className={`px-3 py-1 border rounded transition ${
+                      page === n
+                        ? 'border-brand-500 bg-brand-50 text-brand-600 font-medium'
+                        : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
                 <button
                   onClick={() => setPage(p => Math.min(p + 1, totalPages))}
-                  disabled={page === totalPages}
-                  className="px-3 py-1 border border-gray-200 bg-white text-gray-500 rounded hover:bg-gray-50 disabled:opacity-50 transition"
+                  disabled={page >= totalPages}
+                  className="px-3 py-1 border border-gray-200 bg-white text-gray-500 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
                 >
                   Next
                 </button>
-              </div>
+              </nav>
             </div>
           )}
         </div>
       </div>
 
-      {/* VIEW DETAIL MODAL */}
+      {/* DETAIL MODAL */}
       {isViewOpen && viewData && (
-        <div className="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setIsViewOpen(false)} />
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            
-            <div className="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
-              <div className="bg-white">
-                <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-                  <h3 className="text-lg leading-6 font-heading font-semibold text-gray-900">Detail Pesan</h3>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => triggerConfirm('delete', viewData.id)}
-                      className="text-gray-400 hover:text-red-500 p-1"
-                      title="Hapus"
-                    >
-                      <i className="ph ph-trash text-xl" />
-                    </button>
-                    <button
-                      onClick={() => setIsViewOpen(false)}
-                      className="text-gray-400 hover:text-gray-500 p-1"
-                    >
-                      <i className="ph ph-x text-xl" />
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="px-6 py-5 space-y-6">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="text-xl font-bold text-gray-900">{viewData.subject}</h4>
-                      <div className="mt-2 flex items-center gap-2">
-                        <div className="w-10 h-10 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold text-sm">
-                          {(viewData.name || 'C').charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{viewData.name}</p>
-                          <p className="text-xs text-gray-500">{viewData.email}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <span className="text-xs text-gray-500">{viewData.date}</span>
-                  </div>
-                  
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 text-sm text-gray-800 whitespace-pre-wrap font-sans">
-                    {viewData.message}
-                  </div>
+        // z-50 (bukan z-[60]) — ConfirmDialog ada di z-[60] dan harus tetap di atas
+        // modal ini, kalau tidak overlay-nya menelan klik tombol konfirmasi.
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Detail pesan">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px]" onClick={closeViewModal} />
 
-                  <div className="border-t border-gray-200 pt-4">
-                    <a
-                      href={`mailto:${viewData.email}?subject=Re: ${encodeURIComponent(viewData.subject)}`}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 shadow-sm rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                    >
-                      <i className="ph ph-paper-plane-tilt text-lg" /> Balas via Email
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* CONFIRMATION MODAL */}
-      {confirm.isOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setConfirm(prev => ({ ...prev, isOpen: false }))} />
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            
-            <div className="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-sm sm:w-full">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="sm:flex sm:items-start">
-                  <div className={`mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10 ${
-                    confirm.type.includes('delete') ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'
-                  }`}>
-                    <i className={`text-2xl ph ${confirm.icon}`} />
-                  </div>
-                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900">{confirm.title}</h3>
-                    <div className="mt-2">
-                      <p className="text-sm text-gray-500">{confirm.message}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-gray-50 px-4 py-3 sm:px-6 flex justify-end gap-2">
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <h3 className="text-lg leading-6 font-heading font-semibold text-gray-900">Detail Pesan</h3>
+              <div className="flex items-center gap-2">
+                {viewIsTrashed ? (
+                  <button
+                    onClick={() => confirmAction('restore', viewData.id)}
+                    className="text-gray-400 hover:text-emerald-600 p-1"
+                    title="Pulihkan"
+                    aria-label="Pulihkan pesan"
+                  >
+                    <i className="ph ph-arrow-counter-clockwise text-xl" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => confirmAction('delete', viewData.id)}
+                    className="text-gray-400 hover:text-red-500 p-1"
+                    title="Hapus"
+                    aria-label="Hapus pesan"
+                  >
+                    <i className="ph ph-trash text-xl" />
+                  </button>
+                )}
                 <button
-                  type="button"
-                  onClick={() => setConfirm(prev => ({ ...prev, isOpen: false }))}
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm"
+                  onClick={closeViewModal}
+                  className="text-gray-400 hover:text-gray-600 p-1"
+                  aria-label="Tutup"
                 >
-                  Batal
-                </button>
-                <button
-                  type="button"
-                  onClick={executeAction}
-                  className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white focus:outline-none sm:w-auto sm:text-sm ${
-                    confirm.type.includes('delete') ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700'
-                  }`}
-                >
-                  Ya, Lanjutkan
+                  <i className="ph ph-x text-xl" />
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* Toast Notification */}
-      {toast.show && (
-        <div className={`fixed bottom-4 right-4 z-50 flex items-center p-4 rounded-lg shadow-lg text-white transition-opacity duration-300 ${
-          toast.type === 'success' ? 'bg-emerald-500' : 'bg-red-500'
-        }`}>
-          <i className={`text-xl mr-2 ph ${toast.type === 'success' ? 'ph-check-circle' : 'ph-warning-circle'}`} />
-          <span className="text-sm font-medium">{toast.message}</span>
+            <div className="px-6 py-5 space-y-6 overflow-y-auto">
+              <div className="flex justify-between items-start gap-4">
+                <div className="min-w-0">
+                  <h4 className="text-xl font-bold text-gray-900 break-words">{viewData.subjek || '(tanpa subjek)'}</h4>
+                  <div className="mt-2 flex items-center gap-2">
+                    <div className="w-10 h-10 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold text-sm shrink-0">
+                      {(viewData.nama || 'K').charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{viewData.nama || '-'}</p>
+                      <p className="text-xs text-gray-500 truncate">{viewData.email || '-'}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="text-xs text-gray-500 block">{formatDateTime(viewData.created_at)}</span>
+                  {viewIsTrashed ? (
+                    <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
+                      <i className="ph ph-trash" /> Di Sampah
+                    </span>
+                  ) : viewIsRead ? (
+                    <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                      <i className="ph ph-check-circle" /> Sudah Dibaca
+                    </span>
+                  ) : (
+                    <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                      <i className="ph ph-envelope" /> Belum Dibaca
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 text-sm text-gray-800 whitespace-pre-wrap break-words">
+                {viewLoading && !viewData.pesan
+                  ? 'Memuat isi pesan...'
+                  : (viewData.pesan || '(pesan kosong)')}
+              </div>
+
+              {viewData.response_note && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Catatan Tindak Lanjut</p>
+                  <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 text-sm text-amber-900 whitespace-pre-wrap break-words">
+                    {viewData.response_note}
+                  </div>
+                </div>
+              )}
+
+              {viewData.email && (
+                <div className="border-t border-gray-200 pt-4">
+                  <a
+                    href={`mailto:${viewData.email}?subject=${encodeURIComponent(`Re: ${viewData.subjek || ''}`)}`}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 shadow-sm rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <i className="ph ph-paper-plane-tilt text-lg" /> Balas via Email
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </AdminLayout>

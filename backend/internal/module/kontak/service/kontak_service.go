@@ -20,8 +20,9 @@ type KontakService interface {
 	Submit(ctx context.Context, req *dto.KontakRequest) error
 	Delete(ctx context.Context, id uint) error
 	Restore(ctx context.Context, id uint) error
-	BulkDelete(ctx context.Context, ids []uint) error
-	BulkRestore(ctx context.Context, ids []uint) error
+	// BulkDelete & BulkRestore mengembalikan jumlah pesan yang benar-benar diproses.
+	BulkDelete(ctx context.Context, ids []uint) (int64, error)
+	BulkRestore(ctx context.Context, ids []uint) (int64, error)
 }
 
 type kontakService struct {
@@ -64,15 +65,14 @@ func (s *kontakService) GetAll(ctx context.Context, q dto.KontakQuery) (*dto.Kon
 		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil data pesan.", err)
 	}
 
-	page := q.Page
-	if page <= 0 {
-		page = 1
+	// Pakai normalisasi yang sama dengan repository supaya meta selalu
+	// mencerminkan halaman yang benar-benar di-query.
+	page, limit, _ := q.Pagination()
+
+	totalPages := 0
+	if total > 0 {
+		totalPages = (int(total) + limit - 1) / limit
 	}
-	limit := q.Limit
-	if limit <= 0 {
-		limit = 10
-	}
-	totalPages := (int(total) + limit - 1) / limit
 
 	resp := &dto.KontakListResponse{
 		Kontak: mapper.EntityListToItem(items),
@@ -87,7 +87,8 @@ func (s *kontakService) GetAll(ctx context.Context, q dto.KontakQuery) (*dto.Kon
 }
 
 func (s *kontakService) GetByID(ctx context.Context, id uint) (*dto.KontakDetailResponse, error) {
-	p, err := s.repo.FindByID(id)
+	// Unscoped: pesan di Sampah tetap bisa dibuka detailnya (read-only) dari tab Sampah.
+	p, err := s.repo.FindAnyByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, helper.NewNotFoundError("Pesan tidak ditemukan")
@@ -95,8 +96,9 @@ func (s *kontakService) GetByID(ctx context.Context, id uint) (*dto.KontakDetail
 		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil pesan.", err)
 	}
 
-	// Auto mark as read
-	if !p.IsRead {
+	// Auto mark as read — hanya untuk pesan yang masih di kotak masuk.
+	// Pesan di Sampah tidak diubah statusnya saat dilihat.
+	if !p.IsRead && p.DeletedAt == nil {
 		if err := s.repo.MarkAsRead(id); err != nil {
 			return nil, helper.NewServiceError("SERVER_ERROR", "Gagal menandai pesan sebagai dibaca.", err)
 		}
@@ -136,6 +138,17 @@ func (s *kontakService) Delete(ctx context.Context, id uint) error {
 }
 
 func (s *kontakService) Restore(ctx context.Context, id uint) error {
+	p, err := s.repo.FindAnyByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return helper.NewNotFoundError("Pesan tidak ditemukan")
+		}
+		return helper.NewServiceError("SERVER_ERROR", "Gagal mengambil pesan.", err)
+	}
+	if p.DeletedAt == nil {
+		return helper.NewServiceError("VALIDATION_ERROR", "Pesan tidak berada di Sampah.", nil)
+	}
+
 	if err := s.repo.Restore(id); err != nil {
 		return helper.NewServiceError("SERVER_ERROR", "Gagal memulihkan pesan.", err)
 	}
@@ -144,48 +157,59 @@ func (s *kontakService) Restore(ctx context.Context, id uint) error {
 		Action:      "kontak.restore",
 		EntityType:  "kontak",
 		EntityID:    &id,
-		Description: "Memulihkan pesan kontak (ID: " + strconv.FormatUint(uint64(id), 10) + ")",
+		EntityLabel: p.Nama,
+		Description: "Memulihkan pesan kontak: " + p.Nama + " (ID: " + strconv.FormatUint(uint64(id), 10) + ")",
 	})
 
 	return nil
 }
 
-func (s *kontakService) BulkDelete(ctx context.Context, ids []uint) error {
+func (s *kontakService) BulkDelete(ctx context.Context, ids []uint) (int64, error) {
 	if len(ids) == 0 {
-		return nil
+		return 0, nil
 	}
-	if err := s.repo.BulkSoftDelete(ids); err != nil {
-		return helper.NewServiceError("SERVER_ERROR", "Gagal menghapus pesan.", err)
+	deleted, err := s.repo.BulkSoftDelete(ids)
+	if err != nil {
+		return 0, helper.NewServiceError("SERVER_ERROR", "Gagal menghapus pesan.", err)
+	}
+	if deleted == 0 {
+		return 0, helper.NewServiceError("VALIDATION_ERROR", "Tidak ada pesan yang bisa dihapus.", nil)
 	}
 
 	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		Action:      "kontak.bulk_delete",
 		EntityType:  "kontak",
-		Description: "Menghapus " + strconv.FormatUint(uint64(len(ids)), 10) + " pesan kontak (soft delete)",
+		Description: "Menghapus " + strconv.FormatInt(deleted, 10) + " pesan kontak (soft delete)",
 		Metadata: map[string]any{
-			"ids": ids,
+			"ids":     ids,
+			"deleted": deleted,
 		},
 	})
 
-	return nil
+	return deleted, nil
 }
 
-func (s *kontakService) BulkRestore(ctx context.Context, ids []uint) error {
+func (s *kontakService) BulkRestore(ctx context.Context, ids []uint) (int64, error) {
 	if len(ids) == 0 {
-		return nil
+		return 0, nil
 	}
-	if err := s.repo.BulkRestore(ids); err != nil {
-		return helper.NewServiceError("SERVER_ERROR", "Gagal memulihkan pesan.", err)
+	restored, err := s.repo.BulkRestore(ids)
+	if err != nil {
+		return 0, helper.NewServiceError("SERVER_ERROR", "Gagal memulihkan pesan.", err)
+	}
+	if restored == 0 {
+		return 0, helper.NewServiceError("VALIDATION_ERROR", "Tidak ada pesan di Sampah yang bisa dipulihkan.", nil)
 	}
 
 	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		Action:      "kontak.bulk_restore",
 		EntityType:  "kontak",
-		Description: "Memulihkan " + strconv.FormatUint(uint64(len(ids)), 10) + " pesan kontak",
+		Description: "Memulihkan " + strconv.FormatInt(restored, 10) + " pesan kontak",
 		Metadata: map[string]any{
-			"ids": ids,
+			"ids":      ids,
+			"restored": restored,
 		},
 	})
 
-	return nil
+	return restored, nil
 }

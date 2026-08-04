@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import AdminLayout from '../../layouts/AdminLayout'
 import { activityLogService } from '../../services/activityLogService'
+import { mapLogRowForCsv, mapLogRowForDisplay, extractPaginationMeta } from './activityLogMapping'
 
 export default function ActivityLogAdmin() {
   const [logs, setLogs] = useState([])
@@ -32,9 +33,10 @@ export default function ActivityLogAdmin() {
       .then(res => {
         if (res.success && res.data) {
           setLogs(res.data.items || [])
-          if (res.data.pagination) {
-            setTotal(res.data.pagination.total || 0)
-            setTotalPages(res.data.pagination.totalPages || 1)
+          const paginationMeta = extractPaginationMeta(res.data)
+          if (paginationMeta) {
+            setTotal(paginationMeta.total)
+            setTotalPages(paginationMeta.totalPages)
           }
           setError(null)
         } else {
@@ -69,17 +71,7 @@ export default function ActivityLogAdmin() {
   const downloadCSV = () => {
     if (logs.length === 0) return
     const headers = ['Waktu', 'Aktor', 'Role', 'Aktivitas', 'Entitas', 'Keterangan', 'IP Address', 'Device/User Agent', 'Risiko']
-    const rows = logs.map(log => [
-      log.time || '',
-      log.actor || '',
-      log.role || '',
-      log.action || '',
-      `${log.entity || ''} ${log.entityLabel ? `(${log.entityLabel})` : ''}`,
-      log.description || '',
-      log.ip || '',
-      log.device || '',
-      log.risk || ''
-    ])
+    const rows = logs.map(mapLogRowForCsv)
 
     const csvContent = 'data:text/csv;charset=utf-8,' 
       + [headers.join(','), ...rows.map(e => e.map(val => `"${val.replace(/"/g, '""')}"`).join(','))].join('\n')
@@ -229,34 +221,32 @@ export default function ActivityLogAdmin() {
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-sm text-gray-700">
                   {logs.map((log) => {
-                    const timeParts = (log.time || '').split(', ')
-                    const datePart = timeParts[0] || ''
-                    const hourPart = timeParts[1] || ''
+                    const row = mapLogRowForDisplay(log)
 
                     return (
-                      <tr key={log.id} className="hover:bg-gray-50 transition-colors admin-row">
+                      <tr key={row.id} className="hover:bg-gray-50 transition-colors admin-row">
                         {/* WAKTU */}
                         <td className="p-4">
-                          <div className="text-gray-900 font-medium">{datePart}</div>
-                          <div className="text-gray-500 text-xs mt-0.5">{hourPart}</div>
-                          <div className="text-[10px] text-gray-400 mt-1 uppercase">Log ID: {log.id}</div>
+                          <div className="text-gray-900 font-medium">{row.datePart}</div>
+                          <div className="text-gray-500 text-xs mt-0.5">{row.hourPart}</div>
+                          <div className="text-[10px] text-gray-400 mt-1 uppercase">Log ID: {row.id}</div>
                         </td>
                         
                         {/* AKTOR & DEVICE */}
                         <td className="p-4">
                           <div className="flex items-start gap-3">
                             <div className="w-8 h-8 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold text-xs shrink-0">
-                              {(log.actor || 'S').charAt(0).toUpperCase()}
+                              {row.actor.charAt(0).toUpperCase()}
                             </div>
                             <div>
                               <div className="font-medium text-gray-900 leading-tight">
-                                {log.actor || 'System'}
+                                {row.actor}
                               </div>
                               <div className="text-[11px] text-gray-500 mt-0.5">
-                                {log.role || 'System'} • <span className="font-mono text-gray-400">{log.ip || '127.0.0.1'}</span>
+                                {row.role} • <span className="font-mono text-gray-400">{row.ip}</span>
                               </div>
-                              <div className="text-[10px] text-gray-400 mt-1 leading-tight max-w-[200px]" title={log.device}>
-                                {log.device || 'N/A'}
+                              <div className="text-[10px] text-gray-400 mt-1 leading-tight max-w-[200px]" title={row.device}>
+                                {row.device}
                               </div>
                             </div>
                           </div>
@@ -265,14 +255,14 @@ export default function ActivityLogAdmin() {
                         {/* ACTION & ENTITY */}
                         <td className="p-4">
                           <div className="flex flex-col gap-1.5 items-start">
-                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold font-mono tracking-wider border ${getActionBadgeClass(log.action)}`}>
-                              {log.action}
+                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold font-mono tracking-wider border ${getActionBadgeClass(row.action)}`}>
+                              {row.action}
                             </span>
                             
                             <div className="bg-gray-100 border border-gray-200 px-2 py-1 rounded text-xs w-full max-w-[220px]">
-                              <span className="text-gray-500 font-medium capitalize">{log.entity}</span> 
-                              <div className="font-medium text-gray-800 mt-0.5 truncate" title={log.entityLabel}>
-                                {log.entityLabel || '-'}
+                              <span className="text-gray-500 font-medium capitalize">{row.entity}</span> 
+                              <div className="font-medium text-gray-800 mt-0.5 truncate" title={row.entityLabel}>
+                                {row.entityLabel}
                               </div>
                             </div>
                           </div>
@@ -280,15 +270,15 @@ export default function ActivityLogAdmin() {
                         
                         {/* RISIKO */}
                         <td className="p-4">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${getRiskBadgeClass(log.risk)}`}>
-                            <i className={`ph ${log.risk?.toLowerCase() === 'high' ? 'ph-warning-circle' : 'ph-info'}`} />
-                            <span className="capitalize">{log.risk}</span>
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${getRiskBadgeClass(row.risk)}`}>
+                            <i className={`ph ${row.risk?.toLowerCase() === 'high' ? 'ph-warning-circle' : 'ph-info'}`} />
+                            <span className="capitalize">{row.risk}</span>
                           </span>
                         </td>
                         
                         {/* KETERANGAN */}
                         <td className="p-4 text-gray-600 text-xs leading-relaxed max-w-[200px]">
-                          {log.description}
+                          {row.description}
                         </td>
                       </tr>
                     )

@@ -1,0 +1,27 @@
+{
+  "pbtResults": {
+    "1. Write bug condition exploration test for frontend field/pagination mapping": {
+      "status": "failed",
+      "failingExample": "actor should come from actor_name (seed=1): actual 'System', expected 'Administrator Utama' (row.actor read from log.actor which is undefined, falls back to 'System' instead of the real actor_name field); CSV Waktu column actual '' expected '2026-07-02T13:35:00Z' (read from log.time instead of created_at); extractPaginationMeta returned null when meta.total_data/total_pages were present (looked for res.data.pagination instead of res.data.meta)",
+      "lastRunTimestamp": 1785835601550
+    },
+    "2. Write preservation property test for already-correct fields and untouched filters": {
+      "status": "passed",
+      "lastRunTimestamp": 1785835912105
+    },
+    "3.2 Verify bug condition exploration test now passes": {
+      "status": "passed",
+      "lastRunTimestamp": 1785836023068
+    },
+    "3.3 Verify preservation test still passes": {
+      "status": "passed",
+      "lastRunTimestamp": 1785836024057
+    },
+    "4. Write bug condition exploration test for GetSummary action-string typo": {
+      "status": "failed",
+      "failingExample": "GetSummary's FailedLogin count query uses literal 'auth.failed_login' (SQL=SELECT count(*) FROM activity_logs WHERE action = ? VARS=[auth.failed_login]) instead of the real emitted action string \"auth.login_failed\"; CMSAction exclusion query similarly excludes 'auth.failed_login' instead of 'auth.login_failed'",
+      "lastRunTimestamp": 1785837394091
+    }
+  },
+  "executionHistory": {}
+}

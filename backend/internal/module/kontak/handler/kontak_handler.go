@@ -101,11 +101,12 @@ func (h *KontakHandler) BulkDelete(c *gin.Context) {
 		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "validasi gagal", validator.Errors(err))
 		return
 	}
-	if err := h.svc.BulkDelete(c.Request.Context(), req.IDs); err != nil {
+	affected, err := h.svc.BulkDelete(c.Request.Context(), req.IDs)
+	if err != nil {
 		helper.HandleServiceError(c, err)
 		return
 	}
-	helper.SuccessResponse(c, http.StatusOK, "KONTAK_BULK_DELETED", "Pesan berhasil dihapus massal.", nil, nil)
+	helper.SuccessResponse(c, http.StatusOK, "KONTAK_BULK_DELETED", "Pesan berhasil dihapus massal.", dto.BulkResponse{Affected: affected}, nil)
 }
 
 // POST /api/v1/admin/kontak/bulk-restore — admin
@@ -115,9 +116,10 @@ func (h *KontakHandler) BulkRestore(c *gin.Context) {
 		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "validasi gagal", validator.Errors(err))
 		return
 	}
-	if err := h.svc.BulkRestore(c.Request.Context(), req.IDs); err != nil {
+	affected, err := h.svc.BulkRestore(c.Request.Context(), req.IDs)
+	if err != nil {
 		helper.HandleServiceError(c, err)
 		return
 	}
-	helper.SuccessResponse(c, http.StatusOK, "KONTAK_BULK_RESTORED", "Pesan berhasil dipulihkan massal.", nil, nil)
+	helper.SuccessResponse(c, http.StatusOK, "KONTAK_BULK_RESTORED", "Pesan berhasil dipulihkan massal.", dto.BulkResponse{Affected: affected}, nil)
 }
