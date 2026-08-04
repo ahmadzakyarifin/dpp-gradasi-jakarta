@@ -2607,3 +2607,169 @@ Please check https://github.com/gin-gonic/gin/blob/master/docs/doc.md#dont-trust
 [0m[33m[7.479ms] [34;1m[rows:1][0m UPDATE `berita` SET `views`=views + 1 WHERE id = 6 AND `berita`.`deleted_at` IS NULL
 [GIN] 2026/08/04 - 19:07:11 | 200 |  10.83ms |       127.0.0.1 | GET      "/api/v1/berita/fsgbsgsr"
 [GIN] 2026/08/04 - 19:07:11 | 304 |   8.81ms |       127.0.0.1 | GET      "/uploads/berita/1785844676955206800.jpg"
+
+2026/08/04 19:08:44 [32mD:/dpp-gradasi-jakarta/backend/internal/module/berita/repository/berita_repo.go:233
+[0m[33m[153.156ms] [34;1m[rows:3][0m SELECT DISTINCT `category` FROM `berita` WHERE (deleted_at IS NULL AND category IS NOT NULL AND category != '') AND `berita`.`deleted_at` IS NULL ORDER BY category ASC
+[GIN] 2026/08/04 - 19:08:44 | 200 | 173.98ms |       127.0.0.1 | GET      "/api/v1/berita/categories"
+
+2026/08/04 19:08:44 [32mD:/dpp-gradasi-jakarta/backend/internal/module/berita/repository/berita_repo.go:95
+[0m[33m[166.541ms] [34;1m[rows:1][0m SELECT count(*) FROM `berita` LEFT JOIN users ON users.id = berita.author_id WHERE is_published = true AND (berita.deleted_at IS NULL AND is_published = true) AND `berita`.`deleted_at` IS NULL
+
+2026/08/04 19:08:44 [32mD:/dpp-gradasi-jakarta/backend/internal/module/berita/repository/berita_repo.go:233
+[0m[33m[1.540ms] [34;1m[rows:3][0m SELECT DISTINCT `category` FROM `berita` WHERE (deleted_at IS NULL AND category IS NOT NULL AND category != '') AND `berita`.`deleted_at` IS NULL ORDER BY category ASC
+[GIN] 2026/08/04 - 19:08:44 | 200 |   2.05ms |       127.0.0.1 | GET      "/api/v1/berita/categories"
+
+2026/08/04 19:08:44 [32mD:/dpp-gradasi-jakarta/backend/internal/module/berita/repository/berita_repo.go:118
+[0m[33m[23.215ms] [34;1m[rows:7][0m SELECT * FROM `berita_tags` WHERE `berita_tags`.`berita_id` IN (6,4,1,2)
+
+2026/08/04 19:08:44 [32mD:/dpp-gradasi-jakarta/backend/internal/module/berita/repository/berita_repo.go:118
+[0m[33m[34.902ms] [34;1m[rows:4][0m SELECT berita.*, users.name as author_name FROM `berita` LEFT JOIN users ON users.id = berita.author_id WHERE is_published = true AND (berita.deleted_at IS NULL AND is_published = true) AND `berita`.`deleted_at` IS NULL ORDER BY published_date DESC, created_at DESC LIMIT 6
+[GIN] 2026/08/04 - 19:08:44 | 200 | 211.63ms |       127.0.0.1 | GET      "/api/v1/berita?page=1&limit=6&sort=newest"
+
+2026/08/04 19:08:44 [32mD:/dpp-gradasi-jakarta/backend/internal/module/berita/repository/berita_repo.go:95
+[0m[33m[1.217ms] [34;1m[rows:1][0m SELECT count(*) FROM `berita` LEFT JOIN users ON users.id = berita.author_id WHERE is_published = true AND (berita.deleted_at IS NULL AND is_published = true) AND `berita`.`deleted_at` IS NULL
+
+2026/08/04 19:08:44 [32mD:/dpp-gradasi-jakarta/backend/internal/module/berita/repository/berita_repo.go:118
+[0m[33m[1.766ms] [34;1m[rows:7][0m SELECT * FROM `berita_tags` WHERE `berita_tags`.`berita_id` IN (6,4,1,2)
+
+2026/08/04 19:08:44 [32mD:/dpp-gradasi-jakarta/backend/internal/module/berita/repository/berita_repo.go:118
+[0m[33m[3.892ms] [34;1m[rows:4][0m SELECT berita.*, users.name as author_name FROM `berita` LEFT JOIN users ON users.id = berita.author_id WHERE is_published = true AND (berita.deleted_at IS NULL AND is_published = true) AND `berita`.`deleted_at` IS NULL ORDER BY published_date DESC, created_at DESC LIMIT 6
+[GIN] 2026/08/04 - 19:08:44 | 200 |   5.77ms |       127.0.0.1 | GET      "/api/v1/berita?page=1&limit=6&sort=newest"
+
+2026/08/04 19:08:48 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:87
+[0m[33m[9.301ms] [34;1m[rows:1][0m SELECT count(*) FROM `kegiatan` LEFT JOIN users ON users.id = kegiatan.author_id WHERE is_published = true AND kegiatan.deleted_at IS NULL AND `kegiatan`.`deleted_at` IS NULL
+
+2026/08/04 19:08:48 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:108
+[0m[33m[7.724ms] [34;1m[rows:0][0m SELECT * FROM `kegiatan_tags` WHERE `kegiatan_tags`.`kegiatan_id` IN (6,4,7,5)
+
+2026/08/04 19:08:48 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:108
+[0m[33m[11.954ms] [34;1m[rows:4][0m SELECT kegiatan.*, users.name as author_name FROM `kegiatan` LEFT JOIN users ON users.id = kegiatan.author_id WHERE is_published = true AND kegiatan.deleted_at IS NULL AND `kegiatan`.`deleted_at` IS NULL ORDER BY event_date DESC, created_at DESC LIMIT 10
+[GIN] 2026/08/04 - 19:08:48 | 200 |  28.82ms |       127.0.0.1 | GET      "/api/v1/kegiatan"
+
+2026/08/04 19:08:48 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:87
+[0m[33m[2.330ms] [34;1m[rows:1][0m SELECT count(*) FROM `kegiatan` LEFT JOIN users ON users.id = kegiatan.author_id WHERE is_published = true AND kegiatan.deleted_at IS NULL AND `kegiatan`.`deleted_at` IS NULL
+
+2026/08/04 19:08:48 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:108
+[0m[33m[1.467ms] [34;1m[rows:0][0m SELECT * FROM `kegiatan_tags` WHERE `kegiatan_tags`.`kegiatan_id` IN (6,4,7,5)
+
+2026/08/04 19:08:48 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:108
+[0m[33m[4.733ms] [34;1m[rows:4][0m SELECT kegiatan.*, users.name as author_name FROM `kegiatan` LEFT JOIN users ON users.id = kegiatan.author_id WHERE is_published = true AND kegiatan.deleted_at IS NULL AND `kegiatan`.`deleted_at` IS NULL ORDER BY event_date DESC, created_at DESC LIMIT 10
+[GIN] 2026/08/04 - 19:08:48 | 200 |    7.6ms |       127.0.0.1 | GET      "/api/v1/kegiatan"
+
+2026/08/04 19:08:51 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:120
+[0m[33m[26.232ms] [34;1m[rows:0][0m SELECT * FROM `kegiatan_gallery` WHERE `kegiatan_gallery`.`kegiatan_id` = 7 ORDER BY sort_order ASC, id ASC
+
+2026/08/04 19:08:51 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:120
+[0m[33m[2.091ms] [34;1m[rows:0][0m SELECT * FROM `kegiatan_tags` WHERE `kegiatan_tags`.`kegiatan_id` = 7
+
+2026/08/04 19:08:51 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:120
+[0m[33m[63.510ms] [34;1m[rows:1][0m SELECT kegiatan.*, users.name as author_name FROM `kegiatan` LEFT JOIN users ON users.id = kegiatan.author_id WHERE (kegiatan.slug = 'berita' AND kegiatan.deleted_at IS NULL AND kegiatan.is_published = true) AND `kegiatan`.`deleted_at` IS NULL ORDER BY `kegiatan`.`id` LIMIT 1
+
+2026/08/04 19:08:51 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:199
+[0m[33m[61.945ms] [34;1m[rows:1][0m UPDATE `kegiatan` SET `views`=views + 1 WHERE id = 7 AND `kegiatan`.`deleted_at` IS NULL
+[GIN] 2026/08/04 - 19:08:51 | 200 | 131.47ms |       127.0.0.1 | GET      "/api/v1/kegiatan/berita"
+
+2026/08/04 19:08:51 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:120
+[0m[33m[1.593ms] [34;1m[rows:0][0m SELECT * FROM `kegiatan_gallery` WHERE `kegiatan_gallery`.`kegiatan_id` = 7 ORDER BY sort_order ASC, id ASC
+
+2026/08/04 19:08:51 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:120
+[0m[33m[0.706ms] [34;1m[rows:0][0m SELECT * FROM `kegiatan_tags` WHERE `kegiatan_tags`.`kegiatan_id` = 7
+
+2026/08/04 19:08:51 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:120
+[0m[33m[4.570ms] [34;1m[rows:1][0m SELECT kegiatan.*, users.name as author_name FROM `kegiatan` LEFT JOIN users ON users.id = kegiatan.author_id WHERE (kegiatan.slug = 'berita' AND kegiatan.deleted_at IS NULL AND kegiatan.is_published = true) AND `kegiatan`.`deleted_at` IS NULL ORDER BY `kegiatan`.`id` LIMIT 1
+
+2026/08/04 19:08:51 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:199
+[0m[33m[8.345ms] [34;1m[rows:1][0m UPDATE `kegiatan` SET `views`=views + 1 WHERE id = 7 AND `kegiatan`.`deleted_at` IS NULL
+[GIN] 2026/08/04 - 19:08:51 | 200 |  13.69ms |       127.0.0.1 | GET      "/api/v1/kegiatan/berita"
+
+2026/08/04 19:11:22 [32mD:/dpp-gradasi-jakarta/backend/internal/module/berita/repository/berita_repo.go:95
+[0m[33m[72.575ms] [34;1m[rows:1][0m SELECT count(*) FROM `berita` LEFT JOIN users ON users.id = berita.author_id WHERE is_published = true AND (berita.deleted_at IS NULL AND is_published = true) AND `berita`.`deleted_at` IS NULL
+
+2026/08/04 19:11:22 [32mD:/dpp-gradasi-jakarta/backend/internal/module/pengurus/repository/pengurus_repo.go:72
+[0m[33m[67.933ms] [34;1m[rows:1][0m SELECT count(*) FROM `pengurus` WHERE is_active = true AND deleted_at IS NULL AND `pengurus`.`deleted_at` IS NULL
+
+2026/08/04 19:11:22 [32mD:/dpp-gradasi-jakarta/backend/internal/module/sliders/repository/sliders_repo.go:34
+[0m[33m[72.894ms] [34;1m[rows:5][0m SELECT * FROM `sliders` WHERE `sliders`.`deleted_at` IS NULL ORDER BY sort_order ASC, created_at DESC
+
+2026/08/04 19:11:22 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:87
+[0m[33m[67.372ms] [34;1m[rows:1][0m SELECT count(*) FROM `kegiatan` LEFT JOIN users ON users.id = kegiatan.author_id WHERE is_published = true AND kegiatan.deleted_at IS NULL AND `kegiatan`.`deleted_at` IS NULL
+[GIN] 2026/08/04 - 19:11:22 | 200 |  85.62ms |       127.0.0.1 | GET      "/api/v1/sliders"
+
+2026/08/04 19:11:22 [32mD:/dpp-gradasi-jakarta/backend/internal/module/pengurus/repository/pengurus_repo.go:93
+[0m[33m[6.277ms] [34;1m[rows:26][0m SELECT * FROM `pengurus` WHERE is_active = true AND deleted_at IS NULL AND `pengurus`.`deleted_at` IS NULL ORDER BY sort_order ASC, name ASC LIMIT 100
+[GIN] 2026/08/04 - 19:11:22 | 200 |  88.93ms |       127.0.0.1 | GET      "/api/v1/pengurus?limit=100"
+
+2026/08/04 19:11:22 [32mD:/dpp-gradasi-jakarta/backend/internal/module/berita/repository/berita_repo.go:118
+[0m[33m[9.391ms] [34;1m[rows:7][0m SELECT * FROM `berita_tags` WHERE `berita_tags`.`berita_id` IN (6,4,1,2)
+
+2026/08/04 19:11:22 [32mD:/dpp-gradasi-jakarta/backend/internal/module/berita/repository/berita_repo.go:118
+[0m[33m[16.270ms] [34;1m[rows:4][0m SELECT berita.*, users.name as author_name FROM `berita` LEFT JOIN users ON users.id = berita.author_id WHERE is_published = true AND (berita.deleted_at IS NULL AND is_published = true) AND `berita`.`deleted_at` IS NULL ORDER BY published_date DESC, created_at DESC LIMIT 10
+[GIN] 2026/08/04 - 19:11:22 | 200 |  98.15ms |       127.0.0.1 | GET      "/api/v1/berita"
+
+2026/08/04 19:11:22 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:108
+[0m[33m[9.391ms] [34;1m[rows:0][0m SELECT * FROM `kegiatan_tags` WHERE `kegiatan_tags`.`kegiatan_id` IN (6,4,7,5)
+
+2026/08/04 19:11:22 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:108
+[0m[33m[19.006ms] [34;1m[rows:4][0m SELECT kegiatan.*, users.name as author_name FROM `kegiatan` LEFT JOIN users ON users.id = kegiatan.author_id WHERE is_published = true AND kegiatan.deleted_at IS NULL AND `kegiatan`.`deleted_at` IS NULL ORDER BY event_date DESC, created_at DESC LIMIT 10
+[GIN] 2026/08/04 - 19:11:22 | 200 | 100.61ms |       127.0.0.1 | GET      "/api/v1/kegiatan"
+
+2026/08/04 19:11:22 [32mD:/dpp-gradasi-jakarta/backend/internal/module/sliders/repository/sliders_repo.go:34
+[0m[33m[1.193ms] [34;1m[rows:5][0m SELECT * FROM `sliders` WHERE `sliders`.`deleted_at` IS NULL ORDER BY sort_order ASC, created_at DESC
+[GIN] 2026/08/04 - 19:11:22 | 200 |   1.19ms |       127.0.0.1 | GET      "/api/v1/sliders"
+
+2026/08/04 19:11:22 [32mD:/dpp-gradasi-jakarta/backend/internal/module/pengurus/repository/pengurus_repo.go:72
+[0m[33m[1.484ms] [34;1m[rows:1][0m SELECT count(*) FROM `pengurus` WHERE is_active = true AND deleted_at IS NULL AND `pengurus`.`deleted_at` IS NULL
+
+2026/08/04 19:11:22 [32mD:/dpp-gradasi-jakarta/backend/internal/module/pengurus/repository/pengurus_repo.go:93
+[0m[33m[2.941ms] [34;1m[rows:26][0m SELECT * FROM `pengurus` WHERE is_active = true AND deleted_at IS NULL AND `pengurus`.`deleted_at` IS NULL ORDER BY sort_order ASC, name ASC LIMIT 100
+[GIN] 2026/08/04 - 19:11:22 | 200 |    6.4ms |       127.0.0.1 | GET      "/api/v1/pengurus?limit=100"
+
+2026/08/04 19:11:22 [32mD:/dpp-gradasi-jakarta/backend/internal/module/berita/repository/berita_repo.go:95
+[0m[33m[2.178ms] [34;1m[rows:1][0m SELECT count(*) FROM `berita` LEFT JOIN users ON users.id = berita.author_id WHERE is_published = true AND (berita.deleted_at IS NULL AND is_published = true) AND `berita`.`deleted_at` IS NULL
+
+2026/08/04 19:11:22 [32mD:/dpp-gradasi-jakarta/backend/internal/module/berita/repository/berita_repo.go:118
+[0m[33m[1.612ms] [34;1m[rows:7][0m SELECT * FROM `berita_tags` WHERE `berita_tags`.`berita_id` IN (6,4,1,2)
+
+2026/08/04 19:11:22 [32mD:/dpp-gradasi-jakarta/backend/internal/module/berita/repository/berita_repo.go:118
+[0m[33m[3.688ms] [34;1m[rows:4][0m SELECT berita.*, users.name as author_name FROM `berita` LEFT JOIN users ON users.id = berita.author_id WHERE is_published = true AND (berita.deleted_at IS NULL AND is_published = true) AND `berita`.`deleted_at` IS NULL ORDER BY published_date DESC, created_at DESC LIMIT 10
+[GIN] 2026/08/04 - 19:11:22 | 200 |   7.56ms |       127.0.0.1 | GET      "/api/v1/berita"
+
+2026/08/04 19:11:22 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:87
+[0m[33m[1.748ms] [34;1m[rows:1][0m SELECT count(*) FROM `kegiatan` LEFT JOIN users ON users.id = kegiatan.author_id WHERE is_published = true AND kegiatan.deleted_at IS NULL AND `kegiatan`.`deleted_at` IS NULL
+
+2026/08/04 19:11:22 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:108
+[0m[33m[2.368ms] [34;1m[rows:0][0m SELECT * FROM `kegiatan_tags` WHERE `kegiatan_tags`.`kegiatan_id` IN (6,4,7,5)
+
+2026/08/04 19:11:22 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:108
+[0m[33m[4.618ms] [34;1m[rows:4][0m SELECT kegiatan.*, users.name as author_name FROM `kegiatan` LEFT JOIN users ON users.id = kegiatan.author_id WHERE is_published = true AND kegiatan.deleted_at IS NULL AND `kegiatan`.`deleted_at` IS NULL ORDER BY event_date DESC, created_at DESC LIMIT 10
+[GIN] 2026/08/04 - 19:11:22 | 200 |   6.36ms |       127.0.0.1 | GET      "/api/v1/kegiatan"
+
+2026/08/04 19:11:36 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:120
+[0m[33m[4.294ms] [34;1m[rows:4][0m SELECT * FROM `kegiatan_gallery` WHERE `kegiatan_gallery`.`kegiatan_id` = 4 ORDER BY sort_order ASC, id ASC
+
+2026/08/04 19:11:36 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:120
+[0m[33m[1.534ms] [34;1m[rows:0][0m SELECT * FROM `kegiatan_tags` WHERE `kegiatan_tags`.`kegiatan_id` = 4
+
+2026/08/04 19:11:36 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:120
+[0m[33m[9.002ms] [34;1m[rows:1][0m SELECT kegiatan.*, users.name as author_name FROM `kegiatan` LEFT JOIN users ON users.id = kegiatan.author_id WHERE (kegiatan.slug = 'sdssdsd' AND kegiatan.deleted_at IS NULL AND kegiatan.is_published = true) AND `kegiatan`.`deleted_at` IS NULL ORDER BY `kegiatan`.`id` LIMIT 1
+
+2026/08/04 19:11:36 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:199
+[0m[33m[21.007ms] [34;1m[rows:1][0m UPDATE `kegiatan` SET `views`=views + 1 WHERE id = 4 AND `kegiatan`.`deleted_at` IS NULL
+[GIN] 2026/08/04 - 19:11:36 | 200 |  31.16ms |       127.0.0.1 | GET      "/api/v1/kegiatan/sdssdsd"
+
+2026/08/04 19:11:36 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:120
+[0m[33m[1.273ms] [34;1m[rows:4][0m SELECT * FROM `kegiatan_gallery` WHERE `kegiatan_gallery`.`kegiatan_id` = 4 ORDER BY sort_order ASC, id ASC
+
+2026/08/04 19:11:36 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:120
+[0m[33m[0.777ms] [34;1m[rows:0][0m SELECT * FROM `kegiatan_tags` WHERE `kegiatan_tags`.`kegiatan_id` = 4
+
+2026/08/04 19:11:36 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:120
+[0m[33m[3.807ms] [34;1m[rows:1][0m SELECT kegiatan.*, users.name as author_name FROM `kegiatan` LEFT JOIN users ON users.id = kegiatan.author_id WHERE (kegiatan.slug = 'sdssdsd' AND kegiatan.deleted_at IS NULL AND kegiatan.is_published = true) AND `kegiatan`.`deleted_at` IS NULL ORDER BY `kegiatan`.`id` LIMIT 1
+
+2026/08/04 19:11:36 [32mD:/dpp-gradasi-jakarta/backend/internal/module/kegiatan/repository/kegiatan_repo.go:199
+[0m[33m[6.093ms] [34;1m[rows:1][0m UPDATE `kegiatan` SET `views`=views + 1 WHERE id = 4 AND `kegiatan`.`deleted_at` IS NULL
+[GIN] 2026/08/04 - 19:11:36 | 200 |  10.53ms |       127.0.0.1 | GET      "/api/v1/kegiatan/sdssdsd"
+[GIN] 2026/08/04 - 19:11:36 | 304 |   1.12ms |       127.0.0.1 | GET      "/uploads/kegiatan/1785822236643329800.png"
+[GIN] 2026/08/04 - 19:11:36 | 304 |   1.12ms |       127.0.0.1 | GET      "/uploads/kegiatan/1785822241378332800.png"
+[GIN] 2026/08/04 - 19:11:36 | 304 |   1.64ms |       127.0.0.1 | GET      "/uploads/kegiatan/1785822231395556900.png"
+[GIN] 2026/08/04 - 19:11:36 | 304 |   1.64ms |       127.0.0.1 | GET      "/uploads/kegiatan/1785820803129233400.png"
