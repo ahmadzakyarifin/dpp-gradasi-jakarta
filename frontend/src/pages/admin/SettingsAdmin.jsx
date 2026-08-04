@@ -9,12 +9,8 @@ export default function SettingsAdmin() {
   const { refresh } = useSettings()
   const [currentTab, setCurrentTab] = useState('profil')
   const [loading, setLoading] = useState(false)
-  // Error backend: field errors inline + countdown rate limit
-  const { applyError } = useFormErrors()
-  const { applyRateLimit } = useRateLimitCooldown()
-  const [logoUploading, setLogoUploading] = useState(false)
-  const [logoPreview, setLogoPreview] = useState(null)
-  const [saved, setSaved] = useState(false)
+  const [formErrors, setFormErrors] = useState({})
+  const [touched, setTouched] = useState({})
 
   const [formData, setFormData] = useState({
     site_name: '',
@@ -40,6 +36,24 @@ export default function SettingsAdmin() {
     greeting_content: '',
     greeting_image_path: ''
   })
+
+  const validateForm = (data = formData) => {
+    const errors = {}
+    if (!data.site_name || !data.site_name.trim()) {
+      errors.site_name = 'Nama website / organisasi wajib diisi.'
+    }
+    if (data.contact_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.contact_email)) {
+      errors.contact_email = 'Format email resmi tidak valid.'
+    }
+    return errors
+  }
+
+  // Error backend: field errors inline + countdown rate limit
+  const { fieldErrors, applyError, clearFieldError, resetFieldErrors } = useFormErrors()
+  const { cooldown, isLimited, applyRateLimit } = useRateLimitCooldown()
+  const [logoUploading, setLogoUploading] = useState(false)
+  const [logoPreview, setLogoPreview] = useState(null)
+  const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     settingsService.get()
@@ -108,6 +122,21 @@ export default function SettingsAdmin() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    const errors = validateForm()
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors)
+      setTouched(Object.keys(errors).reduce((acc, k) => ({ ...acc, [k]: true }), {}))
+      // Pindahkan tab ke tab yang bermasalah agar user bisa melihat error
+      if (errors.site_name) {
+        setCurrentTab('profil')
+      } else if (errors.contact_email) {
+        setCurrentTab('kontak')
+      }
+      return
+    }
+    setFormErrors({})
+    resetFieldErrors()
+
     setLoading(true)
 
     // Buang field meta yang tidak boleh dikirim (backend: id/updated_by harus string/null,
@@ -122,6 +151,8 @@ export default function SettingsAdmin() {
     try {
       const res = await settingsService.update(payload)
       if (res.success) {
+        setTouched({})
+        setFormErrors({})
         showToast('Pengaturan website berhasil disimpan!')
         refresh()
       } else {
@@ -130,6 +161,14 @@ export default function SettingsAdmin() {
     } catch (err) {
       const parsed = applyError(err)
       applyRateLimit(err)
+      setFormErrors(prev => ({ ...prev, ...parsed.fieldErrors }))
+      setTouched(prev => ({ ...prev, ...Object.keys(parsed.fieldErrors).reduce((acc, k) => ({ ...acc, [k]: true }), {}) }))
+      // Redirect tab if error is in a field from a specific tab
+      if (parsed.fieldErrors.site_name) {
+        setCurrentTab('profil')
+      } else if (parsed.fieldErrors.contact_email) {
+        setCurrentTab('kontak')
+      }
       if (Object.keys(parsed.fieldErrors).length === 0) {
         showToast(parsed.message || 'Terjadi kesalahan saat menyimpan pengaturan', true)
       }
@@ -138,17 +177,11 @@ export default function SettingsAdmin() {
     }
   }
 
-  const inputCls = "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none"
+  const inputCls = "w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-brand-500 focus:border-brand-500 text-sm bg-white outline-none transition-colors"
 
   return (
     <AdminLayout title="Pengaturan Website">
       <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 animate-fade-in-up">
-
-        {saved && (
-          <div className={`md:col-span-4 px-4 py-3 rounded-xl text-sm font-bold flex items-center gap-2 ${saved.isError ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
-            <i className={`ph ${saved.isError ? 'ph-warning-circle' : 'ph-check-circle'} text-lg`} /> {saved.msg}
-          </div>
-        )}
 
         {/* Navigation Tabs */}
         <div className="md:col-span-1 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col gap-1 h-fit">
@@ -195,8 +228,30 @@ export default function SettingsAdmin() {
                 <h3 className="font-heading font-bold text-gray-800 text-base border-b pb-2">Profil & Sejarah Organisasi</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Nama Website / Organisasi</label>
-                    <input type="text" value={formData.site_name} onChange={e => setFormData({...formData, site_name: e.target.value})} className={inputCls} />
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">Nama Website / Organisasi <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      value={formData.site_name}
+                      onChange={e => {
+                        setFormData({...formData, site_name: e.target.value})
+                        clearFieldError('site_name')
+                        if (touched.site_name) {
+                          const errs = validateForm({...formData, site_name: e.target.value})
+                          setFormErrors(prev => ({ ...prev, site_name: errs.site_name }))
+                        }
+                      }}
+                      onBlur={() => {
+                        setTouched(prev => ({ ...prev, site_name: true }))
+                        const errs = validateForm()
+                        setFormErrors(prev => ({ ...prev, site_name: errs.site_name }))
+                      }}
+                      className={`${inputCls} ${(touched.site_name && formErrors.site_name) || fieldErrors.site_name ? 'border-red-400 focus:ring-2 focus:ring-red-100' : ''}`}
+                    />
+                    {((touched.site_name && formErrors.site_name) || fieldErrors.site_name) && (
+                      <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
+                        <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.site_name || fieldErrors.site_name}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">Tagline</label>
@@ -263,8 +318,30 @@ export default function SettingsAdmin() {
                 <h3 className="font-heading font-bold text-gray-800 text-base border-b pb-2">Informasi Kontak & Profil Kantor</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Email Resmi</label>
-                    <input type="email" value={formData.contact_email} onChange={e => setFormData({...formData, contact_email: e.target.value})} className={inputCls} />
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">Email Resmi <span className="text-gray-400 font-normal">(opsional)</span></label>
+                    <input
+                      type="email"
+                      value={formData.contact_email}
+                      onChange={e => {
+                        setFormData({...formData, contact_email: e.target.value})
+                        clearFieldError('contact_email')
+                        if (touched.contact_email) {
+                          const errs = validateForm({...formData, contact_email: e.target.value})
+                          setFormErrors(prev => ({ ...prev, contact_email: errs.contact_email }))
+                        }
+                      }}
+                      onBlur={() => {
+                        setTouched(prev => ({ ...prev, contact_email: true }))
+                        const errs = validateForm()
+                        setFormErrors(prev => ({ ...prev, contact_email: errs.contact_email }))
+                      }}
+                      className={`${inputCls} ${(touched.contact_email && formErrors.contact_email) || fieldErrors.contact_email ? 'border-red-400 focus:ring-2 focus:ring-red-100' : ''}`}
+                    />
+                    {((touched.contact_email && formErrors.contact_email) || fieldErrors.contact_email) && (
+                      <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
+                        <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.contact_email || fieldErrors.contact_email}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">Telepon / WhatsApp</label>
@@ -305,7 +382,7 @@ export default function SettingsAdmin() {
             )}
 
             <div className="flex justify-end pt-4 border-t border-slate-100">
-              <button type="submit" disabled={loading} className="px-6 py-2.5 bg-brand-600 text-white rounded-lg hover:bg-brand-700 text-sm font-semibold">
+              <button type="submit" disabled={loading} className="px-6 py-2.5 bg-brand-600 text-white rounded-xl hover:bg-brand-700 text-sm font-semibold transition btn-press">
                 {loading ? 'Menyimpan...' : 'Simpan Semua Pengaturan'}
               </button>
             </div>
@@ -313,6 +390,16 @@ export default function SettingsAdmin() {
         </div>
 
       </div>
+
+      {/* Floating Toast Notification */}
+      {saved && (
+        <div className={`fixed bottom-4 right-4 z-50 flex items-center p-4 rounded-xl shadow-xl text-white transition-opacity duration-300 ${
+          saved.isError ? 'bg-red-500' : 'bg-emerald-500'
+        }`}>
+          <i className={`text-xl mr-2 ph ${saved.isError ? 'ph-warning-circle' : 'ph-check-circle'}`} />
+          <span className="text-sm font-semibold">{saved.msg}</span>
+        </div>
+      )}
     </AdminLayout>
   )
 }

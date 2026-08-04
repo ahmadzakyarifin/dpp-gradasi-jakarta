@@ -12,9 +12,15 @@ export default function RoleAdmin() {
 
   const [currentTab, setCurrentTab] = useState('active') // active, trash
   const [searchQuery, setSearchQuery] = useState('')
+  const [filterStatus, setFilterStatus] = useState('')
+
+  // Pagination states
+  const [page, setPage] = useState(1)
+  const [limit] = useState(10)
+  const [total, setTotal] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
 
   const [selectedItems, setSelectedItems] = useState([])
-
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [formMode, setFormMode] = useState('create') // create, edit
   const [formData, setFormData] = useState({ name: '', display_name: '', is_active: true })
@@ -44,19 +50,23 @@ export default function RoleAdmin() {
     setLoading(true)
     setError(null)
     roleService.list({
-      status: currentTab === 'trash' ? 'trashed' : undefined,
+      status: currentTab === 'trash' ? 'trash' : filterStatus || undefined,
       search: searchQuery || undefined,
-      limit: 100,
+      page,
+      limit,
     })
       .then(res => {
         if (res?.data) {
           const list = Array.isArray(res.data) ? res.data : (res.data.roles || res.data.items || [])
           setRoles(list)
+          const meta = res.data.meta || {}
+          if (meta.total_data !== undefined) setTotal(meta.total_data)
+          if (meta.total_pages !== undefined) setTotalPages(meta.total_pages)
         }
       })
       .catch(err => setError(err?.message || 'Gagal memuat role'))
       .finally(() => setLoading(false))
-  }, [currentTab, searchQuery])
+  }, [currentTab, searchQuery, filterStatus, page, limit])
 
   useEffect(() => {
     loadRoles()
@@ -64,9 +74,29 @@ export default function RoleAdmin() {
 
   useEffect(() => {
     setSelectedItems([])
+    setPage(1)
+    setFilterStatus('')
   }, [currentTab])
 
+  const [formErrors, setFormErrors] = useState({})
+  const [touched, setTouched] = useState({})
+
+  const validateForm = useCallback((data = formData) => {
+    const errors = {}
+    if (!data.name || !data.name.trim()) {
+      errors.name = 'Nama role wajib diisi.'
+    } else if (!/^[a-z0-9_]+$/.test(data.name)) {
+      errors.name = 'Nama role hanya boleh huruf kecil, angka, dan underscore.'
+    }
+    if (!data.display_name || !data.display_name.trim()) {
+      errors.display_name = 'Nama tampilan wajib diisi.'
+    }
+    return errors
+  }, [formData])
+
   const openForm = (item = null) => {
+    setFormErrors({})
+    setTouched({})
     resetFieldErrors()
     if (item) {
       setFormMode('edit')
@@ -84,6 +114,15 @@ export default function RoleAdmin() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    const errors = validateForm()
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors)
+      setTouched(Object.keys(errors).reduce((acc, k) => ({ ...acc, [k]: true }), {}))
+      return
+    }
+    setFormErrors({})
+    resetFieldErrors()
+
     setFormSaving(true)
     try {
       if (formMode === 'create') {
@@ -98,6 +137,8 @@ export default function RoleAdmin() {
     } catch (err) {
       const parsed = applyError(err)
       applyRateLimit(err)
+      setFormErrors(prev => ({ ...prev, ...parsed.fieldErrors }))
+      setTouched(prev => ({ ...prev, ...Object.keys(parsed.fieldErrors).reduce((acc, k) => ({ ...acc, [k]: true }), {}) }))
       if (Object.keys(parsed.fieldErrors).length === 0) {
         showToast(parsed.message || 'Gagal menyimpan role.', 'error')
       }
@@ -179,14 +220,69 @@ export default function RoleAdmin() {
     }
   }
 
+  const renderPagination = () => {
+    const pages = []
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(
+        <button
+          key={i}
+          onClick={() => setPage(i)}
+          className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-semibold transition ${
+            page === i
+              ? 'bg-brand-600 text-white'
+              : 'border border-slate-200 text-slate-500 hover:border-brand-500 hover:text-brand-600'
+          }`}
+        >
+          {i}
+        </button>
+      )
+    }
+    return pages
+  }
+
   const isAllSelected = roles.length > 0 && selectedItems.length === roles.length
   const toggleAll = () => setSelectedItems(isAllSelected ? [] : roles.map(r => r.id))
   const toggleItem = (id) => setSelectedItems(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
 
   const inputCls = "w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors"
 
+  const headerContent = (
+    <div className="flex items-center gap-2 w-full max-w-2xl animate-fade-in-up">
+      <div className="relative w-full">
+        <i className="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={e => { setSearchQuery(e.target.value); setPage(1); }}
+          placeholder="Cari nama role..."
+          className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors"
+        />
+      </div>
+      {currentTab === 'active' && (
+        <select
+          value={filterStatus}
+          onChange={e => {
+            setFilterStatus(e.target.value)
+            setPage(1)
+          }}
+          className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
+        >
+          <option value="">Semua Status</option>
+          <option value="active">Aktif</option>
+          <option value="inactive">Non-aktif</option>
+        </select>
+      )}
+      <button
+        onClick={() => { setSearchQuery(''); setFilterStatus(''); setPage(1); }}
+        className="shrink-0 bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all btn-press"
+      >
+        <i className="ph ph-arrows-counter-clockwise text-lg" /> Reset
+      </button>
+    </div>
+  )
+
   return (
-    <AdminLayout title="Manajemen Role">
+    <AdminLayout title="Manajemen Role" headerContent={headerContent}>
       {toast.show && <ToastNotification message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />}
       <ConfirmDialog {...confirm} onClose={() => setConfirm(prev => ({ ...prev, isOpen: false, action: null }))} onConfirm={executeConfirm} />
 
@@ -206,26 +302,14 @@ export default function RoleAdmin() {
               <i className="ph ph-trash" /> Terhapus
             </button>
           </div>
-          <div className="flex items-center gap-2 w-full max-w-md">
-            <div className="relative w-full">
-              <i className="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder="Cari nama role..."
-                className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors"
-              />
-            </div>
-            {currentTab === 'active' && (
-              <button
-                onClick={() => openForm()}
-                className="shrink-0 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all btn-press shadow-sm"
-              >
-                <i className="ph ph-plus-circle text-lg" /> Tambah Role
-              </button>
-            )}
-          </div>
+          {currentTab === 'active' && (
+            <button
+              onClick={() => openForm()}
+              className="shrink-0 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all btn-press shadow-sm"
+            >
+              <i className="ph ph-plus-circle text-lg" /> Tambah Role
+            </button>
+          )}
         </div>
 
         {/* Bulk Actions */}
@@ -283,7 +367,14 @@ export default function RoleAdmin() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {roles.length === 0 && (
-                    <tr><td colSpan={6} className="p-10 text-center text-slate-400">Tidak ada role untuk ditampilkan.</td></tr>
+                    <tr>
+                      <td colSpan={6} className="p-10 text-center text-slate-400">
+                        <div className="flex flex-col items-center justify-center py-6">
+                          <i className="ph ph-shield-check text-gray-300 text-5xl mb-4" />
+                          <p className="font-medium text-gray-500">Tidak ada role untuk ditampilkan.</p>
+                        </div>
+                      </td>
+                    </tr>
                   )}
                   {roles.map(item => (
                     <tr key={item.id} className="hover:bg-slate-50/60 transition admin-row">
@@ -344,6 +435,33 @@ export default function RoleAdmin() {
                   ))}
                 </tbody>
               </table>
+              {/* Pagination */}
+              {!loading && !error && roles.length > 0 && (
+                <div className="bg-gray-50 border-t border-gray-200 px-4 py-3 flex items-center justify-between sm:px-6 rounded-b-xl">
+                  <div className="text-sm text-gray-500">
+                    Menampilkan <span className="font-medium text-gray-900">{(page - 1) * limit + 1}</span> sampai <span className="font-medium text-gray-900">{Math.min(page * limit, total)}</span> dari <span className="font-medium text-gray-900">{total}</span> hasil
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => setPage(p => Math.max(p - 1, 1))}
+                      disabled={page === 1}
+                      className="px-3 py-1 border border-gray-200 bg-white text-gray-500 rounded hover:bg-gray-50 disabled:opacity-50 transition"
+                    >
+                      Prev
+                    </button>
+                    
+                    {renderPagination()}
+
+                    <button
+                      onClick={() => setPage(p => Math.min(p + 1, totalPages))}
+                      disabled={page === totalPages}
+                      className="px-3 py-1 border border-gray-200 bg-white text-gray-500 rounded hover:bg-gray-50 disabled:opacity-50 transition"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -392,40 +510,66 @@ export default function RoleAdmin() {
         <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
             <h3 className="font-heading font-bold text-lg text-slate-900">{formMode === 'create' ? 'Tambah Role Baru' : 'Edit Role'}</h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} noValidate className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1">Nama Role (slug) *</label>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Nama Role (slug) <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={e => { setFormData({ ...formData, name: e.target.value }); clearFieldError('name') }}
+                  onChange={e => {
+                    const val = e.target.value
+                    setFormData({ ...formData, name: val })
+                    clearFieldError('name')
+                    if (touched.name) {
+                      const errs = validateForm({ ...formData, name: val })
+                      setFormErrors(prev => ({ ...prev, name: errs.name }))
+                    }
+                  }}
+                  onBlur={() => {
+                    setTouched(prev => ({ ...prev, name: true }))
+                    const errs = validateForm()
+                    setFormErrors(prev => ({ ...prev, name: errs.name }))
+                  }}
                   placeholder="contoh: admin_berita"
-                  className={`${inputCls} ${fieldErrors.name ? 'border-red-400' : 'border-gray-300'}`}
+                  className={`${inputCls} ${(touched.name && formErrors.name) || fieldErrors.name ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-gray-300'}`}
                 />
-                {fieldErrors.name && (
+                {((touched.name && formErrors.name) || fieldErrors.name) && (
                   <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
-                    <i className="ph-bold ph-warning-circle text-xs" /> {fieldErrors.name}
+                    <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.name || fieldErrors.name}
                   </p>
                 )}
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1">Nama Tampilan *</label>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Nama Tampilan <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   value={formData.display_name}
-                  onChange={e => { setFormData({ ...formData, display_name: e.target.value }); clearFieldError('display_name') }}
+                  onChange={e => {
+                    const val = e.target.value
+                    setFormData({ ...formData, display_name: val })
+                    clearFieldError('display_name')
+                    if (touched.display_name) {
+                      const errs = validateForm({ ...formData, display_name: val })
+                      setFormErrors(prev => ({ ...prev, display_name: errs.display_name }))
+                    }
+                  }}
+                  onBlur={() => {
+                    setTouched(prev => ({ ...prev, display_name: true }))
+                    const errs = validateForm()
+                    setFormErrors(prev => ({ ...prev, display_name: errs.display_name }))
+                  }}
                   placeholder="contoh: Admin Berita"
-                  className={`${inputCls} ${fieldErrors.display_name ? 'border-red-400' : 'border-gray-300'}`}
+                  className={`${inputCls} ${(touched.display_name && formErrors.display_name) || fieldErrors.display_name ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-gray-300'}`}
                 />
-                {fieldErrors.display_name && (
+                {((touched.display_name && formErrors.display_name) || fieldErrors.display_name) && (
                   <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
-                    <i className="ph-bold ph-warning-circle text-xs" /> {fieldErrors.display_name}
+                    <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.display_name || fieldErrors.display_name}
                   </p>
                 )}
               </div>
               <div>
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input type="checkbox" checked={formData.is_active} onChange={e => setFormData({ ...formData, is_active: e.target.checked })} className="accent-brand-600" />
+                <label className="flex items-center gap-2 text-sm cursor-pointer font-medium text-slate-700">
+                  <input type="checkbox" checked={formData.is_active} onChange={e => setFormData({ ...formData, is_active: e.target.checked })} className="accent-brand-600 rounded border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer" />
                   Aktif (bisa dipakai login)
                 </label>
               </div>
@@ -435,8 +579,8 @@ export default function RoleAdmin() {
                     <i className="ph ph-timer text-sm" /> Tunggu {cooldown}s
                   </span>
                 )}
-                <button type="button" onClick={() => setIsFormOpen(false)} disabled={formSaving || isLimited} className="px-4 py-2 border rounded-xl text-sm font-semibold">Batal</button>
-                <button type="submit" disabled={formSaving || isLimited} className="px-5 py-2 bg-brand-600 text-white rounded-xl text-sm font-semibold">
+                <button type="button" onClick={() => setIsFormOpen(false)} disabled={formSaving || isLimited} className="px-4 py-2 border rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors">Batal</button>
+                <button type="submit" disabled={formSaving || isLimited} className="px-5 py-2 bg-brand-600 text-white rounded-xl text-sm font-semibold hover:bg-brand-700 transition-colors">
                   {formSaving ? 'Menyimpan...' : (isLimited ? `Tunggu ${cooldown}s` : 'Simpan')}
                 </button>
               </div>

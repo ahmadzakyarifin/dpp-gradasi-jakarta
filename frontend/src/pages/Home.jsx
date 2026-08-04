@@ -714,7 +714,22 @@ export default function Home() {
                     </Link>
                     <p className="text-slate-600 text-sm flex-grow line-clamp-2 mb-4 leading-relaxed">{item.excerpt}</p>
                     <div className="border-t border-slate-100 pt-4 flex justify-between items-center mt-auto">
-                      <button className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-brand-600 transition">
+                      <button onClick={() => {
+                        const url = `${window.location.origin}/berita/${item.slug}`;
+                        const choice = window.prompt(
+                          `Bagikan Berita: "${item.title}"\nKetik angka untuk memilih:\n1. WhatsApp\n2. Facebook\n3. Instagram (Salin Link)`,
+                          "1"
+                        );
+                        if (choice === "1") {
+                          window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(`${item.title} ${url}`)}`, '_blank');
+                        } else if (choice === "2") {
+                          window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+                        } else if (choice === "3") {
+                          navigator.clipboard.writeText(url).then(() => {
+                            alert('Link disalin ke clipboard! Silakan bagikan di Instagram.');
+                          });
+                        }
+                      }} className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-brand-600 transition">
                         <i className="ph-bold ph-share-network text-sm" /> Bagikan
                       </button>
                       <Link to={`/berita/${item.slug}`} className="flex items-center gap-1.5 text-xs font-bold text-brand-600 hover:text-brand-800 transition">

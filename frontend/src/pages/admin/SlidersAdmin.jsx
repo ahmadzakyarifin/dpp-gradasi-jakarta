@@ -35,11 +35,28 @@ export default function SlidersAdmin() {
     is_active: true,
   })
 
+  const [formErrors, setFormErrors] = useState({})
+  const [touched, setTouched] = useState({})
+
+  const validateForm = useCallback((data = formData) => {
+    const errors = {}
+    if (!data.title || !data.title.trim()) {
+      errors.title = 'Judul utama wajib diisi.'
+    }
+    if (data.sort_order === undefined || data.sort_order === null || String(data.sort_order).trim() === '') {
+      errors.sort_order = 'Urutan wajib diisi.'
+    }
+    if (!data.image_path || !data.image_path.trim()) {
+      errors.image_path = 'Gambar slider (URL) wajib diisi.'
+    }
+    return errors
+  }, [formData])
+
   const [confirm, setConfirm] = useState({ isOpen: false, type: 'danger', title: '', message: '', action: null })
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
   // Error backend: pesan error dari helper + countdown rate limit
-  const { applyError } = useFormErrors()
-  const { applyRateLimit } = useRateLimitCooldown()
+  const { fieldErrors, applyError, clearFieldError, resetFieldErrors } = useFormErrors()
+  const { cooldown, isLimited, applyRateLimit } = useRateLimitCooldown()
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ show: true, message, type })
@@ -84,7 +101,7 @@ export default function SlidersAdmin() {
       }
       if (filterActive) {
         const wantActive = filterActive === 'active'
-        if (item.is_active !== wantActive) return false
+          if (item.is_active !== wantActive) return false
       }
       return true
     })
@@ -111,6 +128,9 @@ export default function SlidersAdmin() {
 
   // --- Form ---
   const openForm = (item = null) => {
+    setFormErrors({})
+    setTouched({})
+    resetFieldErrors()
     if (item) {
       setFormMode('edit')
       setFormData({
@@ -147,6 +167,15 @@ export default function SlidersAdmin() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    const errors = validateForm()
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors)
+      setTouched(Object.keys(errors).reduce((acc, k) => ({ ...acc, [k]: true }), {}))
+      return
+    }
+    setFormErrors({})
+    resetFieldErrors()
+
     try {
       if (formMode === 'create') {
         await slidersService.create(formData)
@@ -160,6 +189,8 @@ export default function SlidersAdmin() {
     } catch (err) {
       const parsed = applyError(err)
       applyRateLimit(err)
+      setFormErrors(prev => ({ ...prev, ...parsed.fieldErrors }))
+      setTouched(prev => ({ ...prev, ...Object.keys(parsed.fieldErrors).reduce((acc, k) => ({ ...acc, [k]: true }), {}) }))
       if (Object.keys(parsed.fieldErrors).length === 0) {
         showToast(parsed.message || 'Gagal menyimpan slider', 'error')
       }
@@ -413,7 +444,7 @@ export default function SlidersAdmin() {
                         )}
                       </td>
                       <td className="p-4 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-end gap-2">
                           {currentTab === 'active' ? (
                             <>
                               <button onClick={() => openForm(item)} className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded" title="Edit">
@@ -437,9 +468,9 @@ export default function SlidersAdmin() {
  
               {/* Empty State */}
               {filteredItems.length === 0 && (
-                <div className="py-12 text-center">
-                  <i className="ph ph-image text-4xl text-gray-300 mb-2" />
-                  <p className="text-gray-500 text-sm">Tidak ada data slider untuk ditampilkan.</p>
+                <div className="py-16 text-center text-slate-500 flex flex-col items-center justify-center">
+                  <i className="ph ph-image text-gray-300 text-5xl mb-4" />
+                  <p className="font-medium text-gray-500">Tidak ada data slider untuk ditampilkan.</p>
                 </div>
               )}
             </div>
@@ -481,143 +512,195 @@ export default function SlidersAdmin() {
         )}
       </div>
 
-      {/* FORM MODAL (Create/Edit) — mirip sliders.html */}
+      {/* FORM MODAL (Create/Edit) */}
       {isFormOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setIsFormOpen(false)} />
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div className="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
-              <div className="bg-white">
-                <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-                  <h3 className="text-lg leading-6 font-heading font-semibold text-gray-900">{formMode === 'create' ? 'Tambah Slider' : 'Edit Slider'}</h3>
-                  <button onClick={() => setIsFormOpen(false)} className="text-gray-400 hover:text-gray-500">
-                    <i className="ph-bold ph-x text-xl" />
-                  </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setIsFormOpen(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden z-10">
+            <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+              <h3 className="font-heading font-bold text-slate-900 text-lg">
+                {formMode === 'create' ? 'Tambah Slider' : 'Edit Slider'}
+              </h3>
+              <button onClick={() => setIsFormOpen(false)} className="text-slate-400 hover:text-slate-600 p-1">
+                <i className="ph-bold ph-x text-lg" />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} noValidate className="p-6 overflow-y-auto max-h-[calc(90vh-120px)] space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 animate-fade-in-up">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Judul Utama <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    value={formData.title}
+                    onChange={e => {
+                      setFormData({ ...formData, title: e.target.value })
+                      clearFieldError('title')
+                      if (touched.title) {
+                        const errs = validateForm({ ...formData, title: e.target.value })
+                        setFormErrors(prev => ({ ...prev, title: errs.title }))
+                      }
+                    }}
+                    onBlur={() => {
+                      setTouched(prev => ({ ...prev, title: true }))
+                      const errs = validateForm()
+                      setFormErrors(prev => ({ ...prev, title: errs.title }))
+                    }}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none transition-colors ${touched.title && formErrors.title ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-gray-300'}`}
+                  />
+                  {touched.title && formErrors.title && (
+                    <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
+                      <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.title}
+                    </p>
+                  )}
                 </div>
-                <form onSubmit={handleSubmit} className="px-6 py-4 space-y-5 max-h-[60vh] overflow-y-auto">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Judul Utama *</label>
-                      <input
-                        type="text"
-                        value={formData.title}
-                        onChange={e => setFormData({ ...formData, title: e.target.value })}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Sub-judul (Opsional)</label>
-                      <input
-                        type="text"
-                        value={formData.subtitle}
-                        onChange={e => setFormData({ ...formData, subtitle: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Badge Tag (Opsional)</label>
-                      <input
-                        type="text"
-                        value={formData.tag}
-                        onChange={e => setFormData({ ...formData, tag: e.target.value })}
-                        placeholder="Misal: Webinar, Event"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Urutan (Sort Order) *</label>
-                      <input
-                        type="number"
-                        value={formData.sort_order}
-                        onChange={e => setFormData({ ...formData, sort_order: Number(e.target.value) })}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Gambar Slider (URL) *</label>
-                      <input
-                        type="url"
-                        value={formData.image_path}
-                        onChange={e => setFormData({ ...formData, image_path: e.target.value })}
-                        required
-                        placeholder="https://example.com/banner.jpg"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">Rekomendasi ukuran: 1920x600 px (Rasio lebar)</p>
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Link URL (Jika diklik mengarah kemana)</label>
-                      <input
-                        type="url"
-                        value={formData.link_url}
-                        onChange={e => setFormData({ ...formData, link_url: e.target.value })}
-                        placeholder="https://..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Kegiatan (Opsional di slider)</label>
-                      <input
-                        type="text"
-                        value={formData.event_date}
-                        onChange={e => setFormData({ ...formData, event_date: e.target.value })}
-                        placeholder="20 Okt 2024"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Lokasi (Opsional di slider)</label>
-                      <input
-                        type="text"
-                        value={formData.location}
-                        onChange={e => setFormData({ ...formData, location: e.target.value })}
-                        placeholder="Jakarta"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none"
-                      />
-                    </div>
-                    <div className="md:col-span-2 flex gap-6">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={formData.is_new}
-                          onChange={e => setFormData({ ...formData, is_new: e.target.checked })}
-                          className="rounded border-gray-300 text-brand-600 focus:ring-brand-500 accent-brand-600"
-                        />
-                        <span className="text-sm font-medium text-gray-700">Tandai sebagai BARU (badge NEW)</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={formData.is_active}
-                          onChange={e => setFormData({ ...formData, is_active: e.target.checked })}
-                          className="rounded border-gray-300 text-brand-600 focus:ring-brand-500 accent-brand-600"
-                        />
-                        <span className="text-sm font-medium text-gray-700">Slider Aktif</span>
-                      </label>
-                    </div>
-                  </div>
-                </form>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Sub-judul <span className="text-gray-400 font-normal">(opsional)</span></label>
+                  <input
+                    type="text"
+                    value={formData.subtitle}
+                    onChange={e => setFormData({ ...formData, subtitle: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Badge Tag <span className="text-gray-400 font-normal">(opsional)</span></label>
+                  <input
+                    type="text"
+                    value={formData.tag}
+                    onChange={e => setFormData({ ...formData, tag: e.target.value })}
+                    placeholder="Misal: Webinar, Event"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Urutan (Sort Order) <span className="text-red-500">*</span></label>
+                  <input
+                    type="number"
+                    value={formData.sort_order}
+                    onChange={e => {
+                      const val = e.target.value
+                      setFormData({ ...formData, sort_order: val === '' ? '' : Number(val) })
+                      clearFieldError('sort_order')
+                      if (touched.sort_order) {
+                        const errs = validateForm({ ...formData, sort_order: val })
+                        setFormErrors(prev => ({ ...prev, sort_order: errs.sort_order }))
+                      }
+                    }}
+                    onBlur={() => {
+                      setTouched(prev => ({ ...prev, sort_order: true }))
+                      const errs = validateForm()
+                      setFormErrors(prev => ({ ...prev, sort_order: errs.sort_order }))
+                    }}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none transition-colors ${touched.sort_order && formErrors.sort_order ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-gray-300'}`}
+                  />
+                  {touched.sort_order && formErrors.sort_order && (
+                    <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
+                      <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.sort_order}
+                    </p>
+                  )}
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Gambar Slider (URL) <span className="text-red-500">*</span></label>
+                  <input
+                    type="url"
+                    value={formData.image_path}
+                    onChange={e => {
+                      setFormData({ ...formData, image_path: e.target.value })
+                      clearFieldError('image_path')
+                      if (touched.image_path) {
+                        const errs = validateForm({ ...formData, image_path: e.target.value })
+                        setFormErrors(prev => ({ ...prev, image_path: errs.image_path }))
+                      }
+                    }}
+                    onBlur={() => {
+                      setTouched(prev => ({ ...prev, image_path: true }))
+                      const errs = validateForm()
+                      setFormErrors(prev => ({ ...prev, image_path: errs.image_path }))
+                    }}
+                    placeholder="https://example.com/banner.jpg"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none transition-colors ${touched.image_path && formErrors.image_path ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-gray-300'}`}
+                  />
+                  {touched.image_path && formErrors.image_path && (
+                    <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
+                      <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.image_path}
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-500 mt-1">Rekomendasi ukuran: 1920x600 px (Rasio lebar)</p>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Link URL (Jika diklik) <span className="text-gray-400 font-normal">(opsional)</span></label>
+                  <input
+                    type="url"
+                    value={formData.link_url}
+                    onChange={e => setFormData({ ...formData, link_url: e.target.value })}
+                    placeholder="https://..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Kegiatan <span className="text-gray-400 font-normal">(opsional di slider)</span></label>
+                  <input
+                    type="text"
+                    value={formData.event_date}
+                    onChange={e => setFormData({ ...formData, event_date: e.target.value })}
+                    placeholder="20 Okt 2024"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Lokasi <span className="text-gray-400 font-normal">(opsional di slider)</span></label>
+                  <input
+                    type="text"
+                    value={formData.location}
+                    onChange={e => setFormData({ ...formData, location: e.target.value })}
+                    placeholder="Jakarta"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none"
+                  />
+                </div>
+                <div className="md:col-span-2 flex gap-6">
+                  <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={formData.is_new}
+                      onChange={e => setFormData({ ...formData, is_new: e.target.checked })}
+                      className="rounded border-gray-300 text-brand-600 focus:ring-brand-500 accent-brand-600 cursor-pointer"
+                    />
+                    <span className="text-sm">Tandai sebagai BARU (badge NEW)</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={formData.is_active}
+                      onChange={e => setFormData({ ...formData, is_active: e.target.checked })}
+                      className="rounded border-gray-300 text-brand-600 focus:ring-brand-500 accent-brand-600 cursor-pointer"
+                    />
+                    <span className="text-sm">Slider Aktif</span>
+                  </label>
+                </div>
               </div>
-              <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+              <div className="flex justify-end gap-2 pt-4 border-t items-center mt-6">
+                {isLimited && (
+                  <span className="text-xs text-amber-600 font-semibold mr-auto flex items-center gap-1">
+                    <i className="ph ph-timer text-sm" /> Tunggu {cooldown}s
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={() => setIsFormOpen(false)}
-                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  disabled={isLimited}
+                  className="px-4 py-2 border rounded-xl text-sm font-semibold hover:bg-slate-50 disabled:opacity-50 transition-colors"
                 >
                   Batal
                 </button>
                 <button
-                  type="button"
-                  onClick={handleSubmit}
-                  className="px-4 py-2 bg-brand-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-brand-700"
+                  type="submit"
+                  disabled={isLimited}
+                  className="px-5 py-2 bg-brand-600 text-white rounded-xl text-sm font-semibold hover:bg-brand-700 disabled:opacity-60 transition-colors flex items-center gap-2"
                 >
-                  Simpan Data
+                  Simpan
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}

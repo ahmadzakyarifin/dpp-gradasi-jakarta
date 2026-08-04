@@ -40,11 +40,43 @@ export default function PengurusAdmin() {
     is_active: true,
   })
 
+  const [formErrors, setFormErrors] = useState({})
+  const [touched, setTouched] = useState({})
+
+  const validateForm = useCallback((data = formData) => {
+    const errors = {}
+    if (!data.name || !data.name.trim()) {
+      errors.name = 'Nama lengkap wajib diisi.'
+    }
+    if (!data.level) {
+      errors.level = 'Tingkat struktur wajib dipilih.'
+    }
+    if (!data.role || !data.role.trim()) {
+      errors.role = 'Jabatan resmi wajib diisi.'
+    }
+    if (!data.periode || !data.periode.trim()) {
+      errors.periode = 'Periode wajib diisi.'
+    }
+    if ((data.level === 'dpd' || data.level === 'dpc') && (!data.provinsi || !data.provinsi.trim())) {
+      errors.provinsi = 'Provinsi wajib diisi.'
+    }
+    if (data.level === 'dpc' && (!data.kabupaten || !data.kabupaten.trim())) {
+      errors.kabupaten = 'Kabupaten/Kota wajib diisi.'
+    }
+    if (formMode === 'create' && !data.image) {
+      errors.image = 'Foto profil wajib diunggah.'
+    }
+    return errors
+  }, [formData, formMode])
+
   const [confirm, setConfirm] = useState({ isOpen: false, type: 'danger', title: '', message: '', action: null })
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
   // Error backend: pesan error dari helper + countdown rate limit
-  const { applyError } = useFormErrors()
-  const { applyRateLimit } = useRateLimitCooldown()
+  const { fieldErrors, applyError, clearFieldError, resetFieldErrors } = useFormErrors()
+  const { cooldown, isLimited, applyRateLimit } = useRateLimitCooldown()
+
+  const isProvinceRequired = formData.level === 'dpd' || formData.level === 'dpc'
+  const isKabupatenRequired = formData.level === 'dpc'
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ show: true, message, type })
@@ -86,6 +118,9 @@ export default function PengurusAdmin() {
   }, [currentTab, searchQuery, filterLevel])
 
   const openForm = (item = null) => {
+    setFormErrors({})
+    setTouched({})
+    resetFieldErrors()
     if (item) {
       setFormMode('edit')
       setFormData({
@@ -132,6 +167,15 @@ export default function PengurusAdmin() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    const errors = validateForm()
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors)
+      setTouched(Object.keys(errors).reduce((acc, k) => ({ ...acc, [k]: true }), {}))
+      return
+    }
+    setFormErrors({})
+    resetFieldErrors()
+
     const payload = { ...formData }
     // Backend butuh multipart; buang id (meta) — image_path dikirim sebagai URL string
     if (formMode === 'create') {
@@ -143,6 +187,8 @@ export default function PengurusAdmin() {
       } catch (err) {
         const parsed = applyError(err)
         applyRateLimit(err)
+        setFormErrors(prev => ({ ...prev, ...parsed.fieldErrors }))
+        setTouched(prev => ({ ...prev, ...Object.keys(parsed.fieldErrors).reduce((acc, k) => ({ ...acc, [k]: true }), {}) }))
         if (Object.keys(parsed.fieldErrors).length === 0) {
           showToast(parsed.message || 'Gagal menyimpan pengurus', 'error')
         }
@@ -156,6 +202,8 @@ export default function PengurusAdmin() {
       } catch (err) {
         const parsed = applyError(err)
         applyRateLimit(err)
+        setFormErrors(prev => ({ ...prev, ...parsed.fieldErrors }))
+        setTouched(prev => ({ ...prev, ...Object.keys(parsed.fieldErrors).reduce((acc, k) => ({ ...acc, [k]: true }), {}) }))
         if (Object.keys(parsed.fieldErrors).length === 0) {
           showToast(parsed.message || 'Gagal menyimpan pengurus', 'error')
         }
@@ -393,7 +441,7 @@ export default function PengurusAdmin() {
                           {item.provinsi ? `${item.provinsi}${item.kabupaten ? `, ${item.kabupaten}` : ''}` : '-'}
                         </td>
                         <td className="p-4 text-right">
-                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex justify-end gap-2">
                             {currentTab === 'trash' ? (
                               <button onClick={() => confirmAction('restore', item)} title="Pulihkan" className="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded">
                                 <i className="ph ph-arrow-counter-clockwise text-lg" />
@@ -453,104 +501,268 @@ export default function PengurusAdmin() {
 
         {/* Form Modal */}
         {isFormOpen && (
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-              <h3 className="font-heading font-bold text-lg text-slate-900">{formMode === 'create' ? 'Tambah Pengurus Baru' : 'Edit Pengurus'}</h3>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Nama Lengkap *</label>
-                  <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Tingkat Struktur *</label>
-                    <select value={formData.level} onChange={e => setFormData({ ...formData, level: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none bg-white">
-                      <option value="ketua">Ketua Umum</option>
-                      <option value="dpp">Pusat (DPP)</option>
-                      <option value="dpd">Provinsi (DPD)</option>
-                      <option value="dpc">Kab/Kota (DPC)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Jabatan Resmi *</label>
-                    <input type="text" value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })} required placeholder="Misal: Ketua Bidang Organisasi" className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Periode *</label>
-                    <input type="text" value={formData.periode} onChange={e => setFormData({ ...formData, periode: e.target.value })} required placeholder="2025 - 2030" className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Departemen</label>
-                    <input type="text" value={formData.department} onChange={e => setFormData({ ...formData, department: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none" />
-                  </div>
-                </div>
-                {formData.level === 'dpd' || formData.level === 'dpc' ? (
-                  <div className="grid grid-cols-2 gap-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setIsFormOpen(false)} />
+            <div className="relative bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden z-10">
+              <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+                <h3 className="font-heading font-bold text-slate-900 text-lg">
+                  {formMode === 'create' ? 'Tambah Pengurus Baru' : 'Edit Pengurus'}
+                </h3>
+                <button onClick={() => setIsFormOpen(false)} className="text-slate-400 hover:text-slate-600 p-1">
+                  <i className="ph-bold ph-x text-lg" />
+                </button>
+              </div>
+              <form onSubmit={handleSubmit} noValidate className="p-6 overflow-y-auto max-h-[calc(90vh-120px)] flex flex-col">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Left Column (Main Data) */}
+                  <div className="space-y-4">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 mb-1">Provinsi {formData.level === 'dpc' ? '*' : ''}</label>
-                      <input type="text" value={formData.provinsi} onChange={e => setFormData({ ...formData, provinsi: e.target.value })} required={formData.level === 'dpd' || formData.level === 'dpc'} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none" />
+                      <label className="block text-xs font-semibold text-gray-500 mb-1">Nama Lengkap <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        value={formData.name}
+                        onChange={e => {
+                          setFormData({ ...formData, name: e.target.value })
+                          clearFieldError('name')
+                          if (touched.name) {
+                            const errs = validateForm({ ...formData, name: e.target.value })
+                            setFormErrors(prev => ({ ...prev, name: errs.name }))
+                          }
+                        }}
+                        onBlur={() => {
+                          setTouched(prev => ({ ...prev, name: true }))
+                          const errs = validateForm()
+                          setFormErrors(prev => ({ ...prev, name: errs.name }))
+                        }}
+                        className={`w-full px-3 py-2 border rounded-xl text-sm outline-none transition-colors ${touched.name && formErrors.name ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-gray-300 focus:border-brand-500'}`}
+                      />
+                      {touched.name && formErrors.name && (
+                        <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
+                          <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.name}
+                        </p>
+                      )}
                     </div>
-                    {formData.level === 'dpc' && (
+
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-semibold text-gray-500 mb-1">Kabupaten/Kota *</label>
-                        <input type="text" value={formData.kabupaten} onChange={e => setFormData({ ...formData, kabupaten: e.target.value })} required className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none" />
+                        <label className="block text-xs font-semibold text-gray-500 mb-1">Tingkat Struktur <span className="text-red-500">*</span></label>
+                        <select
+                          value={formData.level}
+                          onChange={e => {
+                            const val = e.target.value
+                            setFormData({ ...formData, level: val })
+                            clearFieldError('level')
+                            if (touched.level) {
+                              const errs = validateForm({ ...formData, level: val })
+                              setFormErrors(prev => ({ ...prev, level: errs.level }))
+                            }
+                          }}
+                          onBlur={() => {
+                            setTouched(prev => ({ ...prev, level: true }))
+                            const errs = validateForm()
+                            setFormErrors(prev => ({ ...prev, level: errs.level }))
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none bg-white focus:border-brand-500"
+                        >
+                          <option value="ketua">Ketua Umum</option>
+                          <option value="dpp">DPP (Pusat)</option>
+                          <option value="dpd">DPD (Provinsi)</option>
+                          <option value="dpc">DPC (Kabupaten/Kota)</option>
+                        </select>
                       </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 mb-1">Provinsi</label>
-                      <input type="text" value={formData.provinsi} onChange={e => setFormData({ ...formData, provinsi: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none" />
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 mb-1">Jabatan Resmi <span className="text-red-500">*</span></label>
+                        <input
+                          type="text"
+                          value={formData.role}
+                          onChange={e => {
+                            setFormData({ ...formData, role: e.target.value })
+                            clearFieldError('role')
+                            if (touched.role) {
+                              const errs = validateForm({ ...formData, role: e.target.value })
+                              setFormErrors(prev => ({ ...prev, role: errs.role }))
+                            }
+                          }}
+                          onBlur={() => {
+                            setTouched(prev => ({ ...prev, role: true }))
+                            const errs = validateForm()
+                            setFormErrors(prev => ({ ...prev, role: errs.role }))
+                          }}
+                          placeholder="Misal: Ketua Bidang Organisasi"
+                          className={`w-full px-3 py-2 border rounded-xl text-sm outline-none transition-colors ${touched.role && formErrors.role ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-gray-300'}`}
+                        />
+                        {touched.role && formErrors.role && (
+                          <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
+                            <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.role}
+                          </p>
+                        )}
+                      </div>
                     </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 mb-1">Periode <span className="text-red-500">*</span></label>
+                        <input
+                          type="text"
+                          value={formData.periode}
+                          onChange={e => {
+                            setFormData({ ...formData, periode: e.target.value })
+                            clearFieldError('periode')
+                            if (touched.periode) {
+                              const errs = validateForm({ ...formData, periode: e.target.value })
+                              setFormErrors(prev => ({ ...prev, periode: errs.periode }))
+                            }
+                          }}
+                          onBlur={() => {
+                            setTouched(prev => ({ ...prev, periode: true }))
+                            const errs = validateForm()
+                            setFormErrors(prev => ({ ...prev, periode: errs.periode }))
+                          }}
+                          placeholder="Contoh: 2025 - 2030"
+                          className={`w-full px-3 py-2 border rounded-xl text-sm outline-none transition-colors ${touched.periode && formErrors.periode ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-gray-300'}`}
+                        />
+                        {touched.periode && formErrors.periode && (
+                          <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
+                            <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.periode}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 mb-1">Departemen <span className="text-gray-400 font-normal">(opsional)</span></label>
+                        <input type="text" value={formData.department} onChange={e => setFormData({ ...formData, department: e.target.value })} placeholder="Misal: Departemen IT" className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none focus:border-brand-500" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 mb-1">Provinsi <span className={isProvinceRequired ? 'text-red-500' : 'text-gray-400 font-normal'}>{isProvinceRequired ? '*' : '(opsional)'}</span></label>
+                        <input
+                          type="text"
+                          value={formData.provinsi}
+                          onChange={e => {
+                            const val = e.target.value
+                            setFormData({ ...formData, provinsi: val })
+                            clearFieldError('provinsi')
+                            if (touched.provinsi) {
+                              const errs = validateForm({ ...formData, provinsi: val })
+                              setFormErrors(prev => ({ ...prev, provinsi: errs.provinsi }))
+                            }
+                          }}
+                          onBlur={() => {
+                            setTouched(prev => ({ ...prev, provinsi: true }))
+                            const errs = validateForm()
+                            setFormErrors(prev => ({ ...prev, provinsi: errs.provinsi }))
+                          }}
+                          placeholder="Wajib jika DPD/DPC"
+                          className={`w-full px-3 py-2 border rounded-xl text-sm outline-none transition-colors ${touched.provinsi && formErrors.provinsi ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-gray-300'}`}
+                        />
+                        {touched.provinsi && formErrors.provinsi && (
+                          <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
+                            <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.provinsi}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-500 mb-1">Kabupaten/Kota <span className={isKabupatenRequired ? 'text-red-500' : 'text-gray-400 font-normal'}>{isKabupatenRequired ? '*' : '(opsional)'}</span></label>
+                        <input
+                          type="text"
+                          value={formData.kabupaten}
+                          onChange={e => {
+                            const val = e.target.value
+                            setFormData({ ...formData, kabupaten: val })
+                            clearFieldError('kabupaten')
+                            if (touched.kabupaten) {
+                              const errs = validateForm({ ...formData, kabupaten: val })
+                              setFormErrors(prev => ({ ...prev, kabupaten: errs.kabupaten }))
+                            }
+                          }}
+                          onBlur={() => {
+                            setTouched(prev => ({ ...prev, kabupaten: true }))
+                            const errs = validateForm()
+                            setFormErrors(prev => ({ ...prev, kabupaten: errs.kabupaten }))
+                          }}
+                          placeholder="Wajib jika DPC"
+                          className={`w-full px-3 py-2 border rounded-xl text-sm outline-none transition-colors ${touched.kabupaten && formErrors.kabupaten ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-gray-300'}`}
+                        />
+                        {touched.kabupaten && formErrors.kabupaten && (
+                          <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
+                            <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.kabupaten}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 mb-1">Kabupaten/Kota</label>
-                      <input type="text" value={formData.kabupaten} onChange={e => setFormData({ ...formData, kabupaten: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none" />
+                      <label className="block text-xs font-semibold text-gray-500 mb-1">Foto Profil <span className={formMode === 'create' ? 'text-red-500' : 'text-gray-400 font-normal'}>{formMode === 'create' ? '*' : '(opsional)'}</span></label>
+                      <input
+                        type="file"
+                        onChange={e => {
+                          const file = e.target.files && e.target.files[0]
+                          if (file) setFormData(prev => ({ ...prev, image: file, image_path: '' }))
+                        }}
+                        accept="image/*"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none focus:border-brand-500"
+                      />
+                      {formMode === 'create' && touched.image && formErrors.image && (
+                        <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
+                          <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.image}
+                        </p>
+                      )}
+                      <p className="text-[10px] text-gray-400 mt-1">Foto wajib diunggah saat menambah pengurus.</p>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-2">
+                      <label className="flex items-center gap-2 text-sm cursor-pointer font-medium text-slate-700">
+                        <input type="checkbox" checked={formData.is_active} onChange={e => setFormData({ ...formData, is_active: e.target.checked })} className="accent-brand-600 rounded border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer" />
+                        Status Aktif
+                      </label>
                     </div>
                   </div>
-                )}
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Foto Profil {formMode === 'create' ? '*' : ''}</label>
-                  <input type="file" accept="image/*" required={formMode === 'create'} onChange={e => {
-                    const file = e.target.files && e.target.files[0]
-                    if (file) setFormData(prev => ({ ...prev, image: file, image_path: '' }))
-                  }} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none" />
-                  {formMode === 'create' && (
-                    <p className="text-xs text-slate-400 mt-1">Foto wajib diunggah saat menambah pengurus.</p>
+
+                  {/* Right Column (Social Media & Sort Order) */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 mb-1">Facebook URL <span className="text-gray-400 font-normal">(opsional)</span></label>
+                      <input type="text" value={formData.facebook_url} onChange={e => setFormData({ ...formData, facebook_url: e.target.value })} placeholder="https://facebook.com/username" className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none focus:border-brand-500" />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 mb-1">Instagram URL <span className="text-gray-400 font-normal">(opsional)</span></label>
+                      <input type="text" value={formData.instagram_url} onChange={e => setFormData({ ...formData, instagram_url: e.target.value })} placeholder="https://instagram.com/username" className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none focus:border-brand-500" />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 mb-1">LinkedIn URL <span className="text-gray-400 font-normal">(opsional)</span></label>
+                      <input type="text" value={formData.linkedin_url} onChange={e => setFormData({ ...formData, linkedin_url: e.target.value })} placeholder="https://linkedin.com/in/username" className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none focus:border-brand-500" />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 mb-1">WhatsApp <span className="text-gray-400 font-normal">(opsional)</span></label>
+                      <input type="text" value={formData.whatsapp} onChange={e => setFormData({ ...formData, whatsapp: e.target.value })} placeholder="Contoh: 08123456789" className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none focus:border-brand-500" />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 mb-1">Urutan Tampil <span className="text-gray-400 font-normal">(opsional)</span></label>
+                      <input
+                        type="number"
+                        value={formData.sort_order}
+                        onChange={e => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 1 })}
+                        placeholder="Misal: 1"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none focus:border-brand-500"
+                      />
+                      <p className="text-[10px] text-gray-400 mt-1">Semakin kecil angkanya, semakin tinggi posisinya di list.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4 border-t items-center mt-6">
+                  {isLimited && (
+                    <span className="text-xs text-amber-600 font-semibold mr-auto flex items-center gap-1">
+                      <i className="ph ph-timer text-sm" /> Tunggu {cooldown}s
+                    </span>
                   )}
-                  {formMode === 'edit' && formData.image_path && !formData.image && (
-                    <p className="text-xs text-slate-400 mt-1">Foto saat ini: {formData.image_path.split('/').pop()}</p>
-                  )}
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Facebook URL</label>
-                    <input type="text" value={formData.facebook_url} onChange={e => setFormData({ ...formData, facebook_url: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Instagram URL</label>
-                    <input type="text" value={formData.instagram_url} onChange={e => setFormData({ ...formData, instagram_url: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">LinkedIn URL</label>
-                    <input type="text" value={formData.linkedin_url} onChange={e => setFormData({ ...formData, linkedin_url: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">WhatsApp</label>
-                    <input type="text" value={formData.whatsapp} onChange={e => setFormData({ ...formData, whatsapp: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none" />
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input type="checkbox" checked={formData.is_active} onChange={e => setFormData({ ...formData, is_active: e.target.checked })} className="accent-brand-600" />
-                    Aktif
-                  </label>
-                </div>
-                <div className="flex justify-end gap-2 pt-4 border-t">
-                  <button type="button" onClick={() => setIsFormOpen(false)} className="px-4 py-2 border rounded-xl text-xs font-semibold">Batal</button>
-                  <button type="submit" className="px-4 py-2 bg-brand-600 text-white rounded-xl hover:bg-brand-700 text-xs font-semibold">Simpan</button>
+                  <button type="button" onClick={() => setIsFormOpen(false)} disabled={cooldown > 0} className="px-4 py-2 border rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors">Batal</button>
+                  <button type="submit" disabled={cooldown > 0} className="px-5 py-2 bg-brand-600 text-white rounded-xl text-sm font-semibold hover:bg-brand-700 transition-colors">Simpan</button>
                 </div>
               </form>
             </div>

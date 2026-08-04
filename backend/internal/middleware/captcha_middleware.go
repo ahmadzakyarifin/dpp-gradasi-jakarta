@@ -18,7 +18,7 @@ import (
 // atau header: cf-turnstile-response.
 func RequiredCaptchaMiddleware(cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if cfg == nil || !cfg.Security.CaptchaEnabled || cfg.App.Env == "development" {
+		if cfg == nil || !cfg.Security.CaptchaEnabled {
 			c.Next()
 			return
 		}

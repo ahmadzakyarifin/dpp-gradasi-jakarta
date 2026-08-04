@@ -7,4 +7,5 @@ type AppConfig struct {
 	Port           string `env:"PORT" envDefault:"8080"`
 	// ALLOWED_ORIGINS — whitelist origin CORS, comma-separated. Default dev: Vite.
 	AllowedOrigins string `env:"ALLOWED_ORIGINS" envDefault:"http://localhost:5173"`
+	FrontendURL    string `env:"FRONTEND_URL" envDefault:"http://localhost:5173"`
 }

@@ -138,25 +138,9 @@ func EntityToModel(e *entity.Berita) *model.Berita {
 	}
 }
 
-// normalizeDate memastikan tanggal berformat YYYY-MM-DD.
-// GORM bisa meng-scan kolom DATE ke string dengan format RFC3339
-// (mis. "2026-08-03T00:00:00+07:00") — MySQL menolak itu di kolom DATE.
+// normalizeDate memastikan tanggal berformat string.
 func normalizeDate(s string) string {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return s
-	}
-	// Ambil 10 karakter pertama (YYYY-MM-DD) kalau format lebih panjang
-	if len(s) > 10 {
-		if t, err := time.Parse(time.RFC3339, s); err == nil {
-			return t.Format("2006-01-02")
-		}
-		if t, err := time.Parse("2006-01-02 15:04:05", s); err == nil {
-			return t.Format("2006-01-02")
-		}
-		return s[:10]
-	}
-	return s
+	return strings.TrimSpace(s)
 }
 
 // ModelToEntity mengonversi model GORM menjadi entity.
@@ -210,6 +194,7 @@ func EntityToListItem(e *entity.Berita) dto.BeritaListItem {
 		Category:      e.Category,
 		PublishedDate: FormatDate(e.PublishedDate),
 		IsFeatured:    e.IsFeatured,
+		IsPublished:   &e.IsPublished,
 		Views:         e.Views,
 		AuthorName:    e.AuthorName,
 		CreatedAt:     e.CreatedAt.Format("2006-01-02T15:04:05Z"),
@@ -279,20 +264,7 @@ func ParseTags(tags string) []string {
 	return result
 }
 
-// FormatDate menormalkan format tanggal published_date ke "2006-01-02".
+// FormatDate mengembalikan nilai string tanggal apa adanya.
 func FormatDate(v string) string {
-	if v == "" {
-		return ""
-	}
-	t, err := time.Parse("2006-01-02T15:04:05Z07:00", v)
-	if err == nil {
-		return t.Format("2006-01-02")
-	}
-	if _, err = time.Parse("2006-01-02", v); err == nil {
-		return v
-	}
-	if len(v) >= 10 {
-		return v[:10]
-	}
-	return v
+	return strings.TrimSpace(v)
 }

@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react'
 
-export default function ConfirmDialog({ isOpen, title, message, type = 'danger', onConfirm, onCancel }) {
+export default function ConfirmDialog({ isOpen, title, message, type = 'danger', onConfirm, onCancel, onClose }) {
   const dialogRef = useRef(null)
+  const handleCancel = onCancel || onClose
 
   useEffect(() => {
     if (isOpen) {
@@ -11,11 +12,11 @@ export default function ConfirmDialog({ isOpen, title, message, type = 'danger',
 
   useEffect(() => {
     function handleEsc(e) {
-      if (e.key === 'Escape' && isOpen) onCancel?.()
+      if (e.key === 'Escape' && isOpen) handleCancel?.()
     }
     document.addEventListener('keydown', handleEsc)
     return () => document.removeEventListener('keydown', handleEsc)
-  }, [isOpen, onCancel])
+  }, [isOpen, handleCancel])
 
   if (!isOpen) return null
 
@@ -41,7 +42,7 @@ export default function ConfirmDialog({ isOpen, title, message, type = 'danger',
       {/* Overlay */}
       <div
         className="fixed inset-0 bg-black/40 backdrop-blur-[2px] animate-[fadeIn_150ms_ease-out]"
-        onClick={onCancel}
+        onClick={handleCancel}
       />
 
       {/* Dialog */}
@@ -65,7 +66,7 @@ export default function ConfirmDialog({ isOpen, title, message, type = 'danger',
         <div className="bg-slate-50 border-t border-slate-100 px-6 py-4 flex justify-end gap-2.5">
           <button
             type="button"
-            onClick={onCancel}
+            onClick={handleCancel}
             className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-colors shadow-sm"
           >
             Batal

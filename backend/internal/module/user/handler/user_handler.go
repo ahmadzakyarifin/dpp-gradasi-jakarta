@@ -324,7 +324,8 @@ func (h *UserHandler) CheckUnique(c *gin.Context) {
 
 func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	var req struct {
-		Name string `json:"name" binding:"required,min=2"`
+		Name  string `json:"name" binding:"required,min=2"`
+		Email string `json:"email" binding:"required,email"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "validasi gagal", validator.Errors(err))
@@ -337,7 +338,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	updated, err := h.s.UpdateProfile(c.Request.Context(), userID, req.Name)
+	updated, err := h.s.UpdateProfile(c.Request.Context(), userID, req.Name, req.Email)
 	if err != nil {
 		helper.HandleServiceError(c, err)
 		return

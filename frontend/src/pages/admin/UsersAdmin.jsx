@@ -11,6 +11,7 @@ export default function UsersAdmin() {
 
   const [currentTab, setCurrentTab] = useState('active') // active, pending, trash
   const [search, setSearch] = useState('')
+  const [filterRole, setFilterRole] = useState('')
 
   // Pagination
   const [page, setPage] = useState(1)
@@ -23,6 +24,7 @@ export default function UsersAdmin() {
 
   // Roles (untuk dropdown form) — diambil dari GET /roles
   const [roles, setRoles] = useState([])
+  const [allRoles, setAllRoles] = useState([])
 
   // Modal Form (Create)
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -48,9 +50,28 @@ export default function UsersAdmin() {
     message: '',
     type: 'success'
   })
+  const [formErrors, setFormErrors] = useState({})
+  const [touched, setTouched] = useState({})
+
+  const validateForm = (data = formData) => {
+    const errors = {}
+    if (!data.name || !data.name.trim()) {
+      errors.name = 'Nama lengkap wajib diisi.'
+    }
+    if (!data.email || !data.email.trim()) {
+      errors.email = 'Email wajib diisi.'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+      errors.email = 'Format email tidak valid.'
+    }
+    if (!data.role_id) {
+      errors.role_id = 'Role akses wajib dipilih.'
+    }
+    return errors
+  }
+
   // Error backend: pesan error dari helper + countdown rate limit
-  const { applyError } = useFormErrors()
-  const { applyRateLimit } = useRateLimitCooldown()
+  const { fieldErrors, applyError, clearFieldError, resetFieldErrors } = useFormErrors()
+  const { cooldown, isLimited, applyRateLimit } = useRateLimitCooldown()
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type })
@@ -61,12 +82,25 @@ export default function UsersAdmin() {
 
   const fetchUsers = useCallback(() => {
     setLoading(true)
-    userService.list({
-      tab: currentTab,
-      search,
+    const params = {
+      search: search.trim(),
+      role: filterRole,
       page,
       limit
-    })
+    }
+
+    if (currentTab === 'active') {
+      params.status = 'active'
+      params.trashed = false
+    } else if (currentTab === 'pending') {
+      params.status = 'inactive'
+      params.trashed = false
+    } else if (currentTab === 'trash') {
+      params.status = ''
+      params.trashed = true
+    }
+
+    userService.list(params)
       .then(res => {
         if (res.success && res.data) {
           setUsers(res.data.items || res.data.users || [])
@@ -82,7 +116,7 @@ export default function UsersAdmin() {
         setError(err.message || 'Kesalahan koneksi ke server')
       })
       .finally(() => setLoading(false))
-  }, [currentTab, search, page, limit])
+  }, [currentTab, search, filterRole, page, limit])
 
   useEffect(() => {
     setSelectedIds([])
@@ -94,12 +128,17 @@ export default function UsersAdmin() {
     fetchUsers()
   }, [fetchUsers])
 
-  // Ambil daftar role untuk dropdown form (non super_admin)
+  // Ambil daftar role untuk dropdown form & filter
   useEffect(() => {
     roleService.list()
       .then(res => {
         const list = Array.isArray(res?.data) ? res.data : (res?.data?.roles || [])
-        setRoles(list.filter(r => r.name !== 'super_admin'))
+        setAllRoles(list)
+        const filtered = list.filter(r => r.name !== 'super_admin')
+        setRoles(filtered)
+        if (filtered.length > 0) {
+          setFormData(prev => ({ ...prev, role_id: filtered[0].id || '' }))
+        }
       })
       .catch(() => {}) // fallback: dropdown kosong, validasi BE akan menolak
   }, [])
@@ -107,17 +146,17 @@ export default function UsersAdmin() {
   const handleSearchSubmit = (e) => {
     e.preventDefault()
     setPage(1)
-    // fetchUsers() otomatis dipanggil via useEffect [fetchUsers] saat search/page berubah
   }
 
   const handleReset = () => {
     setSearch('')
+    setFilterRole('')
     setPage(1)
   }
 
   // Row Selection logic
   const selectableUsers = users.filter(
-    item => !item.is_system && item.status !== 'pending_activation'
+    item => !item.is_system && !(item.status === 'inactive' && !item.has_password)
   )
 
   const isAllSelected = selectableUsers.length > 0 && selectedIds.length === selectableUsers.length
@@ -139,15 +178,28 @@ export default function UsersAdmin() {
   // Handle Form Submit
   const handleFormSubmit = async (e) => {
     e.preventDefault()
+    const errors = validateForm()
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors)
+      setTouched(Object.keys(errors).reduce((acc, k) => ({ ...acc, [k]: true }), {}))
+      return
+    }
+    setFormErrors({})
+    resetFieldErrors()
+
     try {
       await userService.create(formData)
       setIsFormOpen(false)
       setFormData({ name: '', email: '', role_id: roles[0]?.id || '' })
+      setTouched({})
+      setFormErrors({})
       showToast('Admin berhasil dibuat. Kredensial login dikirim ke email admin!', 'success')
       fetchUsers()
     } catch (err) {
       const parsed = applyError(err)
       applyRateLimit(err)
+      setFormErrors(prev => ({ ...prev, ...parsed.fieldErrors }))
+      setTouched(prev => ({ ...prev, ...Object.keys(parsed.fieldErrors).reduce((acc, k) => ({ ...acc, [k]: true }), {}) }))
       if (Object.keys(parsed.fieldErrors).length === 0) {
         showToast(parsed.message || 'Gagal mengirim undangan admin baru.', 'error')
       }
@@ -250,7 +302,7 @@ export default function UsersAdmin() {
   }
 
   const headerContent = (
-    <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 w-full max-w-2xl animate-fade-in-up">
+    <div className="flex items-center gap-2 w-full max-w-3xl animate-fade-in-up">
       <div className="relative w-full">
         <i className="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         <input
@@ -261,21 +313,26 @@ export default function UsersAdmin() {
           className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors"
         />
       </div>
-      <button
-        type="submit"
-        className="bg-brand-600 hover:bg-brand-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all btn-press shrink-0"
+      <select
+        value={filterRole}
+        onChange={(e) => {
+          setFilterRole(e.target.value)
+          setPage(1)
+        }}
+        className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
       >
-        Cari
-      </button>
+        <option value="">Semua Role</option>
+        {allRoles.map(role => (
+          <option key={role.id} value={role.id}>{role.display_name}</option>
+        ))}
+      </select>
       <button
-        type="button"
         onClick={handleReset}
         className="shrink-0 bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all btn-press"
-        title="Reset Filter"
       >
-        <i className="ph ph-arrows-counter-clockwise text-lg" />
+        <i className="ph ph-arrows-counter-clockwise text-lg" /> Reset
       </button>
-    </form>
+    </div>
   )
 
   return (
@@ -319,7 +376,13 @@ export default function UsersAdmin() {
 
           {currentTab === 'active' && (
             <button
-              onClick={() => setIsFormOpen(true)}
+              onClick={() => {
+                setFormData({ name: '', email: '', role_id: roles[0]?.id || '' })
+                setFormErrors({})
+                setTouched({})
+                resetFieldErrors()
+                setIsFormOpen(true)
+              }}
               className="shrink-0 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all btn-press shadow-sm"
             >
               <i className="ph ph-user-plus text-lg" /> Tambah
@@ -359,9 +422,9 @@ export default function UsersAdmin() {
             ) : error ? (
               <div className="py-12 text-center text-red-500">{error}</div>
             ) : users.length === 0 ? (
-              <div className="py-12 text-center text-gray-500">
-                <i className="ph ph-users text-4xl text-gray-300 mb-2 block mx-auto" />
-                Tidak ada data untuk ditampilkan.
+              <div className="py-16 text-center text-slate-500 flex flex-col items-center justify-center">
+                <i className="ph ph-users text-gray-300 text-5xl mb-4" />
+                <p className="font-medium text-gray-500">Tidak ada data admin untuk ditampilkan.</p>
               </div>
             ) : (
               <table className="w-full text-left border-collapse">
@@ -385,7 +448,7 @@ export default function UsersAdmin() {
                 <tbody className="divide-y divide-gray-100 text-sm text-gray-700">
                   {users.map((item) => {
                     const isProtected = item.is_system || item.role === 'super_admin'
-                    const isPending = item.status === 'pending_activation'
+                    const isPending = item.status === 'inactive' && !item.has_password
                     const canSelect = !isProtected && !isPending
 
                     return (
@@ -432,7 +495,7 @@ export default function UsersAdmin() {
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border ${
                               item.status === 'active'
                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : item.status === 'pending_activation'
+                                : isPending
                                 ? 'bg-amber-50 text-amber-700 border-amber-200'
                                 : 'bg-gray-100 text-gray-600 border-gray-200'
                             }`}
@@ -441,7 +504,7 @@ export default function UsersAdmin() {
                               className={`ph ${
                                 item.status === 'active'
                                   ? 'ph-check-circle'
-                                  : item.status === 'pending_activation'
+                                  : isPending
                                   ? 'ph-clock'
                                   : 'ph-prohibit'
                               }`}
@@ -449,14 +512,14 @@ export default function UsersAdmin() {
                             <span>
                               {item.status === 'active'
                                 ? 'Aktif'
-                                : item.status === 'pending_activation'
+                                : isPending
                                 ? 'Menunggu Aktivasi'
                                 : 'Nonaktif'}
                             </span>
                           </span>
                         </td>
                         <td className="p-4 text-right">
-                          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center justify-end gap-2">
                             {!isProtected ? (
                               <>
                                 {currentTab === 'active' && (
@@ -548,126 +611,158 @@ export default function UsersAdmin() {
             </div>
           )}
         </div>
-      </div>
-
-      {/* FORM MODAL (Create) */}
+      </div>      {/* FORM MODAL (Create) */}
       {isFormOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setIsFormOpen(false)} />
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            
-            <div className="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
-              <div className="bg-white">
-                <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-                  <h3 className="text-lg leading-6 font-heading font-semibold text-gray-900">Tambah Admin Baru</h3>
-                  <button onClick={() => setIsFormOpen(false)} className="text-gray-400 hover:text-gray-500">
-                    <i className="ph ph-x text-xl" />
-                  </button>
-                </div>
-                <form onSubmit={handleFormSubmit} id="createAdminForm" className="px-6 py-4 space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap *</label>
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email Aktif *</label>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Kredensial login (email & password default) akan dikirim ke email ini.</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Role Akses *</label>
-                    <select
-                      value={formData.role_id}
-                      onChange={(e) => setFormData(prev => ({ ...prev, role_id: e.target.value }))}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm bg-white"
-                    >
-                      {roles.length === 0 && <option value="">Pilih Role...</option>}
-                      {roles.map(r => (
-                        <option key={r.id} value={r.id}>{r.display_name || r.name}</option>
-                      ))}
-                    </select>
-                    <p className="text-xs text-gray-500 mt-1">Super Admin (sistem) tidak bisa dibuat via undangan.</p>
-                  </div>
-                </form>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setIsFormOpen(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden z-10 animate-scale-up">
+            <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+              <h3 className="font-heading font-bold text-slate-900 text-lg">Tambah Admin Baru</h3>
+              <button onClick={() => setIsFormOpen(false)} className="text-slate-400 hover:text-slate-600 p-1">
+                <i className="ph-bold ph-x text-lg" />
+              </button>
+            </div>
+            <form onSubmit={handleFormSubmit} noValidate id="createAdminForm" className="p-6 overflow-y-auto max-h-[calc(90vh-120px)] space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Nama Lengkap <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => {
+                    setFormData(prev => ({ ...prev, name: e.target.value }))
+                    clearFieldError('name')
+                    if (touched.name) {
+                      const errs = validateForm({ ...formData, name: e.target.value })
+                      setFormErrors(prev => ({ ...prev, name: errs.name }))
+                    }
+                  }}
+                  onBlur={() => {
+                    setTouched(prev => ({ ...prev, name: true }))
+                    const errs = validateForm()
+                    setFormErrors(prev => ({ ...prev, name: errs.name }))
+                  }}
+                  className={`w-full px-3 py-2 border rounded-xl focus:ring-brand-500 focus:border-brand-500 text-sm outline-none transition-colors ${touched.name && formErrors.name ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-gray-300'}`}
+                />
+                {touched.name && formErrors.name && (
+                  <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
+                    <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.name}
+                  </p>
+                )}
               </div>
-              
-              <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Email <span className="text-red-500">*</span></label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => {
+                    setFormData(prev => ({ ...prev, email: e.target.value }))
+                    clearFieldError('email')
+                    if (touched.email) {
+                      const errs = validateForm({ ...formData, email: e.target.value })
+                      setFormErrors(prev => ({ ...prev, email: errs.email }))
+                    }
+                  }}
+                  onBlur={() => {
+                    setTouched(prev => ({ ...prev, email: true }))
+                    const errs = validateForm()
+                    setFormErrors(prev => ({ ...prev, email: errs.email }))
+                  }}
+                  className={`w-full px-3 py-2 border rounded-xl focus:ring-brand-500 focus:border-brand-500 text-sm outline-none transition-colors ${touched.email && formErrors.email ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-gray-300'}`}
+                />
+                {touched.email && formErrors.email && (
+                  <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
+                    <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.email}
+                  </p>
+                )}
+                <p className="text-[10px] text-gray-400 mt-1">Kredensial login (email & password default) akan dikirim ke email ini.</p>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Role Akses <span className="text-red-500">*</span></label>
+                <select
+                  value={formData.role_id}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    setFormData(prev => ({ ...prev, role_id: val }))
+                    clearFieldError('role_id')
+                    if (touched.role_id) {
+                      const errs = validateForm({ ...formData, role_id: val })
+                      setFormErrors(prev => ({ ...prev, role_id: errs.role_id }))
+                    }
+                  }}
+                  onBlur={() => {
+                    setTouched(prev => ({ ...prev, role_id: true }))
+                    const errs = validateForm()
+                    setFormErrors(prev => ({ ...prev, role_id: errs.role_id }))
+                  }}
+                  className={`w-full px-3 py-2 border rounded-xl focus:ring-brand-500 focus:border-brand-500 text-sm bg-white outline-none transition-colors ${touched.role_id && formErrors.role_id ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-gray-300'}`}
+                >
+                  {roles.length === 0 && <option value="">Pilih Role...</option>}
+                  {roles.map(r => (
+                    <option key={r.id} value={r.id}>{r.display_name || r.name}</option>
+                  ))}
+                </select>
+                {touched.role_id && formErrors.role_id && (
+                  <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
+                    <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.role_id}
+                  </p>
+                )}
+                <p className="text-[10px] text-gray-400 mt-1">Super Admin (sistem) tidak bisa dibuat via undangan.</p>
+              </div>
+              <div className="flex justify-end gap-2 pt-4 border-t items-center mt-4">
                 <button
                   type="button"
                   onClick={() => setIsFormOpen(false)}
-                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  className="px-4 py-2 border rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  form="createAdminForm"
-                  className="px-4 py-2 bg-brand-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-brand-700 flex items-center gap-2 transition"
+                  className="px-5 py-2 bg-brand-600 text-white rounded-xl text-sm font-semibold hover:bg-brand-700 transition-colors flex items-center gap-2"
                 >
                   <i className="ph ph-paper-plane-right" /> Buat & Kirim Kredensial
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}
 
       {/* CONFIRMATION MODAL */}
       {confirm.isOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setConfirm(prev => ({ ...prev, isOpen: false }))} />
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            
-            <div className="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-sm sm:w-full">
-              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div className="sm:flex sm:items-start">
-                  <div className={`mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10 ${
-                    confirm.type.includes('delete') || confirm.type === 'deactivate' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'
-                  }`}>
-                    <i className={`text-2xl ph ${confirm.icon}`} />
-                  </div>
-                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900">{confirm.title}</h3>
-                    <div className="mt-2">
-                      <p className="text-sm text-gray-500">{confirm.message}</p>
-                    </div>
-                  </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setConfirm(prev => ({ ...prev, isOpen: false }))} />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden z-10 p-6 animate-scale-up">
+            <div className="sm:flex sm:items-start">
+              <div className={`mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10 ${
+                confirm.type.includes('delete') || confirm.type === 'deactivate' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'
+              }`}>
+                <i className={`text-2xl ph ${confirm.icon}`} />
+              </div>
+              <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                <h3 className="text-lg leading-6 font-bold text-slate-900 font-heading">{confirm.title}</h3>
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500">{confirm.message}</p>
                 </div>
               </div>
-              
-              <div className="bg-gray-50 px-4 py-3 sm:px-6 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setConfirm(prev => ({ ...prev, isOpen: false }))}
-                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm"
-                >
-                  Batal
-                </button>
-                <button
-                  type="button"
-                  onClick={executeAction}
-                  className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white focus:outline-none sm:w-auto sm:text-sm ${
-                    confirm.type.includes('delete') || confirm.type === 'deactivate' ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700'
-                  }`}
-                >
-                  Ya, Lanjutkan
-                </button>
-              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-2 border-t pt-4">
+              <button
+                type="button"
+                onClick={() => setConfirm(prev => ({ ...prev, isOpen: false }))}
+                className="px-4 py-2 border rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={executeAction}
+                className={`px-5 py-2 text-white rounded-xl text-sm font-semibold transition-colors ${
+                  confirm.type.includes('delete') || confirm.type === 'deactivate' ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700'
+                }`}
+              >
+                Ya, Lanjutkan
+              </button>
             </div>
           </div>
         </div>

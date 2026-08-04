@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 	"time"
 
@@ -103,8 +104,7 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 	userAgent := c.Request.UserAgent()
 	link, err := h.s.ForgotPassword(c.Request.Context(), req, ipAddress, userAgent)
 	if err != nil {
-		helper.HandleServiceError(c, err)
-		return
+		log.Printf("[ERROR] Gagal proses ForgotPassword: %v", err)
 	}
 
 	var data map[string]any

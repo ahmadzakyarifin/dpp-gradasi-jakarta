@@ -5,7 +5,7 @@ import { useAuthStore } from '../store/useAuthStore'
 import CaptchaWidget from '../components/auth/CaptchaWidget'
 import { authContent } from '../content/authContent'
 import { authService } from '../services/authService'
-import { validateEmail } from '../utils/validation'
+import { validateEmail, validatePassword } from '../utils/validation'
 import { useSettings } from '../context/useSettings'
 import { resolveAssetUrl } from '../utils/assetUrl'
 
@@ -52,7 +52,8 @@ export default function Login() {
     const next = {}
     const emailError = validateEmail(loginForm.email)
     if (emailError) next.email = emailError
-    if (!loginForm.password) next.password = 'Password wajib diisi'
+    const passwordError = validatePassword(loginForm.password, 'Password')
+    if (passwordError) next.password = passwordError
     return next
   }, [loginForm])
 
@@ -220,7 +221,7 @@ export default function Login() {
         {view === 'login' ? (
           <form onSubmit={handleLogin} autoComplete="off" className="w-full flex flex-col gap-5">
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1.5">{authContent.login.emailLabel}</label>
+              <label className="block text-sm font-bold text-slate-700 mb-1.5">{authContent.login.emailLabel} <span className="text-red-500">*</span></label>
               <div className="relative group">
                 <div className={`absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none transition-colors ${touched.email && loginErrors.email ? 'text-red-400' : 'text-slate-400 group-focus-within:text-brand-600'}`}>
                   <i className="ph-bold ph-envelope-simple text-lg" />
@@ -243,7 +244,7 @@ export default function Login() {
 
             <div>
               <div className="flex justify-between items-center mb-1.5">
-                <label className="block text-sm font-bold text-slate-700">{authContent.login.passwordLabel}</label>
+                <label className="block text-sm font-bold text-slate-700">{authContent.login.passwordLabel} <span className="text-red-500">*</span></label>
                 <button type="button" onClick={switchToForgot} className="text-[11px] font-bold text-brand-600 hover:text-brand-800 transition uppercase tracking-wider">
                   {authContent.login.forgotButton}
                 </button>
@@ -293,7 +294,7 @@ export default function Login() {
         ) : (
           <form onSubmit={handleForgot} autoComplete="off" className="w-full flex flex-col gap-5">
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1.5">{authContent.forgot.emailLabel}</label>
+              <label className="block text-sm font-bold text-slate-700 mb-1.5">{authContent.forgot.emailLabel} <span className="text-red-500">*</span></label>
               <div className="relative group">
                 <div className={`absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none transition-colors ${touched.forgotEmail && forgotErrors.forgotEmail ? 'text-red-400' : 'text-slate-400 group-focus-within:text-brand-600'}`}>
                   <i className="ph-bold ph-envelope-simple text-lg" />

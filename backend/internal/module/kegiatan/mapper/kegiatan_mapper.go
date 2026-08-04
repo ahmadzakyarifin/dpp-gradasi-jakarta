@@ -334,8 +334,6 @@ func FormatDate(v string) string {
 	if _, err = time.Parse("2006-01-02", v); err == nil {
 		return v
 	}
-	if len(v) >= 10 {
-		return v[:10]
-	}
+	// Return as-is if it's a custom string (e.g., "30 Desember 2026")
 	return v
 }

@@ -7,6 +7,12 @@ import ToastNotification from '../../components/admin/ToastNotification'
 import { useFormErrors, useRateLimitCooldown } from '../../utils/parseApiError'
 import { resolveAssetUrl } from '../../utils/assetUrl'
 
+const getTodayIndonesian = () => {
+  const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  const d = new Date();
+  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
 const PAGE_SIZE = 5
 
 export default function BeritaAdmin() {
@@ -32,7 +38,7 @@ export default function BeritaAdmin() {
     id: null,
     title: '',
     category: 'Berita Nasional',
-    published_date: new Date().toISOString().slice(0, 10),
+    published_date: getTodayIndonesian(),
     image_path: '',
     excerpt: '',
     content: '',
@@ -55,7 +61,7 @@ export default function BeritaAdmin() {
     if (!data.category || !data.category.trim()) {
       errors.category = 'Kategori wajib dipilih.'
     }
-    if (!data.published_date) {
+    if (!data.published_date || !data.published_date.trim()) {
       errors.published_date = 'Tanggal terbit wajib diisi.'
     }
     if (!data.content || !data.content.trim()) {
@@ -169,7 +175,7 @@ export default function BeritaAdmin() {
         id: null,
         title: '',
         category: categories[0] || 'Berita Nasional',
-        published_date: new Date().toISOString().slice(0, 10),
+        published_date: getTodayIndonesian(),
         image_path: '',
         excerpt: '',
         content: '',
@@ -426,8 +432,11 @@ export default function BeritaAdmin() {
                   <th className="p-4 w-12 text-center">
                     <input type="checkbox" onChange={toggleAll} checked={isAllSelected} className="rounded border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer" />
                   </th>
-                  <th className="p-4">Judul & Kategori</th>
-                  <th className="p-4">Tanggal</th>
+                  <th className="p-4">Berita</th>
+                  <th className="p-4">Kategori</th>
+                  <th className="p-4">Penulis</th>
+                  <th className="p-4">Tanggal Terbit</th>
+                  <th className="p-4 text-center">Dilihat</th>
                   <th className="p-4">Status</th>
                   <th className="p-4 text-right">Aksi</th>
                 </tr>
@@ -439,23 +448,39 @@ export default function BeritaAdmin() {
                       <input type="checkbox" checked={selectedItems.includes(item.id)} onChange={() => toggleItem(item.id)} className="rounded border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer" />
                     </td>
                     <td className="p-4">
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-center gap-3">
                         {item.image_url || item.image_path ? (
-                          <img src={resolveAssetUrl(item.image_url || item.image_path)} alt="" className="w-16 h-12 rounded-lg object-cover border border-slate-200 shrink-0" />
+                          <img src={resolveAssetUrl(item.image_url || item.image_path)} alt="" className="w-12 h-9 rounded object-cover border border-slate-200 shrink-0" />
                         ) : (
-                          <div className="w-16 h-12 rounded-lg bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center text-slate-300">
-                            <i className="ph ph-image text-lg" />
+                          <div className="w-12 h-9 rounded bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center text-slate-300">
+                            <i className="ph ph-image text-base" />
                           </div>
                         )}
-                        <div>
-                          <p className="font-semibold text-slate-900 leading-snug line-clamp-1">{item.title}</p>
-                          <span className="inline-block bg-slate-100 text-slate-600 text-[10px] font-semibold px-2 py-0.5 rounded-full mt-1">
-                            {item.category}
-                          </span>
-                        </div>
+                        <span className="font-semibold text-slate-900 leading-snug line-clamp-1 max-w-[200px]" title={item.title}>
+                          {item.title}
+                        </span>
                       </div>
                     </td>
-                    <td className="p-4 text-slate-500 text-sm whitespace-nowrap">{item.published_date}</td>
+                    <td className="p-4">
+                      <span className="inline-block bg-slate-100 text-slate-600 text-[10px] font-semibold px-2.5 py-1 rounded-full">
+                        {item.category}
+                      </span>
+                    </td>
+                    <td className="p-4 text-slate-600 font-medium text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-6 h-6 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-bold text-[10px]">
+                          {(item.author_name || 'A').charAt(0).toUpperCase()}
+                        </div>
+                        {item.author_name || 'Admin'}
+                      </div>
+                    </td>
+                    <td className="p-4 text-slate-500 text-xs whitespace-nowrap">{item.published_date}</td>
+                    <td className="p-4 text-center text-slate-500 text-xs font-semibold">
+                      <div className="flex items-center justify-center gap-1">
+                        <i className="ph ph-eye text-sm text-slate-400" />
+                        {item.views || 0}
+                      </div>
+                    </td>
                     <td className="p-4">
                       {currentTab === 'trash' ? (
                         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-500">
@@ -497,7 +522,7 @@ export default function BeritaAdmin() {
           </div>
 
           {/* PAGINATION (server-driven) */}
-          {totalPages > 1 && (
+          {totalPages >= 1 && items.length > 0 && (
             <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200">
               <span className="text-xs text-slate-500">
                 Hal {currentPage} dari {totalPages} · {meta.total_data || 0} data
@@ -550,179 +575,198 @@ export default function BeritaAdmin() {
                 <i className="ph-bold ph-x text-lg" />
               </button>
             </div>
-            <form onSubmit={handleSubmit} noValidate className="p-6 space-y-4 overflow-y-auto">
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Judul Berita *</label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={e => {
-                    setFormData({ ...formData, title: e.target.value })
-                    clearFieldError('title')
-                    if (touched.title) {
-                      const errs = validateForm({ ...formData, title: e.target.value })
-                      setFormErrors(prev => ({ ...prev, title: errs.title }))
-                    }
-                  }}
-                  onBlur={() => {
-                    setTouched(prev => ({ ...prev, title: true }))
-                    const errs = validateForm()
-                    setFormErrors(prev => ({ ...prev, title: errs.title }))
-                  }}
-                  className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors ${touched.title && formErrors.title ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
-                />
-                {touched.title && formErrors.title && (
-                  <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
-                    <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.title}
-                  </p>
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Kategori *</label>
-                  <select
-                    value={formData.category}
-                    onChange={e => {
-                      if (e.target.value === '__new__') {
-                        const name = window.prompt('Nama kategori baru:')
-                        if (name && name.trim()) {
-                          const clean = name.trim()
-                          if (!categories.includes(clean)) {
-                            setCategories(prev => [...prev, clean])
+            <form onSubmit={handleSubmit} noValidate className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                {/* Left Column: Meta & Media */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Judul Berita <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      value={formData.title}
+                      onChange={e => {
+                        setFormData({ ...formData, title: e.target.value })
+                        clearFieldError('title')
+                        if (touched.title) {
+                          const errs = validateForm({ ...formData, title: e.target.value })
+                          setFormErrors(prev => ({ ...prev, title: errs.title }))
+                        }
+                      }}
+                      onBlur={() => {
+                        setTouched(prev => ({ ...prev, title: true }))
+                        const errs = validateForm()
+                        setFormErrors(prev => ({ ...prev, title: errs.title }))
+                      }}
+                      placeholder="Masukkan judul berita..."
+                      className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors ${touched.title && formErrors.title ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
+                    />
+                    {touched.title && formErrors.title && (
+                      <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
+                        <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.title}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Kategori <span className="text-red-500">*</span></label>
+                      <select
+                        value={formData.category}
+                        onChange={e => {
+                          if (e.target.value === '__new__') {
+                            const name = window.prompt('Nama kategori baru:')
+                            if (name && name.trim()) {
+                              const clean = name.trim()
+                              if (!categories.includes(clean)) {
+                                setCategories(prev => [...prev, clean])
+                              }
+                              setFormData(prev => ({ ...prev, category: clean }))
+                              if (touched.category) {
+                                const errs = validateForm({ ...formData, category: clean })
+                                setFormErrors(prev => ({ ...prev, category: errs.category }))
+                              }
+                            }
+                            return
                           }
-                          setFormData(prev => ({ ...prev, category: clean }))
+                          const val = e.target.value
+                          setFormData(prev => ({ ...prev, category: val }))
                           if (touched.category) {
-                            const errs = validateForm({ ...formData, category: clean })
+                            const errs = validateForm({ ...formData, category: val })
                             setFormErrors(prev => ({ ...prev, category: errs.category }))
                           }
-                        }
-                        return
-                      }
-                      const val = e.target.value
-                      setFormData(prev => ({ ...prev, category: val }))
-                      if (touched.category) {
-                        const errs = validateForm({ ...formData, category: val })
-                        setFormErrors(prev => ({ ...prev, category: errs.category }))
-                      }
-                    }}
-                    onBlur={() => {
-                      setTouched(prev => ({ ...prev, category: true }))
-                      const errs = validateForm()
-                      setFormErrors(prev => ({ ...prev, category: errs.category }))
-                    }}
-                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none bg-white transition-colors ${touched.category && formErrors.category ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
-                  >
-                    <option value="">Pilih Kategori</option>
-                    {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                    <option value="__new__">+ Buat Kategori Baru...</option>
-                  </select>
-                  {touched.category && formErrors.category && (
-                    <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
-                      <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.category}
-                    </p>
-                  )}
+                        }}
+                        onBlur={() => {
+                          setTouched(prev => ({ ...prev, category: true }))
+                          const errs = validateForm()
+                          setFormErrors(prev => ({ ...prev, category: errs.category }))
+                        }}
+                        className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none bg-white transition-colors ${touched.category && formErrors.category ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
+                      >
+                        <option value="">Pilih Kategori</option>
+                        {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                        <option value="__new__">+ Buat Kategori Baru...</option>
+                      </select>
+                      {touched.category && formErrors.category && (
+                        <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
+                          <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.category}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Tanggal Terbit <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        value={formData.published_date}
+                        onChange={e => {
+                          setFormData({ ...formData, published_date: e.target.value })
+                          if (touched.published_date) {
+                            const errs = validateForm({ ...formData, published_date: e.target.value })
+                            setFormErrors(prev => ({ ...prev, published_date: errs.published_date }))
+                          }
+                        }}
+                        onBlur={() => {
+                          setTouched(prev => ({ ...prev, published_date: true }))
+                          const errs = validateForm()
+                          setFormErrors(prev => ({ ...prev, published_date: errs.published_date }))
+                        }}
+                        placeholder="Contoh: 30 Desember 2026"
+                        className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors ${touched.published_date && formErrors.published_date ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
+                      />
+                      {touched.published_date && formErrors.published_date && (
+                        <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
+                          <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.published_date}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Gambar Cover <span className="text-gray-400 font-normal">(opsional)</span></label>
+                    <div className="flex items-center gap-3">
+                      {formData.image_path && (
+                        <img src={resolveAssetUrl(formData.image_path)} alt="Cover" className="w-20 h-14 rounded-lg object-cover border border-slate-200 shrink-0" />
+                      )}
+                      <label className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 text-sm font-semibold cursor-pointer transition shrink-0">
+                        <i className="ph-bold ph-upload-simple" />
+                        {imageUploading ? 'Mengunggah...' : (formData.image_path ? 'Ganti Gambar' : 'Upload Gambar')}
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp"
+                          className="hidden"
+                          disabled={imageUploading}
+                          onChange={e => {
+                            const file = e.target.files?.[0]
+                            if (file) handleImageUpload(file)
+                            e.target.value = ''
+                          }}
+                        />
+                      </label>
+                      {formData.image_path && (
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, image_path: '' })}
+                          className="text-xs text-red-500 hover:text-red-700 font-medium"
+                        >
+                          Hapus
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-1.5">PNG / JPG / WEBP · Maks 5MB.</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Tags (pisahkan dengan koma) <span className="text-gray-400 font-normal">(opsional)</span></label>
+                    <input type="text" value={formData.tags} onChange={e => setFormData({ ...formData, tags: e.target.value })} placeholder="teknologi, pendidikan, digital" className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
+                  </div>
+
+                  <div className="pt-2">
+                    <label className="flex items-center gap-2 text-sm cursor-pointer font-medium text-slate-700">
+                      <input type="checkbox" checked={formData.is_published} onChange={e => setFormData({ ...formData, is_published: e.target.checked })} className="accent-brand-600 rounded border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer" />
+                      Terbitkan langsung (Published)
+                    </label>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Tanggal Terbit *</label>
-                  <input
-                    type="date"
-                    value={formData.published_date}
-                    onChange={e => {
-                      setFormData({ ...formData, published_date: e.target.value })
-                      if (touched.published_date) {
-                        const errs = validateForm({ ...formData, published_date: e.target.value })
-                        setFormErrors(prev => ({ ...prev, published_date: errs.published_date }))
-                      }
-                    }}
-                    onBlur={() => {
-                      setTouched(prev => ({ ...prev, published_date: true }))
-                      const errs = validateForm()
-                      setFormErrors(prev => ({ ...prev, published_date: errs.published_date }))
-                    }}
-                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors ${touched.published_date && formErrors.published_date ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
-                  />
-                  {touched.published_date && formErrors.published_date && (
-                    <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
-                      <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.published_date}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Gambar Cover</label>
-                <div className="flex items-center gap-3">
-                  {formData.image_path && (
-                    <img src={resolveAssetUrl(formData.image_path)} alt="Cover" className="w-24 h-16 rounded-lg object-cover border border-slate-200 shrink-0" />
-                  )}
-                  <label className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 text-sm font-semibold cursor-pointer transition shrink-0">
-                    <i className="ph-bold ph-upload-simple" />
-                    {imageUploading ? 'Mengunggah...' : (formData.image_path ? 'Ganti Gambar' : 'Upload Gambar')}
-                    <input
-                      type="file"
-                      accept="image/png,image/jpeg,image/webp"
-                      className="hidden"
-                      disabled={imageUploading}
+
+                {/* Right Column: Descriptions & Content */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Ringkasan (Excerpt) <span className="text-gray-400 font-normal">(opsional)</span></label>
+                    <textarea rows={3} value={formData.excerpt} onChange={e => setFormData({ ...formData, excerpt: e.target.value })} placeholder="Tulis ringkasan berita singkat..." className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors resize-none" />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Konten Lengkap <span className="text-red-500">*</span></label>
+                    <textarea
+                      rows={8}
+                      value={formData.content}
                       onChange={e => {
-                        const file = e.target.files?.[0]
-                        if (file) handleImageUpload(file)
-                        e.target.value = ''
+                        setFormData({ ...formData, content: e.target.value })
+                        clearFieldError('content')
+                        if (touched.content) {
+                          const errs = validateForm({ ...formData, content: e.target.value })
+                          setFormErrors(prev => ({ ...prev, content: errs.content }))
+                        }
                       }}
+                      onBlur={() => {
+                        setTouched(prev => ({ ...prev, content: true }))
+                        const errs = validateForm()
+                        setFormErrors(prev => ({ ...prev, content: errs.content }))
+                      }}
+                      placeholder="Isi berita lengkap di sini..."
+                      className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors resize-none ${touched.content && formErrors.content ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
                     />
-                  </label>
-                  {formData.image_path && (
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, image_path: '' })}
-                      className="text-xs text-red-500 hover:text-red-700 font-medium"
-                    >
-                      Hapus
-                    </button>
-                  )}
+                    {touched.content && formErrors.content && (
+                      <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
+                        <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.content}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1.5">PNG / JPG / WEBP · maks 5MB.</p>
+
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Ringkasan (Excerpt)</label>
-                <textarea rows={2} value={formData.excerpt} onChange={e => setFormData({ ...formData, excerpt: e.target.value })} className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Konten Lengkap *</label>
-                <textarea
-                  rows={6}
-                  value={formData.content}
-                  onChange={e => {
-                    setFormData({ ...formData, content: e.target.value })
-                    clearFieldError('content')
-                    if (touched.content) {
-                      const errs = validateForm({ ...formData, content: e.target.value })
-                      setFormErrors(prev => ({ ...prev, content: errs.content }))
-                    }
-                  }}
-                  onBlur={() => {
-                    setTouched(prev => ({ ...prev, content: true }))
-                    const errs = validateForm()
-                    setFormErrors(prev => ({ ...prev, content: errs.content }))
-                  }}
-                  placeholder="Isi berita lengkap di sini..."
-                  className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors ${touched.content && formErrors.content ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
-                />
-                {touched.content && formErrors.content && (
-                  <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
-                    <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.content}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Tags (pisahkan dengan koma)</label>
-                <input type="text" value={formData.tags} onChange={e => setFormData({ ...formData, tags: e.target.value })} placeholder="teknologi, pendidikan, digital" className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
-              </div>
-              <div>
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input type="checkbox" checked={formData.is_published} onChange={e => setFormData({ ...formData, is_published: e.target.checked })} className="accent-brand-600" />
-                  Terbitkan langsung (Published)
-                </label>
-              </div>
-              <div className="flex justify-end gap-2 pt-4 border-t items-center">
+
+              <div className="flex justify-end gap-2 pt-4 border-t items-center mt-6">
                 {isLimited && (
                   <span className="text-xs text-amber-600 font-semibold mr-auto flex items-center gap-1">
                     <i className="ph ph-timer text-sm" /> Terlalu banyak percobaan. Tunggu {cooldown}s

@@ -164,7 +164,22 @@ export default function BeritaList() {
                   </Link>
                   <p className="text-slate-500 text-[13px] flex-grow line-clamp-2 mb-4 leading-relaxed">{item.excerpt || '-'}</p>
                   <div className="pt-4 flex justify-between items-center border-t border-slate-100 mt-auto">
-                    <button type="button" className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-brand-600 transition group/btn">
+                    <button onClick={() => {
+                      const url = `${window.location.origin}/berita/${item.slug}`;
+                      const choice = window.prompt(
+                        `Bagikan Berita: "${item.title}"\nKetik angka untuk memilih:\n1. WhatsApp\n2. Facebook\n3. Instagram (Salin Link)`,
+                        "1"
+                      );
+                      if (choice === "1") {
+                        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(`${item.title} ${url}`)}`, '_blank');
+                      } else if (choice === "2") {
+                        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+                      } else if (choice === "3") {
+                        navigator.clipboard.writeText(url).then(() => {
+                          alert('Link disalin ke clipboard! Silakan bagikan di Instagram.');
+                        });
+                      }
+                    }} type="button" className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-brand-600 transition group/btn">
                       <div className="w-7 h-7 rounded-full bg-slate-50 flex items-center justify-center group-hover/btn:bg-brand-50 transition-colors">
                         <i className="ph-bold ph-share-network text-sm" />
                       </div>

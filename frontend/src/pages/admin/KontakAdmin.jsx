@@ -395,7 +395,7 @@ export default function KontakAdmin() {
                                 </button>
                                 <button
                                   onClick={() => triggerConfirm('delete', item.id)}
-                                  className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                                  className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
                                   title="Hapus"
                                 >
                                   <i className="ph ph-trash text-lg" />
@@ -404,7 +404,7 @@ export default function KontakAdmin() {
                             ) : (
                               <button
                                 onClick={() => triggerConfirm('restore', item.id)}
-                                className="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded"
                                 title="Pulihkan"
                               >
                                 <i className="ph ph-arrow-counter-clockwise text-lg" />

@@ -240,7 +240,7 @@ func (s *authService) ForgotPassword(ctx context.Context, req dto.ForgotPassword
 		return "", errors.New("gagal memproses permintaan reset password")
 	}
 
-	link := fmt.Sprintf("%s/reset-password?token=%s", strings.TrimSuffix(s.cfg.App.URL, "/"), token)
+	link := fmt.Sprintf("%s/reset-password?token=%s", strings.TrimSuffix(s.cfg.App.FrontendURL, "/"), token)
 	if s.cfg.App.Env != "production" {
 		fmt.Printf("\n[DEBUG] Forgot Password Link for %s: %s\n\n", user.Email, link)
 	}

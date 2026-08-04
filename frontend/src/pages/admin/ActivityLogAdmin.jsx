@@ -132,18 +132,7 @@ export default function ActivityLogAdmin() {
   }
 
   const headerContent = (
-    <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 w-full max-w-4xl animate-fade-in-up">
-      <div className="relative w-full">
-        <i className="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Cari log..."
-          className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors"
-        />
-      </div>
-      
+    <div className="flex items-center gap-2 w-full max-w-4xl justify-end animate-fade-in-up">
       <select
         value={filterRole}
         onChange={(e) => {
@@ -192,20 +181,12 @@ export default function ActivityLogAdmin() {
       </select>
 
       <button
-        type="submit"
-        className="bg-brand-600 hover:bg-brand-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all btn-press shrink-0"
-      >
-        Cari
-      </button>
-      <button
-        type="button"
         onClick={handleReset}
         className="shrink-0 bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all btn-press"
-        title="Reset Filter"
       >
-        <i className="ph ph-arrows-counter-clockwise text-lg" />
+        <i className="ph ph-arrows-counter-clockwise text-lg" /> Reset
       </button>
-    </form>
+    </div>
   )
 
   return (
@@ -231,7 +212,10 @@ export default function ActivityLogAdmin() {
             ) : error ? (
               <div className="py-12 text-center text-red-500">{error}</div>
             ) : logs.length === 0 ? (
-              <div className="py-12 text-center text-gray-500">Tidak ada log aktivitas untuk ditampilkan.</div>
+              <div className="py-16 text-center text-slate-500 flex flex-col items-center justify-center">
+                <i className="ph ph-clock-counter-clockwise text-gray-300 text-5xl mb-4" />
+                <p className="font-medium text-gray-500">Tidak ada log aktivitas untuk ditampilkan.</p>
+              </div>
             ) : (
               <table className="w-full text-left border-collapse">
                 <thead>

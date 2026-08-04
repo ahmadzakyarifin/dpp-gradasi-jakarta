@@ -33,10 +33,17 @@ export default function BeritaDetail() {
   function shareTo(platform) {
     const url = window.location.href
     const text = article?.title || beritaContent.detail.defaultTitle
+    if (platform === 'instagram') {
+      navigator.clipboard.writeText(url).then(() => {
+        alert('Link berita berhasil disalin ke clipboard! Silakan bagikan di Instagram.')
+      }).catch(() => {
+        alert('Gagal menyalin link. Silakan salin URL di address bar browser Anda.')
+      })
+      return
+    }
     const links = {
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-      whatsapp: `https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`,
-      twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+      whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(`${text} ${url}`)}`,
     }
     window.open(links[platform], '_blank', 'noopener,noreferrer')
   }
@@ -129,7 +136,7 @@ export default function BeritaDetail() {
                       <div className="grid grid-cols-3 gap-2">
                         <button onClick={() => shareTo('facebook')} className="flex items-center justify-center w-full h-11 rounded-xl bg-[#1877F2]/10 text-[#1877F2] hover:bg-[#1877F2] hover:text-white transition" title="Facebook"><i className="ph-fill ph-facebook-logo text-lg" /></button>
                         <button onClick={() => shareTo('whatsapp')} className="flex items-center justify-center w-full h-11 rounded-xl bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366] hover:text-white transition" title="WhatsApp"><i className="ph-fill ph-whatsapp-logo text-lg" /></button>
-                        <button onClick={() => shareTo('twitter')} className="flex items-center justify-center w-full h-11 rounded-xl bg-slate-900/10 text-slate-900 hover:bg-slate-900 hover:text-white transition" title="X"><i className="ph-fill ph-x-logo text-lg" /></button>
+                        <button onClick={() => shareTo('instagram')} className="flex items-center justify-center w-full h-11 rounded-xl bg-[#E1306C]/10 text-[#E1306C] hover:bg-[#E1306C] hover:text-white transition" title="Instagram"><i className="ph-fill ph-instagram-logo text-lg" /></button>
                       </div>
                     </div>
                   </div>

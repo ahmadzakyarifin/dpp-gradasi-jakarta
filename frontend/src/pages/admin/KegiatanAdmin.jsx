@@ -26,7 +26,7 @@ export default function KegiatanAdmin() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [formMode, setFormMode] = useState('create')
 
-  const [categories, setCategories] = useState([])
+  const [categories, setCategories] = useState(['Kegiatan', 'Munas', 'Pelatihan'])
 
   const [formData, setFormData] = useState({
     id: null,
@@ -53,6 +53,24 @@ export default function KegiatanAdmin() {
   // Error backend: field errors inline + countdown rate limit
   const { fieldErrors, applyError, clearFieldError } = useFormErrors()
   const { cooldown, isLimited, applyRateLimit } = useRateLimitCooldown()
+
+  const [formErrors, setFormErrors] = useState({})
+  const [touched, setTouched] = useState({})
+
+  const validateForm = useCallback((data = formData) => {
+    const errors = {}
+    if (!data.title || !data.title.trim()) {
+      errors.title = 'Judul kegiatan wajib diisi.'
+    } else if (data.title.trim().length < 5) {
+      errors.title = 'Judul minimal 5 karakter.'
+    } else if (data.title.trim().length > 300) {
+      errors.title = 'Judul maksimal 300 karakter.'
+    }
+    if (!data.content || !data.content.trim()) {
+      errors.content = 'Konten lengkap wajib diisi.'
+    }
+    return errors
+  }, [formData])
 
   // Galeri gambar kegiatan
   const [gallery, setGallery] = useState([]) // [{id?, image_path, caption, sort_order}]
@@ -112,6 +130,8 @@ export default function KegiatanAdmin() {
   const totalData = meta.total_data ?? items.length
 
   const openForm = (item = null) => {
+    setFormErrors({})
+    setTouched({})
     if (item) {
       setFormMode('edit')
       setFormData({
@@ -173,6 +193,14 @@ export default function KegiatanAdmin() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    const errors = validateForm()
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors)
+      setTouched(Object.keys(errors).reduce((acc, k) => ({ ...acc, [k]: true }), {}))
+      return
+    }
+    setFormErrors({})
+
     const payload = {
       title: formData.title,
       category: formData.category,
@@ -184,11 +212,11 @@ export default function KegiatanAdmin() {
       content: formData.content,
       is_published: formData.isPublished,
       // Galeri: item baru (tanpa id) dikirim, item lama dengan id tetap dipertahankan
-      gallery: gallery.map((g, idx) => ({
+      gallery: JSON.stringify(gallery.map((g, idx) => ({
         image_path: g.image_path,
         caption: g.caption || '',
         sort_order: g.sort_order ?? idx,
-      }))
+      })))
     }
 
     try {
@@ -205,6 +233,8 @@ export default function KegiatanAdmin() {
     } catch (err) {
       const parsed = applyError(err)
       applyRateLimit(err)
+      setFormErrors(prev => ({ ...prev, ...parsed.fieldErrors }))
+      setTouched(prev => ({ ...prev, ...Object.keys(parsed.fieldErrors).reduce((acc, k) => ({ ...acc, [k]: true }), {}) }))
       if (Object.keys(parsed.fieldErrors).length === 0) {
         showToast(parsed.message || 'Gagal menyimpan kegiatan.', 'error')
       }
@@ -253,7 +283,7 @@ export default function KegiatanAdmin() {
     showToast('Gambar galeri dihapus.')
   }
 
-  function confirmAction(type, id = null) {
+  function confirmAction(type, id = null, extraData = null) {
     const configs = {
       delete: {
         type: 'danger',
@@ -273,6 +303,20 @@ export default function KegiatanAdmin() {
           await kegiatanService.restore(id)
           loadKegiatan()
           showToast('Kegiatan berhasil dipulihkan.')
+        },
+      },
+      toggle_publish: {
+        type: extraData ? 'warning' : 'info',
+        title: extraData ? 'Jadikan Draft' : 'Terbitkan Kegiatan',
+        message: extraData ? 'Kegiatan ini akan diubah menjadi draft. Lanjutkan?' : 'Kegiatan ini akan diterbitkan. Lanjutkan?',
+        action: async () => {
+          try {
+            await kegiatanService.update(id, { is_published: !extraData })
+            setItems(prev => prev.map(i => i.id === id ? { ...i, is_published: !extraData } : i))
+            showToast(extraData ? 'Kegiatan dijadikan draft.' : 'Kegiatan berhasil diterbitkan!')
+          } catch (err) {
+            showToast(err?.message || 'Gagal mengubah status kegiatan.', 'error')
+          }
         },
       },
       bulk_delete: {
@@ -478,13 +522,18 @@ export default function KegiatanAdmin() {
                     </td>
                     <td className="p-4">
                       {currentTab === 'trash' ? (
-                        <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-red-50 text-red-500">
-                          Di Sampah
+                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-500">
+                          <i className="ph ph-trash" /> Di Sampah
                         </span>
                       ) : (
-                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg ${item.is_published ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
-                          {item.is_published ? 'Terbit' : 'Draft'}
-                        </span>
+                        <button onClick={() => confirmAction('toggle_publish', item.id, item.is_published)} className="inline-flex items-center gap-2 cursor-pointer">
+                          <div className={`relative w-9 h-5 rounded-full transition-colors ${item.is_published ? 'bg-brand-500' : 'bg-slate-200'}`}>
+                            <div className={`absolute top-[2px] left-[2px] w-4 h-4 bg-white rounded-full transition-transform ${item.is_published ? 'translate-x-4' : 'translate-x-0'}`} />
+                          </div>
+                          <span className={`text-xs font-semibold ${item.is_published ? 'text-brand-600' : 'text-slate-400'}`}>
+                            {item.is_published ? 'Terbit' : 'Draft'}
+                          </span>
+                        </button>
                       )}
                     </td>
                     <td className="p-4 text-right">
@@ -551,172 +600,236 @@ export default function KegiatanAdmin() {
           )}
         </div>
       </div>
-
-      {/* Form Modal */}
+         {/* Form Modal */}
       {isFormOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="font-heading font-bold text-lg text-slate-900">{formMode === 'create' ? 'Tambah Kegiatan Baru' : 'Edit Kegiatan'}</h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1">Judul Kegiatan *</label>
-                <input type="text" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} required className="w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Kategori</label>
-                  <select
-                    value={formData.category}
-                    onChange={e => {
-                      if (e.target.value === '__new__') {
-                        const name = window.prompt('Nama kategori baru:')
-                        if (name && name.trim()) {
-                          const clean = name.trim()
-                          if (!categories.includes(clean)) {
-                            setCategories(prev => [...prev, clean])
-                          }
-                          setFormData({ ...formData, category: clean })
-                        }
-                        return
-                      }
-                      setFormData({ ...formData, category: e.target.value })
-                    }}
-                    className="w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none bg-white"
-                  >
-                    {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                    <option value="__new__">+ Buat Kategori Baru...</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Tanggal Event</label>
-                  <input type="text" value={formData.eventDate} onChange={e => setFormData({ ...formData, eventDate: e.target.value })} placeholder="31 Desember 2025" className="w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Lokasi</label>
-                  <input type="text" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} placeholder="Jakarta" className="w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1">Gambar Cover</label>
-                <div className="flex items-center gap-3">
-                  {formData.image && (
-                    <img src={resolveAssetUrl(formData.image)} alt="Cover" className="w-24 h-16 rounded-lg object-cover border border-slate-200 shrink-0" />
-                  )}
-                  <label className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 text-sm font-semibold cursor-pointer transition shrink-0">
-                    <i className="ph-bold ph-upload-simple" />
-                    {coverUploading ? 'Mengunggah...' : (formData.image ? 'Ganti Cover' : 'Upload Cover')}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setIsFormOpen(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden z-10">
+            <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+              <h3 className="font-heading font-bold text-slate-900 text-lg">
+                {formMode === 'create' ? 'Tambah Kegiatan Baru' : 'Edit Kegiatan'}
+              </h3>
+              <button onClick={() => setIsFormOpen(false)} className="text-slate-400 hover:text-slate-600 p-1">
+                <i className="ph-bold ph-x text-lg" />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} noValidate className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in-up">
+                
+                {/* Left Column: Meta & Media */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Judul Kegiatan <span className="text-red-500">*</span></label>
                     <input
-                      type="file"
-                      accept="image/png,image/jpeg,image/webp"
-                      className="hidden"
-                      disabled={coverUploading}
+                      type="text"
+                      value={formData.title}
                       onChange={e => {
-                        const file = e.target.files?.[0]
-                        if (file) handleImageUpload(file, 'cover')
-                        e.target.value = ''
+                        setFormData({ ...formData, title: e.target.value })
+                        clearFieldError('title')
+                        if (touched.title) {
+                          const errs = validateForm({ ...formData, title: e.target.value })
+                          setFormErrors(prev => ({ ...prev, title: errs.title }))
+                        }
                       }}
+                      onBlur={() => {
+                        setTouched(prev => ({ ...prev, title: true }))
+                        const errs = validateForm()
+                        setFormErrors(prev => ({ ...prev, title: errs.title }))
+                      }}
+                      className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors ${touched.title && formErrors.title ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
                     />
-                  </label>
-                  {formData.image && (
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, image: '' })}
-                      className="text-xs text-red-500 hover:text-red-700 font-medium"
-                    >
-                      Hapus
-                    </button>
-                  )}
-                </div>
-                {fieldErrors.image && (
-                  <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
-                    <i className="ph-bold ph-warning-circle text-xs" /> {fieldErrors.image}
-                  </p>
-                )}
-              </div>
+                    {touched.title && formErrors.title && (
+                      <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
+                        <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.title}
+                      </p>
+                    )}
+                  </div>
 
-              {/* Galeri Gambar Kegiatan */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-2">Galeri Gambar ({gallery.length})</label>
-                {gallery.length > 0 && (
-                  <div className="grid grid-cols-3 gap-3 mb-3">
-                    {gallery.map((g, idx) => (
-                      <div key={g.id || `new-${idx}`} className="relative group rounded-xl overflow-hidden border border-slate-200">
-                        <img src={resolveAssetUrl(g.image_path)} alt={`Galeri ${idx + 1}`} className="w-full h-24 object-cover" />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Kategori <span className="text-gray-400 font-normal">(opsional)</span></label>
+                      <select
+                        value={formData.category}
+                        onChange={e => {
+                          if (e.target.value === '__new__') {
+                            const name = window.prompt('Nama kategori baru:')
+                            if (name && name.trim()) {
+                              const clean = name.trim()
+                              if (!categories.includes(clean)) {
+                                setCategories(prev => [...prev, clean])
+                              }
+                              setFormData({ ...formData, category: clean })
+                            }
+                            return
+                          }
+                          setFormData({ ...formData, category: e.target.value })
+                        }}
+                        className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors"
+                      >
+                        {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                        <option value="__new__">+ Buat Kategori Baru...</option>
+                      </select>
+                    </div>
+
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Tanggal Event <span className="text-gray-400 font-normal">(opsional)</span></label>
+                      <input type="text" value={formData.eventDate} onChange={e => setFormData({ ...formData, eventDate: e.target.value })} placeholder="31 Desember 2025" className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
+                    </div>
+
+                    <div className="col-span-2">
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Lokasi <span className="text-gray-400 font-normal">(opsional)</span></label>
+                      <input type="text" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} placeholder="Jakarta" className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Gambar Cover <span className="text-gray-400 font-normal">(opsional)</span></label>
+                    <div className="flex items-center gap-3">
+                      {formData.image && (
+                        <img src={resolveAssetUrl(formData.image)} alt="Cover" className="w-24 h-16 rounded-lg object-cover border border-slate-200 shrink-0" />
+                      )}
+                      <label className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 text-sm font-semibold cursor-pointer transition shrink-0">
+                        <i className="ph-bold ph-upload-simple" />
+                        {coverUploading ? 'Mengunggah...' : (formData.image ? 'Ganti Cover' : 'Upload Cover')}
                         <input
-                          type="text"
-                          value={g.caption || ''}
-                          placeholder="Caption (opsional)"
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp"
+                          className="hidden"
+                          disabled={coverUploading}
                           onChange={e => {
-                            const next = [...gallery]
-                            next[idx] = { ...g, caption: e.target.value }
-                            setGallery(next)
+                            const file = e.target.files?.[0]
+                            if (file) handleImageUpload(file, 'cover')
+                            e.target.value = ''
                           }}
-                          className="absolute bottom-0 left-0 right-0 px-2 py-1 bg-black/60 text-white text-[10px] outline-none placeholder:text-white/60"
                         />
+                      </label>
+                      {formData.image && (
                         <button
                           type="button"
-                          onClick={() => handleRemoveGallery(idx)}
-                          className="absolute top-1.5 right-1.5 w-6 h-6 flex items-center justify-center rounded-full bg-red-600 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow"
-                          title="Hapus gambar"
+                          onClick={() => setFormData({ ...formData, image: '' })}
+                          className="text-xs text-red-500 hover:text-red-700 font-medium"
                         >
-                          <i className="ph-bold ph-x" />
+                          Hapus
                         </button>
-                      </div>
-                    ))}
+                      )}
+                    </div>
+                    {fieldErrors.image && (
+                      <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
+                        <i className="ph-bold ph-warning-circle text-xs" /> {fieldErrors.image}
+                      </p>
+                    )}
                   </div>
-                )}
-                <label className="inline-flex items-center gap-2 px-4 py-2 border border-dashed border-slate-300 text-slate-600 hover:border-brand-500 hover:text-brand-600 rounded-lg text-sm font-semibold cursor-pointer transition">
-                  <i className="ph-bold ph-plus" />
-                  {galleryUploading ? 'Mengunggah...' : 'Tambah Gambar Galeri'}
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    className="hidden"
-                    disabled={galleryUploading}
-                    onChange={e => {
-                      const file = e.target.files?.[0]
-                      if (file) handleImageUpload(file, 'gallery')
-                      e.target.value = ''
-                    }}
-                  />
-                </label>
-                <p className="text-[11px] text-gray-400 mt-1.5">PNG / JPG / WEBP · maks 5MB. Gambar baru otomatis tersimpan saat kegiatan disimpan.</p>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1">Ringkasan</label>
-                <textarea rows={3} value={formData.excerpt} onChange={e => { setFormData({ ...formData, excerpt: e.target.value }); clearFieldError('excerpt') }} className="w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1">Konten Lengkap *</label>
-                <textarea rows={5} value={formData.content} onChange={e => { setFormData({ ...formData, content: e.target.value }); clearFieldError('content') }} required className="w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none" />
-                {fieldErrors.content && (
-                  <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
-                    <i className="ph-bold ph-warning-circle text-xs" /> {fieldErrors.content}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-2">Status Publikasi</label>
-                <div className="flex gap-4">
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input type="radio" name="isPublished" checked={formData.isPublished} onChange={() => setFormData({ ...formData, isPublished: true })} className="accent-brand-600" />
-                    Terbit
-                  </label>
-                  <label className="flex items-center gap-2 text-sm cursor-pointer">
-                    <input type="radio" name="isPublished" checked={!formData.isPublished} onChange={() => setFormData({ ...formData, isPublished: false })} className="accent-slate-400" />
-                    Draft
-                  </label>
+
+                  {/* Galeri Gambar Kegiatan */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-2">Galeri Gambar <span className="text-gray-400 font-normal">(opsional)</span> ({gallery.length})</label>
+                    {gallery.length > 0 && (
+                      <div className="grid grid-cols-3 gap-3 mb-3">
+                        {gallery.map((g, idx) => (
+                          <div key={g.id || `new-${idx}`} className="relative group rounded-xl overflow-hidden border border-slate-200">
+                            <img src={resolveAssetUrl(g.image_path)} alt={`Galeri ${idx + 1}`} className="w-full h-24 object-cover" />
+                            <input
+                              type="text"
+                              value={g.caption || ''}
+                              placeholder="Caption (opsional)"
+                              onChange={e => {
+                                const next = [...gallery]
+                                next[idx] = { ...g, caption: e.target.value }
+                                setGallery(next)
+                              }}
+                              className="absolute bottom-0 left-0 right-0 px-2 py-1 bg-black/60 text-white text-[10px] outline-none placeholder:text-white/60"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveGallery(idx)}
+                              className="absolute top-1.5 right-1.5 w-6 h-6 flex items-center justify-center rounded-full bg-red-600 text-white text-xs transition-opacity shadow"
+                              title="Hapus gambar"
+                            >
+                              <i className="ph-bold ph-x" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <label className="inline-flex items-center gap-2 px-4 py-2 border border-dashed border-slate-300 text-slate-600 hover:border-brand-500 hover:text-brand-600 rounded-lg text-sm font-semibold cursor-pointer transition">
+                      <i className="ph-bold ph-plus" />
+                      {galleryUploading ? 'Mengunggah...' : 'Tambah Gambar Galeri'}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="hidden"
+                        disabled={galleryUploading}
+                        onChange={e => {
+                          const file = e.target.files?.[0]
+                          if (file) handleImageUpload(file, 'gallery')
+                          e.target.value = ''
+                        }}
+                      />
+                    </label>
+                    <p className="text-[11px] text-slate-400 mt-1.5">PNG / JPG / WEBP · maks 5MB. Gambar baru otomatis tersimpan saat kegiatan disimpan.</p>
+                  </div>
                 </div>
+
+                {/* Right Column: Descriptions & Content */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Ringkasan <span className="text-gray-400 font-normal">(opsional)</span></label>
+                    <textarea rows={3} value={formData.excerpt} onChange={e => { setFormData({ ...formData, excerpt: e.target.value }); clearFieldError('excerpt') }} className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors resize-none" />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Konten Lengkap <span className="text-red-500">*</span></label>
+                    <textarea
+                      rows={8}
+                      value={formData.content}
+                      onChange={e => {
+                        setFormData({ ...formData, content: e.target.value })
+                        clearFieldError('content')
+                        if (touched.content) {
+                          const errs = validateForm({ ...formData, content: e.target.value })
+                          setFormErrors(prev => ({ ...prev, content: errs.content }))
+                        }
+                      }}
+                      onBlur={() => {
+                        setTouched(prev => ({ ...prev, content: true }))
+                        const errs = validateForm()
+                        setFormErrors(prev => ({ ...prev, content: errs.content }))
+                      }}
+                      className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors resize-none ${touched.content && formErrors.content ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
+                    />
+                    {touched.content && formErrors.content && (
+                      <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
+                        <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.content}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-2">Status Publikasi</label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2 text-sm cursor-pointer font-medium text-slate-700">
+                        <input type="radio" name="isPublished" checked={formData.isPublished} onChange={() => setFormData({ ...formData, isPublished: true })} className="accent-brand-600 rounded border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer" />
+                        Terbit
+                      </label>
+                      <label className="flex items-center gap-2 text-sm cursor-pointer font-medium text-slate-700">
+                        <input type="radio" name="isPublished" checked={!formData.isPublished} onChange={() => setFormData({ ...formData, isPublished: false })} className="accent-slate-400 rounded border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer" />
+                        Draft
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
               </div>
-              <div className="flex justify-end gap-2 pt-4 border-t items-center">
+
+              <div className="flex justify-end gap-2 pt-4 border-t items-center mt-6">
                 {isLimited && (
                   <span className="text-xs text-amber-600 font-semibold mr-auto flex items-center gap-1">
                     <i className="ph ph-timer text-sm" /> Terlalu banyak percobaan. Tunggu {cooldown}s
                   </span>
                 )}
-                <button type="button" onClick={() => setIsFormOpen(false)} disabled={isLimited} className="px-4 py-2 border rounded-xl text-sm font-semibold">Batal</button>
-                <button type="submit" disabled={isLimited} className="px-5 py-2 bg-brand-600 text-white rounded-xl text-sm font-semibold">
-                  {isLimited ? `Tunggu ${cooldown}s` : 'Simpan'}
+                <button type="button" onClick={() => setIsFormOpen(false)} disabled={coverUploading || galleryUploading || isLimited} className="px-4 py-2 border rounded-xl text-sm font-semibold hover:bg-slate-50 disabled:opacity-50 transition-colors">Batal</button>
+                <button type="submit" disabled={coverUploading || galleryUploading || isLimited} className="px-5 py-2 bg-brand-600 text-white rounded-xl text-sm font-semibold hover:bg-brand-700 disabled:opacity-60 transition-colors flex items-center gap-2">
+                  Simpan
                 </button>
               </div>
             </form>

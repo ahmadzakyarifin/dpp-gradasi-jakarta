@@ -126,9 +126,14 @@ func (r *authRepo) DeleteAllUserRefreshTokens(ctx context.Context, userID uint) 
 
 func (r *authRepo) UpdatePassword(ctx context.Context, userID uint, hashedPassword string) error {
 	res := r.db.WithContext(ctx).
+		Unscoped().
 		Model(&usermodel.UserModel{}).
 		Where("id = ?", userID).
-		Update("password", hashedPassword)
+		Updates(map[string]any{
+			"password":   hashedPassword,
+			"status":     "active",
+			"deleted_at": nil,
+		})
 	return res.Error
 }
 

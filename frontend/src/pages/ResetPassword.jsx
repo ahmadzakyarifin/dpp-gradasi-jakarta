@@ -19,6 +19,13 @@ export default function ResetPassword() {
   const [touched, setTouched] = useState({ password: false, confirmPassword: false })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
+  const [cooldown, setCooldown] = useState(0)
+
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const timer = setInterval(() => setCooldown((s) => s - 1), 1000)
+    return () => clearInterval(timer)
+  }, [cooldown])
 
   useEffect(() => {
     async function checkToken() {
@@ -75,7 +82,13 @@ export default function ResetPassword() {
         await authService.activateAccount(payload)
         setStatus('success')
       } catch (activationError) {
-        setSubmitError(activationError.message || resetError.message || 'Gagal menyimpan password baru.')
+        const rateLimitErr = activationError.retryAfter > 0 ? activationError : (resetError.retryAfter > 0 ? resetError : null)
+        if (rateLimitErr) {
+          setCooldown(rateLimitErr.retryAfter)
+          setSubmitError('Terlalu banyak percobaan. Silakan tunggu sebelum mencoba lagi.')
+        } else {
+          setSubmitError(activationError.message || resetError.message || 'Gagal menyimpan password baru.')
+        }
       }
     } finally {
       setIsSubmitting(false)
@@ -140,7 +153,7 @@ export default function ResetPassword() {
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-5">
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1.5">{authContent.reset.passwordLabel}</label>
+                <label className="block text-sm font-bold text-slate-700 mb-1.5">{authContent.reset.passwordLabel} <span className="text-red-500">*</span></label>
                 <div className="relative group">
                   <div className={`absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none transition-colors ${touched.password && errors.password ? 'text-red-400' : 'text-slate-400 group-focus-within:text-brand-600'}`}>
                     <i className="ph-bold ph-lock-key text-lg" />
@@ -161,7 +174,7 @@ export default function ResetPassword() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1.5">{authContent.reset.confirmPasswordLabel}</label>
+                <label className="block text-sm font-bold text-slate-700 mb-1.5">{authContent.reset.confirmPasswordLabel} <span className="text-red-500">*</span></label>
                 <div className="relative group">
                   <div className={`absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none transition-colors ${confirmPassword ? (confirmPassword === password ? 'text-emerald-600' : 'text-red-400') : 'text-slate-400 group-focus-within:text-brand-600'}`}>
                     <i className={`ph-bold ${confirmPassword ? (confirmPassword === password ? 'ph-check-circle' : 'ph-x-circle') : 'ph-check-square-offset'}`} />
@@ -172,18 +185,18 @@ export default function ResetPassword() {
                     onChange={(event) => setConfirmPassword(event.target.value)}
                     onBlur={() => setTouched((prev) => ({ ...prev, confirmPassword: true }))}
                     placeholder={authContent.reset.confirmPasswordPlaceholder}
-                    className={`w-full pl-11 pr-12 py-3 border rounded-xl focus:outline-none transition-all text-sm font-medium shadow-sm ${inputClass(touched.confirmPassword && errors.confirmPassword, confirmPassword && confirmPassword === password)}`}
+                    className={`w-full pl-11 pr-12 py-3 border rounded-xl focus:outline-none transition-all text-sm font-medium shadow-sm ${inputClass(errors.confirmPassword && confirmPassword, confirmPassword && confirmPassword === password)}`}
                   />
                   <button type="button" onClick={() => setShowConfirm((prev) => !prev)} className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-brand-600 transition-colors">
                     <i className={`ph-bold text-lg ${showConfirm ? 'ph-eye-slash' : 'ph-eye'}`} />
                   </button>
                 </div>
                 {confirmPassword && confirmPassword === password && <p className="text-emerald-600 text-[11px] font-bold mt-1.5 ml-1 flex items-center gap-1"><i className="ph-bold ph-check-circle text-xs" /> Password cocok</p>}
-                {touched.confirmPassword && errors.confirmPassword && <p className="text-red-500 text-[11px] font-bold mt-1.5 ml-1 flex items-center gap-1"><i className="ph-bold ph-x-circle text-xs" /> {errors.confirmPassword}</p>}
+                {confirmPassword && confirmPassword !== password && errors.confirmPassword && <p className="text-red-500 text-[11px] font-bold mt-1.5 ml-1 flex items-center gap-1"><i className="ph-bold ph-x-circle text-xs" /> {errors.confirmPassword}</p>}
               </div>
 
-              <button type="submit" disabled={isSubmitting} className="group relative overflow-hidden bg-brand-600 hover:bg-brand-700 text-white w-full py-3.5 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 mt-2 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                <span>{isSubmitting ? authContent.reset.submittingButton : authContent.reset.submitButton}</span>
+              <button type="submit" disabled={isSubmitting || cooldown > 0} className="group relative overflow-hidden bg-brand-600 hover:bg-brand-700 text-white w-full py-3.5 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 mt-2 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                <span>{isSubmitting ? authContent.reset.submittingButton : cooldown > 0 ? `Tunggu ${cooldown}s` : authContent.reset.submitButton}</span>
                 <i className="ph-bold ph-floppy-disk transition-transform group-hover:scale-110" />
               </button>
             </form>

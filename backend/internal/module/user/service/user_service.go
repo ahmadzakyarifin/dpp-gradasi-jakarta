@@ -38,7 +38,7 @@ type UserService interface {
 	BulkRestore(ctx context.Context, ids []uint) error
 	GetDependencyInfo(ctx context.Context, id uint) (map[string]interface{}, error)
 	CheckUnique(ctx context.Context, field string, value string, excludeID uint) (bool, error)
-	UpdateProfile(ctx context.Context, id uint, name string) (*entity.User, error)
+	UpdateProfile(ctx context.Context, id uint, name string, email string) (*entity.User, error)
 	GetProfile(ctx context.Context, userID uint) (*entity.User, error)
 	ChangePassword(ctx context.Context, userID uint, oldPassword string, newPassword string) error
 	VerifyEmail(ctx context.Context, userID uint, token string) error
@@ -333,8 +333,8 @@ func (s *userService) sendActivationEmail(ctx context.Context, user *entity.User
 		return err
 	}
 
-	link := fmt.Sprintf("%s/activate?token=%s",
-		strings.TrimSuffix(s.cfg.App.URL, "/"),
+	link := fmt.Sprintf("%s/reset-password?token=%s",
+		strings.TrimSuffix(s.cfg.App.FrontendURL, "/"),
 		rawToken,
 	)
 
@@ -502,17 +502,37 @@ func (s *userService) CheckUnique(ctx context.Context, field string, value strin
 	}
 }
 
-func (s *userService) UpdateProfile(ctx context.Context, id uint, name string) (*entity.User, error) {
+func (s *userService) UpdateProfile(ctx context.Context, id uint, name string, email string) (*entity.User, error) {
 	user, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		return nil, helper.NewNotFoundError("Pengguna tidak ditemukan")
 	}
 
 	oldName := user.Name
+	oldEmail := user.Email
 	user.Name = strings.TrimSpace(name)
+
+	emailChanged := false
+	newEmail := strings.ToLower(strings.TrimSpace(email))
+	if newEmail != "" && newEmail != user.Email {
+		// Check email uniqueness
+		if existing, _ := s.repo.FindByEmail(ctx, newEmail); existing != nil {
+			v := helper.NewValidationError()
+			v.Add("email", fmt.Sprintf("Email '%s' sudah terdaftar", newEmail))
+			return nil, v
+		}
+		emailChanged = true
+		user.Email = newEmail
+		user.EmailVerifiedAt = nil // Mark as unverified until verified
+	}
 
 	if err := s.repo.UpdateTx(ctx, user); err != nil {
 		return nil, err
+	}
+
+	if emailChanged {
+		// Trigger activation/verification email send
+		_ = s.sendActivationEmail(ctx, user)
 	}
 
 	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
@@ -525,8 +545,11 @@ func (s *userService) UpdateProfile(ctx context.Context, id uint, name string) (
 		EntityLabel: user.Name,
 		Description: fmt.Sprintf("Memperbarui profil: %s", user.Name),
 		Metadata: map[string]any{
-			"old_name": oldName,
-			"new_name": user.Name,
+			"old_name":      oldName,
+			"new_name":      user.Name,
+			"old_email":     oldEmail,
+			"new_email":     user.Email,
+			"email_changed": emailChanged,
 		},
 	})
 
