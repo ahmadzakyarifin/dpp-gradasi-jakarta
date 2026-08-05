@@ -199,9 +199,9 @@ func (r *userRepo) FindPaginated(ctx context.Context, page, limit int, search, r
 	} else {
 		switch status {
 		case "active":
-			q = q.Where("users.status = ?", "active")
+			q = q.Where("users.status = ? OR (users.status = ? AND users.password != ?)", "active", "inactive", "")
 		case "inactive":
-			q = q.Where("users.status = ?", "inactive")
+			q = q.Where("users.status = ? AND (users.password = ? OR users.password IS NULL)", "inactive", "")
 		}
 	}
 

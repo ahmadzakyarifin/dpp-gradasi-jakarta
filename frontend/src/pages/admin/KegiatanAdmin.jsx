@@ -39,6 +39,8 @@ export default function KegiatanAdmin() {
   const [formMode, setFormMode] = useState('create')
 
   const [categories, setCategories] = useState(['Kegiatan', 'Munas', 'Pelatihan'])
+  const [isNewCategory, setIsNewCategory] = useState(false)
+  const [customCategory, setCustomCategory] = useState('')
 
   const [formData, setFormData] = useState({
     id: null,
@@ -193,6 +195,8 @@ export default function KegiatanAdmin() {
           }
         })
         .catch(() => {}) // gagal ambil detail → tetap pakai data list
+      setIsNewCategory(false)
+      setCustomCategory('')
     } else {
       setFormMode('create')
       setFormData({
@@ -208,6 +212,8 @@ export default function KegiatanAdmin() {
         isPublished: true
       })
       setGallery([])
+      setIsNewCategory(false)
+      setCustomCategory('')
     }
     setIsFormOpen(true)
   }
@@ -236,9 +242,15 @@ export default function KegiatanAdmin() {
     }
     setFormErrors({})
 
+    const actualCategory = isNewCategory ? customCategory.trim() : formData.category
+    if (isNewCategory && !actualCategory) {
+      showToast('Kategori baru tidak boleh kosong.', 'error')
+      return
+    }
+
     const payload = {
       title: formData.title,
-      category: formData.category,
+      category: actualCategory,
       organizer: formData.organizer,
       event_date: formData.eventDate,
       location: formData.location,
@@ -264,6 +276,9 @@ export default function KegiatanAdmin() {
       }
       setIsFormOpen(false)
       setGallery([])
+      if (isNewCategory && !categories.includes(actualCategory)) {
+        setCategories(prev => [...prev, actualCategory])
+      }
       loadKegiatan()
     } catch (err) {
       const parsed = applyError(err)
@@ -691,26 +706,31 @@ export default function KegiatanAdmin() {
                     <div className="col-span-2 sm:col-span-1">
                       <label className="block text-xs font-semibold text-slate-500 mb-1">Kategori <span className="text-gray-400 font-normal">(opsional)</span></label>
                       <select
-                        value={formData.category}
+                        value={isNewCategory ? '__new__' : formData.category}
                         onChange={e => {
                           if (e.target.value === '__new__') {
-                            const name = window.prompt('Nama kategori baru:')
-                            if (name && name.trim()) {
-                              const clean = name.trim()
-                              if (!categories.includes(clean)) {
-                                setCategories(prev => [...prev, clean])
-                              }
-                              setFormData({ ...formData, category: clean })
-                            }
+                            setIsNewCategory(true)
+                            setCustomCategory('')
+                            setFormData({ ...formData, category: '' })
                             return
                           }
+                          setIsNewCategory(false)
                           setFormData({ ...formData, category: e.target.value })
                         }}
                         className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors"
                       >
                         {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                        <option value="__new__">+ Buat Kategori Baru...</option>
+                        <option value="__new__">+ Tulis Kategori Baru...</option>
                       </select>
+                      {isNewCategory && (
+                        <input
+                          type="text"
+                          placeholder="Ketik kategori baru..."
+                          value={customCategory}
+                          onChange={e => setCustomCategory(e.target.value)}
+                          className="mt-2 w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors"
+                        />
+                      )}
                     </div>
 
                     <div className="col-span-2 sm:col-span-1">

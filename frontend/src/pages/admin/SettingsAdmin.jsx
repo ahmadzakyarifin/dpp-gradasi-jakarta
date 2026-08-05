@@ -35,6 +35,8 @@ export default function SettingsAdmin() {
     greeting_date: '',
     greeting_content: '',
     greeting_image_path: '',
+    greeting_sign_name: '',
+    greeting_sign_subtitle: '',
     log_retention_days: 30
   })
 
@@ -383,6 +385,28 @@ export default function SettingsAdmin() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">URL Gambar / Poster Sambutan</label>
                   <input type="text" value={formData.greeting_image_path} onChange={e => setFormData({...formData, greeting_image_path: e.target.value})} className={inputCls} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">Nama Organisasi / Pengirim di Tanda Tangan (Signature)</label>
+                    <input 
+                      type="text" 
+                      placeholder="Contoh: GRADASI (Kosongkan untuk default nama website)" 
+                      value={formData.greeting_sign_name || ''} 
+                      onChange={e => setFormData({...formData, greeting_sign_name: e.target.value})} 
+                      className={inputCls} 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">Nama Penandatangan (Signature)</label>
+                    <input 
+                      type="text" 
+                      placeholder="Contoh: Upi Asmaradhana & Junaidi, S.Kom (Kosongkan untuk default data pengurus)" 
+                      value={formData.greeting_sign_subtitle || ''} 
+                      onChange={e => setFormData({...formData, greeting_sign_subtitle: e.target.value})} 
+                      className={inputCls} 
+                    />
+                  </div>
                 </div>
               </div>
             )}

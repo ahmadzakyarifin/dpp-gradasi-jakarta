@@ -67,7 +67,7 @@ func (s *dashboardService) GetSummary(ctx context.Context) (*dashdto.DashboardSu
 	if err := s.db.Model(&usermodel.UserModel{}).Where("role_id <> ? AND deleted_at IS NULL", 1).Count(&totalAdmin).Error; err != nil {
 		return nil, err
 	}
-	if err := s.db.Model(&usermodel.UserModel{}).Where("role_id <> ? AND deleted_at IS NULL AND status = ?", 1, "inactive").Count(&pendingAdmin).Error; err != nil {
+	if err := s.db.Model(&usermodel.UserModel{}).Where("role_id <> ? AND deleted_at IS NULL AND status = ? AND (password = ? OR password IS NULL)", 1, "inactive", "").Count(&pendingAdmin).Error; err != nil {
 		return nil, err
 	}
 	res.TotalAdmin = totalAdmin

@@ -388,26 +388,30 @@ export default function Home() {
               </div>
 
               {/* Signature */}
-              {(ketuaUmum || sekjen) && (
-                <div className="flex items-center gap-4 pt-4 border-t border-slate-100">
-                  <div className="flex -space-x-4">
-                    {ketuaUmum?.image_path && (
-                      <img src={resolveAssetUrl(ketuaUmum.image_path)} alt={ketuaUmum.name} className="w-12 h-12 rounded-full border-2 border-white shadow-md relative z-20 object-cover" />
-                    )}
-                    {sekjen?.name && (
-                      <div className="w-12 h-12 rounded-full bg-brand-100 border-2 border-white shadow-md flex items-center justify-center text-brand-700 font-bold text-xs relative z-10">
-                        {sekjen.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-heading font-bold text-slate-900 text-sm">{settings.site_name || ''}</p>
-                    <p className="text-xs text-brand-600 font-medium">
-                      {ketuaUmum?.name || ''} {sekjen?.name ? `& ${sekjen.name}` : ''}
-                    </p>
-                  </div>
+              <div className="flex items-center gap-4 pt-4 border-t border-slate-100">
+                <div className="flex -space-x-4">
+                  {ketuaUmum?.image_path && (
+                    <img src={resolveAssetUrl(ketuaUmum.image_path)} alt={ketuaUmum.name} className="w-12 h-12 rounded-full border-2 border-white shadow-md relative z-20 object-cover" />
+                  )}
+                  {sekjen?.name && !settings.greeting_sign_subtitle && (
+                    <div className="w-12 h-12 rounded-full bg-brand-100 border-2 border-white shadow-md flex items-center justify-center text-brand-700 font-bold text-xs relative z-10">
+                      {sekjen.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                    </div>
+                  )}
                 </div>
-              )}
+                <div>
+                  <p className="font-heading font-bold text-slate-900 text-sm">
+                    {settings.greeting_sign_name || settings.site_name || ''}
+                  </p>
+                  <p className="text-xs text-brand-600 font-medium">
+                    {settings.greeting_sign_subtitle || (
+                      <>
+                        {ketuaUmum?.name || ''} {sekjen?.name ? `& ${sekjen.name}` : ''}
+                      </>
+                    )}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

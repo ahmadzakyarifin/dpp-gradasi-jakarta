@@ -235,6 +235,10 @@ export default function UsersAdmin() {
       title = 'Nonaktifkan Admin'
       message = 'Akun admin ini akan dinonaktifkan (inactive) dan tidak bisa login. Lanjutkan?'
       icon = 'ph-prohibit'
+    } else if (type === 'activate') {
+      title = 'Aktifkan Admin'
+      message = 'Akun admin ini akan diaktifkan kembali. Lanjutkan?'
+      icon = 'ph-check-circle'
     } else if (type === 'restore') {
       title = 'Pulihkan Akses Admin'
       message = 'Akun admin ini akan kembali aktif.'
@@ -275,6 +279,9 @@ export default function UsersAdmin() {
       } else if (type === 'deactivate') {
         await userService.setStatus(id, 'inactive')
         showToast('Akun admin dinonaktifkan.', 'success')
+      } else if (type === 'activate') {
+        await userService.setStatus(id, 'active')
+        showToast('Akun admin berhasil diaktifkan.', 'success')
       } else if (type === 'delete') {
         await userService.remove(id)
         showToast('Akun admin berhasil dihapus.', 'success')
@@ -493,32 +500,25 @@ export default function UsersAdmin() {
                           )}
                         </td>
                         <td className="p-4">
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border ${
-                              item.status === 'active'
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : isPending
-                                ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                : 'bg-gray-100 text-gray-600 border-gray-200'
-                            }`}
-                          >
-                            <i
-                              className={`ph ${
-                                item.status === 'active'
-                                  ? 'ph-check-circle'
-                                  : isPending
-                                  ? 'ph-clock'
-                                  : 'ph-prohibit'
-                              }`}
-                            />
-                            <span>
-                              {item.status === 'active'
-                                ? 'Aktif'
-                                : isPending
-                                ? 'Menunggu Aktivasi'
-                                : 'Nonaktif'}
+                          {isPending ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border bg-amber-50 text-amber-700 border-amber-200">
+                              <i className="ph ph-clock" />
+                              <span>Menunggu Aktivasi</span>
                             </span>
-                          </span>
+                          ) : (
+                            <button
+                              disabled={isProtected}
+                              onClick={() => triggerConfirm(item.status === 'active' ? 'deactivate' : 'activate', item.id)}
+                              className={`inline-flex items-center gap-2 ${isProtected ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
+                            >
+                              <div className={`relative w-9 h-5 rounded-full transition-colors ${item.status === 'active' ? 'bg-emerald-500' : 'bg-slate-200'}`}>
+                                <div className={`absolute top-[2px] left-[2px] w-4 h-4 bg-white rounded-full transition-transform ${item.status === 'active' ? 'translate-x-4' : 'translate-x-0'}`} />
+                              </div>
+                              <span className={`text-xs font-semibold ${item.status === 'active' ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                {item.status === 'active' ? 'Aktif' : 'Nonaktif'}
+                              </span>
+                            </button>
+                          )}
                         </td>
                         <td className="p-4 text-right">
                           <div className="flex items-center justify-end gap-2">
@@ -538,13 +538,6 @@ export default function UsersAdmin() {
                                       title="Reset Password Admin"
                                     >
                                       <i className="ph ph-key text-lg" />
-                                    </button>
-                                    <button
-                                      onClick={() => triggerConfirm('deactivate', item.id)}
-                                      className="p-1.5 text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded"
-                                      title="Nonaktifkan Akun"
-                                    >
-                                      <i className="ph ph-prohibit text-lg" />
                                     </button>
                                     <button
                                       onClick={() => triggerConfirm('delete', item.id)}

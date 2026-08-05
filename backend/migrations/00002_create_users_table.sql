@@ -5,6 +5,7 @@ CREATE TABLE users (
     role ENUM("super_admin", "admin") NOT NULL,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
+    email_pending VARCHAR(255) NULL,
     password VARCHAR(255) DEFAULT NULL,
     photo_path VARCHAR(500),
     status ENUM('active', 'inactive', 'pending_activation') NOT NULL DEFAULT 'inactive',

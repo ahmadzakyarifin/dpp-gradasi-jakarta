@@ -30,7 +30,8 @@ export default function BeritaAdmin() {
   const [selectedItems, setSelectedItems] = useState([])
 
   const [categories, setCategories] = useState(beritaContent.categories)
-
+  const [isNewCategory, setIsNewCategory] = useState(false)
+  const [customCategory, setCustomCategory] = useState('')
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [formMode, setFormMode] = useState('create')
   const [formLoading, setFormLoading] = useState(false)
@@ -186,6 +187,8 @@ export default function BeritaAdmin() {
       } finally {
         setFormLoading(false)
       }
+      setIsNewCategory(false)
+      setCustomCategory('')
     } else {
       setFormMode('create')
       setFormData({
@@ -199,6 +202,8 @@ export default function BeritaAdmin() {
         tags: '',
         is_published: true,
       })
+      setIsNewCategory(false)
+      setCustomCategory('')
       setIsFormOpen(true)
     }
   }
@@ -226,16 +231,30 @@ export default function BeritaAdmin() {
       return
     }
     setFormErrors({})
+    const actualCategory = isNewCategory ? customCategory.trim() : formData.category
+    if (isNewCategory && !actualCategory) {
+      showToast('Kategori baru tidak boleh kosong.', 'error')
+      return
+    }
+
+    const payload = {
+      ...formData,
+      category: actualCategory
+    }
+
     setFormLoading(true)
     try {
       if (formMode === 'create') {
-        await beritaService.create(formData)
+        await beritaService.create(payload)
         showToast('Berita berhasil dibuat.')
       } else {
-        await beritaService.update(formData.id, formData)
+        await beritaService.update(formData.id, payload)
         showToast('Berita berhasil diperbarui.')
       }
       setIsFormOpen(false)
+      if (isNewCategory && !categories.includes(actualCategory)) {
+        setCategories(prev => [...prev, actualCategory])
+      }
       await loadBerita()
     } catch (err) {
       // Error validasi/bisnis dari backend → field errors inline + toast ringkas
@@ -643,24 +662,16 @@ export default function BeritaAdmin() {
                     <div>
                       <label className="block text-xs font-semibold text-slate-500 mb-1">Kategori <span className="text-red-500">*</span></label>
                       <select
-                        value={formData.category}
+                        value={isNewCategory ? '__new__' : formData.category}
                         onChange={e => {
                           if (e.target.value === '__new__') {
-                            const name = window.prompt('Nama kategori baru:')
-                            if (name && name.trim()) {
-                              const clean = name.trim()
-                              if (!categories.includes(clean)) {
-                                setCategories(prev => [...prev, clean])
-                              }
-                              setFormData(prev => ({ ...prev, category: clean }))
-                              if (touched.category) {
-                                const errs = validateForm({ ...formData, category: clean })
-                                setFormErrors(prev => ({ ...prev, category: errs.category }))
-                              }
-                            }
+                            setIsNewCategory(true)
+                            setCustomCategory('')
+                            setFormData(prev => ({ ...prev, category: '' }))
                             return
                           }
                           const val = e.target.value
+                          setIsNewCategory(false)
                           setFormData(prev => ({ ...prev, category: val }))
                           if (touched.category) {
                             const errs = validateForm({ ...formData, category: val })
@@ -676,8 +687,17 @@ export default function BeritaAdmin() {
                       >
                         <option value="">Pilih Kategori</option>
                         {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                        <option value="__new__">+ Buat Kategori Baru...</option>
+                        <option value="__new__">+ Tulis Kategori Baru...</option>
                       </select>
+                      {isNewCategory && (
+                        <input
+                          type="text"
+                          placeholder="Ketik kategori baru..."
+                          value={customCategory}
+                          onChange={e => setCustomCategory(e.target.value)}
+                          className="mt-2 w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors"
+                        />
+                      )}
                       {touched.category && formErrors.category && (
                         <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
                           <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.category}
