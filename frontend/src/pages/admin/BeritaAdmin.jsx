@@ -30,8 +30,8 @@ export default function BeritaAdmin() {
   const [selectedItems, setSelectedItems] = useState([])
 
   const [categories, setCategories] = useState(beritaContent.categories)
-  const [isNewCategory, setIsNewCategory] = useState(false)
-  const [customCategory, setCustomCategory] = useState('')
+  const [categorySearch, setCategorySearch] = useState('')
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [formMode, setFormMode] = useState('create')
   const [formLoading, setFormLoading] = useState(false)
@@ -181,20 +181,20 @@ export default function BeritaAdmin() {
           tags: Array.isArray(d.tags) ? d.tags.join(', ') : (d.tags ?? ''),
           is_published: typeof d.is_published === 'boolean' ? d.is_published : !!item.is_published,
         })
+        setCategorySearch(d.category ?? item.category ?? '')
         setIsFormOpen(true)
       } catch (err) {
         showToast(err?.message || 'Gagal memuat detail berita.', 'error')
       } finally {
         setFormLoading(false)
       }
-      setIsNewCategory(false)
-      setCustomCategory('')
     } else {
       setFormMode('create')
+      const defaultCat = categories[0] || 'Berita Nasional'
       setFormData({
         id: null,
         title: '',
-        category: categories[0] || 'Berita Nasional',
+        category: defaultCat,
         published_date: getTodayIndonesian(),
         image_path: '',
         excerpt: '',
@@ -202,8 +202,7 @@ export default function BeritaAdmin() {
         tags: '',
         is_published: true,
       })
-      setIsNewCategory(false)
-      setCustomCategory('')
+      setCategorySearch(defaultCat)
       setIsFormOpen(true)
     }
   }
@@ -231,9 +230,9 @@ export default function BeritaAdmin() {
       return
     }
     setFormErrors({})
-    const actualCategory = isNewCategory ? customCategory.trim() : formData.category
-    if (isNewCategory && !actualCategory) {
-      showToast('Kategori baru tidak boleh kosong.', 'error')
+    const actualCategory = formData.category?.trim() || ''
+    if (!actualCategory) {
+      showToast('Kategori tidak boleh kosong.', 'error')
       return
     }
 
@@ -252,7 +251,7 @@ export default function BeritaAdmin() {
         showToast('Berita berhasil diperbarui.')
       }
       setIsFormOpen(false)
-      if (isNewCategory && !categories.includes(actualCategory)) {
+      if (actualCategory && !categories.includes(actualCategory)) {
         setCategories(prev => [...prev, actualCategory])
       }
       await loadBerita()
@@ -661,43 +660,78 @@ export default function BeritaAdmin() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-semibold text-slate-500 mb-1">Kategori <span className="text-red-500">*</span></label>
-                      <select
-                        value={isNewCategory ? '__new__' : formData.category}
-                        onChange={e => {
-                          if (e.target.value === '__new__') {
-                            setIsNewCategory(true)
-                            setCustomCategory('')
-                            setFormData(prev => ({ ...prev, category: '' }))
-                            return
-                          }
-                          const val = e.target.value
-                          setIsNewCategory(false)
-                          setFormData(prev => ({ ...prev, category: val }))
-                          if (touched.category) {
-                            const errs = validateForm({ ...formData, category: val })
-                            setFormErrors(prev => ({ ...prev, category: errs.category }))
-                          }
-                        }}
-                        onBlur={() => {
-                          setTouched(prev => ({ ...prev, category: true }))
-                          const errs = validateForm()
-                          setFormErrors(prev => ({ ...prev, category: errs.category }))
-                        }}
-                        className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none bg-white transition-colors ${touched.category && formErrors.category ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
-                      >
-                        <option value="">Pilih Kategori</option>
-                        {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                        <option value="__new__">+ Tulis Kategori Baru...</option>
-                      </select>
-                      {isNewCategory && (
+                      <div className="relative">
                         <input
                           type="text"
-                          placeholder="Ketik kategori baru..."
-                          value={customCategory}
-                          onChange={e => setCustomCategory(e.target.value)}
-                          className="mt-2 w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors"
+                          value={categorySearch}
+                          onChange={e => {
+                            setCategorySearch(e.target.value)
+                            setShowCategoryDropdown(true)
+                            setFormData(prev => ({ ...prev, category: e.target.value }))
+                            clearFieldError('category')
+                          }}
+                          onFocus={() => setShowCategoryDropdown(true)}
+                          onBlur={() => {
+                            setTimeout(() => setShowCategoryDropdown(false), 200)
+                            setTouched(prev => ({ ...prev, category: true }))
+                            const errs = validateForm()
+                            setFormErrors(prev => ({ ...prev, category: errs.category }))
+                          }}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault()
+                              const trimmed = categorySearch.trim()
+                              if (trimmed) {
+                                setFormData(prev => ({ ...prev, category: trimmed }))
+                                setCategorySearch(trimmed)
+                                if (!categories.includes(trimmed)) {
+                                  setCategories(prev => [...prev, trimmed])
+                                }
+                                setShowCategoryDropdown(false)
+                              }
+                            }
+                          }}
+                          placeholder="Ketik atau pilih kategori..."
+                          className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none bg-white transition-colors ${touched.category && formErrors.category ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
                         />
-                      )}
+                        
+                        {showCategoryDropdown && (
+                          <div className="absolute left-0 right-0 z-50 mt-1 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-xl">
+                            {categories
+                              .filter(c => c.toLowerCase().includes(categorySearch.toLowerCase()))
+                              .map(c => (
+                                <button
+                                  key={c}
+                                  type="button"
+                                  onMouseDown={() => {
+                                    setFormData(prev => ({ ...prev, category: c }))
+                                    setCategorySearch(c)
+                                    setShowCategoryDropdown(false)
+                                  }}
+                                  className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium"
+                                >
+                                  {c}
+                                </button>
+                              ))
+                            }
+                            {categorySearch.trim() && !categories.map(c => c.toLowerCase()).includes(categorySearch.trim().toLowerCase()) && (
+                              <button
+                                type="button"
+                                onMouseDown={() => {
+                                  const trimmed = categorySearch.trim()
+                                  setFormData(prev => ({ ...prev, category: trimmed }))
+                                  setCategorySearch(trimmed)
+                                  setCategories(prev => [...prev, trimmed])
+                                  setShowCategoryDropdown(false)
+                                }}
+                                className="w-full px-4 py-2.5 text-left text-sm text-brand-600 hover:bg-brand-50 font-bold transition-colors border-t border-slate-100"
+                              >
+                                + Tambah "{categorySearch.trim()}"
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                       {touched.category && formErrors.category && (
                         <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
                           <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.category}

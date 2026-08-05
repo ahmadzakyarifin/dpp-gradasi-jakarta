@@ -39,8 +39,8 @@ export default function KegiatanAdmin() {
   const [formMode, setFormMode] = useState('create')
 
   const [categories, setCategories] = useState(['Kegiatan', 'Munas', 'Pelatihan'])
-  const [isNewCategory, setIsNewCategory] = useState(false)
-  const [customCategory, setCustomCategory] = useState('')
+  const [categorySearch, setCategorySearch] = useState('')
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
 
   const [formData, setFormData] = useState({
     id: null,
@@ -185,6 +185,7 @@ export default function KegiatanAdmin() {
               image: d.image_path || d.image_url || prev.image,
               tags: Array.isArray(d.tags) ? d.tags.join(', ') : (d.tags ?? prev.tags),
             }))
+            setCategorySearch(d.category ?? item.category ?? '')
             // Isi galeri dari detail (id sudah ada → bisa dihapus per item via API)
             if (Array.isArray(d.gallery)) {
               setGallery(d.gallery.map((g, idx) => ({
@@ -197,8 +198,7 @@ export default function KegiatanAdmin() {
           }
         })
         .catch(() => {}) // gagal ambil detail → tetap pakai data list
-      setIsNewCategory(false)
-      setCustomCategory('')
+      setCategorySearch(item.category || 'Kegiatan')
     } else {
       setFormMode('create')
       setFormData({
@@ -214,9 +214,8 @@ export default function KegiatanAdmin() {
         tags: '',
         isPublished: true
       })
+      setCategorySearch('Kegiatan')
       setGallery([])
-      setIsNewCategory(false)
-      setCustomCategory('')
     }
     setIsFormOpen(true)
   }
@@ -245,9 +244,9 @@ export default function KegiatanAdmin() {
     }
     setFormErrors({})
 
-    const actualCategory = isNewCategory ? customCategory.trim() : formData.category
-    if (isNewCategory && !actualCategory) {
-      showToast('Kategori baru tidak boleh kosong.', 'error')
+    const actualCategory = formData.category?.trim() || ''
+    if (!actualCategory) {
+      showToast('Kategori tidak boleh kosong.', 'error')
       return
     }
 
@@ -280,7 +279,7 @@ export default function KegiatanAdmin() {
       }
       setIsFormOpen(false)
       setGallery([])
-      if (isNewCategory && !categories.includes(actualCategory)) {
+      if (actualCategory && !categories.includes(actualCategory)) {
         setCategories(prev => [...prev, actualCategory])
       }
       loadKegiatan()
@@ -707,33 +706,74 @@ export default function KegiatanAdmin() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="col-span-2 sm:col-span-1">
+                    <div className="col-span-2 sm:col-span-1 relative">
                       <label className="block text-xs font-semibold text-slate-500 mb-1">Kategori <span className="text-gray-400 font-normal">(opsional)</span></label>
-                      <select
-                        value={isNewCategory ? '__new__' : formData.category}
+                      <input
+                        type="text"
+                        value={categorySearch}
                         onChange={e => {
-                          if (e.target.value === '__new__') {
-                            setIsNewCategory(true)
-                            setCustomCategory('')
-                            setFormData({ ...formData, category: '' })
-                            return
-                          }
-                          setIsNewCategory(false)
-                          setFormData({ ...formData, category: e.target.value })
+                          setCategorySearch(e.target.value)
+                          setShowCategoryDropdown(true)
+                          setFormData(prev => ({ ...prev, category: e.target.value }))
                         }}
+                        onFocus={() => setShowCategoryDropdown(true)}
+                        onBlur={() => {
+                          setTimeout(() => setShowCategoryDropdown(false), 200)
+                          setTouched(prev => ({ ...prev, category: true }))
+                        }}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            const trimmed = categorySearch.trim()
+                            if (trimmed) {
+                              setFormData(prev => ({ ...prev, category: trimmed }))
+                              setCategorySearch(trimmed)
+                              if (!categories.includes(trimmed)) {
+                                setCategories(prev => [...prev, trimmed])
+                              }
+                              setShowCategoryDropdown(false)
+                            }
+                          }
+                        }}
+                        placeholder="Ketik atau pilih kategori..."
                         className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors"
-                      >
-                        {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                        <option value="__new__">+ Tulis Kategori Baru...</option>
-                      </select>
-                      {isNewCategory && (
-                        <input
-                          type="text"
-                          placeholder="Ketik kategori baru..."
-                          value={customCategory}
-                          onChange={e => setCustomCategory(e.target.value)}
-                          className="mt-2 w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors"
-                        />
+                      />
+                      
+                      {showCategoryDropdown && (
+                        <div className="absolute left-0 right-0 z-50 mt-1 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-xl">
+                          {categories
+                            .filter(c => c.toLowerCase().includes(categorySearch.toLowerCase()))
+                            .map(c => (
+                              <button
+                                key={c}
+                                type="button"
+                                onMouseDown={() => {
+                                  setFormData(prev => ({ ...prev, category: c }))
+                                  setCategorySearch(c)
+                                  setShowCategoryDropdown(false)
+                                }}
+                                className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium"
+                              >
+                                {c}
+                              </button>
+                            ))
+                          }
+                          {categorySearch.trim() && !categories.map(c => c.toLowerCase()).includes(categorySearch.trim().toLowerCase()) && (
+                            <button
+                              type="button"
+                              onMouseDown={() => {
+                                const trimmed = categorySearch.trim()
+                                setFormData(prev => ({ ...prev, category: trimmed }))
+                                setCategorySearch(trimmed)
+                                setCategories(prev => [...prev, trimmed])
+                                setShowCategoryDropdown(false)
+                              }}
+                              className="w-full px-4 py-2.5 text-left text-sm text-brand-600 hover:bg-brand-50 font-bold transition-colors border-t border-slate-100"
+                            >
+                              + Tambah "{categorySearch.trim()}"
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
 
