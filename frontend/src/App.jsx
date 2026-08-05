@@ -27,6 +27,7 @@ const ActivityLogAdmin = lazy(() => import('./pages/admin/ActivityLogAdmin'))
 import { useAuthStore } from './store/useAuthStore'
 import { SettingsProvider } from './context/SettingsContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import ScrollToTop from './components/ScrollToTop'
 
 // Mapping role per route — cocokkan dengan middleware RoleMiddleware di backend:
 //   dashboard & activitylog & user : super_admin
@@ -71,6 +72,7 @@ function App() {
   return (
     <SettingsProvider>
       <Router>
+        <ScrollToTop />
         <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Public Homepage */}

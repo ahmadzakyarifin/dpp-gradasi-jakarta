@@ -197,7 +197,11 @@ export default function AdminLayout({ children, title = 'Admin Panel', headerCon
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-auto bg-[#f8fafc] p-4 sm:p-8">{children}</div>
+        <div className="flex-1 overflow-auto bg-[#f8fafc] p-4 sm:p-8">
+          <div className="animate-fade-in-up duration-300">
+            {children}
+          </div>
+        </div>
       </main>
 
       {/* Global Image Preview Lightbox Modal */}

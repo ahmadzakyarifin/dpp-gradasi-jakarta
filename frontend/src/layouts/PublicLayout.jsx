@@ -43,18 +43,18 @@ export default function PublicLayout({ children }) {
     : 'font-heading font-extrabold text-base text-slate-900 tracking-tight group-hover:text-brand-700 transition'
 
   const taglineClass = navTheme === 'transparent'
-    ? 'text-[9px] font-bold text-brand-300 tracking-wider uppercase'
+    ? 'text-[9px] font-bold text-brand-200 tracking-wider uppercase'
     : 'text-[9px] font-bold text-brand-600 tracking-wider uppercase'
 
   const getLinkClass = (path, matchStart = false) => {
     const isActive = matchStart ? location.pathname.startsWith(path) : location.pathname === path
     if (navTheme === 'transparent') {
-      return `px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
-        isActive ? 'text-white bg-white/15' : 'text-white/80 hover:text-white hover:bg-white/10'
+      return `px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-300 transform hover:scale-[1.03] ${
+        isActive ? 'text-white bg-white/20 shadow-md backdrop-blur-md' : 'text-white/80 hover:text-white hover:bg-white/10 hover:shadow-sm'
       }`
     } else {
-      return `px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
-        isActive ? 'text-brand-700 bg-brand-50' : 'text-slate-600 hover:text-brand-700 hover:bg-slate-50'
+      return `px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-300 transform hover:scale-[1.03] ${
+        isActive ? 'text-brand-700 bg-brand-50/80 font-bold shadow-xs' : 'text-slate-600 hover:text-brand-700 hover:bg-brand-50/40'
       }`
     }
   }
@@ -228,7 +228,7 @@ export default function PublicLayout({ children }) {
       </header>
 
       {/* Main Content */}
-      <main>
+      <main className="animate-fade-in-up duration-300">
         {children}
       </main>
 

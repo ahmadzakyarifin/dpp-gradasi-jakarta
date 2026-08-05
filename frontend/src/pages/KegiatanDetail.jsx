@@ -13,6 +13,7 @@ export default function KegiatanDetail() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [copied, setCopied] = useState(false)
+  const [activeImageIndex, setActiveImageIndex] = useState(null)
 
   useEffect(() => {
     setLoading(true)
@@ -125,31 +126,104 @@ export default function KegiatanDetail() {
               <div className="flex flex-col lg:flex-row gap-10">
                 <article className="w-full lg:w-2/3 min-w-0 space-y-8">
                   {kegiatan.excerpt && (
-                    <p className="text-slate-500 font-medium italic border-l-4 border-brand-500 pl-4 py-1 text-lg">
+                    <p className="text-slate-500 font-medium italic border-l-4 border-brand-500 pl-4 py-1 text-lg break-words">
                       {kegiatan.excerpt}
                     </p>
                   )}
 
                   <div 
-                    className="prose max-w-none text-slate-700 leading-relaxed"
+                    className="prose max-w-none text-slate-700 leading-relaxed break-words whitespace-pre-line"
                     dangerouslySetInnerHTML={{ __html: kegiatan.content }}
                   />
 
                   {/* Gallery Section */}
                   {kegiatan.gallery && kegiatan.gallery.length > 0 && (
-                    <div className="space-y-4 pt-6 border-t border-slate-100">
-                      <h3 className="font-heading font-bold text-lg text-slate-900">Galeri Foto Kegiatan</h3>
+                    <div className="space-y-5 pt-8 border-t border-slate-100">
+                      <div>
+                        <h3 className="font-heading font-bold text-lg text-slate-900">Galeri Foto Kegiatan</h3>
+                        <p className="text-xs text-slate-400 font-medium">Klik gambar untuk melihat dalam ukuran penuh.</p>
+                      </div>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {kegiatan.gallery.map(img => (
-                          <div key={img.id} className="rounded-xl overflow-hidden border border-slate-200 shadow-sm aspect-video bg-slate-50">
+                        {kegiatan.gallery.map((img, idx) => (
+                          <div 
+                            key={img.id} 
+                            onClick={() => setActiveImageIndex(idx)}
+                            className="group relative rounded-2xl overflow-hidden border border-slate-200 shadow-sm aspect-video bg-slate-50 cursor-pointer"
+                          >
                             <img 
                               src={resolveAssetUrl(img.image_url || img.image_path)} 
                               alt={img.caption || kegiatan.title} 
-                              className="w-full h-full object-cover hover:scale-105 transition duration-300"
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                             />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3.5">
+                              <span className="text-[11px] text-white font-medium truncate w-full flex items-center gap-1.5 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                                <i className="ph ph-magnifying-glass-plus text-sm" />
+                                {img.caption || 'Lihat foto'}
+                              </span>
+                            </div>
                           </div>
                         ))}
                       </div>
+
+                      {/* Premium Lightbox Modal */}
+                      {activeImageIndex !== null && (
+                        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-fade-in">
+                          <div 
+                            className="fixed inset-0 bg-slate-950/80 backdrop-blur-md transition-opacity"
+                            onClick={() => setActiveImageIndex(null)}
+                          />
+                          <div className="relative max-w-4xl w-full max-h-[85vh] flex flex-col justify-center items-center z-10 animate-scale-up">
+                            {/* Close Button */}
+                            <button 
+                              onClick={() => setActiveImageIndex(null)}
+                              className="absolute -top-12 right-0 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition border border-white/10 shadow"
+                              title="Tutup"
+                            >
+                              <i className="ph-bold ph-x text-lg" />
+                            </button>
+
+                            {/* Main Image */}
+                            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-white/5 bg-slate-900 max-h-[75vh]">
+                              <img 
+                                src={resolveAssetUrl(kegiatan.gallery[activeImageIndex].image_url || kegiatan.gallery[activeImageIndex].image_path)} 
+                                alt={kegiatan.gallery[activeImageIndex].caption || 'Detail foto'} 
+                                className="w-full h-auto max-h-[75vh] object-contain mx-auto"
+                              />
+                              {kegiatan.gallery[activeImageIndex].caption && (
+                                <div className="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-xs text-white text-center py-3.5 px-6 text-sm font-semibold border-t border-white/5">
+                                  {kegiatan.gallery[activeImageIndex].caption}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Prev / Next controls */}
+                            {kegiatan.gallery.length > 1 && (
+                              <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 flex justify-between pointer-events-none px-4">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setActiveImageIndex(prev => (prev > 0 ? prev - 1 : kegiatan.gallery.length - 1))
+                                  }}
+                                  className="pointer-events-auto w-11 h-11 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition border border-white/10 shadow-lg"
+                                >
+                                  <i className="ph-bold ph-caret-left text-lg" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setActiveImageIndex(prev => (prev < kegiatan.gallery.length - 1 ? prev + 1 : 0))
+                                  }}
+                                  className="pointer-events-auto w-11 h-11 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition border border-white/10 shadow-lg"
+                                >
+                                  <i className="ph-bold ph-caret-right text-lg" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
