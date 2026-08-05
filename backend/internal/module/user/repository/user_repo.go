@@ -91,11 +91,12 @@ func (r *userRepo) Update(ctx context.Context, db *gorm.DB, u *entity.User) erro
 	}
 	m := mapper.EntityToUserModel(u)
 	updates := map[string]any{
-		"role":       m.Role,
-		"name":       m.Name,
-		"email":      m.Email,
-		"photo_path": m.PhotoPath,
-		"status":     m.Status,
+		"role":          m.Role,
+		"name":          m.Name,
+		"email":         m.Email,
+		"email_pending": m.EmailPending,
+		"photo_path":    m.PhotoPath,
+		"status":        m.Status,
 	}
 	return db.WithContext(ctx).Model(&model.UserModel{}).
 		Where("id = ?", m.ID).

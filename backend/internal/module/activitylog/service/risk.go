@@ -6,15 +6,16 @@ var highRisk = map[string]struct{}{
 	"auth.login_failed":           {},
 	"auth.forgot_password_spam":   {},
 	"auth.reset_password":         {},
-	"auth.change_password":        {},
 	"auth.reset_password_failed":  {},
 	"auth.change_password_failed": {},
 
 	// Users
-	"users.delete":        {},
-	"users.bulk_delete":   {},
-	"users.toggle_status": {},
-	"users.change_role":   {},
+	"users.delete":         {},
+	"users.bulk_delete":    {},
+	"users.toggle_status":  {},
+	"users.change_role":    {},
+	"users.reset_password":  {},
+	"users.change_password": {},
 }
 
 // mediumRisk: aksi perubahan data yang berdampak sedang.
@@ -51,7 +52,6 @@ var mediumRisk = map[string]struct{}{
 	"kegiatan.bulk_restore": {},
 
 	// CMS — Kontak
-	"kontak.update":       {},
 	"kontak.delete":       {},
 	"kontak.restore":      {},
 	"kontak.bulk_delete":  {},
@@ -67,6 +67,9 @@ var mediumRisk = map[string]struct{}{
 
 	// CMS — Settings
 	"settings.update": {},
+
+	// Users — Email verification
+	"users.verify_email": {},
 
 	// CMS — Sliders (aksi di service memakai prefix "slider")
 	"slider.create":       {},

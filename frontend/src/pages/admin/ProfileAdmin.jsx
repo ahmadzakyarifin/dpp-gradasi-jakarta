@@ -89,7 +89,11 @@ export default function ProfileAdmin() {
       })
       setProfileTouched({})
       setProfileErrors({})
-      setMessage({ type: 'success', text: res.message || 'Profil berhasil diperbarui' })
+      let successMsg = res.message || 'Profil berhasil diperbarui.'
+      if (res?.data?.user?.email_pending) {
+        successMsg = `Perubahan email berhasil disimpan. Silakan periksa email ${res.data.user.email_pending} untuk kode verifikasi (OTP).`
+      }
+      setMessage({ type: 'success', text: successMsg })
       fetchMe()
     } catch (err) {
       if (err?.data?.errors) {
@@ -110,7 +114,7 @@ export default function ProfileAdmin() {
   const handleVerifyEmail = async (e) => {
     e.preventDefault()
     if (!verificationToken.trim()) {
-      setVerifyError('Token verifikasi wajib diisi.')
+      setVerifyError('Kode OTP verifikasi wajib diisi.')
       return
     }
     setVerifyError('')
@@ -201,7 +205,7 @@ export default function ProfileAdmin() {
                 <img src={photoPreview || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'User')}&background=0D8ABC&color=fff`} className="w-20 h-20 rounded-full object-cover border border-gray-200 shadow-sm" alt="Foto" />
                 <div>
                   <h3 className="text-sm font-semibold text-gray-800">{name || 'Nama Pengguna'}</h3>
-                  <p className="text-xs text-gray-500">{email}</p>
+                  <p className="text-xs text-gray-500">{user?.email}</p>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -254,9 +258,17 @@ export default function ProfileAdmin() {
                       <i className="ph-bold ph-warning-circle text-xs" /> {profileErrors.email}
                     </p>
                   )}
-                  {user && user.email_verified_at && (
+                  {user && email === user.email && user.email_verified_at ? (
                     <p className="text-emerald-600 text-[11px] font-semibold mt-1 flex items-center gap-1">
                       <i className="ph-bold ph-check-circle text-xs" /> Terverifikasi
+                    </p>
+                  ) : email !== user?.email ? (
+                    <p className="text-amber-600 text-[11px] font-semibold mt-1 flex items-center gap-1">
+                      <i className="ph-bold ph-warning-circle text-xs" /> Belum Disimpan (Klik Simpan Perubahan)
+                    </p>
+                  ) : (
+                    <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
+                      <i className="ph-bold ph-warning-circle text-xs" /> Belum Terverifikasi
                     </p>
                   )}
                 </div>
@@ -268,20 +280,20 @@ export default function ProfileAdmin() {
               </div>
             </form>
 
-            {user && !user.email_verified_at && (
+            {user && user.email_pending && (
               <div className="mt-6 p-4 rounded-xl border border-amber-200 bg-amber-50/50">
                 <h4 className="text-sm font-bold text-amber-800 flex items-center gap-1.5 mb-1">
-                  <i className="ph-bold ph-warning-circle text-base" /> Verifikasi Email Baru Anda
+                  <i className="ph-bold ph-warning-circle text-base" /> Verifikasi Email Baru
                 </h4>
                 <p className="text-xs text-amber-700 leading-relaxed mb-3">
-                  Kami telah mengirimkan link/token verifikasi ke email baru Anda <strong>{user.email}</strong>. 
-                  Silakan masukkan token/kode verifikasi yang Anda terima di bawah ini untuk mengonfirmasi perubahan email.
+                  Kami telah mengirimkan kode verifikasi (OTP) ke <strong>{user.email_pending}</strong>. 
+                  Silakan masukkan kode OTP yang Anda terima di bawah ini.
                 </p>
                 <form onSubmit={handleVerifyEmail} className="flex gap-3 max-w-md">
                   <div className="flex-1">
                     <input
                       type="text"
-                      placeholder="Masukkan token verifikasi..."
+                      placeholder="Masukkan kode OTP..."
                       value={verificationToken}
                       onChange={(e) => setVerificationToken(e.target.value)}
                       className="w-full px-3 py-1.5 border border-amber-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"

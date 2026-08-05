@@ -16,7 +16,7 @@ type BeritaRepo interface {
 	FindAll(query dto.BeritaQuery) ([]entity.Berita, int64, error)
 	FindBySlug(slug string) (*entity.Berita, error)
 	FindUniqueSlug(slug string) (string, error)
-	ExistsTitle(title string, excludeID uint) (bool, error)
+	ExistsSlug(slug string, excludeID uint) (bool, error)
 	FindByID(id uint) (*entity.Berita, error)
 	Create(berita *entity.Berita) error
 	Update(berita *entity.Berita) error
@@ -150,11 +150,11 @@ func (r *beritaRepo) FindUniqueSlug(slug string) (string, error) {
 	}
 }
 
-// ExistsTitle mengembalikan true jika judul sudah dipakai berita lain (soft-delete ikut dihitung).
+// ExistsSlug mengembalikan true jika slug sudah dipakai berita lain (soft-delete ikut dihitung).
 // excludeID dipakai saat update — mengabaikan berita dengan id tersebut (dirinya sendiri).
-func (r *beritaRepo) ExistsTitle(title string, excludeID uint) (bool, error) {
+func (r *beritaRepo) ExistsSlug(slug string, excludeID uint) (bool, error) {
 	var count int64
-	q := r.db.Unscoped().Model(&model.Berita{}).Where("title = ?", title)
+	q := r.db.Unscoped().Model(&model.Berita{}).Where("slug = ?", slug)
 	if excludeID > 0 {
 		q = q.Where("id != ?", excludeID)
 	}

@@ -20,6 +20,7 @@ type PengurusRepo interface {
 	Restore(id uint) error
 	BulkSoftDelete(ids []uint) error
 	BulkRestore(ids []uint) error
+	Reorder(ids []uint) error
 }
 
 type pengurusRepo struct {
@@ -135,4 +136,15 @@ func (r *pengurusRepo) BulkSoftDelete(ids []uint) error {
 
 func (r *pengurusRepo) BulkRestore(ids []uint) error {
 	return r.db.Unscoped().Model(&model.Pengurus{}).Where("id IN ?", ids).Update("deleted_at", nil).Error
+}
+
+func (r *pengurusRepo) Reorder(ids []uint) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		for i, id := range ids {
+			if err := tx.Model(&model.Pengurus{}).Where("id = ?", id).Update("sort_order", i).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }

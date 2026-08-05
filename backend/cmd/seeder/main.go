@@ -133,11 +133,10 @@ func main() {
 			Tag:       strPtr("FOTO RESMI"),
 			ImagePath: "https://gradasi.org/uploads/img/slider/1749385864.jpg",
 			SortOrder: 1,
-			IsActive:  true,
+			IsPublished: true,
 			IsNew:     false,
 			EventDate: nil,
 			Location:  nil,
-			LinkURL:   nil,
 		},
 		{
 			Title:     "Musyawarah Nasional Ke-II GRADASI",
@@ -145,11 +144,10 @@ func main() {
 			Tag:       strPtr("HEADLINE EVENT"),
 			ImagePath: "https://gradasi.org/uploads/img/slider/1746600520.png",
 			SortOrder: 2,
-			IsActive:  true,
+			IsPublished: true,
 			IsNew:     true,
 			EventDate: strPtr("10 - 12 Agustus 2026"),
 			Location:  strPtr("Jakarta Convention Center"),
-			LinkURL:   strPtr("/kegiatan/munas-ke-ii"),
 		},
 		{
 			Title:     "UMKM KOTA PALANGKA RAYA",
@@ -157,11 +155,10 @@ func main() {
 			Tag:       strPtr("INFO KEGIATAN"),
 			ImagePath: "https://gradasi.org/uploads/img/slider/1746600828.jpg",
 			SortOrder: 3,
-			IsActive:  true,
+			IsPublished: true,
 			IsNew:     false,
 			EventDate: strPtr("20 September 2026"),
 			Location:  strPtr("Palangka Raya"),
-			LinkURL:   strPtr("/kegiatan/umkm-kota-palangka-raya"),
 		},
 	}
 	db.Create(&sliders)

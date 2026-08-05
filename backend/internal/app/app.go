@@ -1,6 +1,7 @@
 package app
 
 import (
+	"log"
 	"strings"
 	"time"
 
@@ -178,6 +179,26 @@ func NewApp(database *gorm.DB, appConfig *config.Config) *App {
 		ActivityLogSvc:     activityLogSvc,
 		dashboardHandler:   dashboardHandler,
 	}
+
+	// Background Worker: Auto-Clear Activity Logs
+	go func(db *gorm.DB) {
+		// Jalankan pertama kali 5 detik setelah server startup
+		time.Sleep(5 * time.Second)
+		for {
+			var retentionDays int
+			err := db.Table("settings").Select("log_retention_days").Where("id = ?", 1).Row().Scan(&retentionDays)
+			if err == nil && retentionDays > 0 {
+				res := db.Exec("DELETE FROM activity_logs WHERE created_at < DATE_SUB(NOW(), INTERVAL ? DAY)", retentionDays)
+				if res.Error != nil {
+					log.Printf("[Auto-Clear Log] Gagal membersihkan log: %v", res.Error)
+				} else if res.RowsAffected > 0 {
+					log.Printf("[Auto-Clear Log] Berhasil membersihkan %d baris log lama (> %d hari)", res.RowsAffected, retentionDays)
+				}
+			}
+			// Jalankan kembali setiap 24 jam
+			time.Sleep(24 * time.Hour)
+		}
+	}(database)
 
 	registerRoutes(appInstance)
 

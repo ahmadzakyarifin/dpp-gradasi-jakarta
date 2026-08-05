@@ -78,52 +78,67 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Links & Activity Log Summary */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
           
           {/* Quick Actions */}
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-            <h3 className="font-heading font-bold text-gray-900 text-lg flex items-center gap-2">
-              <i className="ph ph-lightning text-brand-600" /> Akses Cepat Admin
-            </h3>
-            <div className="space-y-2">
-              <Link to="/admin/berita" className="flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-brand-50 hover:text-brand-600 text-gray-700 text-sm font-semibold transition">
-                <span className="flex items-center gap-2.5"><i className="ph ph-plus-circle text-lg" /> Tambah Berita Baru</span>
-                <i className="ph ph-caret-right" />
-              </Link>
-              <Link to="/admin/kegiatan" className="flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-brand-50 hover:text-brand-600 text-gray-700 text-sm font-semibold transition">
-                <span className="flex items-center gap-2.5"><i className="ph ph-calendar-plus text-lg" /> Tambah Kegiatan / Event</span>
-                <i className="ph ph-caret-right" />
-              </Link>
-              <Link to="/admin/pengurus" className="flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-brand-50 hover:text-brand-600 text-gray-700 text-sm font-semibold transition">
-                <span className="flex items-center gap-2.5"><i className="ph ph-user-plus text-lg" /> Tambah Data Pengurus</span>
-                <i className="ph ph-caret-right" />
-              </Link>
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+            <div className="space-y-5">
+              <h3 className="font-heading font-bold text-gray-900 text-lg flex items-center gap-2">
+                <i className="ph ph-lightning text-brand-600" /> Akses Cepat Admin
+              </h3>
+              <div className="space-y-3">
+                <Link to="/admin/berita" className="flex items-center justify-between p-4 rounded-xl bg-gray-50 hover:bg-brand-50 hover:text-brand-600 text-gray-700 text-sm font-semibold transition-all hover:translate-x-1 duration-200">
+                  <span className="flex items-center gap-3"><i className="ph ph-plus-circle text-xl text-brand-500" /> Tambah Berita Baru</span>
+                  <i className="ph ph-caret-right text-gray-400" />
+                </Link>
+                <Link to="/admin/kegiatan" className="flex items-center justify-between p-4 rounded-xl bg-gray-50 hover:bg-brand-50 hover:text-brand-600 text-gray-700 text-sm font-semibold transition-all hover:translate-x-1 duration-200">
+                  <span className="flex items-center gap-3"><i className="ph ph-calendar-plus text-xl text-emerald-500" /> Tambah Kegiatan / Event</span>
+                  <i className="ph ph-caret-right text-gray-400" />
+                </Link>
+                <Link to="/admin/pengurus" className="flex items-center justify-between p-4 rounded-xl bg-gray-50 hover:bg-brand-50 hover:text-brand-600 text-gray-700 text-sm font-semibold transition-all hover:translate-x-1 duration-200">
+                  <span className="flex items-center gap-3"><i className="ph ph-user-plus text-xl text-indigo-500" /> Tambah Data Pengurus</span>
+                  <i className="ph ph-caret-right text-gray-400" />
+                </Link>
+              </div>
             </div>
           </div>
 
-          {/* Activity Logs */}
-          <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-heading font-bold text-gray-900 text-lg flex items-center gap-2">
-                <i className="ph ph-clock-counter-clockwise text-brand-600" /> Log Aktivitas Terakhir
-              </h3>
-              <Link to="/admin/activity-log" className="text-xs font-bold text-brand-600 hover:text-brand-700">
-                Lihat Semua
-              </Link>
-            </div>
-            
-            <div className="divide-y divide-gray-100">
-              {(summary.latest_logs || []).slice(0, 4).map((log) => (
-                <div key={log.id} className="py-3 flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-3">
-                    <span className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 font-mono text-[11px] font-bold">
-                      {log.action}
-                    </span>
-                    <span className="text-gray-700 font-medium">{log.details || log.module}</span>
+          {/* Latest Messages */}
+          <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-heading font-bold text-gray-900 text-lg flex items-center gap-2">
+                  <i className="ph ph-envelope-simple text-brand-600" /> Pesan Masuk Terbaru
+                </h3>
+                <Link to="/admin/kontak" className="text-xs font-bold text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg transition-colors">
+                  Lihat Semua
+                </Link>
+              </div>
+              
+              <div className="divide-y divide-gray-100">
+                {(summary.latest_messages || []).map((msg) => (
+                  <div key={msg.id} className="py-3.5 flex items-center justify-between text-sm hover:bg-gray-50/50 px-2 rounded-xl transition-colors">
+                    <div className="flex items-center gap-3">
+                      {msg.is_read ? (
+                        <span className="w-2.5 h-2.5 rounded-full bg-gray-300 shrink-0" title="Sudah Dibaca" />
+                      ) : (
+                        <span className="w-2.5 h-2.5 rounded-full bg-brand-500 animate-pulse shrink-0" title="Pesan Baru" />
+                      )}
+                      <div className="flex flex-col">
+                        <span className="text-gray-900 font-semibold text-xs leading-tight">{msg.nama}</span>
+                        <span className="text-gray-500 font-medium text-xs mt-0.5 line-clamp-1 max-w-[280px] md:max-w-[420px]" title={msg.subjek}>{msg.subjek}</span>
+                      </div>
+                    </div>
+                    <span className="text-xs text-gray-400 font-mono hidden sm:inline">{msg.created_at}</span>
                   </div>
-                  <span className="text-xs text-gray-400 font-mono">{log.created_at}</span>
-                </div>
-              ))}
+                ))}
+                {(!summary.latest_messages || summary.latest_messages.length === 0) && (
+                  <div className="py-12 text-center text-gray-400 text-sm flex flex-col items-center justify-center">
+                    <i className="ph ph-envelope-open text-3xl text-gray-300 mb-2" />
+                    Tidak ada pesan masuk terbaru
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

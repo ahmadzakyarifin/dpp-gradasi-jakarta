@@ -45,7 +45,7 @@ func UserEntityToResponse(user entity.User) dto.UserResponse {
 	if user.Role == "super_admin" {
 		roleDisplayName = "Super Administrator"
 	}
-	return dto.UserResponse{
+	resp := dto.UserResponse{
 		ID:              user.ID,
 		Role:            user.Role,
 		IsSystem:        user.IsSystem,
@@ -55,16 +55,17 @@ func UserEntityToResponse(user entity.User) dto.UserResponse {
 		Email:           user.Email,
 		PhotoPath:       user.PhotoPath,
 		Status:          user.Status,
-
 		HasPassword:        user.Password != "",
 		MustChangePassword: user.MustChangePassword,
-
 		EmailVerifiedAt: formatTimePtr(user.EmailVerifiedAt),
 		LastLoginAt:     formatTimePtr(user.LastLoginAt),
-
-		CreatedAt: user.CreatedAt.Format("2006-01-02T15:04:05Z"),
-		UpdatedAt: user.UpdatedAt.Format("2006-01-02T15:04:05Z"),
+		CreatedAt:       user.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		UpdatedAt:       user.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 	}
+	if user.EmailPending != nil {
+		resp.EmailPending = user.EmailPending
+	}
+	return resp
 }
 
 func UsersEntityToResponse(users []entity.User) []dto.UserResponse {

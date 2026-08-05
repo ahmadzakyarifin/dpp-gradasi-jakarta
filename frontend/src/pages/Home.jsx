@@ -531,45 +531,66 @@ export default function Home() {
             <h2 className="font-heading text-4xl md:text-5xl font-black text-slate-900">Visi & Misi</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-min">
-            {/* VISI UTAMA Box */}
-            <div className="md:col-span-2 lg:col-span-2 bg-gradient-to-br from-brand-700 to-brand-900 rounded-3xl p-8 sm:p-10 text-white relative overflow-hidden group shadow-xl">
-              <i className="ph-fill ph-quotes absolute -bottom-10 -right-10 text-[180px] text-white/5 -rotate-12 pointer-events-none" />
-              <div className="relative z-10 h-full flex flex-col justify-center">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/30">
-                    <i className="ph-fill ph-eye text-xl" />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Left: Visi & Logo */}
+            <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-28">
+              {/* VISI UTAMA Box */}
+              <div className="bg-gradient-to-br from-brand-700 to-brand-900 rounded-3xl p-8 sm:p-10 text-white relative overflow-hidden group shadow-xl">
+                <i className="ph-fill ph-quotes absolute -bottom-10 -right-10 text-[180px] text-white/5 -rotate-12 pointer-events-none" />
+                <div className="relative z-10">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/30">
+                      <i className="ph-fill ph-eye text-xl" />
+                    </div>
+                    <span className="text-xs font-bold uppercase tracking-widest text-brand-200">Visi Utama</span>
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-widest text-brand-200">Visi Utama</span>
+                  <p className="text-xl sm:text-2xl font-heading font-bold leading-relaxed drop-shadow-md italic">
+                    "{settings.about_vision}"
+                  </p>
                 </div>
-                <p className="text-2xl sm:text-3xl font-heading font-bold leading-tight drop-shadow-md italic">
-                  "{settings.about_vision}"
-                </p>
+              </div>
+
+              {/* Logo Display Box */}
+              <div className="bg-white rounded-3xl p-8 flex items-center justify-center border border-slate-100 shadow-md">
+                <img src={resolveAssetUrl(settings.logo_path)} alt="Logo" className="w-44 h-auto object-contain filter drop-shadow-lg" />
               </div>
             </div>
 
-            {/* Logo Display Box */}
-            <div className="bg-white rounded-3xl p-8 flex items-center justify-center border border-slate-100 shadow-md">
-              <img src={resolveAssetUrl(settings.logo_path)} alt="Logo" className="w-48 h-auto object-contain filter drop-shadow-lg" />
-            </div>
-
-            {/* Dynamic Missions */}
-            {getMissions().map((mission, idx) => (
-              <div 
-                key={idx} 
-                className={`bg-white rounded-3xl p-8 border border-slate-100 shadow-md group transition-all duration-300 ${
-                  idx % 3 === 0 ? 'hover:bg-blue-50' : idx % 3 === 1 ? 'hover:bg-teal-50' : 'hover:bg-amber-50'
-                }`}
-              >
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl mb-6 shadow-sm ${
-                  idx % 3 === 0 ? 'bg-blue-100 text-blue-600' : idx % 3 === 1 ? 'bg-teal-100 text-teal-600' : 'bg-amber-100 text-amber-600'
-                }`}>
-                  <i className={`ph-fill ${idx % 3 === 0 ? 'ph-users-three' : idx % 3 === 1 ? 'ph-chalkboard-teacher' : 'ph-handshake'}`} />
+            {/* Right: Dynamic Missions */}
+            <div className="lg:col-span-7">
+              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-md">
+                <h3 className="font-heading text-xl font-extrabold text-slate-900 mb-8 flex items-center gap-2">
+                  <i className="ph-bold ph-list-numbers text-brand-600 text-2xl" /> Misi Organisasi
+                </h3>
+                
+                <div className="space-y-6">
+                  {getMissions().map((mission, idx) => (
+                    <div 
+                      key={idx} 
+                      className="flex gap-4 items-start group relative"
+                    >
+                      {/* Stepper Circle */}
+                      <div className="flex flex-col items-center flex-shrink-0">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-sm transition-all duration-300 group-hover:scale-110 ${
+                          idx % 3 === 0 ? 'bg-blue-50 text-blue-600 border border-blue-200' : idx % 3 === 1 ? 'bg-teal-50 text-teal-600 border border-teal-200' : 'bg-amber-50 text-amber-600 border border-amber-200'
+                        }`}>
+                          {idx + 1}
+                        </div>
+                        {idx < getMissions().length - 1 && (
+                          <div className="w-[1.5px] bg-slate-100 flex-grow h-12 mt-2" />
+                        )}
+                      </div>
+                      
+                      {/* Mission Card */}
+                      <div className="flex-1 bg-slate-50/40 hover:bg-slate-50 group-hover:translate-x-1 border border-slate-200/40 rounded-2xl p-5 transition-all duration-300">
+                        <h4 className="font-bold text-slate-800 text-xs mb-1.5 uppercase tracking-wider">Misi Ke-{idx + 1}</h4>
+                        <p className="text-slate-600 text-sm leading-relaxed">{mission}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <h3 className="font-bold text-slate-900 mb-2 font-heading">Misi {idx + 1}</h3>
-                <p className="text-slate-600 text-sm leading-relaxed">{mission}</p>
               </div>
-            ))}
+            </div>
           </div>
         </div>
       </section>

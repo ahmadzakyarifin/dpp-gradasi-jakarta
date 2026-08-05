@@ -134,8 +134,8 @@ export default function ActivityLogAdmin() {
         className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
       >
         <option value="">Semua Role</option>
-        <option value="Super Admin">Super Admin</option>
-        <option value="Admin">Admin</option>
+        <option value="super_admin">Super Admin</option>
+        <option value="admin">Admin</option>
       </select>
 
       <select
@@ -187,8 +187,7 @@ export default function ActivityLogAdmin() {
 
         {/* Table Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-            <h2 className="font-semibold text-gray-800">Catatan Aktivitas Sistem</h2>
+          <div className="p-4 border-b border-gray-200 flex justify-end items-center bg-gray-50">
             <button
               onClick={downloadCSV}
               disabled={logs.length === 0}

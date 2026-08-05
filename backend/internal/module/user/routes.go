@@ -38,6 +38,7 @@ func RegisterRoutes(
 		admin.GET("/:id", h.GetByID)
 		admin.POST("", h.Create)
 		admin.PUT("/:id", h.Update)
+		admin.PUT("/:id/password", h.ResetUserPassword)
 		admin.DELETE("/:id", h.Delete)
 		admin.PUT("/:id/status", h.ToggleStatus)
 		admin.POST("/:id/resend-activation", h.ResendNotification)

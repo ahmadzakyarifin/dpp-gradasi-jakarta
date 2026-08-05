@@ -6,7 +6,7 @@ import ToastNotification from '../../components/admin/ToastNotification'
 import { useFormErrors, useRateLimitCooldown } from '../../utils/parseApiError'
 import { resolveAssetUrl } from '../../utils/assetUrl'
 
-const PAGE_SIZE = 5
+const PAGE_SIZE = 10
 
 const getTodayDateString = () => {
   const months = [
@@ -603,11 +603,11 @@ export default function KegiatanAdmin() {
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
             <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
               <span className="text-xs text-slate-500">
                 Hal {currentPage} dari {totalPages} · {totalData} data
               </span>
+              {totalPages > 1 && (
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
@@ -636,8 +636,8 @@ export default function KegiatanAdmin() {
                   <i className="ph-bold ph-caret-right text-sm" />
                 </button>
               </div>
+              )}
             </div>
-          )}
           </>
           )}
         </div>

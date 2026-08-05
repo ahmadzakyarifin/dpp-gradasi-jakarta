@@ -37,7 +37,11 @@ export default function Login() {
     setLoginForm({ email: savedEmail || '', password: '', rememberMe: !!savedEmail })
     setCaptchaToken('')
     setCaptchaError(false)
-  }, [])
+
+    if (searchParams.get('expired') === '1') {
+      setNotice({ type: 'error', message: 'Sesi login telah berakhir. Silakan login kembali.' })
+    }
+  }, [searchParams])
 
   // Countdown saat rate limit (429) — tampilkan "coba lagi dalam X detik" & disable tombol
   useEffect(() => {
@@ -172,6 +176,10 @@ export default function Login() {
         type: 'success',
         message: response?.message || authContent.forgot.successMessage,
       })
+      setForgotEmail('')
+      setForgotCaptchaToken('')
+      setForgotCaptchaError(false)
+      setTouched({ email: false, password: false, forgotEmail: false })
     } catch (error) {
       if (error.retryAfter > 0) {
         setCooldown(error.retryAfter)

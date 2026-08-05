@@ -27,7 +27,8 @@ type Settings struct {
 	GreetingImagePath  string
 	LoginHeroTitle     string
 	LoginHeroDescription string
-	CreatedAt          string
-	UpdatedAt          string
-	UpdatedBy          *uint
+	LogRetentionDays     int
+	CreatedAt            string
+	UpdatedAt            string
+	UpdatedBy            *uint
 }

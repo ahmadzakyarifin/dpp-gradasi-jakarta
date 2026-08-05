@@ -26,6 +26,7 @@ type Settings struct {
 	GreetingImagePath    string `gorm:"size:500"`
 	LoginHeroTitle       string `gorm:"size:255"`
 	LoginHeroDescription string `gorm:"type:text"`
+	LogRetentionDays     int    `gorm:"column:log_retention_days;default:30"`
 	CreatedAt            string
 	UpdatedAt            string
 	UpdatedBy            *uint `gorm:"column:updated_by"`

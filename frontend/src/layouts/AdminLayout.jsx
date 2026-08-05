@@ -22,6 +22,7 @@ export default function AdminLayout({ children, title = 'Admin Panel', headerCon
   const user = useAuthStore((state) => state.user)
   const role = useAuthStore((state) => state.role)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   // Selama role belum diketahui (baru refresh, fetchMe masih jalan),
   // jangan fallback ke "tampilkan semua menu" — tampilkan skeleton.
@@ -70,13 +71,27 @@ export default function AdminLayout({ children, title = 'Admin Panel', headerCon
   }
 
   return (
-    <div className="font-sans antialiased overflow-hidden flex h-screen bg-gray-50 text-gray-800">
+    <div className="font-sans antialiased overflow-hidden flex h-screen bg-gray-50 text-gray-800 relative">
+      {/* Mobile Sidebar Backdrop */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden transition-opacity"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 bg-brand-900 text-white flex flex-col h-full shrink-0 shadow-lg z-10">
-        <div className="h-16 flex items-center px-6 border-b border-white/10 shrink-0">
+      <aside className={`fixed inset-y-0 left-0 w-64 bg-brand-900 text-white flex flex-col h-full shrink-0 shadow-lg z-50 lg:z-10 lg:relative transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="h-16 flex items-center justify-between px-6 border-b border-white/10 shrink-0">
           <span className="font-heading font-bold text-xl tracking-wide">
             GRADASI<span className="text-brand-400">Admin</span>
           </span>
+          <button 
+            onClick={() => setIsSidebarOpen(false)} 
+            className="lg:hidden p-1 text-white/70 hover:text-white rounded-lg hover:bg-white/10"
+          >
+            <i className="ph ph-x text-xl" />
+          </button>
         </div>
         <nav className="flex-1 overflow-y-auto py-4 space-y-1 px-3">
           {visibleLinks.map((link) => {
@@ -85,6 +100,7 @@ export default function AdminLayout({ children, title = 'Admin Panel', headerCon
               <Link
                 key={link.path}
                 to={link.path}
+                onClick={() => setIsSidebarOpen(false)}
                 className={`flex items-center px-3 py-2.5 rounded-lg transition-all duration-200 btn-press ${
                   isActive
                     ? 'bg-brand-600 text-white shadow-md font-medium'
@@ -109,12 +125,21 @@ export default function AdminLayout({ children, title = 'Admin Panel', headerCon
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-full overflow-hidden">
         {/* Header */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shrink-0 shadow-sm z-10">
-          <h1 className="font-heading font-semibold text-gray-800 text-lg shrink-0">{title}</h1>
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-8 shrink-0 shadow-sm z-10 gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Open Menu"
+            >
+              <i className="ph ph-list text-2xl" />
+            </button>
+            <h1 className="font-heading font-semibold text-gray-800 text-sm sm:text-lg truncate max-w-[150px] sm:max-w-none">{title}</h1>
+          </div>
           
           {/* Center Actions (Search, Filter, etc.) */}
           {headerContent && (
-            <div className="flex-1 flex items-center justify-center px-6">
+            <div className="flex-1 hidden md:flex items-center justify-center px-6">
               {headerContent}
             </div>
           )}
@@ -130,7 +155,7 @@ export default function AdminLayout({ children, title = 'Admin Panel', headerCon
                   className="w-8 h-8 rounded-full border border-gray-200 object-cover"
                   alt={user?.name || 'Admin'}
                 />
-                <span className="text-sm font-medium text-gray-700">{user?.name || 'Admin'}</span>
+                <span className="text-sm font-medium text-gray-700 hidden sm:inline">{user?.name || 'Admin'}</span>
                 <i className="ph ph-caret-down text-gray-500" />
               </button>
               {userMenuOpen && (
@@ -138,17 +163,10 @@ export default function AdminLayout({ children, title = 'Admin Panel', headerCon
                   <Link
                     to="/admin/profile"
                     onClick={() => setUserMenuOpen(false)}
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-600 transition-colors"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-600 transition-colors rounded-xl"
                   >
                     <i className="ph ph-user-circle mr-2" /> Profil Saya
                   </Link>
-                  <div className="border-t border-gray-100 my-1" />
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                  >
-                    <i className="ph ph-sign-out mr-2" /> Logout
-                  </button>
                 </div>
               )}
             </div>
@@ -156,7 +174,7 @@ export default function AdminLayout({ children, title = 'Admin Panel', headerCon
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-auto bg-gray-50 p-8">{children}</div>
+        <div className="flex-1 overflow-auto bg-gray-50 p-4 sm:p-8">{children}</div>
       </main>
     </div>
   )

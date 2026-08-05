@@ -168,3 +168,17 @@ func (h *PengurusHandler) BulkRestore(c *gin.Context) {
 	}
 	helper.SuccessResponse(c, http.StatusOK, "PENGURUS_BULK_RESTORED", "Pengurus berhasil dipulihkan massal", nil, nil)
 }
+
+// PUT /api/v1/admin/pengurus/reorder — admin (reorder)
+func (h *PengurusHandler) Reorder(c *gin.Context) {
+	var req dto.BulkRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "validasi gagal", validator.Errors(err))
+		return
+	}
+	if err := h.svc.Reorder(c.Request.Context(), req.IDs); err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+	helper.SuccessResponse(c, http.StatusOK, "PENGURUS_REORDERED", "urutan pengurus berhasil diubah", nil, nil)
+}

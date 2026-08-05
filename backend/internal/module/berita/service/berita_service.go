@@ -236,16 +236,16 @@ func (s *beritaService) Create(ctx context.Context, req *dto.BeritaCreateRequest
 		return nil, v
 	}
 
-	// Validasi judul duplikat — error jelas (bukan auto-suffix)
-	dup, err := s.repo.ExistsTitle(title, 0)
+	slugStr := slug.Make(title)
+
+	// Validasi slug duplikat — error jelas (bukan auto-suffix)
+	dup, err := s.repo.ExistsSlug(slugStr, 0)
 	if err != nil {
 		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal memvalidasi judul.", err)
 	}
 	if dup {
-		return nil, helper.NewServiceError("DUPLICATE_TITLE", "Judul sudah digunakan, gunakan judul lain.", nil)
+		return nil, helper.NewServiceError("DUPLICATE_TITLE", "Judul berita sudah terpakai karena menghasilkan slug yang sama dengan berita lain. Gunakan judul lain.", nil)
 	}
-
-	slugStr := slug.Make(title)
 
 	cat := strings.TrimSpace(req.Category)
 	if cat == "" {
@@ -311,13 +311,14 @@ func (s *beritaService) Update(ctx context.Context, id uint, req *dto.BeritaUpda
 			v.Add("title", "Judul wajib diisi.")
 			return nil, v
 		}
-		// Cek duplikat judul (kecuali id ini sendiri)
-		dup, err := s.repo.ExistsTitle(title, id)
+		slugStr := slug.Make(title)
+		// Cek duplikat slug (kecuali id ini sendiri)
+		dup, err := s.repo.ExistsSlug(slugStr, id)
 		if err != nil {
 			return nil, helper.NewServiceError("SERVER_ERROR", "Gagal memvalidasi judul.", err)
 		}
 		if dup {
-			return nil, helper.NewServiceError("DUPLICATE_TITLE", "Judul sudah digunakan, gunakan judul lain.", nil)
+			return nil, helper.NewServiceError("DUPLICATE_TITLE", "Judul berita sudah terpakai karena menghasilkan slug yang sama dengan berita lain. Gunakan judul lain.", nil)
 		}
 	}
 

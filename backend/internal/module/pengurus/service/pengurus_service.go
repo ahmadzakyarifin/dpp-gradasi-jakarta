@@ -31,6 +31,7 @@ type PengurusService interface {
 	Restore(ctx context.Context, id uint) error
 	BulkDelete(ctx context.Context, ids []uint) error
 	BulkRestore(ctx context.Context, ids []uint) error
+	Reorder(ctx context.Context, ids []uint) error
 }
 
 type pengurusService struct {
@@ -320,6 +321,23 @@ func (s *pengurusService) BulkRestore(ctx context.Context, ids []uint) error {
 		Action:      "pengurus.bulk_restore",
 		EntityType:  "pengurus",
 		Description: "Memulihkan " + strconv.FormatUint(uint64(len(ids)), 10) + " pengurus",
+		Metadata: map[string]any{
+			"ids": ids,
+		},
+	})
+
+	return nil
+}
+
+func (s *pengurusService) Reorder(ctx context.Context, ids []uint) error {
+	if err := s.repo.Reorder(ids); err != nil {
+		return helper.NewServiceError("SERVER_ERROR", "Gagal mengubah urutan pengurus.", err)
+	}
+
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
+		Action:      "pengurus.update",
+		EntityType:  "pengurus",
+		Description: "Mengubah urutan (reorder) pengurus",
 		Metadata: map[string]any{
 			"ids": ids,
 		},

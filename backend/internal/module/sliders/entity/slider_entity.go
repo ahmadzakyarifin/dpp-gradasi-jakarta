@@ -12,9 +12,8 @@ type Slider struct {
 	EventDate *string
 	Location  *string
 	ImagePath string
-	LinkURL   *string
 	SortOrder int
-	IsActive  bool
+	IsPublished  bool
 	CreatedBy *uint
 	CreatedAt time.Time
 	UpdatedAt time.Time

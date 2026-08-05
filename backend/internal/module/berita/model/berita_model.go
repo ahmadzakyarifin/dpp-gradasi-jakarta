@@ -18,9 +18,6 @@ type Berita struct {
 	Excerpt       *string `gorm:"type:text"`
 	Content       *string `gorm:"type:longtext"`
 	IsFeatured    bool    `gorm:"default:false"`
-	// TIDAK pakai default:true — GORM skip field bool false (zero value) saat
-	// INSERT karena tag default, sehingga DB selalu menyimpan 1 (published).
-	// Entity/mapper selalu meng-set nilai eksplisit; DB default hanya fallback.
 	IsPublished   bool
 	Views         int     `gorm:"default:0"`
 	CreatedAt     time.Time

@@ -16,7 +16,7 @@ type KegiatanRepo interface {
 	FindAll(q dto.KegiatanQuery) ([]entity.Kegiatan, int64, error)
 	FindBySlug(slug string) (*entity.Kegiatan, error)
 	FindUniqueSlug(slug string) (string, error)
-	ExistsTitle(title string, excludeID uint) (bool, error)
+	ExistsSlug(slug string, excludeID uint) (bool, error)
 	FindByID(id uint) (*entity.Kegiatan, error)
 	Create(k *entity.Kegiatan) error
 	Update(k *entity.Kegiatan) error
@@ -142,11 +142,11 @@ func (r *kegiatanRepo) FindUniqueSlug(slug string) (string, error) {
 	}
 }
 
-// ExistsTitle mengembalikan true jika judul sudah dipakai kegiatan lain (soft-delete ikut dihitung).
+// ExistsSlug mengembalikan true jika slug sudah dipakai kegiatan lain (soft-delete ikut dihitung).
 // excludeID dipakai saat update — mengabaikan kegiatan dengan id tersebut (dirinya sendiri).
-func (r *kegiatanRepo) ExistsTitle(title string, excludeID uint) (bool, error) {
+func (r *kegiatanRepo) ExistsSlug(slug string, excludeID uint) (bool, error) {
 	var count int64
-	q := r.db.Unscoped().Model(&model.Kegiatan{}).Where("title = ?", title)
+	q := r.db.Unscoped().Model(&model.Kegiatan{}).Where("slug = ?", slug)
 	if excludeID > 0 {
 		q = q.Where("id != ?", excludeID)
 	}

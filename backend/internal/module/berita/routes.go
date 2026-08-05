@@ -30,5 +30,5 @@ func RegisterRoutes(api *gin.RouterGroup, h *handler.BeritaHandler, jwtSecret st
 		admin.POST("/bulk-restore", h.BulkRestore)
 		admin.DELETE("/:id", h.Delete)
 		admin.POST("/:id/restore", h.Restore)
-	}
+		}
 }

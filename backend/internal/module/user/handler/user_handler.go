@@ -339,15 +339,20 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	updated, err := h.s.UpdateProfile(c.Request.Context(), userID, req.Name, req.Email)
+	updated, token, err := h.s.UpdateProfile(c.Request.Context(), userID, req.Name, req.Email)
 	if err != nil {
 		helper.HandleServiceError(c, err)
 		return
 	}
 
-	helper.SuccessResponse(c, http.StatusOK, "USER_PROFILE_UPDATED", "profil berhasil diperbarui", gin.H{
+	var data = gin.H{
 		"user": mapper.UserEntityToResponse(*updated),
-	}, nil)
+	}
+	if h.cfg.App.Env != "production" && token != "" {
+		data["debug_token"] = token
+	}
+
+	helper.SuccessResponse(c, http.StatusOK, "USER_PROFILE_UPDATED", "profil berhasil diperbarui", data, nil)
 }
 
 // GetProfile mengembalikan profil user yang sedang login (dari token).
@@ -416,4 +421,28 @@ func (h *UserHandler) VerifyEmail(c *gin.Context) {
 	}
 
 	helper.SuccessResponse(c, http.StatusOK, "EMAIL_VERIFIED", "Email berhasil diverifikasi dan diperbarui", nil, nil)
+}
+
+// ResetUserPassword mereset password user lain (khusus super_admin).
+func (h *UserHandler) ResetUserPassword(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusBadRequest, "INVALID_PARAMETER", "ID tidak valid", nil)
+		return
+	}
+
+	var req struct {
+		Password string `json:"password" binding:"required,min=6"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "validasi gagal", validator.Errors(err))
+		return
+	}
+
+	if err := h.s.ResetPassword(c.Request.Context(), uint(id), req.Password); err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+
+	helper.SuccessResponse(c, http.StatusOK, "PASSWORD_RESET", "Password pengguna berhasil direset", nil, nil)
 }

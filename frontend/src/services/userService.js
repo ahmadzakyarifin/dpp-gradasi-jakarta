@@ -48,6 +48,13 @@ export const userService = {
     })
   },
 
+  resetPassword(id, password) {
+    return apiRequest(`/admin/users/${id}/password`, {
+      method: 'PUT',
+      body: JSON.stringify({ password }),
+    })
+  },
+
   bulkDelete(ids) {
     return apiRequest('/admin/users/bulk-delete', {
       method: 'POST',

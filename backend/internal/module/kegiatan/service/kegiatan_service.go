@@ -252,12 +252,14 @@ func (s *kegiatanService) Update(ctx context.Context, id uint, req *dto.Kegiatan
 			return nil, v
 		}
 		// Cek duplikat judul (kecuali id ini sendiri)
-		dup, err := s.repo.ExistsTitle(title, id)
+		slugStr := slug.Make(title)
+		// Cek duplikat slug (kecuali id ini sendiri)
+		dup, err := s.repo.ExistsSlug(slugStr, id)
 		if err != nil {
 			return nil, helper.NewServiceError("SERVER_ERROR", "Gagal memvalidasi judul.", err)
 		}
 		if dup {
-			return nil, helper.NewServiceError("DUPLICATE_TITLE", "Judul sudah digunakan, gunakan judul lain.", nil)
+			return nil, helper.NewServiceError("DUPLICATE_TITLE", "Judul kegiatan sudah terpakai karena menghasilkan slug yang sama dengan kegiatan lain. Gunakan judul lain.", nil)
 		}
 	}
 

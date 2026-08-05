@@ -6,7 +6,7 @@ import (
 )
 
 type SlidersRepo interface {
-	FindAll(activeOnly bool) ([]model.Slider, error)
+	FindAll(publishedOnly bool) ([]model.Slider, error)
 	FindByID(id uint) (*model.Slider, error)
 	Create(slider *model.Slider) error
 	Update(slider *model.Slider) error
@@ -25,11 +25,11 @@ func NewSlidersRepo(db *gorm.DB) SlidersRepo {
 	return &slidersRepo{db: db}
 }
 
-func (r *slidersRepo) FindAll(activeOnly bool) ([]model.Slider, error) {
+func (r *slidersRepo) FindAll(publishedOnly bool) ([]model.Slider, error) {
 	var sliders []model.Slider
 	q := r.db.Order("sort_order ASC, created_at DESC")
-	if activeOnly {
-		q = q.Where("is_active = ?", true)
+	if publishedOnly {
+		q = q.Where("is_published = ?", true)
 	}
 	err := q.Find(&sliders).Error
 	return sliders, err

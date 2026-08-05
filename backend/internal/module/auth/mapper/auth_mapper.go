@@ -13,10 +13,18 @@ func UserEntityToAuth(user userentity.User) dto.AuthUser {
 		roleDisplayName = "Super Administrator"
 	}
 
+	var emailVerifiedStr *string
+	if user.EmailVerifiedAt != nil {
+		s := user.EmailVerifiedAt.Format("2006-01-02T15:04:05Z")
+		emailVerifiedStr = &s
+	}
+
 	return dto.AuthUser{
 		ID:        user.ID,
 		Name:      user.Name,
 		Email:     user.Email,
+		EmailPending: user.EmailPending,
+		EmailVerifiedAt: emailVerifiedStr,
 		PhotoPath: user.PhotoPath,
 		Role: dto.AuthRole{
 			ID:          roleID,

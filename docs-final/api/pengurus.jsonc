@@ -550,5 +550,64 @@
           }
         }
       }
+    },
+
+    "reorder": {
+      "method": "PUT",
+      "endpoint": "/api/v1/admin/pengurus/reorder",
+      "consumes": "application/json",
+      "produces": "application/json",
+      "authentication": {
+        "type": "Bearer Access Token"
+      },
+      "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": "Bearer <access_token>"
+      },
+      "security": {
+        "roles": ["super_admin", "admin"]
+      },
+      "request": {
+        "ids": [3, 1, 2]
+      },
+      "validation": {
+        "ids": [
+          { "tag": "required", "message": "Daftar ID wajib dikirim." },
+          { "tag": "min", "value": 1, "message": "Minimal 1 item." }
+        ]
+      },
+      "notes": [
+        "Mengubah urutan (sort_order) pengurus sesuai dengan urutan array ID yang dikirim.",
+        "Urutan bersifat global — melewati batas halaman pagination.",
+        "Cakupan: semua pengurus yang termasuk filter saat ini (tab, search, level)."
+      ],
+      "responses": {
+        "200": {
+          "description": "Urutan pengurus berhasil diubah",
+          "body": {
+            "success": true,
+            "code": "PENGURUS_REORDERED",
+            "message": "Urutan pengurus berhasil diubah"
+          }
+        },
+        "401": {
+          "description": "Token tidak valid",
+          "body": {
+            "success": false,
+            "code": "AUTH_TOKEN_INVALID_OR_EXPIRED",
+            "message": "Sesi login telah berakhir. Silakan login kembali."
+          }
+        },
+        "403": {
+          "description": "Role tidak diizinkan",
+          "body": {
+            "success": false,
+            "code": "FORBIDDEN",
+            "message": "Anda tidak memiliki izin untuk melakukan aksi ini."
+          }
+        }
+      }
     }
+
 }

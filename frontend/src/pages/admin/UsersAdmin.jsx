@@ -47,6 +47,14 @@ export default function UsersAdmin() {
   const [formErrors, setFormErrors] = useState({})
   const [touched, setTouched] = useState({})
 
+  // Reset Password State
+  const [isResetPwdOpen, setIsResetPwdOpen] = useState(false)
+  const [resetUserId, setResetUserId] = useState(null)
+  const [resetUserName, setResetUserName] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [resetLoading, setResetLoading] = useState(false)
+  const [resetErrors, setResetErrors] = useState({})
+
   const validateForm = (data = formData) => {
     const errors = {}
     if (!data.name || !data.name.trim()) {
@@ -186,6 +194,30 @@ export default function UsersAdmin() {
       if (Object.keys(parsed.fieldErrors).length === 0) {
         showToast(parsed.message || 'Gagal mengirim undangan admin baru.', 'error')
       }
+    }
+  }
+
+  const handleResetPasswordSubmit = async (e) => {
+    e.preventDefault()
+    if (!newPassword || newPassword.trim().length < 6) {
+      setResetErrors({ password: 'Password baru minimal 6 karakter.' })
+      return
+    }
+    setResetErrors({})
+    setResetLoading(true)
+    try {
+      await userService.resetPassword(resetUserId, newPassword.trim())
+      setIsResetPwdOpen(false)
+      showToast(`Password untuk ${resetUserName} berhasil direset!`, 'success')
+      fetchUsers()
+    } catch (err) {
+      const parsed = applyError(err)
+      setResetErrors(parsed.fieldErrors || {})
+      if (!parsed.fieldErrors || Object.keys(parsed.fieldErrors).length === 0) {
+        showToast(parsed.message || 'Gagal mereset password.', 'error')
+      }
+    } finally {
+      setResetLoading(false)
     }
   }
 
@@ -495,6 +527,19 @@ export default function UsersAdmin() {
                                 {currentTab === 'active' && (
                                   <div className="flex gap-2">
                                     <button
+                                      onClick={() => {
+                                        setResetUserId(item.id)
+                                        setResetUserName(item.name)
+                                        setNewPassword('')
+                                        setResetErrors({})
+                                        setIsResetPwdOpen(true)
+                                      }}
+                                      className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded"
+                                      title="Reset Password Admin"
+                                    >
+                                      <i className="ph ph-key text-lg" />
+                                    </button>
+                                    <button
                                       onClick={() => triggerConfirm('deactivate', item.id)}
                                       className="p-1.5 text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded"
                                       title="Nonaktifkan Akun"
@@ -689,6 +734,60 @@ export default function UsersAdmin() {
                   className="px-5 py-2 bg-brand-600 text-white rounded-xl text-sm font-semibold hover:bg-brand-700 transition-colors flex items-center gap-2"
                 >
                   <i className="ph ph-paper-plane-right" /> Buat & Kirim Kredensial
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL RESET PASSWORD */}
+      {isResetPwdOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setIsResetPwdOpen(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full flex flex-col overflow-hidden z-10 animate-scale-up">
+            <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+              <h3 className="font-heading font-bold text-slate-900 text-lg">Reset Password Admin</h3>
+              <button onClick={() => setIsResetPwdOpen(false)} className="text-slate-400 hover:text-slate-600 p-1">
+                <i className="ph-bold ph-x text-lg" />
+              </button>
+            </div>
+            <form onSubmit={handleResetPasswordSubmit} noValidate className="p-6 space-y-4">
+              <p className="text-xs text-gray-500 leading-relaxed">
+                Anda akan mereset password untuk admin: <strong>{resetUserName}</strong>. Admin tersebut akan otomatis ter-logout dari semua perangkat demi keamanan.
+              </p>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Password Baru <span className="text-red-500">*</span></label>
+                <input
+                  type="password"
+                  placeholder="Minimal 6 karakter..."
+                  value={newPassword}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value)
+                    if (resetErrors.password) setResetErrors({})
+                  }}
+                  className={`w-full px-3 py-2 border rounded-xl focus:ring-brand-500 focus:border-brand-500 text-sm outline-none transition-colors ${resetErrors.password ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-gray-300'}`}
+                />
+                {resetErrors.password && (
+                  <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
+                    <i className="ph-bold ph-warning-circle text-xs" /> {resetErrors.password}
+                  </p>
+                )}
+              </div>
+              <div className="flex justify-end gap-2 pt-4 border-t items-center mt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsResetPwdOpen(false)}
+                  className="px-4 py-2 border rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={resetLoading}
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors flex items-center gap-2"
+                >
+                  <i className="ph ph-key" /> {resetLoading ? 'Menyimpan...' : 'Reset Password'}
                 </button>
               </div>
             </form>

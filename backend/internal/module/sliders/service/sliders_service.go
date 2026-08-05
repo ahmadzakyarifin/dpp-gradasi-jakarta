@@ -2,7 +2,13 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"io"
+	"mime/multipart"
+	"os"
+	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/helper"
 	activitylogdto "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/activitylog/dto"
@@ -15,7 +21,7 @@ import (
 )
 
 type SlidersService interface {
-	GetAll(ctx context.Context, activeOnly bool) (*dto.SliderListResponse, error)
+	GetAll(ctx context.Context, publishedOnly bool) (*dto.SliderListResponse, error)
 	GetByID(ctx context.Context, id uint) (*dto.SliderResponse, error)
 	Create(ctx context.Context, req *dto.SliderRequest, createdBy uint) (*dto.SliderResponse, error)
 	Update(ctx context.Context, id uint, req *dto.SliderRequest) (*dto.SliderResponse, error)
@@ -24,6 +30,7 @@ type SlidersService interface {
 	BulkDelete(ctx context.Context, ids []uint) error
 	BulkRestore(ctx context.Context, ids []uint) error
 	Reorder(ctx context.Context, ids []uint) error
+	UploadImage(ctx context.Context, fileHeader *multipart.FileHeader) (*dto.UploadImageResponse, error)
 }
 
 type slidersService struct {
@@ -60,8 +67,8 @@ func (s *slidersService) log(ctx context.Context, db *gorm.DB, input *activitylo
 	_ = s.audit.Log(ctx, db, input)
 }
 
-func (s *slidersService) GetAll(ctx context.Context, activeOnly bool) (*dto.SliderListResponse, error) {
-	sliders, err := s.repo.FindAll(activeOnly)
+func (s *slidersService) GetAll(ctx context.Context, publishedOnly bool) (*dto.SliderListResponse, error) {
+	sliders, err := s.repo.FindAll(publishedOnly)
 	if err != nil {
 		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil data slider.", err)
 	}
@@ -228,4 +235,38 @@ func (s *slidersService) BulkRestore(ctx context.Context, ids []uint) error {
 	})
 
 	return nil
+}
+
+func (s *slidersService) UploadImage(ctx context.Context, fileHeader *multipart.FileHeader) (*dto.UploadImageResponse, error) {
+	// Pastikan direktori upload ada
+	uploadPath := "public/uploads/sliders"
+	if err := os.MkdirAll(uploadPath, 0755); err != nil {
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal membuat direktori upload sliders.", err)
+	}
+
+	// Generate filename unik
+	ext := filepath.Ext(fileHeader.Filename)
+	filename := fmt.Sprintf("slider-%d%s", time.Now().UnixNano(), ext)
+	dst := filepath.Join(uploadPath, filename)
+
+	// Simpan file
+	src, err := fileHeader.Open()
+	if err != nil {
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal membuka file terunggah", err)
+	}
+	defer src.Close()
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal membuat file baru di server", err)
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, src)
+	if err != nil {
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal menulis file", err)
+	}
+
+	imagePath := "/uploads/sliders/" + filename
+	return &dto.UploadImageResponse{ImagePath: imagePath}, nil
 }

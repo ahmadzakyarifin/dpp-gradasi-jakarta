@@ -34,7 +34,8 @@ export default function SettingsAdmin() {
     greeting_subtitle: '',
     greeting_date: '',
     greeting_content: '',
-    greeting_image_path: ''
+    greeting_image_path: '',
+    log_retention_days: 30
   })
 
   const validateForm = (data = formData) => {
@@ -60,17 +61,19 @@ export default function SettingsAdmin() {
       .then(res => {
         if (res.success && res.data) {
           const data = res.data
-          // convert about_mission from array/JSON to simple newline string for textarea
-          let missionText = ''
+          let missionArray = []
           try {
             const arr = typeof data.about_mission === 'string' ? JSON.parse(data.about_mission) : data.about_mission
             if (Array.isArray(arr)) {
-              missionText = arr.join('\n')
+              missionArray = arr.map(s => s || '')
             }
           } catch {
-            missionText = data.about_mission || ''
+            missionArray = data.about_mission ? [data.about_mission] : []
           }
-          setFormData({ ...data, about_mission: missionText })
+          if (missionArray.length === 0) {
+            missionArray = ['']
+          }
+          setFormData({ ...data, about_mission: missionArray })
         }
       }).catch(() => {})
   }, [])
@@ -145,8 +148,7 @@ export default function SettingsAdmin() {
     const { id: _id, created_at: _ca, updated_at: _ua, updated_by: _ub, captcha_enabled: _ce, captcha_site_key: _csk, ...rest } = formData
     const payload = {
       ...rest,
-      about_mission: (rest.about_mission || '')
-        .split('\n').map(s => s.trim()).filter(Boolean)
+      about_mission: (rest.about_mission || []).map(s => s.trim()).filter(Boolean)
     }
 
     try {
@@ -185,12 +187,13 @@ export default function SettingsAdmin() {
       <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 animate-fade-in-up">
 
         {/* Navigation Tabs */}
-        <div className="md:col-span-1 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col gap-1 h-fit">
-          <button onClick={() => setCurrentTab('profil')} className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition-all duration-200 btn-press ${currentTab === 'profil' ? 'bg-brand-50 text-brand-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}>Profil & Sejarah</button>
-          <button onClick={() => setCurrentTab('sambutan')} className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition-all duration-200 btn-press ${currentTab === 'sambutan' ? 'bg-brand-50 text-brand-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}>Sambutan Depan</button>
-          <button onClick={() => setCurrentTab('kontak')} className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition-all duration-200 btn-press ${currentTab === 'kontak' ? 'bg-brand-50 text-brand-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}>Informasi Kontak</button>
-          <button onClick={() => setCurrentTab('sosmed')} className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition-all duration-200 btn-press ${currentTab === 'sosmed' ? 'bg-brand-50 text-brand-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}>Media Sosial</button>
-          <button onClick={() => setCurrentTab('logo')} className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition-all duration-200 btn-press ${currentTab === 'logo' ? 'bg-brand-50 text-brand-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}>Logo Website</button>
+         <div className="md:col-span-1 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col gap-1 h-fit">
+          <button onClick={() => setCurrentTab('profil')} type="button" className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition-all duration-200 btn-press ${currentTab === 'profil' ? 'bg-brand-50 text-brand-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}>Profil & Sejarah</button>
+          <button onClick={() => setCurrentTab('sambutan')} type="button" className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition-all duration-200 btn-press ${currentTab === 'sambutan' ? 'bg-brand-50 text-brand-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}>Sambutan Depan</button>
+          <button onClick={() => setCurrentTab('kontak')} type="button" className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition-all duration-200 btn-press ${currentTab === 'kontak' ? 'bg-brand-50 text-brand-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}>Informasi Kontak</button>
+          <button onClick={() => setCurrentTab('sosmed')} type="button" className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition-all duration-200 btn-press ${currentTab === 'sosmed' ? 'bg-brand-50 text-brand-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}>Media Sosial</button>
+          <button onClick={() => setCurrentTab('logo')} type="button" className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition-all duration-200 btn-press ${currentTab === 'logo' ? 'bg-brand-50 text-brand-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}>Logo Website</button>
+          <button onClick={() => setCurrentTab('log')} type="button" className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition-all duration-200 btn-press ${currentTab === 'log' ? 'bg-brand-50 text-brand-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}>Pembersihan Log</button>
         </div>
 
         {/* Form Area */}
@@ -220,6 +223,28 @@ export default function SettingsAdmin() {
                       <span className="text-[11px] text-gray-400 break-all">Path saat ini: {formData.logo_path}</span>
                     )}
                   </div>
+                </div>
+              </div>
+            )}
+
+            {currentTab === 'log' && (
+              <div className="space-y-4">
+                <h3 className="font-heading font-bold text-gray-800 text-base border-b pb-2">Auto Clear Log Aktivitas</h3>
+                <p className="text-xs text-gray-500 leading-relaxed">Log aktivitas super admin & admin yang telah melewati jangka waktu di bawah ini akan dihapus secara otomatis secara berkala setiap 24 jam demi menghemat kapasitas penyimpanan database.</p>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Masa Simpan / Retensi Log Aktivitas</label>
+                  <select
+                    value={formData.log_retention_days}
+                    onChange={e => setFormData({ ...formData, log_retention_days: Number(e.target.value) })}
+                    className={inputCls}
+                  >
+                    <option value={7}>7 Hari (1 Minggu)</option>
+                    <option value={30}>30 Hari (1 Bulan)</option>
+                    <option value={90}>90 Hari (3 Bulan)</option>
+                    <option value={180}>180 Hari (6 Bulan)</option>
+                    <option value={365}>365 Hari (1 Tahun)</option>
+                    <option value={0}>Selamanya (Jangan Hapus Log)</option>
+                  </select>
                 </div>
               </div>
             )}
@@ -274,8 +299,56 @@ export default function SettingsAdmin() {
                   <textarea rows="2" value={formData.about_vision} onChange={e => setFormData({...formData, about_vision: e.target.value})} className={inputCls} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Misi Organisasi (Satu Misi Per Baris)</label>
-                  <textarea rows="4" value={formData.about_mission} onChange={e => setFormData({...formData, about_mission: e.target.value})} className={inputCls} />
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-xs font-semibold text-gray-500">Misi Organisasi</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData(prev => ({
+                          ...prev,
+                          about_mission: [...(prev.about_mission || []), '']
+                        }))
+                      }}
+                      className="inline-flex items-center gap-1 text-xs font-bold text-brand-600 hover:text-brand-700 transition"
+                    >
+                      <i className="ph-bold ph-plus-circle text-sm" /> Tambah Misi
+                    </button>
+                  </div>
+                  
+                  <div className="max-h-56 overflow-y-auto space-y-2.5 pr-2 border border-slate-200/60 rounded-xl p-3 bg-slate-50/50">
+                    {(formData.about_mission || []).length === 0 ? (
+                      <p className="text-xs text-gray-400 text-center py-2">Belum ada misi. Klik Tambah Misi.</p>
+                    ) : (
+                      (formData.about_mission || []).map((misi, index) => (
+                        <div key={index} className="flex gap-2 items-center animate-scale-up">
+                          <span className="text-xs font-bold text-gray-400 w-6 text-center">{index + 1}</span>
+                          <input
+                            type="text"
+                            value={misi}
+                            placeholder={`Masukkan misi ke-${index + 1}...`}
+                            onChange={e => {
+                              const newMissions = [...formData.about_mission]
+                              newMissions[index] = e.target.value
+                              setFormData({ ...formData, about_mission: newMissions })
+                            }}
+                            className={inputCls}
+                          />
+                          <button
+                            type="button"
+                            disabled={formData.about_mission.length <= 1}
+                            onClick={() => {
+                              const newMissions = formData.about_mission.filter((_, i) => i !== index)
+                              setFormData({ ...formData, about_mission: newMissions })
+                            }}
+                            className="p-2 text-gray-400 hover:text-red-500 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-red-50 rounded-xl transition"
+                            title="Hapus Misi"
+                          >
+                            <i className="ph-bold ph-trash text-base" />
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">Sejarah / Tentang Kami</label>

@@ -90,6 +90,8 @@ export async function apiRequest(path, options = {}) {
     } catch (refreshErr) {
       // Refresh gagal → sesi benar-benar berakhir, bersihkan token lokal.
       localStorage.removeItem('access_token')
+      localStorage.removeItem('user_role')
+      window.location.href = '/login?expired=1'
       const error = new Error(refreshErr?.message || 'Sesi berakhir, silakan login kembali.')
       error.status = 401
       error.code = 'AUTH_SESSION_EXPIRED'

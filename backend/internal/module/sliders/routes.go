@@ -22,6 +22,7 @@ func RegisterRoutes(api *gin.RouterGroup, h *handler.SlidersHandler, jwtSecret s
 	{
 		protected.GET("/admin", h.GetAllAdmin)
 		protected.POST("", h.Create)
+		protected.POST("/upload-image", h.UploadImage)
 		protected.PUT("/reorder", h.Reorder)
 		protected.PUT("/:id", h.Update)
 		protected.POST("/bulk-delete", h.BulkDelete)

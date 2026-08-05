@@ -10,6 +10,7 @@ type User struct {
 	IsSystem           bool
 	Name               string
 	Email              string
+	EmailPending       *string
 	PhotoPath          *string
 	Password           string
 	Status             string

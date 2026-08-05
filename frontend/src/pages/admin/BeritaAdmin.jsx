@@ -13,7 +13,7 @@ const getTodayIndonesian = () => {
   return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-const PAGE_SIZE = 5
+const PAGE_SIZE = 10
 
 export default function BeritaAdmin() {
   const [items, setItems] = useState([])
@@ -363,7 +363,7 @@ export default function BeritaAdmin() {
           className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
         >
           <option value="">{beritaContent.admin.allStatus}</option>
-          <option value="published">Public</option>
+          <option value="published">Terbit</option>
           <option value="draft">Draft</option>
         </select>
       )}
@@ -520,7 +520,7 @@ export default function BeritaAdmin() {
                             <div className={`absolute top-[2px] left-[2px] w-4 h-4 bg-white rounded-full transition-transform ${item.is_published ? 'translate-x-4' : 'translate-x-0'}`} />
                           </div>
                           <span className={`text-xs font-semibold ${item.is_published ? 'text-brand-600' : 'text-slate-400'}`}>
-                            {item.is_published ? 'Published' : 'Draft'}
+                            {item.is_published ? 'Terbit' : 'Draft'}
                           </span>
                         </button>
                       )}

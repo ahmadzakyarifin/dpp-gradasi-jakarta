@@ -9,7 +9,8 @@ import { useFormErrors, useRateLimitCooldown } from '../../utils/parseApiError'
 const PAGE_SIZE = 10
 
 export default function PengurusAdmin() {
-  const [items, setItems] = useState([])
+  const [items, setItems] = useState([]) // untuk tampilanNg paginated
+  const [allItems, setAllItems] = useState([]) // semua item yang difilter (tanpa pagination)
   const [loading, setLoading] = useState(false)
   const [meta, setMeta] = useState({ total_data: 0, total_pages: 1, current_page: 1, limit: PAGE_SIZE })
 
@@ -71,8 +72,8 @@ export default function PengurusAdmin() {
 
   const [confirm, setConfirm] = useState({ isOpen: false, type: 'danger', title: '', message: '', action: null })
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
-  // Error backend: pesan error dari helper + countdown rate limit
-  const { fieldErrors, applyError, clearFieldError, resetFieldErrors } = useFormErrors()
+  // Error dari backend: field errors inline + countdown rate limit
+  const { applyError, clearFieldError, resetFieldErrors } = useFormErrors()
   const { cooldown, isLimited, applyRateLimit } = useRateLimitCooldown()
 
   const isProvinceRequired = formData.level === 'dpd' || formData.level === 'dpc'
@@ -83,39 +84,84 @@ export default function PengurusAdmin() {
     setTimeout(() => setToast(prev => ({ ...prev, show: false })), 3000)
   }, [])
 
-  const loadPengurus = useCallback(() => {
-    setLoading(true)
+  // Load SEMUA data (tanpa pagination) untuk keperluan reorder global
+  const loadAllPengurus = useCallback(() => {
+    // Kita perlu load semua data tanpa pagination
+    // Contact backend untuk menyediakan endpoint listAdmin tanpa page/limit? Atau kita hit dengan page=1&limit=9999?
+    // Untuk saat ini, kita akan hit dengan limit besar. Alternatif: endpoint khusus /admin/pengurus/all
+    // Tapi kontrak tidak ada. Jadi kita pake listAdmin dengan limit besar.
+    // Implementation: call listAdmin with a very high limit
     const params = {
-      page: currentPage,
-      limit: PAGE_SIZE,
+      page: 1,
+      limit: 9999, // harap tidak Page Not Found
       search: searchQuery,
       status: currentTab === 'trash' ? 'all' : (currentTab === 'inactive' ? 'inactive' : 'active'),
       trashed: currentTab === 'trash',
       level: filterLevel || undefined,
       sort: 'sort_order',
     }
-    pengurusService.listAdmin(params)
+    return pengurusService.listAdmin(params)
+  }, [currentTab, searchQuery, filterLevel])
+
+  const loadPengurus = useCallback(() => {
+    setLoading(true)
+    loadAllPengurus()
       .then(res => {
         if (res && res.data) {
-          const list = Array.isArray(res.data) ? res.data : (res.data.data || [])
-          setItems(list)
-          if (res.data.meta) setMeta(res.data.meta)
+          let list = []
+          if (Array.isArray(res.data)) {
+            list = res.data
+          } else if (res.data.data) {
+            list = res.data.data
+          }
+          setAllItems(list) // simpan semua data
+          // Untuk items (ditampilkan), kita akan ambil slice berdasarkan currentPage dari filteredAllItems nanti
+          updateMetaFromResponse(res.data)
         } else {
+          setAllItems([])
           setItems([])
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        setAllItems([])
+        setItems([])
+      })
       .finally(() => setLoading(false))
-  }, [currentTab, currentPage, searchQuery, filterLevel])
+  }, [loadAllPengurus])
 
   useEffect(() => {
     loadPengurus()
   }, [loadPengurus])
 
   useEffect(() => {
+    // Ketika filter/search/tab berubah, reset page & pilihan
     setCurrentPage(1)
     setSelectedItems([])
   }, [currentTab, searchQuery, filterLevel])
+
+  // Update items (page view) berdasarkan allItems yang difilter + pagination
+  useEffect(() => {
+    // allItems sudah terfilter oleh response (karena kita kirim parameter filter)
+    // Tapi allItems berisi semua data, kita paginate di frontend
+    const total = allItems.length
+    const totalPages = Math.ceil(total / PAGE_SIZE) || 1
+    const start = (currentPage - 1) * PAGE_SIZE
+    const end = start + PAGE_SIZE
+    const paginatedList = allItems.slice(start, end)
+    setItems(paginatedList)
+    setMeta({
+      total_data: total,
+      total_pages: totalPages,
+      current_page: currentPage,
+      limit: PAGE_SIZE,
+    })
+  }, [allItems, currentPage])
+
+  function updateMetaFromResponse(data) {
+    if (data && data.meta) {
+      setMeta(data.meta)
+    }
+  }
 
   const openForm = (item = null) => {
     setFormErrors({})
@@ -156,7 +202,7 @@ export default function PengurusAdmin() {
         instagram_url: '',
         linkedin_url: '',
         whatsapp: '',
-        sort_order: (meta.total_data || 0) + 1,
+        sort_order: (allItems.length || 0) + 1,
         image_path: '',
         image: null,
         is_active: true,
@@ -211,97 +257,32 @@ export default function PengurusAdmin() {
     }
   }
 
-  const handleSortChange = async (item, value) => {
-    const newOrder = Number(value)
-    if (!Number.isFinite(newOrder) || newOrder === item.sort_order) return
+  const handleMove = async (globalIndex, direction) => {
+    // globalIndex adalah index dalam allItems (setelah filtered)
+    const targetGlobalIndex = direction === 'up' ? globalIndex - 1 : globalIndex + 1
+    if (targetGlobalIndex < 0 || targetGlobalIndex >= allItems.length) return
+
+    const currentItem = allItems[globalIndex]
+    const targetItem = allItems[targetGlobalIndex]
+
+    // Swap IDs in the array
+    const newAllItems = [...allItems]
+    newAllItems[globalIndex] = targetItem
+    newAllItems[targetGlobalIndex] = currentItem
+
+    // Update local state immediately for responsive UI
+    setAllItems(newAllItems)
+
+    // Send reorder request with all IDs in new order
+    const reorderedIds = newAllItems.map(item => item.id)
     try {
-      const payload = {
-        name: item.name,
-        level: item.level,
-        role: item.role,
-        department: item.department || '',
-        periode: item.periode || '2025 - 2030',
-        provinsi: item.provinsi || '',
-        kabupaten: item.kabupaten || '',
-        facebook_url: item.facebook_url || '',
-        instagram_url: item.instagram_url || '',
-        linkedin_url: item.linkedin_url || '',
-        whatsapp: item.whatsapp || '',
-        sort_order: newOrder,
-        image_path: item.image_path || item.image_url || '',
-        image: null,
-        is_active: item.is_active !== false,
-      }
-      await pengurusService.update(item.id, payload)
+      await pengurusService.reorder(reorderedIds)
       showToast('Urutan pengurus diperbarui.')
+      // Refresh data from server to ensure consistency
       loadPengurus()
     } catch (err) {
-      showToast(err.message || 'Gagal mengubah urutan', 'error')
-    }
-  }
-
-  const handleMove = async (index, direction) => {
-    const targetIndex = direction === 'up' ? index - 1 : index + 1
-    if (targetIndex < 0 || targetIndex >= items.length) return
-
-    const currentItem = items[index]
-    const targetItem = items[targetIndex]
-
-    const currentOrder = currentItem.sort_order ?? 0
-    const targetOrder = targetItem.sort_order ?? 0
-
-    let newCurrentOrder = targetOrder
-    let newTargetOrder = currentOrder
-    if (currentOrder === targetOrder) {
-      if (direction === 'up') {
-        newCurrentOrder = targetOrder - 1
-      } else {
-        newCurrentOrder = targetOrder + 1
-      }
-    }
-
-    try {
-      const payloadTarget = {
-        name: targetItem.name,
-        level: targetItem.level,
-        role: targetItem.role,
-        department: targetItem.department || '',
-        periode: targetItem.periode || '2025 - 2030',
-        provinsi: targetItem.provinsi || '',
-        kabupaten: targetItem.kabupaten || '',
-        facebook_url: targetItem.facebook_url || '',
-        instagram_url: targetItem.instagram_url || '',
-        linkedin_url: targetItem.linkedin_url || '',
-        whatsapp: targetItem.whatsapp || '',
-        sort_order: newTargetOrder,
-        image_path: targetItem.image_path || targetItem.image_url || '',
-        image: null,
-        is_active: targetItem.is_active !== false,
-      }
-      await pengurusService.update(targetItem.id, payloadTarget)
-
-      const payloadCurrent = {
-        name: currentItem.name,
-        level: currentItem.level,
-        role: currentItem.role,
-        department: currentItem.department || '',
-        periode: currentItem.periode || '2025 - 2030',
-        provinsi: currentItem.provinsi || '',
-        kabupaten: currentItem.kabupaten || '',
-        facebook_url: currentItem.facebook_url || '',
-        instagram_url: currentItem.instagram_url || '',
-        linkedin_url: currentItem.linkedin_url || '',
-        whatsapp: currentItem.whatsapp || '',
-        sort_order: newCurrentOrder,
-        image_path: currentItem.image_path || currentItem.image_url || '',
-        image: null,
-        is_active: currentItem.is_active !== false,
-      }
-      await pengurusService.update(currentItem.id, payloadCurrent)
-
-      showToast('Urutan pengurus diperbarui.')
-      loadPengurus()
-    } catch (err) {
+      // Rollback on error
+      setAllItems(allItems)
       showToast(err.message || 'Gagal mengubah urutan', 'error')
     }
   }
@@ -327,6 +308,23 @@ export default function PengurusAdmin() {
           await pengurusService.restore(item.id)
           showToast('Pengurus berhasil dipulihkan.')
           loadPengurus()
+        },
+      },
+      toggle_status: {
+        type: item?.is_active ? 'warning' : 'info',
+        title: item?.is_active ? 'Non-aktifkan Pengurus' : 'Aktifkan Pengurus',
+        message: item?.is_active
+          ? `Anda akan menonaktifkan "${name}". Pengurus tidak akan tampil di halaman publik. Lanjutkan?`
+          : `Anda akan mengaktifkan "${name}". Pengurus akan tampil di halaman publik. Lanjutkan?`,
+        action: async () => {
+          try {
+            await pengurusService.update(item.id, { ...item, is_active: !item.is_active, image: null })
+            // Update local state immediately
+            setAllItems(prev => prev.map(i => i.id === item.id ? { ...i, is_active: !item.is_active } : i))
+            showToast(item.is_active ? 'Pengurus dinonaktifkan.' : 'Pengurus berhasil diaktifkan!')
+          } catch (err) {
+            showToast(err?.message || 'Gagal mengubah status pengurus.', 'error')
+          }
         },
       },
       bulk_delete: {
@@ -365,6 +363,7 @@ export default function PengurusAdmin() {
     }
   }
 
+  // selectedItems selection based on current page view
   const isAllSelected = items.length > 0 && selectedItems.length === items.length
   function toggleAll() {
     setSelectedItems(isAllSelected ? [] : items.map(i => i.id))
@@ -374,7 +373,7 @@ export default function PengurusAdmin() {
   }
 
   const totalPages = Math.max(1, meta.total_pages || 1)
-  const totalData = meta.total_data ?? items.length
+  const totalData = meta.total_data ?? allItems.length
 
   const levelLabel = { ketua: 'Ketua Umum', dpp: 'Pusat (DPP)', dpd: 'Provinsi (DPD)', dpc: 'Kab/Kota (DPC)' }
 
@@ -506,86 +505,107 @@ export default function PengurusAdmin() {
                       <th className="p-4">Tingkat</th>
                       <th className="p-4">Jabatan</th>
                       <th className="p-4">Wilayah</th>
+                      <th className="p-4">Status</th>
                       <th className="p-4 w-24">Urutan</th>
                       <th className="p-4 text-right">Aksi</th>
                     </tr>
                   </thead>
-              <tbody className="divide-y divide-gray-100">
-                    {items.map((item, index) => (
-                      <tr key={item.id} className="hover:bg-slate-50/50 admin-row">
-                        <td className="p-4">
-                          <input type="checkbox" checked={selectedItems.includes(item.id)} onChange={() => toggleOne(item.id)} className="accent-brand-600 border-gray-300 rounded" />
-                        </td>
-                        <td className="p-4 font-medium text-slate-900">
-                          <div className="flex items-center gap-3">
-                            {item.image_url ? (
-                              <img src={resolveAssetUrl(item.image_url)} alt="" className="w-10 h-10 rounded-full object-cover border border-gray-200" />
-                            ) : (
-                              <div className="w-10 h-10 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold text-sm">
-                                {item.name.charAt(0).toUpperCase()}
+                  <tbody className="divide-y divide-gray-100">
+                    {items.map((item) => {
+                      // global index dalam allItems untuk determined posisi global
+                      const globalIndex = allItems.findIndex(i => i.id === item.id)
+                      return (
+                        <tr key={item.id} className="hover:bg-slate-50/50 admin-row">
+                          <td className="p-4">
+                            <input type="checkbox" checked={selectedItems.includes(item.id)} onChange={() => toggleOne(item.id)} className="accent-brand-600 border-gray-300 rounded" />
+                          </td>
+                          <td className="p-4 font-medium text-slate-900">
+                            <div className="flex items-center gap-3">
+                              {item.image_url ? (
+                                <img src={resolveAssetUrl(item.image_url)} alt="" className="w-10 h-10 rounded-full object-cover border border-gray-200" />
+                              ) : (
+                                <div className="w-10 h-10 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold text-sm">
+                                  {item.name.charAt(0).toUpperCase()}
+                                </div>
+                              )}
+                              <div>
+                                <div>{item.name}</div>
+                                <div className="text-xs text-slate-400">{item.periode}</div>
                               </div>
-                            )}
-                            <div>
-                              <div>{item.name}</div>
-                              <div className="text-xs text-slate-400">{item.periode}</div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="p-4 uppercase font-bold text-xs text-brand-600">{levelLabel[item.level] || item.level}</td>
-                        <td className="p-4">{item.role}</td>
-                        <td className="p-4 text-slate-500 text-xs">
-                          {item.provinsi ? `${item.provinsi}${item.kabupaten ? `, ${item.kabupaten}` : ''}` : '-'}
-                        </td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-3">
-                            <button
-                              type="button"
-                              disabled={index === 0}
-                              onClick={() => handleMove(index, 'up')}
-                              className="p-1 hover:bg-slate-100 text-slate-500 hover:text-slate-700 rounded disabled:opacity-20 transition-all"
-                              title="Pindahkan ke atas"
-                            >
-                              <i className="ph-bold ph-arrow-up text-base" />
-                            </button>
-                            <button
-                              type="button"
-                              disabled={index === items.length - 1}
-                              onClick={() => handleMove(index, 'down')}
-                              className="p-1 hover:bg-slate-100 text-slate-500 hover:text-slate-700 rounded disabled:opacity-20 transition-all"
-                              title="Pindahkan ke bawah"
-                            >
-                              <i className="ph-bold ph-arrow-down text-base" />
-                            </button>
-                          </div>
-                        </td>
-                        <td className="p-4 text-right">
-                          <div className="flex justify-end gap-2">
+                          </td>
+                          <td className="p-4 uppercase font-bold text-xs text-brand-600">{levelLabel[item.level] || item.level}</td>
+                          <td className="p-4">{item.role}</td>
+                          <td className="p-4 text-slate-500 text-xs">
+                            {item.provinsi ? `${item.provinsi}${item.kabupaten ? `, ${item.kabupaten}` : ''}` : '-'}
+                          </td>
+                          <td className="p-4">
                             {currentTab === 'trash' ? (
-                              <button onClick={() => confirmAction('restore', item)} title="Pulihkan" className="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded">
-                                <i className="ph ph-arrow-counter-clockwise text-lg" />
-                              </button>
+                              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-500">
+                                <i className="ph ph-trash" /> Di Sampah
+                              </span>
                             ) : (
-                              <>
-                                <button onClick={() => openForm(item)} className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded" title="Edit">
-                                  <i className="ph ph-pencil-simple text-lg" />
-                                </button>
-                                <button onClick={() => confirmAction('delete', item)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded" title="Hapus (Soft Delete)">
-                                  <i className="ph ph-trash text-lg" />
-                                </button>
-                              </>
+                              <button onClick={() => confirmAction('toggle_status', item)} className="inline-flex items-center gap-2 cursor-pointer">
+                                <div className={`relative w-9 h-5 rounded-full transition-colors ${item.is_active ? 'bg-emerald-500' : 'bg-slate-200'}`}>
+                                  <div className={`absolute top-[2px] left-[2px] w-4 h-4 bg-white rounded-full transition-transform ${item.is_active ? 'translate-x-4' : 'translate-x-0'}`} />
+                                </div>
+                                <span className={`text-xs font-semibold ${item.is_active ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                  {item.is_active ? 'Aktif' : 'Non-aktif'}
+                                </span>
+                              </button>
                             )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-3">
+                              <button
+                                type="button"
+                                disabled={globalIndex === 0}
+                                onClick={() => handleMove(globalIndex, 'up')}
+                                className="p-1 hover:bg-slate-100 text-slate-500 hover:text-slate-700 rounded disabled:opacity-20 transition-all"
+                                title="Pindahkan ke atas"
+                              >
+                                <i className="ph-bold ph-arrow-up text-base" />
+                              </button>
+                              <button
+                                type="button"
+                                disabled={globalIndex === allItems.length - 1}
+                                onClick={() => handleMove(globalIndex, 'down')}
+                                className="p-1 hover:bg-slate-100 text-slate-500 hover:text-slate-700 rounded disabled:opacity-20 transition-all"
+                                title="Pindahkan ke bawah"
+                              >
+                                <i className="ph-bold ph-arrow-down text-base" />
+                              </button>
+                            </div>
+                          </td>
+                          <td className="p-4 text-right">
+                            <div className="flex justify-end gap-2">
+                              {currentTab === 'trash' ? (
+                                <button onClick={() => confirmAction('restore', item)} title="Pulihkan" className="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded">
+                                  <i className="ph ph-arrow-counter-clockwise text-lg" />
+                                </button>
+                              ) : (
+                                <>
+                                  <button onClick={() => openForm(item)} className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded" title="Edit">
+                                    <i className="ph ph-pencil-simple text-lg" />
+                                  </button>
+                                  <button onClick={() => confirmAction('delete', item)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded" title="Hapus (Soft Delete)">
+                                    <i className="ph ph-trash text-lg" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
 
               {/* Pagination */}
-              {totalPages > 1 && (
                 <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
                   <span className="text-xs text-slate-500">Hal {currentPage} dari {totalPages} · {totalData} data</span>
+                  {totalPages > 1 && (
                   <div className="flex items-center gap-1.5">
                     <button
                       disabled={currentPage <= 1}
@@ -611,12 +631,11 @@ export default function PengurusAdmin() {
                       <i className="ph-bold ph-caret-right" />
                     </button>
                   </div>
+                  )}
                 </div>
-              )}
             </>
           )}
         </div>
-
       </div>
 
         {/* Form Modal */}
@@ -898,6 +917,6 @@ export default function PengurusAdmin() {
             </div>
           </div>
         )}
-    </AdminLayout>
+      </AdminLayout>
   )
 }

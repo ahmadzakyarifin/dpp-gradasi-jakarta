@@ -15,9 +15,8 @@ type Slider struct {
 	EventDate *string `gorm:"size:100"`
 	Location  *string `gorm:"size:200"`
 	ImagePath string  `gorm:"size:500;not null"`
-	LinkURL   *string `gorm:"size:500"`
 	SortOrder int     `gorm:"default:0"`
-	IsActive  bool    `gorm:"default:true"`
+	IsPublished bool    `gorm:"default:true;column:is_published"`
 	CreatedBy *uint
 	CreatedAt time.Time
 	UpdatedAt time.Time

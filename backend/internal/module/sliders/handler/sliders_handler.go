@@ -21,7 +21,7 @@ func NewSlidersHandler(svc service.SlidersService) *SlidersHandler {
 }
 
 func (h *SlidersHandler) GetAll(c *gin.Context) {
-	list, err := h.svc.GetAll(c.Request.Context(), false)
+	list, err := h.svc.GetAll(c.Request.Context(), true)
 	if err != nil {
 		helper.HandleServiceError(c, err)
 		return
@@ -161,4 +161,19 @@ func (h *SlidersHandler) Reorder(c *gin.Context) {
 		return
 	}
 	helper.SuccessResponse(c, http.StatusOK, "SLIDER_REORDERED", "urutan slider berhasil diubah", nil, nil)
+}
+
+func (h *SlidersHandler) UploadImage(c *gin.Context) {
+	file, err := c.FormFile("image")
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "File gambar wajib diunggah (field 'image')", nil)
+		return
+	}
+
+	resp, err := h.svc.UploadImage(c.Request.Context(), file)
+	if err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+	helper.SuccessResponse(c, http.StatusOK, "SLIDER_IMAGE_UPLOADED", "Gambar berhasil diunggah.", resp, nil)
 }

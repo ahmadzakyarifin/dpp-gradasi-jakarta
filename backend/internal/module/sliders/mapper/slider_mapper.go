@@ -37,9 +37,8 @@ func CreateReqToEntity(req *dto.SliderRequest) *entity.Slider {
 		EventDate: req.EventDate,
 		Location:  req.Location,
 		ImagePath: req.ImagePath,
-		LinkURL:   req.LinkURL,
 		SortOrder: req.SortOrder,
-		IsActive:  req.IsActive,
+		IsPublished:  req.IsPublished,
 	}
 }
 
@@ -55,9 +54,8 @@ func UpdateReqToEntity(req *dto.SliderRequest, sl *entity.Slider) {
 	sl.EventDate = req.EventDate
 	sl.Location = req.Location
 	sl.ImagePath = req.ImagePath
-	sl.LinkURL = req.LinkURL
 	sl.SortOrder = req.SortOrder
-	sl.IsActive = req.IsActive
+	sl.IsPublished = req.IsPublished
 }
 
 // EntityToModel mengonversi entity menjadi model GORM.
@@ -74,9 +72,8 @@ func EntityToModel(e *entity.Slider) *model.Slider {
 		EventDate: e.EventDate,
 		Location:  e.Location,
 		ImagePath: e.ImagePath,
-		LinkURL:   e.LinkURL,
 		SortOrder: e.SortOrder,
-		IsActive:  e.IsActive,
+		IsPublished:  e.IsPublished,
 		CreatedBy: e.CreatedBy,
 		CreatedAt: e.CreatedAt,
 		UpdatedAt: e.UpdatedAt,
@@ -98,9 +95,8 @@ func ModelToEntity(m *model.Slider) *entity.Slider {
 		EventDate: m.EventDate,
 		Location:  m.Location,
 		ImagePath: m.ImagePath,
-		LinkURL:   m.LinkURL,
 		SortOrder: m.SortOrder,
-		IsActive:  m.IsActive,
+		IsPublished:  m.IsPublished,
 		CreatedBy: m.CreatedBy,
 		CreatedAt: m.CreatedAt,
 		UpdatedAt: m.UpdatedAt,
@@ -119,7 +115,7 @@ func EntityToResponse(e *entity.Slider) dto.SliderResponse {
 		IsNew:     e.IsNew,
 		ImagePath: e.ImagePath,
 		SortOrder: e.SortOrder,
-		IsActive:  e.IsActive,
+		IsPublished:  e.IsPublished,
 	}
 	if e.Subtitle != nil {
 		r.Subtitle = *e.Subtitle
@@ -132,9 +128,6 @@ func EntityToResponse(e *entity.Slider) dto.SliderResponse {
 	}
 	if e.Location != nil {
 		r.Location = *e.Location
-	}
-	if e.LinkURL != nil {
-		r.LinkURL = *e.LinkURL
 	}
 	return r
 }

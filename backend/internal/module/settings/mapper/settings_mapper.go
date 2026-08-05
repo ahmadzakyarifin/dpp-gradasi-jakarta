@@ -41,9 +41,10 @@ func ModelToEntity(m *model.Settings) *entity.Settings {
 		GreetingImagePath:  m.GreetingImagePath,
 		LoginHeroTitle:     m.LoginHeroTitle,
 		LoginHeroDescription: m.LoginHeroDescription,
-		CreatedAt:          m.CreatedAt,
-		UpdatedAt:          m.UpdatedAt,
-		UpdatedBy:          m.UpdatedBy,
+		LogRetentionDays:     m.LogRetentionDays,
+		CreatedAt:            m.CreatedAt,
+		UpdatedAt:            m.UpdatedAt,
+		UpdatedBy:            m.UpdatedBy,
 	}
 }
 
@@ -89,8 +90,9 @@ func EntityToResponse(e *entity.Settings) *dto.SettingsResponse {
 		GreetingImagePath:  e.GreetingImagePath,
 		LoginHeroTitle:     e.LoginHeroTitle,
 		LoginHeroDescription: e.LoginHeroDescription,
-		CreatedAt:          e.CreatedAt,
-		UpdatedAt:          e.UpdatedAt,
-		UpdatedBy:          e.UpdatedBy,
+		LogRetentionDays:     e.LogRetentionDays,
+		CreatedAt:            e.CreatedAt,
+		UpdatedAt:            e.UpdatedAt,
+		UpdatedBy:            e.UpdatedBy,
 	}
 }

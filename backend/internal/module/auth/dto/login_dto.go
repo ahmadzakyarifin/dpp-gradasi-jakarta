@@ -26,6 +26,8 @@ type AuthUser struct {
 	ID                 uint     `json:"id"`
 	Name               string   `json:"name"`
 	Email              string   `json:"email"`
+	EmailPending       *string  `json:"email_pending,omitempty"`
+	EmailVerifiedAt    *string  `json:"email_verified_at,omitempty"`
 	PhotoPath          *string  `json:"photo_path"`
 	Role               AuthRole `json:"role"`
 	Status             string   `json:"status"`

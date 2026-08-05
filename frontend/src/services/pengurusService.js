@@ -100,4 +100,11 @@ export const pengurusService = {
       body: JSON.stringify({ ids }),
     })
   },
+
+  reorder(ids) {
+    return apiRequest('/admin/pengurus/reorder', {
+      method: 'PUT',
+      body: JSON.stringify({ ids }),
+    })
+  },
 }

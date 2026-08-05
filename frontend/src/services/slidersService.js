@@ -67,4 +67,13 @@ export const slidersService = {
       body: JSON.stringify({ ids }),
     })
   },
+
+  uploadImage(file) {
+    const formData = new FormData()
+    formData.append('image', file)
+    return apiRequest('/sliders/upload-image', {
+      method: 'POST',
+      body: formData,
+    })
+  },
 }

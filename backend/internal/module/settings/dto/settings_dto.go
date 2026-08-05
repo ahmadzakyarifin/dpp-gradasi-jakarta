@@ -26,9 +26,10 @@ type SettingsResponse struct {
 	GreetingImagePath  string   `json:"greeting_image_path"`
 	LoginHeroTitle     string   `json:"login_hero_title"`
 	LoginHeroDescription string   `json:"login_hero_description"`
-	CreatedAt          string   `json:"created_at"`
-	UpdatedAt          string   `json:"updated_at,omitempty"`
-	UpdatedBy          *uint    `json:"updated_by,omitempty"`
+	LogRetentionDays     int      `json:"log_retention_days"`
+	CreatedAt            string   `json:"created_at"`
+	UpdatedAt            string   `json:"updated_at,omitempty"`
+	UpdatedBy            *uint    `json:"updated_by,omitempty"`
 
 	// Status CAPTCHA dari config backend — dibaca frontend (single source of truth)
 	CaptchaEnabled bool   `json:"captcha_enabled,omitempty"`

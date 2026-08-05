@@ -9,7 +9,7 @@ type BeritaTag struct {
 	Tag      string
 }
 
-// Berita adalah representasi domain dari tabel berita.
+// Berita adalah representasi domain dari tabel `berita`.
 type Berita struct {
 	ID            uint
 	Slug          string

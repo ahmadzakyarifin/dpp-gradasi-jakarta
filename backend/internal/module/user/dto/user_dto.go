@@ -73,6 +73,7 @@ type UserResponse struct {
 	RoleDisplayName string  `json:"role_display_name"`
 	Name            string  `json:"name"`
 	Email           string  `json:"email"`
+	EmailPending    *string `json:"email_pending,omitempty"`
 	PhotoPath       *string `json:"photo_path"`
 	Status          string  `json:"status"`
 

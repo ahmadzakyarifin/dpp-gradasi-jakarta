@@ -82,5 +82,20 @@ func (s *dashboardService) GetSummary(ctx context.Context) (*dashdto.DashboardSu
 		res.CMSActions = summary.FinanceAction
 	}
 
+	// Latest Messages
+	var latestMsgs []kontakmodel.PesanKontak
+	if err := s.db.Model(&kontakmodel.PesanKontak{}).Where("deleted_at IS NULL").Order("created_at DESC").Limit(4).Find(&latestMsgs).Error; err == nil {
+		res.LatestMessages = make([]dashdto.DashboardMessage, len(latestMsgs))
+		for i, msg := range latestMsgs {
+			res.LatestMessages[i] = dashdto.DashboardMessage{
+				ID:        msg.ID,
+				Nama:      msg.Nama,
+				Subjek:    msg.Subjek,
+				CreatedAt: msg.CreatedAt.Format("2006-01-02 15:04:05"),
+				IsRead:    msg.IsRead,
+			}
+		}
+	}
+
 	return res, nil
 }

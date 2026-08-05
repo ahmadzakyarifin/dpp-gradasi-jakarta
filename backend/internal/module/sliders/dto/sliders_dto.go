@@ -2,31 +2,29 @@ package dto
 
 // SliderRequest create/update
 type SliderRequest struct {
-	Title     string  `json:"title" binding:"required"`
-	Subtitle  *string `json:"subtitle,omitempty"`
-	Tag       *string `json:"tag,omitempty"`
-	IsNew     bool    `json:"is_new"`
-	EventDate *string `json:"event_date,omitempty"`
-	Location  *string `json:"location,omitempty"`
-	ImagePath string  `json:"image_path" binding:"required"`
-	LinkURL   *string `json:"link_url,omitempty"`
-	SortOrder int     `json:"sort_order"`
-	IsActive  bool    `json:"is_active"`
+	Title       string  `json:"title" binding:"required"`
+	Subtitle    *string `json:"subtitle,omitempty"`
+	Tag         *string `json:"tag,omitempty"`
+	IsNew       bool    `json:"is_new"`
+	EventDate   *string `json:"event_date,omitempty"`
+	Location    *string `json:"location,omitempty"`
+	ImagePath   string  `json:"image_path" binding:"required"`
+	SortOrder   int     `json:"sort_order"`
+	IsPublished bool    `json:"is_published"`
 }
 
 // SliderResponse response
 type SliderResponse struct {
-	ID        uint   `json:"id"`
-	Title     string `json:"title"`
-	Subtitle  string `json:"subtitle,omitempty"`
-	Tag       string `json:"tag,omitempty"`
-	IsNew     bool   `json:"is_new"`
-	EventDate string `json:"event_date,omitempty"`
-	Location  string `json:"location,omitempty"`
-	ImagePath string `json:"image_path"`
-	LinkURL   string `json:"link_url,omitempty"`
-	SortOrder int    `json:"sort_order"`
-	IsActive  bool   `json:"is_active"`
+	ID          uint   `json:"id"`
+	Title       string `json:"title"`
+	Subtitle    string `json:"subtitle,omitempty"`
+	Tag         string `json:"tag,omitempty"`
+	IsNew       bool   `json:"is_new"`
+	EventDate   string `json:"event_date,omitempty"`
+	Location    string `json:"location,omitempty"`
+	ImagePath   string `json:"image_path"`
+	SortOrder   int    `json:"sort_order"`
+	IsPublished bool   `json:"is_published"`
 }
 
 // SliderListResponse list
@@ -42,4 +40,8 @@ type ReorderRequest struct {
 
 type BulkRequest struct {
 	IDs []uint `json:"ids" binding:"required,min=1"`
+}
+
+type UploadImageResponse struct {
+	ImagePath string `json:"image_path"`
 }

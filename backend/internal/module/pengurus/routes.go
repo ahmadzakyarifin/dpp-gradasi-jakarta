@@ -27,5 +27,6 @@ func RegisterRoutes(api *gin.RouterGroup, h *handler.PengurusHandler, jwtSecret 
 		admin.POST("/bulk-restore", h.BulkRestore)
 		admin.DELETE("/:id", h.Delete)
 		admin.POST("/:id/restore", h.Restore)
+		admin.PUT("/reorder", h.Reorder)
 	}
 }

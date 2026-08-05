@@ -6,7 +6,7 @@ import ToastNotification from '../../components/admin/ToastNotification'
 import { resolveAssetUrl } from '../../utils/assetUrl'
 import { useFormErrors, useRateLimitCooldown } from '../../utils/parseApiError'
 
-const PAGE_SIZE = 5
+const PAGE_SIZE = 10
 
 export default function SlidersAdmin() {
   const [items, setItems] = useState([])
@@ -16,7 +16,7 @@ export default function SlidersAdmin() {
   const [currentTab, setCurrentTab] = useState('active') // active | trash
   const [selectedItems, setSelectedItems] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
-  const [filterActive, setFilterActive] = useState('')
+  const [filterStatus, setFilterStatus] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
 
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -27,27 +27,42 @@ export default function SlidersAdmin() {
     subtitle: '',
     tag: '',
     image_path: '',
-    link_url: '',
     sort_order: 1,
     event_date: '',
     location: '',
     is_new: false,
-    is_active: true,
+    is_published: true,
   })
 
   const [formErrors, setFormErrors] = useState({})
   const [touched, setTouched] = useState({})
+  const [imageUploading, setImageUploading] = useState(false)
+
+  const handleImageUpload = async (file) => {
+    if (!file) return
+    setImageUploading(true)
+    try {
+      const res = await slidersService.uploadImage(file)
+      if (res?.data?.image_path) {
+        setFormData(prev => ({ ...prev, image_path: res.data.image_path }))
+        showToast('Gambar berhasil diunggah.')
+      } else {
+        showToast('Gagal mengunggah gambar.', 'error')
+      }
+    } catch (err) {
+      showToast(err?.message || 'Gagal mengunggah gambar.', 'error')
+    } finally {
+      setImageUploading(false)
+    }
+  }
 
   const validateForm = useCallback((data = formData) => {
     const errors = {}
     if (!data.title || !data.title.trim()) {
       errors.title = 'Judul utama wajib diisi.'
     }
-    if (data.sort_order === undefined || data.sort_order === null || String(data.sort_order).trim() === '') {
-      errors.sort_order = 'Urutan wajib diisi.'
-    }
     if (!data.image_path || !data.image_path.trim()) {
-      errors.image_path = 'Gambar slider (URL) wajib diisi.'
+      errors.image_path = 'Gambar slider wajib diunggah.'
     }
     return errors
   }, [formData])
@@ -87,21 +102,24 @@ export default function SlidersAdmin() {
   useEffect(() => {
     setCurrentPage(1)
     setSelectedItems([])
-  }, [currentTab, searchQuery, filterActive])
+  }, [currentTab, searchQuery, filterStatus])
 
   // --- Filtering (mirip sliders.html) ---
   const filteredItems = items
     .filter(item => {
-      const inTab = currentTab === 'trash' ? !item.is_active : item.is_active
-      if (!inTab) return false
+      const inTab = currentTab === 'trash' ? !item.is_published : true // default show all active/draft
+      if (currentTab === 'trash') {
+        // jika ada soft delete
+        return false // backend slider soft delete tidak support trash list di FE saat ini (terhapus permanen/soft delete tanpa list)
+      }
       if (searchQuery) {
         const q = searchQuery.toLowerCase()
         const hay = `${item.title || ''} ${item.subtitle || ''}`.toLowerCase()
         if (!hay.includes(q)) return false
       }
-      if (filterActive) {
-        const wantActive = filterActive === 'active'
-          if (item.is_active !== wantActive) return false
+      if (filterStatus) {
+        const wantPublished = filterStatus === 'published'
+        if (item.is_published !== wantPublished) return false
       }
       return true
     })
@@ -121,7 +139,7 @@ export default function SlidersAdmin() {
   }
   function resetFilter() {
     setSearchQuery('')
-    setFilterActive('')
+    setFilterStatus('')
     setCurrentPage(1)
     showToast('Filter direset.', 'success')
   }
@@ -139,12 +157,11 @@ export default function SlidersAdmin() {
         subtitle: item.subtitle || '',
         tag: item.tag || '',
         image_path: item.image_path || item.image_url || '',
-        link_url: item.link_url || '',
         sort_order: item.sort_order,
         event_date: item.event_date || '',
         location: item.location || '',
         is_new: item.is_new,
-        is_active: item.is_active,
+        is_published: item.is_published,
       })
     } else {
       setFormMode('create')
@@ -154,12 +171,11 @@ export default function SlidersAdmin() {
         subtitle: '',
         tag: '',
         image_path: '',
-        link_url: '',
         sort_order: items.length + 1,
         event_date: '',
         location: '',
         is_new: false,
-        is_active: true,
+        is_published: true,
       })
     }
     setIsFormOpen(true)
@@ -202,7 +218,18 @@ export default function SlidersAdmin() {
     const newOrder = Number(value)
     if (!Number.isFinite(newOrder) || newOrder === item.sort_order) return
     try {
-      await slidersService.update(item.id, { ...item, sort_order: newOrder })
+      const payload = {
+        title: item.title,
+        subtitle: item.subtitle,
+        tag: item.tag,
+        image_path: item.image_path || item.image_url,
+        sort_order: newOrder,
+        event_date: item.event_date,
+        location: item.location,
+        is_new: item.is_new,
+        is_published: item.is_published
+      }
+      await slidersService.update(item.id, payload)
       showToast('Urutan slider diperbarui.')
       loadSliders()
     } catch (err) {
@@ -210,32 +237,46 @@ export default function SlidersAdmin() {
     }
   }
 
-  const handleMove = async (index, direction) => {
-    const targetIndex = direction === 'up' ? index - 1 : index + 1
-    if (targetIndex < 0 || targetIndex >= filteredItems.length) return
+  const handleMove = async (globalIndex, direction) => {
+    const targetGlobalIndex = direction === 'up' ? globalIndex - 1 : globalIndex + 1
+    if (targetGlobalIndex < 0 || targetGlobalIndex >= filteredItems.length) return
 
-    const currentItem = filteredItems[index]
-    const targetItem = filteredItems[targetIndex]
+    const currentItem = filteredItems[globalIndex]
+    const targetItem = filteredItems[targetGlobalIndex]
 
-    const currentOrder = currentItem.sort_order ?? 0
-    const targetOrder = targetItem.sort_order ?? 0
+    // Buat urutan baru untuk filteredItems
+    const newFilteredItems = [...filteredItems]
+    newFilteredItems[globalIndex] = targetItem
+    newFilteredItems[targetGlobalIndex] = currentItem
 
-    let newCurrentOrder = targetOrder
-    let newTargetOrder = currentOrder
-    if (currentOrder === targetOrder) {
-      if (direction === 'up') {
-        newCurrentOrder = targetOrder - 1
-      } else {
-        newCurrentOrder = targetOrder + 1
-      }
-    }
+    // Map balik ke list items (state asli) agar urutannya konsisten
+    const newItems = items.map(item => {
+      const foundInFiltered = newFilteredItems.find(f => f.id === item.id)
+      return foundInFiltered ? foundInFiltered : item
+    })
 
+    // Cari cara mencocokkan urutan global di state items utama
+    const itemsOrderMap = new Map(newFilteredItems.map((item, idx) => [item.id, idx]))
+    
+    // Sort items berdasarkan posisi barunya di filtered items
+    const updatedItems = [...items].sort((a, b) => {
+      const posA = itemsOrderMap.has(a.id) ? itemsOrderMap.get(a.id) : 9999
+      const posB = itemsOrderMap.has(b.id) ? itemsOrderMap.get(b.id) : 9999
+      if (posA !== posB) return posA - posB
+      return (a.sort_order ?? 0) - (b.sort_order ?? 0)
+    })
+
+    // Update local state instan untuk visual responsive
+    setItems(updatedItems)
+
+    const reorderedIds = updatedItems.filter(item => !item.deleted_at).map(item => item.id)
     try {
-      await slidersService.update(targetItem.id, { ...targetItem, sort_order: newTargetOrder })
-      await slidersService.update(currentItem.id, { ...currentItem, sort_order: newCurrentOrder })
+      await slidersService.reorder(reorderedIds)
       showToast('Urutan slider diperbarui.')
       loadSliders()
     } catch (err) {
+      // Rollback
+      loadSliders()
       showToast(err.message || 'Gagal mengubah urutan', 'error')
     }
   }
@@ -264,12 +305,23 @@ export default function SlidersAdmin() {
         },
       },
       toggle_publish: {
-        type: 'info',
-        title: item.is_active ? 'Nonaktifkan Slider' : 'Aktifkan Slider',
-        message: `Anda akan ${item.is_active ? 'menonaktifkan' : 'mengaktifkan'} "${title}". Lanjutkan?`,
+        type: item.is_published ? 'warning' : 'info',
+        title: item.is_published ? 'Jadikan Draft' : 'Terbitkan Slider',
+        message: `Anda akan ${item.is_published ? 'mengubah status slider menjadi draft' : 'menerbitkan slider'} "${title}". Lanjutkan?`,
         action: async () => {
-          await slidersService.update(item.id, { ...item, is_active: !item.is_active })
-          showToast(item.is_active ? 'Slider dinonaktifkan.' : 'Slider diaktifkan.')
+          const payload = {
+            title: item.title,
+            subtitle: item.subtitle,
+            tag: item.tag,
+            image_path: item.image_path || item.image_url,
+            sort_order: item.sort_order,
+            event_date: item.event_date,
+            location: item.location,
+            is_new: item.is_new,
+            is_published: !item.is_published
+          }
+          await slidersService.update(item.id, payload)
+          showToast(item.is_published ? 'Slider dijadikan draft.' : 'Slider berhasil diterbitkan!')
           loadSliders()
         },
       },
@@ -322,13 +374,13 @@ export default function SlidersAdmin() {
         />
       </div>
       <select
-        value={filterActive}
-        onChange={e => setFilterActive(e.target.value)}
+        value={filterStatus}
+        onChange={e => setFilterStatus(e.target.value)}
         className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
       >
         <option value="">Semua Status</option>
-        <option value="active">Aktif</option>
-        <option value="inactive">Non-aktif</option>
+        <option value="published">Terbit</option>
+        <option value="draft">Draft</option>
       </select>
       <button
         onClick={resetFilter}
@@ -352,7 +404,7 @@ export default function SlidersAdmin() {
               onClick={() => setCurrentTab('active')}
               className={`px-4 py-1.5 rounded-md text-sm transition-all duration-200 ${currentTab === 'active' ? 'bg-brand-50 text-brand-600 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'}`}
             >
-              Daftar Aktif
+              Aktif & Draft
             </button>
             <button
               onClick={() => setCurrentTab('trash')}
@@ -471,13 +523,13 @@ export default function SlidersAdmin() {
                           <button
                             onClick={() => confirmAction('toggle_publish', item)}
                             className="relative inline-flex items-center cursor-pointer"
-                            title={item.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                            title={item.is_published ? 'Jadikan Draft' : 'Terbitkan'}
                           >
-                            <span className={`w-9 h-5 rounded-full transition-colors relative ${item.is_active ? 'bg-brand-500' : 'bg-gray-200'}`}>
-                              <span className={`absolute top-[2px] left-[2px] h-4 w-4 bg-white border rounded-full transition-transform ${item.is_active ? 'translate-x-4 border-white' : 'border-gray-300'}`} />
+                            <span className={`w-9 h-5 rounded-full transition-colors relative ${item.is_published ? 'bg-brand-500' : 'bg-gray-200'}`}>
+                              <span className={`absolute top-[2px] left-[2px] h-4 w-4 bg-white border rounded-full transition-transform ${item.is_published ? 'translate-x-4 border-white' : 'border-gray-300'}`} />
                             </span>
-                            <span className={`ml-2 text-xs font-medium ${item.is_active ? 'text-brand-600' : 'text-gray-400'}`}>
-                              {item.is_active ? 'Aktif' : 'Non-aktif'}
+                            <span className={`ml-2 text-xs font-medium ${item.is_published ? 'text-brand-600' : 'text-gray-400'}`}>
+                              {item.is_published ? 'Terbit' : 'Draft'}
                             </span>
                           </button>
                         ) : (
@@ -605,7 +657,7 @@ export default function SlidersAdmin() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none"
                   />
                 </div>
-                <div>
+                <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Badge Tag <span className="text-gray-400 font-normal">(opsional)</span></label>
                   <input
                     type="text"
@@ -615,70 +667,43 @@ export default function SlidersAdmin() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Urutan (Sort Order) <span className="text-red-500">*</span></label>
-                  <input
-                    type="number"
-                    value={formData.sort_order}
-                    onChange={e => {
-                      const val = e.target.value
-                      setFormData({ ...formData, sort_order: val === '' ? '' : Number(val) })
-                      clearFieldError('sort_order')
-                      if (touched.sort_order) {
-                        const errs = validateForm({ ...formData, sort_order: val })
-                        setFormErrors(prev => ({ ...prev, sort_order: errs.sort_order }))
-                      }
-                    }}
-                    onBlur={() => {
-                      setTouched(prev => ({ ...prev, sort_order: true }))
-                      const errs = validateForm()
-                      setFormErrors(prev => ({ ...prev, sort_order: errs.sort_order }))
-                    }}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none transition-colors ${touched.sort_order && formErrors.sort_order ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-gray-300'}`}
-                  />
-                  {touched.sort_order && formErrors.sort_order && (
-                    <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
-                      <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.sort_order}
-                    </p>
-                  )}
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Gambar Slider (URL) <span className="text-red-500">*</span></label>
-                  <input
-                    type="url"
-                    value={formData.image_path}
-                    onChange={e => {
-                      setFormData({ ...formData, image_path: e.target.value })
-                      clearFieldError('image_path')
-                      if (touched.image_path) {
-                        const errs = validateForm({ ...formData, image_path: e.target.value })
-                        setFormErrors(prev => ({ ...prev, image_path: errs.image_path }))
-                      }
-                    }}
-                    onBlur={() => {
-                      setTouched(prev => ({ ...prev, image_path: true }))
-                      const errs = validateForm()
-                      setFormErrors(prev => ({ ...prev, image_path: errs.image_path }))
-                    }}
-                    placeholder="https://example.com/banner.jpg"
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none transition-colors ${touched.image_path && formErrors.image_path ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-gray-300'}`}
-                  />
+                 <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Gambar Slider <span className="text-red-500">*</span></label>
+                  <div className="flex items-center gap-3">
+                    {formData.image_path && (
+                      <img src={resolveAssetUrl(formData.image_path)} alt="Slider Cover" className="w-32 h-16 rounded-lg object-cover border border-slate-200 shrink-0" />
+                    )}
+                    <label className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 text-sm font-semibold cursor-pointer transition shrink-0">
+                      <i className="ph-bold ph-upload-simple" />
+                      {imageUploading ? 'Mengunggah...' : (formData.image_path ? 'Ganti Gambar' : 'Upload Gambar')}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="hidden"
+                        disabled={imageUploading}
+                        onChange={e => {
+                          const file = e.target.files?.[0]
+                          if (file) handleImageUpload(file)
+                          e.target.value = ''
+                        }}
+                      />
+                    </label>
+                    {formData.image_path && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, image_path: '' })}
+                        className="text-xs text-red-500 hover:text-red-700 font-medium"
+                      >
+                        Hapus
+                      </button>
+                    )}
+                  </div>
                   {touched.image_path && formErrors.image_path && (
                     <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
                       <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.image_path}
                     </p>
                   )}
                   <p className="text-xs text-gray-500 mt-1">Rekomendasi ukuran: 1920x600 px (Rasio lebar)</p>
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Link URL (Jika diklik) <span className="text-gray-400 font-normal">(opsional)</span></label>
-                  <input
-                    type="url"
-                    value={formData.link_url}
-                    onChange={e => setFormData({ ...formData, link_url: e.target.value })}
-                    placeholder="https://..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none"
-                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Kegiatan <span className="text-gray-400 font-normal">(opsional di slider)</span></label>
@@ -713,11 +738,11 @@ export default function SlidersAdmin() {
                   <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
                     <input
                       type="checkbox"
-                      checked={formData.is_active}
-                      onChange={e => setFormData({ ...formData, is_active: e.target.checked })}
+                      checked={formData.is_published}
+                      onChange={e => setFormData({ ...formData, is_published: e.target.checked })}
                       className="rounded border-gray-300 text-brand-600 focus:ring-brand-500 accent-brand-600 cursor-pointer"
                     />
-                    <span className="text-sm">Slider Aktif</span>
+                    <span className="text-sm">Terbitkan langsung (Published)</span>
                   </label>
                 </div>
               </div>

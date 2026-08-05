@@ -38,10 +38,11 @@ type UserService interface {
 	BulkRestore(ctx context.Context, ids []uint) error
 	GetDependencyInfo(ctx context.Context, id uint) (map[string]interface{}, error)
 	CheckUnique(ctx context.Context, field string, value string, excludeID uint) (bool, error)
-	UpdateProfile(ctx context.Context, id uint, name string, email string) (*entity.User, error)
+	UpdateProfile(ctx context.Context, id uint, name string, email string) (*entity.User, string, error)
 	GetProfile(ctx context.Context, userID uint) (*entity.User, error)
 	ChangePassword(ctx context.Context, userID uint, oldPassword string, newPassword string) error
 	VerifyEmail(ctx context.Context, userID uint, token string) error
+	ResetPassword(ctx context.Context, id uint, newPassword string) error
 }
 
 type userService struct {
@@ -125,7 +126,7 @@ func (s *userService) Create(ctx context.Context, req dto.UserCreateReq) (*entit
 	}
 
 	// Kirim email aktivasi (langsung, sync via template email)
-	if err := s.sendActivationEmail(ctx, user); err != nil {
+	if _, err := s.sendActivationEmail(ctx, user); err != nil {
 		// Email gagal bukan berarti user gagal dibuat — log saja.
 		_ = err
 	}
@@ -319,18 +320,18 @@ func (s *userService) BulkRestore(ctx context.Context, ids []uint) error {
 	return nil
 }
 
-func (s *userService) sendActivationEmail(ctx context.Context, user *entity.User) error {
-	if s.mailer == nil {
-		return nil
-	}
-
+func (s *userService) sendActivationEmail(ctx context.Context, user *entity.User) (string, error) {
 	rawToken, _, expiresAt, err := helper.GenerateActivationToken(s.cfg.JWT.Secret, 72)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if err := s.authRepo.SaveAuthToken(ctx, user.ID, rawToken, "activation", expiresAt); err != nil {
-		return err
+		return "", err
+	}
+
+	if s.mailer == nil {
+		return rawToken, nil
 	}
 
 	link := fmt.Sprintf("%s/reset-password?token=%s",
@@ -343,10 +344,42 @@ func (s *userService) sendActivationEmail(ctx context.Context, user *entity.User
 		"URL":  link,
 	})
 	if err != nil {
-		return fmt.Errorf("gagal merender template email: %w", err)
+		return rawToken, fmt.Errorf("gagal merender template email: %w", err)
 	}
 
-	return s.mailer.Send(user.Email, "Aktivasi Akun", html)
+	sendErr := s.mailer.Send(user.Email, "Aktivasi Akun", html)
+	return rawToken, sendErr
+}
+
+func (s *userService) sendEmailChangeOTP(ctx context.Context, user *entity.User) (string, error) {
+	rawToken, _, expiresAt, err := helper.GenerateEmailChangeOTP(s.cfg.JWT.Secret)
+	if err != nil {
+		return "", err
+	}
+
+	if err := s.authRepo.SaveAuthToken(ctx, user.ID, rawToken, "activation", expiresAt); err != nil {
+		return "", err
+	}
+
+	if s.mailer == nil {
+		return rawToken, nil
+	}
+
+	targetEmail := user.Email
+	if user.EmailPending != nil && *user.EmailPending != "" {
+		targetEmail = *user.EmailPending
+	}
+
+	html, err := emailtemplate.Render("otp_notification.html", map[string]any{
+		"Name": user.Name,
+		"OTP":  rawToken,
+	})
+	if err != nil {
+		return rawToken, fmt.Errorf("gagal merender template email: %w", err)
+	}
+
+	sendErr := s.mailer.Send(targetEmail, "Kode Verifikasi Ubah Email", html)
+	return rawToken, sendErr
 }
 
 func (s *userService) ResendNotification(ctx context.Context, id uint) error {
@@ -355,7 +388,7 @@ func (s *userService) ResendNotification(ctx context.Context, id uint) error {
 		return helper.NewNotFoundError("Pengguna tidak ditemukan")
 	}
 
-	if err := s.sendActivationEmail(ctx, user); err != nil {
+	if _, err := s.sendActivationEmail(ctx, user); err != nil {
 		return err
 	}
 
@@ -402,7 +435,7 @@ func (s *userService) BulkResendNotification(ctx context.Context, ids []uint) (*
 			continue
 		}
 
-		if err := s.sendActivationEmail(ctx, user); err != nil {
+		if _, err := s.sendActivationEmail(ctx, user); err != nil {
 			result.Failed++
 			result.Errors = append(result.Errors, fmt.Sprintf("%s: %s", user.Name, err.Error()))
 			continue
@@ -502,10 +535,10 @@ func (s *userService) CheckUnique(ctx context.Context, field string, value strin
 	}
 }
 
-func (s *userService) UpdateProfile(ctx context.Context, id uint, name string, email string) (*entity.User, error) {
+func (s *userService) UpdateProfile(ctx context.Context, id uint, name string, email string) (*entity.User, string, error) {
 	user, err := s.repo.FindByID(ctx, id)
 	if err != nil {
-		return nil, helper.NewNotFoundError("Pengguna tidak ditemukan")
+		return nil, "", helper.NewNotFoundError("Pengguna tidak ditemukan")
 	}
 
 	oldName := user.Name
@@ -519,20 +552,23 @@ func (s *userService) UpdateProfile(ctx context.Context, id uint, name string, e
 		if existing, _ := s.repo.FindByEmail(ctx, newEmail); existing != nil {
 			v := helper.NewValidationError()
 			v.Add("email", fmt.Sprintf("Email '%s' sudah terdaftar", newEmail))
-			return nil, v
+			return nil, "", v
 		}
 		emailChanged = true
-		user.Email = newEmail
-		user.EmailVerifiedAt = nil // Mark as unverified until verified
+		// Simpan ke pending, jangan langsung ubah email utama
+		user.EmailPending = &newEmail
 	}
 
 	if err := s.repo.UpdateTx(ctx, user); err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
+	token := ""
 	if emailChanged {
-		// Trigger activation/verification email send
-		_ = s.sendActivationEmail(ctx, user)
+		// Kirim verifikasi ke email pending
+		var err error
+		token, err = s.sendEmailChangeOTP(ctx, user)
+		_ = err
 	}
 
 	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
@@ -545,15 +581,17 @@ func (s *userService) UpdateProfile(ctx context.Context, id uint, name string, e
 		EntityLabel: user.Name,
 		Description: fmt.Sprintf("Memperbarui profil: %s", user.Name),
 		Metadata: map[string]any{
-			"old_name":      oldName,
-			"new_name":      user.Name,
-			"old_email":     oldEmail,
-			"new_email":     user.Email,
-			"email_changed": emailChanged,
+			"old_name":       oldName,
+			"new_name":       user.Name,
+			"old_email":      oldEmail,
+			"new_email_pending": newEmail,
+			"email_changed":  emailChanged,
 		},
 	})
 
-	return user, nil
+	// Refresh user dari DB before return ( agar EmailPending muncul)
+	updated, _ := s.repo.FindByID(ctx, id)
+	return updated, token, nil
 }
 
 // GetProfile mengembalikan profil user berdasarkan ID dari token login.
@@ -611,7 +649,7 @@ func (s *userService) ChangePassword(ctx context.Context, userID uint, oldPasswo
 }
 
 // VerifyEmail memverifikasi token aktivasi email untuk user yang sedang login.
-// Menggunakan tabel activation_tokens (project Redis-free), bukan Redis.
+// Jika user memiliki email_pending, verifikasi akan memindahkan email_pending ke email utama.
 func (s *userService) VerifyEmail(ctx context.Context, userID uint, token string) error {
 	tokenUserID, err := s.authRepo.FindAuthToken(ctx, token, "activation")
 	if err != nil {
@@ -621,29 +659,100 @@ func (s *userService) VerifyEmail(ctx context.Context, userID uint, token string
 		return &helper.AuthenticationError{Message: "Token verifikasi tidak valid atau telah kedaluwarsa.", Code: "AUTH_TOKEN_INVALID_OR_EXPIRED"}
 	}
 
+	// Cek apakah ada email pending
+	user, err := s.repo.FindByID(ctx, userID)
+	if err != nil {
+		return helper.NewNotFoundError("Pengguna tidak ditemukan")
+	}
+
 	now := time.Now()
-	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Set email_verified_at
 		if err := tx.Model(&entity.User{}).Where("id = ?", userID).Update("email_verified_at", now).Error; err != nil {
 			return err
 		}
+		// Jika ada email_pending, pindahkan ke email utama
+		if user.EmailPending != nil && *user.EmailPending != "" {
+			newEmail := strings.ToLower(strings.TrimSpace(*user.EmailPending))
+			// Cek uniqueness (tetap perlu, walau sudah dicek sebelumnya)
+			if existing, _ := s.repo.FindByEmail(ctx, newEmail); existing != nil && existing.ID != userID {
+				v := helper.NewValidationError()
+				v.Add("email", fmt.Sprintf("Email '%s' sudah terdaftar", newEmail))
+				return v
+			}
+			if err := tx.Model(&entity.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
+				"email":        newEmail,
+				"email_pending": nil,
+			}).Error; err != nil {
+				return err
+			}
+		}
 		return s.authRepo.DeleteAuthToken(ctx, token, "activation")
-	}); err != nil {
+	})
+	if err != nil {
 		return errors.New("gagal memverifikasi email")
 	}
 
-	user, _ := s.repo.FindByID(ctx, userID)
-	if user != nil {
-		s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
-			ActorID:     &userID,
-			ActorName:   user.Name,
-			ActorRole:   user.Role,
-			Action:      "users.verify_email",
-			EntityType:  "users",
-			EntityID:    &userID,
-			EntityLabel: user.Name,
-			Description: fmt.Sprintf("Email diverifikasi: %s", user.Name),
-		})
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
+		ActorID:     &userID,
+		ActorName:   user.Name,
+		ActorRole:   user.Role,
+		Action:      "users.verify_email",
+		EntityType:  "users",
+		EntityID:    &userID,
+		EntityLabel: user.Name,
+		Description: fmt.Sprintf("Email diverifikasi: %s", user.Name),
+	})
+	return nil
+}
+
+func (s *userService) ResetPassword(ctx context.Context, id uint, newPassword string) error {
+	newPassword = strings.TrimSpace(newPassword)
+	if newPassword == "" {
+		v := helper.NewValidationError()
+		v.Add("password", "Password baru wajib diisi.")
+		return v
 	}
+	if len(newPassword) < 6 {
+		v := helper.NewValidationError()
+		v.Add("password", "Password baru minimal 6 karakter.")
+		return v
+	}
+
+	user, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return helper.NewNotFoundError("User tidak ditemukan")
+		}
+		return helper.NewServiceError("SERVER_ERROR", "Gagal mengambil data user.", err)
+	}
+
+	hashedPassword, err := helper.HashPassword(newPassword)
+	if err != nil {
+		return helper.NewServiceError("SERVER_ERROR", "Gagal melakukan hash password.", err)
+	}
+
+	err = s.db.Transaction(func(tx *gorm.DB) error {
+		// Update password di DB
+		if err := tx.Table("users").Where("id = ?", id).Update("password", hashedPassword).Error; err != nil {
+			return err
+		}
+		// Hapus session refresh token jika ada
+		tx.Table("refresh_tokens").Where("user_id = ?", id).Delete(nil)
+		return nil
+	})
+	if err != nil {
+		return helper.NewServiceError("SERVER_ERROR", "Gagal mereset password.", err)
+	}
+
+	// Audit Log
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
+		Action:      "users.reset_password",
+		EntityType:  "users",
+		EntityID:    &id,
+		EntityLabel: user.Name,
+		Description: fmt.Sprintf("Mereset password user: %s (Role: %s)", user.Name, user.Role),
+	})
 
 	return nil
 }

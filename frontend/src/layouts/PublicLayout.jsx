@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useSettings } from '../context/useSettings'
 import { resolveAssetUrl } from '../utils/assetUrl'
@@ -9,8 +9,24 @@ export default function PublicLayout({ children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [kegiatanDropdown, setKegiatanDropdown] = useState(false)
   const [informasiDropdown, setInformasiDropdown] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
 
   const location = useLocation()
+  const isHome = location.pathname === '/'
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 20) {
+        setScrolled(true)
+      } else {
+        setScrolled(false)
+      }
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  const navTheme = isHome && !scrolled ? 'transparent' : 'glass'
 
   const socialLinks = [
     { label: 'Facebook', icon: 'ph-facebook-logo', url: settings.facebook_url || '#' },
@@ -18,35 +34,68 @@ export default function PublicLayout({ children }) {
     { label: 'YouTube', icon: 'ph-youtube-logo', url: settings.youtube_url || '#' },
   ]
 
+  const headerClass = navTheme === 'transparent'
+    ? 'fixed top-0 w-full z-50 transition-all duration-300 bg-transparent border-transparent py-5'
+    : 'fixed top-0 w-full z-50 transition-all duration-300 bg-white/90 backdrop-blur-xl border-b border-slate-200/80 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.05)] py-3'
+
+  const titleClass = navTheme === 'transparent'
+    ? 'font-heading font-extrabold text-base text-white tracking-tight group-hover:text-amber-400 transition'
+    : 'font-heading font-extrabold text-base text-slate-900 tracking-tight group-hover:text-brand-700 transition'
+
+  const taglineClass = navTheme === 'transparent'
+    ? 'text-[9px] font-bold text-brand-300 tracking-wider uppercase'
+    : 'text-[9px] font-bold text-brand-600 tracking-wider uppercase'
+
+  const getLinkClass = (path, matchStart = false) => {
+    const isActive = matchStart ? location.pathname.startsWith(path) : location.pathname === path
+    if (navTheme === 'transparent') {
+      return `px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
+        isActive ? 'text-white bg-white/15' : 'text-white/80 hover:text-white hover:bg-white/10'
+      }`
+    } else {
+      return `px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 ${
+        isActive ? 'text-brand-700 bg-brand-50' : 'text-slate-600 hover:text-brand-700 hover:bg-slate-50'
+      }`
+    }
+  }
+
+  const caretClass = navTheme === 'transparent' ? 'text-white/60' : 'text-slate-400'
+
+  const loginBtnClass = navTheme === 'transparent'
+    ? 'btn-press group relative inline-flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold text-brand-900 bg-white hover:bg-slate-100 rounded-xl transition-all duration-300 shadow-lg shadow-white/5'
+    : 'btn-press group relative inline-flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold text-white bg-gradient-brand animate-gradient rounded-xl overflow-hidden glow-brand transition-all duration-300'
+
+  const burgerClass = navTheme === 'transparent'
+    ? 'text-white hover:text-white/80 focus:outline-none p-2 bg-white/10 hover:bg-white/20 rounded-lg transition'
+    : 'text-slate-600 hover:text-brand-700 focus:outline-none p-2 bg-slate-50 hover:bg-slate-100 rounded-lg transition'
+
   return (
     <div className="font-sans bg-slate-50 min-h-screen">
       {/* Navigation Header — glassmorphism + scroll effect */}
-      <header className="fixed top-0 w-full z-50 transition-all duration-300 bg-white/80 backdrop-blur-xl border-b border-white/40 shadow-[0_1px_20px_-5px_rgba(37,99,235,0.08)]">
+      <header className={headerClass}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
+          <div className="flex justify-between items-center">
             {/* Logo Branding */}
             <Link to="/" className="flex-shrink-0 flex items-center gap-3 group">
               <img src={resolveAssetUrl(settings.logo_path)} alt={`Logo ${settings.site_name}`} className="h-10 w-auto object-contain transition duration-300 group-hover:scale-105" />
               <div className="flex flex-col leading-tight">
-                <span className="font-heading font-extrabold text-base text-slate-900 tracking-tight group-hover:text-brand-700 transition">{settings.site_name}</span>
-                <span className="text-[9px] font-bold text-brand-600 tracking-wider uppercase">{settings.tagline}</span>
+                <span className={titleClass}>{settings.site_name}</span>
+                <span className={taglineClass}>{settings.tagline}</span>
               </div>
             </Link>
-
-
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center space-x-1">
               <Link 
                 to="/" 
-                className={`px-4 py-2 text-sm font-semibold rounded-lg transition ${location.pathname === '/' ? 'text-brand-700 bg-brand-50' : 'text-slate-600 hover:text-brand-700 hover:bg-slate-50'}`}
+                className={getLinkClass('/')}
               >
                 Beranda
               </Link>
               
               <Link 
                 to="/#tentang" 
-                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-brand-700 hover:bg-slate-50 transition rounded-lg"
+                className={getLinkClass('/#tentang')}
               >
                 Tentang Kami
               </Link>
@@ -59,9 +108,9 @@ export default function PublicLayout({ children }) {
               >
                 <Link 
                   to="/kegiatan"
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition flex items-center gap-1 ${location.pathname.startsWith('/kegiatan') ? 'text-brand-700 bg-brand-50' : 'text-slate-600 hover:text-brand-700 hover:bg-slate-50'}`}
+                  className={getLinkClass('/kegiatan', true) + ' flex items-center gap-1'}
                 >
-                  Kegiatan <i className={`ph-bold ph-caret-down text-[10px] transition-transform duration-300 ${kegiatanDropdown ? 'rotate-180' : ''}`} />
+                  Kegiatan <i className={`ph-bold ph-caret-down text-[10px] transition-transform duration-300 ${caretClass} ${kegiatanDropdown ? 'rotate-180' : ''}`} />
                 </Link>
                 {kegiatanDropdown && (
                   <div className="absolute left-0 top-full pt-1 w-52 z-50">
@@ -93,9 +142,9 @@ export default function PublicLayout({ children }) {
               >
                 <Link 
                   to="/berita"
-                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition flex items-center gap-1 ${location.pathname.startsWith('/berita') ? 'text-brand-700 bg-brand-50' : 'text-slate-600 hover:text-brand-700 hover:bg-slate-50'}`}
+                  className={getLinkClass('/berita', true) + ' flex items-center gap-1'}
                 >
-                  Informasi <i className={`ph-bold ph-caret-down text-[10px] transition-transform duration-300 ${informasiDropdown ? 'rotate-180' : ''}`} />
+                  Informasi <i className={`ph-bold ph-caret-down text-[10px] transition-transform duration-300 ${caretClass} ${informasiDropdown ? 'rotate-180' : ''}`} />
                 </Link>
                 {informasiDropdown && (
                   <div className="absolute left-0 top-full pt-1 w-52 z-50">
@@ -121,14 +170,14 @@ export default function PublicLayout({ children }) {
 
               <Link 
                 to="/kepengurusan" 
-                className={`px-4 py-2 text-sm font-semibold rounded-lg transition ${location.pathname.startsWith('/kepengurusan') ? 'text-brand-700 bg-brand-50' : 'text-slate-600 hover:text-brand-700 hover:bg-slate-50'}`}
+                className={getLinkClass('/kepengurusan', true)}
               >
                 Kepengurusan
               </Link>
 
               <Link 
                 to="/#kontak" 
-                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-brand-700 hover:bg-slate-50 transition rounded-lg"
+                className={getLinkClass('/#kontak')}
               >
                 Kontak
               </Link>
@@ -138,7 +187,7 @@ export default function PublicLayout({ children }) {
             <div className="hidden lg:flex items-center gap-3">
               <Link 
                 to="/login" 
-                className="btn-press group relative inline-flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-bold text-white bg-gradient-brand animate-gradient rounded-xl overflow-hidden glow-brand transition-all duration-300"
+                className={loginBtnClass}
               >
                 <i className="ph-bold ph-sign-in text-lg transition-transform duration-300 group-hover:translate-x-0.5" />
                 <span>Masuk</span>
@@ -149,7 +198,7 @@ export default function PublicLayout({ children }) {
             <div className="lg:hidden flex items-center">
               <button 
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="text-slate-600 hover:text-brand-700 focus:outline-none p-2 bg-slate-50 rounded-lg"
+                className={burgerClass}
               >
                 <i className={`ph-bold text-2xl ${mobileMenuOpen ? 'ph-x' : 'ph-list'}`} />
               </button>
