@@ -21,7 +21,7 @@ func CreateReqToEntity(req *dto.UserCreateReq) *entity.User {
 	return &entity.User{
 		Name:   req.Name,
 		Email:  req.Email,
-		RoleID: req.RoleID,
+		Role:   req.Role,
 		Status: status,
 	}
 }
@@ -33,7 +33,7 @@ func UpdateReqToEntity(req *dto.UserUpdateReq, user *entity.User) {
 	}
 	user.Name = req.Name
 	user.Email = req.Email
-	user.RoleID = req.RoleID
+	user.Role = req.Role
 	if req.Status != "" {
 		user.Status = req.Status
 	}

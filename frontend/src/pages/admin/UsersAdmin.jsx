@@ -166,7 +166,12 @@ export default function UsersAdmin() {
     resetFieldErrors()
 
     try {
-      await userService.create(formData)
+      const payload = {
+        name: formData.name,
+        email: formData.email,
+        role: formData.role_id === '1' ? 'super_admin' : 'admin'
+      }
+      await userService.create(payload)
       setIsFormOpen(false)
       setFormData({ name: '', email: '', role_id: '2' })
       setTouched({})

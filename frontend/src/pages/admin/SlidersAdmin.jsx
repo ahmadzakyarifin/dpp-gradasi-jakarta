@@ -210,6 +210,36 @@ export default function SlidersAdmin() {
     }
   }
 
+  const handleMove = async (index, direction) => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1
+    if (targetIndex < 0 || targetIndex >= filteredItems.length) return
+
+    const currentItem = filteredItems[index]
+    const targetItem = filteredItems[targetIndex]
+
+    const currentOrder = currentItem.sort_order ?? 0
+    const targetOrder = targetItem.sort_order ?? 0
+
+    let newCurrentOrder = targetOrder
+    let newTargetOrder = currentOrder
+    if (currentOrder === targetOrder) {
+      if (direction === 'up') {
+        newCurrentOrder = targetOrder - 1
+      } else {
+        newCurrentOrder = targetOrder + 1
+      }
+    }
+
+    try {
+      await slidersService.update(targetItem.id, { ...targetItem, sort_order: newTargetOrder })
+      await slidersService.update(currentItem.id, { ...currentItem, sort_order: newCurrentOrder })
+      showToast('Urutan slider diperbarui.')
+      loadSliders()
+    } catch (err) {
+      showToast(err.message || 'Gagal mengubah urutan', 'error')
+    }
+  }
+
   const confirmAction = (type, item = null) => {
     const title = item ? item.title : ''
     const configs = {
@@ -384,45 +414,58 @@ export default function SlidersAdmin() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-sm text-gray-700">
-                  {paginatedItems.map(item => (
-                    <tr key={item.id} className="hover:bg-gray-50 transition-colors group admin-row">
-                      <td className="p-4 text-center">
-                        <input
-                          type="checkbox"
-                          checked={selectedItems.includes(item.id)}
-                          onChange={() => toggleOne(item.id)}
-                          className="rounded border-gray-300 text-brand-600 focus:ring-brand-500 accent-brand-600"
-                        />
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-start gap-4">
-                          {item.image_url ? (
-                            <img src={resolveAssetUrl(item.image_url)} alt={item.title} className="w-32 h-16 rounded object-cover border border-gray-200 shrink-0" />
-                          ) : (
-                            <div className="w-32 h-16 rounded bg-gray-100 border border-gray-200 shrink-0 flex items-center justify-center">
-                              <i className="ph ph-image text-gray-300 text-2xl" />
-                            </div>
-                          )}
-                          <div>
-                            <p className="font-medium text-gray-900 leading-snug">{item.title}</p>
-                            {item.subtitle && <p className="text-xs text-gray-500 mt-1">{item.subtitle}</p>}
-                            {item.is_new && (
-                              <span className="inline-block mt-1 bg-brand-50 text-brand-600 text-[10px] px-2 py-0.5 rounded-full font-medium">NEW</span>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <div className="w-16">
+                   {paginatedItems.map((item, index) => {
+                    const globalIndex = (currentPage - 1) * PAGE_SIZE + index
+                    return (
+                      <tr key={item.id} className="hover:bg-gray-50 transition-colors group admin-row">
+                        <td className="p-4 text-center">
                           <input
-                            type="number"
-                            defaultValue={item.sort_order}
-                            onBlur={e => handleSortChange(item, e.target.value)}
-                            onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
-                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-brand-500 focus:border-brand-500 text-center outline-none"
+                            type="checkbox"
+                            checked={selectedItems.includes(item.id)}
+                            onChange={() => toggleOne(item.id)}
+                            className="rounded border-gray-300 text-brand-600 focus:ring-brand-500 accent-brand-600"
                           />
-                        </div>
-                      </td>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-start gap-4">
+                            {item.image_url ? (
+                              <img src={resolveAssetUrl(item.image_url)} alt={item.title} className="w-32 h-16 rounded object-cover border border-gray-200 shrink-0" />
+                            ) : (
+                              <div className="w-32 h-16 rounded bg-gray-100 border border-gray-200 shrink-0 flex items-center justify-center">
+                                <i className="ph ph-image text-gray-300 text-2xl" />
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-medium text-gray-900 leading-snug">{item.title}</p>
+                              {item.subtitle && <p className="text-xs text-gray-500 mt-1">{item.subtitle}</p>}
+                              {item.is_new && (
+                                <span className="inline-block mt-1 bg-brand-50 text-brand-600 text-[10px] px-2 py-0.5 rounded-full font-medium">NEW</span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              disabled={globalIndex === 0}
+                              onClick={() => handleMove(globalIndex, 'up')}
+                              className="p-1 hover:bg-slate-100 text-slate-500 hover:text-slate-700 rounded disabled:opacity-20 transition-all"
+                              title="Pindahkan ke atas"
+                            >
+                              <i className="ph-bold ph-arrow-up text-base" />
+                            </button>
+                            <button
+                              type="button"
+                              disabled={globalIndex === filteredItems.length - 1}
+                              onClick={() => handleMove(globalIndex, 'down')}
+                              className="p-1 hover:bg-slate-100 text-slate-500 hover:text-slate-700 rounded disabled:opacity-20 transition-all"
+                              title="Pindahkan ke bawah"
+                            >
+                              <i className="ph-bold ph-arrow-down text-base" />
+                            </button>
+                          </div>
+                        </td>
                       <td className="p-4">
                         {currentTab === 'active' ? (
                           <button
@@ -462,7 +505,7 @@ export default function SlidersAdmin() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
  

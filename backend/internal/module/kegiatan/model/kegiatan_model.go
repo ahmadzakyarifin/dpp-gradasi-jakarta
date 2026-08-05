@@ -11,7 +11,7 @@ type Kegiatan struct {
 	Slug        string `gorm:"uniqueIndex;size:250;not null"`
 	Title       string `gorm:"size:300;not null"`
 	Category    string `gorm:"size:100;default:'Kegiatan'"`
-	EventDate   string `gorm:"size:20"`
+	EventDate   string `gorm:"size:200;not null"`
 	Location    string `gorm:"size:200"`
 	Organizer   string `gorm:"size:200"`
 	AuthorID    *uint

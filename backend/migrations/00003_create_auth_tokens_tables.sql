@@ -4,9 +4,11 @@ CREATE TABLE refresh_tokens (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     token_hash VARCHAR(255) NOT NULL UNIQUE,
-    device_info VARCHAR(255),
+    device_name VARCHAR(255),
+    user_agent VARCHAR(255) NULL,
     ip_address VARCHAR(45),
     expires_at TIMESTAMP NOT NULL,
+    revoked_at TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,

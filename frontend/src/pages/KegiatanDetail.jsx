@@ -3,12 +3,16 @@ import { useParams, Link } from 'react-router-dom'
 import PublicLayout from '../layouts/PublicLayout'
 import { kegiatanService } from '../services/kegiatanService'
 import { resolveAssetUrl } from '../utils/assetUrl'
+import { useSettings } from '../context/useSettings'
+import { shareContent, getShareUrl, copyToClipboard } from '../utils/share'
 
 export default function KegiatanDetail() {
+  const { settings } = useSettings()
   const { slug } = useParams()
   const [kegiatan, setKegiatan] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -24,139 +28,189 @@ export default function KegiatanDetail() {
       .finally(() => setLoading(false))
   }, [slug])
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(window.location.href)
-    alert('Tautan disalin ke papan klip!')
+  useEffect(() => {
+    if (kegiatan?.title) {
+      document.title = `${kegiatan.title} - DPP GRADASI`
+    }
+    return () => {
+      document.title = 'DPP GRADASI - Generasi Digital Indonesia'
+    }
+  }, [kegiatan])
+
+
+  const handleInstagramShare = () => {
+    copyToClipboard(window.location.href).then(success => {
+      if (success) {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+        window.open('https://www.instagram.com/', '_blank')
+      }
+    })
   }
+
+  const handleCopyLink = () => {
+    copyToClipboard(window.location.href).then(success => {
+      if (success) {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      }
+    })
+  }
+
 
   return (
     <PublicLayout>
-      <section className="pt-28 pb-16 md:pt-36 bg-slate-50 min-h-[90vh]">
+      <div className="fixed top-0 left-0 h-[3px] bg-gradient-to-r from-brand-600 to-brand-400 z-[9999] w-full" />
+      <section className="pt-28 pb-0 bg-white border-b border-slate-100">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          
-          {loading && <div className="py-20 text-center text-slate-500">Memuat detail kegiatan...</div>}
-          {error && (
-            <div className="py-20 text-center">
-              <p className="text-red-600 font-medium mb-4">{error}</p>
-              <Link to="/kegiatan" className="text-brand-600 hover:underline">Kembali ke Daftar Kegiatan</Link>
-            </div>
-          )}
-
-          {kegiatan && (
-            <article className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm p-6 md:p-10 space-y-8">
-              {/* Header */}
-              <div className="space-y-4">
-                <span className="inline-block px-3 py-1 bg-brand-50 text-brand-700 rounded-lg text-xs font-bold uppercase tracking-wider">
-                  {kegiatan.category}
-                </span>
-                <h1 className="font-heading text-2xl md:text-4xl font-extrabold text-slate-900 leading-tight">
-                  {kegiatan.title}
-                </h1>
-                
-                <div className="flex flex-wrap gap-4 text-xs text-slate-400 font-medium border-y border-slate-100 py-3">
-                  <span>📅 {kegiatan.event_date}</span>
-                  <span>📍 {kegiatan.location}</span>
-                  <span>🏢 Penyelenggara: {kegiatan.organizer}</span>
-                  {kegiatan.author_name && <span>✍️ Penulis: {kegiatan.author_name}</span>}
-                </div>
-              </div>
-
-              {/* Main Image */}
-              {kegiatan.image_url && (
-                <div className="rounded-2xl overflow-hidden max-h-[450px]">
-                  <img 
-                    src={resolveAssetUrl(kegiatan.image_url)} 
-                    alt={kegiatan.title} 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
-
-              {/* Excerpt */}
-              {kegiatan.excerpt && (
-                <p className="text-slate-500 font-medium italic border-l-4 border-brand-500 pl-4 py-1 text-lg">
-                  {kegiatan.excerpt}
-                </p>
-              )}
-
-              {/* Content */}
-              <div 
-                className="prose max-w-none text-slate-700 leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: kegiatan.content }}
-              />
-
-              {/* Tags */}
-              {kegiatan.tags && kegiatan.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-4 border-t border-slate-100">
-                  <span className="text-xs font-bold text-slate-400 self-center mr-2">TAGS:</span>
-                  {kegiatan.tags.map(tagItem => (
-                    <span key={tagItem} className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold">
-                      #{tagItem}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {/* Gallery Section */}
-              {kegiatan.gallery && kegiatan.gallery.length > 0 && (
-                <div className="space-y-4 pt-6 border-t border-slate-100">
-                  <h3 className="font-heading font-bold text-lg text-slate-900">Galeri Foto Kegiatan</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {kegiatan.gallery.map(img => (
-                      <div key={img.id} className="rounded-xl overflow-hidden border border-slate-200 shadow-sm aspect-video bg-slate-50">
-                        <img 
-                          src={resolveAssetUrl(img.image_url || img.image_path)} 
-                          alt={img.caption || kegiatan.title} 
-                          className="w-full h-full object-cover hover:scale-105 transition duration-300"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Share Options */}
-              <div className="flex flex-wrap gap-3 items-center justify-between pt-6 border-t border-slate-100">
-                <span className="text-xs font-bold text-slate-400">BAGIKAN ARTIKEL:</span>
-                <div className="flex gap-2">
-                  <a 
-                    href={`https://api.whatsapp.com/send?text=${encodeURIComponent(kegiatan.title + ' ' + window.location.href)}`} 
-                    target="_blank" 
-                    rel="noreferrer"
-                    className="px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-semibold hover:bg-green-100 transition"
-                  >
-                    WhatsApp
-                  </a>
-                  <a 
-                    href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`} 
-                    target="_blank" 
-                    rel="noreferrer"
-                    className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-semibold hover:bg-blue-100 transition"
-                  >
-                    Facebook
-                  </a>
-                  <a 
-                    href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}`} 
-                    target="_blank" 
-                    rel="noreferrer"
-                    className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-semibold hover:bg-indigo-100 transition"
-                  >
-                    LinkedIn
-                  </a>
-                  <button 
-                    onClick={copyToClipboard}
-                    className="px-3 py-1.5 bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-100 transition"
-                  >
-                    Salin Tautan
-                  </button>
-                </div>
-              </div>
-
-            </article>
-          )}
-
+          <nav className="flex items-center gap-2 text-sm py-4">
+            <Link to="/" className="text-slate-400 hover:text-brand-600 transition flex items-center gap-1">
+              <i className="ph-bold ph-house text-xs" /> Beranda
+            </Link>
+            <i className="ph-bold ph-caret-right text-[10px] text-slate-300" />
+            <Link to="/kegiatan" className="text-slate-400 hover:text-brand-600 transition">Kegiatan</Link>
+            <i className="ph-bold ph-caret-right text-[10px] text-slate-300" />
+            <span className="text-brand-600 font-semibold truncate max-w-[250px]">{kegiatan?.title || 'Detail Kegiatan'}</span>
+          </nav>
         </div>
       </section>
+
+      {loading && <section className="bg-white py-24 text-center text-slate-500">Memuat detail kegiatan...</section>}
+      {error && (
+        <section className="bg-white py-24 text-center">
+          <p className="text-red-600 font-medium mb-4">{error}</p>
+          <Link to="/kegiatan" className="text-brand-600 hover:underline">Kembali ke Daftar Kegiatan</Link>
+        </section>
+      )}
+
+      {!loading && !error && kegiatan && (
+        <>
+          <section className="bg-white pt-8 pb-6 md:pt-12 md:pb-8">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex flex-wrap items-center gap-3 mb-5">
+                <span className="inline-flex items-center gap-1.5 bg-brand-50 text-brand-700 text-[11px] font-bold px-3.5 py-1.5 rounded-full border border-brand-100/80 uppercase tracking-wider">
+                  <i className="ph-bold ph-calendar-blank" /> {kegiatan.category || 'Kegiatan'}
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-slate-400 text-xs font-medium">
+                  <i className="ph-bold ph-calendar" /> {kegiatan.event_date}
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-slate-400 text-xs font-medium">
+                  <i className="ph-bold ph-map-pin" /> {kegiatan.location}
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-slate-400 text-xs font-medium">
+                  <i className="ph-bold ph-buildings" /> Penyelenggara: {kegiatan.organizer}
+                </span>
+                {kegiatan.author_name && (
+                  <span className="inline-flex items-center gap-1.5 text-slate-400 text-xs font-medium">
+                    <i className="ph-bold ph-user" /> Penulis: {kegiatan.author_name}
+                  </span>
+                )}
+              </div>
+
+              <h1 className="font-heading text-3xl md:text-4xl lg:text-[2.75rem] font-extrabold text-slate-900 leading-tight tracking-tight mb-6 break-words">
+                {kegiatan.title}
+              </h1>
+
+              {kegiatan.image_url && (
+                <div className="relative overflow-hidden rounded-2xl mb-8">
+                  <img src={resolveAssetUrl(kegiatan.image_url)} alt={kegiatan.title} className="w-full h-64 md:h-96 lg:h-[480px] object-cover rounded-2xl" />
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/30 to-transparent h-24 rounded-b-2xl" />
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="pb-16 bg-white">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex flex-col lg:flex-row gap-10">
+                <article className="w-full lg:w-2/3 min-w-0 space-y-8">
+                  {kegiatan.excerpt && (
+                    <p className="text-slate-500 font-medium italic border-l-4 border-brand-500 pl-4 py-1 text-lg">
+                      {kegiatan.excerpt}
+                    </p>
+                  )}
+
+                  <div 
+                    className="prose max-w-none text-slate-700 leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: kegiatan.content }}
+                  />
+
+                  {/* Gallery Section */}
+                  {kegiatan.gallery && kegiatan.gallery.length > 0 && (
+                    <div className="space-y-4 pt-6 border-t border-slate-100">
+                      <h3 className="font-heading font-bold text-lg text-slate-900">Galeri Foto Kegiatan</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {kegiatan.gallery.map(img => (
+                          <div key={img.id} className="rounded-xl overflow-hidden border border-slate-200 shadow-sm aspect-video bg-slate-50">
+                            <img 
+                              src={resolveAssetUrl(img.image_url || img.image_path)} 
+                              alt={img.caption || kegiatan.title} 
+                              className="w-full h-full object-cover hover:scale-105 transition duration-300"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Author Card */}
+                  <div className="mt-10 pt-8 border-t border-slate-100">
+                    <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                      <p className="text-xs font-bold text-brand-600 uppercase tracking-widest mb-3">SALAM KOLABORASI</p>
+                      <div className="flex items-center gap-4">
+                        <img src={resolveAssetUrl(settings.logo_path)} alt={settings.site_name} className="w-12 h-12 rounded-xl object-contain bg-white p-1.5 border border-slate-200 shadow-sm" />
+                        <div>
+                          <p className="font-heading font-bold text-slate-900 text-sm">DPP Gradasi</p>
+                          <p className="text-slate-500 text-xs font-medium">Tim Redaksi & Publikasi DPP Gradasi</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tags */}
+                  {kegiatan.tags && kegiatan.tags.length > 0 && (
+                    <div className="mt-8 flex flex-wrap gap-2">
+                      {kegiatan.tags.map((tag) => (
+                        <span key={tag} className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full hover:bg-brand-50 hover:text-brand-600 transition cursor-pointer">
+                          <i className="ph-bold ph-hash text-[10px]" /> {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </article>
+
+                <aside className="w-full lg:w-1/3">
+                  <div className="sticky top-28 space-y-6">
+                    <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm animate-fade-in">
+                      <h4 className="font-heading font-bold text-slate-900 text-sm mb-4 flex items-center gap-2">
+                        <i className="ph-bold ph-share-network text-brand-600" /> Bagikan Kegiatan
+                      </h4>
+                      <div className="grid grid-cols-4 gap-2">
+                        <button onClick={handleInstagramShare} className="flex items-center justify-center w-full h-11 rounded-xl bg-[#E1306C]/10 text-[#E1306C] hover:bg-[#E1306C] hover:text-white transition" title="Instagram"><i className="ph-fill ph-instagram-logo text-lg" /></button>
+                        <a href={getShareUrl('whatsapp', { title: kegiatan.title, text: kegiatan.excerpt })} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full h-11 rounded-xl bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366] hover:text-white transition" title="WhatsApp"><i className="ph-fill ph-whatsapp-logo text-lg" /></a>
+                        <a href={getShareUrl('facebook', { title: kegiatan.title, text: kegiatan.excerpt })} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full h-11 rounded-xl bg-[#1877F2]/10 text-[#1877F2] hover:bg-[#1877F2] hover:text-white transition" title="Facebook"><i className="ph-fill ph-facebook-logo text-lg" /></a>
+                        <button 
+                          onClick={handleCopyLink} 
+                          className={`flex items-center justify-center w-full h-11 rounded-xl transition ${copied ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-600 hover:text-white'}`}
+                          title={copied ? "Tautan Berhasil Disalin" : "Salin Tautan"}
+                        >
+                          <i className={`text-lg ${copied ? 'ph-bold ph-check' : 'ph-bold ph-link'}`} />
+                        </button>
+                      </div>
+                      {copied && (
+                        <p className="text-[10px] text-emerald-600 font-semibold mt-2 text-center animate-pulse">
+                          Tautan berhasil disalin ke papan klip!
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </aside>
+              </div>
+            </div>
+          </section>
+        </>
+      )}
     </PublicLayout>
   )
 }
+

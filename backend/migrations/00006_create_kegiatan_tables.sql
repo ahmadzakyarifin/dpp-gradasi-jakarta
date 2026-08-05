@@ -5,7 +5,7 @@ CREATE TABLE kegiatan (
     slug VARCHAR(250) NOT NULL UNIQUE,
     title VARCHAR(300) NOT NULL,
     category VARCHAR(100) DEFAULT 'Kegiatan',
-    event_date DATE,
+    event_date VARCHAR(200) NOT NULL,
     location VARCHAR(200),
     organizer VARCHAR(200),
     author_id INT NULL,

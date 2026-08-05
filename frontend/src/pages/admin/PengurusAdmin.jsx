@@ -211,6 +211,101 @@ export default function PengurusAdmin() {
     }
   }
 
+  const handleSortChange = async (item, value) => {
+    const newOrder = Number(value)
+    if (!Number.isFinite(newOrder) || newOrder === item.sort_order) return
+    try {
+      const payload = {
+        name: item.name,
+        level: item.level,
+        role: item.role,
+        department: item.department || '',
+        periode: item.periode || '2025 - 2030',
+        provinsi: item.provinsi || '',
+        kabupaten: item.kabupaten || '',
+        facebook_url: item.facebook_url || '',
+        instagram_url: item.instagram_url || '',
+        linkedin_url: item.linkedin_url || '',
+        whatsapp: item.whatsapp || '',
+        sort_order: newOrder,
+        image_path: item.image_path || item.image_url || '',
+        image: null,
+        is_active: item.is_active !== false,
+      }
+      await pengurusService.update(item.id, payload)
+      showToast('Urutan pengurus diperbarui.')
+      loadPengurus()
+    } catch (err) {
+      showToast(err.message || 'Gagal mengubah urutan', 'error')
+    }
+  }
+
+  const handleMove = async (index, direction) => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1
+    if (targetIndex < 0 || targetIndex >= items.length) return
+
+    const currentItem = items[index]
+    const targetItem = items[targetIndex]
+
+    const currentOrder = currentItem.sort_order ?? 0
+    const targetOrder = targetItem.sort_order ?? 0
+
+    let newCurrentOrder = targetOrder
+    let newTargetOrder = currentOrder
+    if (currentOrder === targetOrder) {
+      if (direction === 'up') {
+        newCurrentOrder = targetOrder - 1
+      } else {
+        newCurrentOrder = targetOrder + 1
+      }
+    }
+
+    try {
+      const payloadTarget = {
+        name: targetItem.name,
+        level: targetItem.level,
+        role: targetItem.role,
+        department: targetItem.department || '',
+        periode: targetItem.periode || '2025 - 2030',
+        provinsi: targetItem.provinsi || '',
+        kabupaten: targetItem.kabupaten || '',
+        facebook_url: targetItem.facebook_url || '',
+        instagram_url: targetItem.instagram_url || '',
+        linkedin_url: targetItem.linkedin_url || '',
+        whatsapp: targetItem.whatsapp || '',
+        sort_order: newTargetOrder,
+        image_path: targetItem.image_path || targetItem.image_url || '',
+        image: null,
+        is_active: targetItem.is_active !== false,
+      }
+      await pengurusService.update(targetItem.id, payloadTarget)
+
+      const payloadCurrent = {
+        name: currentItem.name,
+        level: currentItem.level,
+        role: currentItem.role,
+        department: currentItem.department || '',
+        periode: currentItem.periode || '2025 - 2030',
+        provinsi: currentItem.provinsi || '',
+        kabupaten: currentItem.kabupaten || '',
+        facebook_url: currentItem.facebook_url || '',
+        instagram_url: currentItem.instagram_url || '',
+        linkedin_url: currentItem.linkedin_url || '',
+        whatsapp: currentItem.whatsapp || '',
+        sort_order: newCurrentOrder,
+        image_path: currentItem.image_path || currentItem.image_url || '',
+        image: null,
+        is_active: currentItem.is_active !== false,
+      }
+      await pengurusService.update(currentItem.id, payloadCurrent)
+
+      showToast('Urutan pengurus diperbarui.')
+      loadPengurus()
+    } catch (err) {
+      showToast(err.message || 'Gagal mengubah urutan', 'error')
+    }
+  }
+
   const confirmAction = (type, item = null) => {
     const name = item ? item.name : ''
     const configs = {
@@ -411,11 +506,12 @@ export default function PengurusAdmin() {
                       <th className="p-4">Tingkat</th>
                       <th className="p-4">Jabatan</th>
                       <th className="p-4">Wilayah</th>
+                      <th className="p-4 w-24">Urutan</th>
                       <th className="p-4 text-right">Aksi</th>
                     </tr>
                   </thead>
               <tbody className="divide-y divide-gray-100">
-                    {items.map(item => (
+                    {items.map((item, index) => (
                       <tr key={item.id} className="hover:bg-slate-50/50 admin-row">
                         <td className="p-4">
                           <input type="checkbox" checked={selectedItems.includes(item.id)} onChange={() => toggleOne(item.id)} className="accent-brand-600 border-gray-300 rounded" />
@@ -439,6 +535,28 @@ export default function PengurusAdmin() {
                         <td className="p-4">{item.role}</td>
                         <td className="p-4 text-slate-500 text-xs">
                           {item.provinsi ? `${item.provinsi}${item.kabupaten ? `, ${item.kabupaten}` : ''}` : '-'}
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              disabled={index === 0}
+                              onClick={() => handleMove(index, 'up')}
+                              className="p-1 hover:bg-slate-100 text-slate-500 hover:text-slate-700 rounded disabled:opacity-20 transition-all"
+                              title="Pindahkan ke atas"
+                            >
+                              <i className="ph-bold ph-arrow-up text-base" />
+                            </button>
+                            <button
+                              type="button"
+                              disabled={index === items.length - 1}
+                              onClick={() => handleMove(index, 'down')}
+                              className="p-1 hover:bg-slate-100 text-slate-500 hover:text-slate-700 rounded disabled:opacity-20 transition-all"
+                              title="Pindahkan ke bawah"
+                            >
+                              <i className="ph-bold ph-arrow-down text-base" />
+                            </button>
+                          </div>
                         </td>
                         <td className="p-4 text-right">
                           <div className="flex justify-end gap-2">
@@ -499,11 +617,13 @@ export default function PengurusAdmin() {
           )}
         </div>
 
+      </div>
+
         {/* Form Modal */}
         {isFormOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setIsFormOpen(false)} />
-            <div className="relative bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden z-10">
+            <div className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden z-10">
               <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
                 <h3 className="font-heading font-bold text-slate-900 text-lg">
                   {formMode === 'create' ? 'Tambah Pengurus Baru' : 'Edit Pengurus'}
@@ -512,10 +632,10 @@ export default function PengurusAdmin() {
                   <i className="ph-bold ph-x text-lg" />
                 </button>
               </div>
-              <form onSubmit={handleSubmit} noValidate className="p-6 overflow-y-auto max-h-[calc(90vh-120px)] flex flex-col">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <form onSubmit={handleSubmit} noValidate className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in-up">
                   {/* Left Column (Main Data) */}
-                  <div className="space-y-4">
+                  <div className="space-y-5">
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 mb-1">Nama Lengkap <span className="text-red-500">*</span></label>
                       <input
@@ -534,7 +654,7 @@ export default function PengurusAdmin() {
                           const errs = validateForm()
                           setFormErrors(prev => ({ ...prev, name: errs.name }))
                         }}
-                        className={`w-full px-3 py-2 border rounded-xl text-sm outline-none transition-colors ${touched.name && formErrors.name ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-gray-300 focus:border-brand-500'}`}
+                        className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none bg-white transition-colors ${touched.name && formErrors.name ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
                       />
                       {touched.name && formErrors.name && (
                         <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
@@ -562,7 +682,7 @@ export default function PengurusAdmin() {
                             const errs = validateForm()
                             setFormErrors(prev => ({ ...prev, level: errs.level }))
                           }}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none bg-white focus:border-brand-500"
+                          className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors cursor-pointer"
                         >
                           <option value="ketua">Ketua Umum</option>
                           <option value="dpp">DPP (Pusat)</option>
@@ -589,7 +709,7 @@ export default function PengurusAdmin() {
                             setFormErrors(prev => ({ ...prev, role: errs.role }))
                           }}
                           placeholder="Misal: Ketua Bidang Organisasi"
-                          className={`w-full px-3 py-2 border rounded-xl text-sm outline-none transition-colors ${touched.role && formErrors.role ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-gray-300'}`}
+                          className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none bg-white transition-colors ${touched.role && formErrors.role ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
                         />
                         {touched.role && formErrors.role && (
                           <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
@@ -619,7 +739,7 @@ export default function PengurusAdmin() {
                             setFormErrors(prev => ({ ...prev, periode: errs.periode }))
                           }}
                           placeholder="Contoh: 2025 - 2030"
-                          className={`w-full px-3 py-2 border rounded-xl text-sm outline-none transition-colors ${touched.periode && formErrors.periode ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-gray-300'}`}
+                          className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none bg-white transition-colors ${touched.periode && formErrors.periode ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
                         />
                         {touched.periode && formErrors.periode && (
                           <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
@@ -629,7 +749,7 @@ export default function PengurusAdmin() {
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-gray-500 mb-1">Departemen <span className="text-gray-400 font-normal">(opsional)</span></label>
-                        <input type="text" value={formData.department} onChange={e => setFormData({ ...formData, department: e.target.value })} placeholder="Misal: Departemen IT" className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none focus:border-brand-500" />
+                        <input type="text" value={formData.department} onChange={e => setFormData({ ...formData, department: e.target.value })} placeholder="Misal: Departemen IT" className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
                       </div>
                     </div>
 
@@ -654,7 +774,7 @@ export default function PengurusAdmin() {
                             setFormErrors(prev => ({ ...prev, provinsi: errs.provinsi }))
                           }}
                           placeholder="Wajib jika DPD/DPC"
-                          className={`w-full px-3 py-2 border rounded-xl text-sm outline-none transition-colors ${touched.provinsi && formErrors.provinsi ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-gray-300'}`}
+                          className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none bg-white transition-colors ${touched.provinsi && formErrors.provinsi ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
                         />
                         {touched.provinsi && formErrors.provinsi && (
                           <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
@@ -682,7 +802,7 @@ export default function PengurusAdmin() {
                             setFormErrors(prev => ({ ...prev, kabupaten: errs.kabupaten }))
                           }}
                           placeholder="Wajib jika DPC"
-                          className={`w-full px-3 py-2 border rounded-xl text-sm outline-none transition-colors ${touched.kabupaten && formErrors.kabupaten ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-gray-300'}`}
+                          className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none bg-white transition-colors ${touched.kabupaten && formErrors.kabupaten ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
                         />
                         {touched.kabupaten && formErrors.kabupaten && (
                           <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
@@ -694,21 +814,43 @@ export default function PengurusAdmin() {
 
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 mb-1">Foto Profil <span className={formMode === 'create' ? 'text-red-500' : 'text-gray-400 font-normal'}>{formMode === 'create' ? '*' : '(opsional)'}</span></label>
-                      <input
-                        type="file"
-                        onChange={e => {
-                          const file = e.target.files && e.target.files[0]
-                          if (file) setFormData(prev => ({ ...prev, image: file, image_path: '' }))
-                        }}
-                        accept="image/*"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none focus:border-brand-500"
-                      />
+                      <div className="flex items-center gap-3">
+                        {(formData.image_path || formData.image) && (
+                          <img
+                            src={formData.image instanceof File ? URL.createObjectURL(formData.image) : resolveAssetUrl(formData.image_path)}
+                            alt="Profil Preview"
+                            className="w-16 h-16 rounded-full object-cover border border-slate-200 shrink-0"
+                          />
+                        )}
+                        <label className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 text-sm font-semibold cursor-pointer transition shrink-0 shadow-sm">
+                          <i className="ph-bold ph-upload-simple" />
+                          {formData.image || formData.image_path ? 'Ganti Foto' : 'Upload Foto'}
+                          <input
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp"
+                            className="hidden"
+                            onChange={e => {
+                              const file = e.target.files?.[0]
+                              if (file) setFormData(prev => ({ ...prev, image: file, image_path: '' }))
+                            }}
+                          />
+                        </label>
+                        {(formData.image || formData.image_path) && (
+                          <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, image: null, image_path: '' })}
+                            className="text-xs text-red-500 hover:text-red-700 font-medium"
+                          >
+                            Hapus
+                          </button>
+                        )}
+                      </div>
                       {formMode === 'create' && touched.image && formErrors.image && (
-                        <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
+                        <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
                           <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.image}
                         </p>
                       )}
-                      <p className="text-[10px] text-gray-400 mt-1">Foto wajib diunggah saat menambah pengurus.</p>
+                      <p className="text-[10px] text-gray-400 mt-1.5">PNG / JPG / WEBP · maks 5MB. Foto wajib diunggah saat menambah pengurus.</p>
                     </div>
 
                     <div className="flex items-center gap-2 pt-2">
@@ -719,38 +861,26 @@ export default function PengurusAdmin() {
                     </div>
                   </div>
 
-                  {/* Right Column (Social Media & Sort Order) */}
-                  <div className="space-y-4">
+                  {/* Right Column (Social Media) */}
+                  <div className="space-y-5">
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 mb-1">Facebook URL <span className="text-gray-400 font-normal">(opsional)</span></label>
-                      <input type="text" value={formData.facebook_url} onChange={e => setFormData({ ...formData, facebook_url: e.target.value })} placeholder="https://facebook.com/username" className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none focus:border-brand-500" />
+                      <input type="text" value={formData.facebook_url} onChange={e => setFormData({ ...formData, facebook_url: e.target.value })} placeholder="https://facebook.com/username" className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
                     </div>
 
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 mb-1">Instagram URL <span className="text-gray-400 font-normal">(opsional)</span></label>
-                      <input type="text" value={formData.instagram_url} onChange={e => setFormData({ ...formData, instagram_url: e.target.value })} placeholder="https://instagram.com/username" className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none focus:border-brand-500" />
+                      <input type="text" value={formData.instagram_url} onChange={e => setFormData({ ...formData, instagram_url: e.target.value })} placeholder="https://instagram.com/username" className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
                     </div>
 
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 mb-1">LinkedIn URL <span className="text-gray-400 font-normal">(opsional)</span></label>
-                      <input type="text" value={formData.linkedin_url} onChange={e => setFormData({ ...formData, linkedin_url: e.target.value })} placeholder="https://linkedin.com/in/username" className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none focus:border-brand-500" />
+                      <input type="text" value={formData.linkedin_url} onChange={e => setFormData({ ...formData, linkedin_url: e.target.value })} placeholder="https://linkedin.com/in/username" className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
                     </div>
 
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 mb-1">WhatsApp <span className="text-gray-400 font-normal">(opsional)</span></label>
-                      <input type="text" value={formData.whatsapp} onChange={e => setFormData({ ...formData, whatsapp: e.target.value })} placeholder="Contoh: 08123456789" className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none focus:border-brand-500" />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 mb-1">Urutan Tampil <span className="text-gray-400 font-normal">(opsional)</span></label>
-                      <input
-                        type="number"
-                        value={formData.sort_order}
-                        onChange={e => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 1 })}
-                        placeholder="Misal: 1"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm outline-none focus:border-brand-500"
-                      />
-                      <p className="text-[10px] text-gray-400 mt-1">Semakin kecil angkanya, semakin tinggi posisinya di list.</p>
+                      <input type="text" value={formData.whatsapp} onChange={e => setFormData({ ...formData, whatsapp: e.target.value })} placeholder="Contoh: 08123456789" className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
                     </div>
                   </div>
                 </div>
@@ -768,7 +898,6 @@ export default function PengurusAdmin() {
             </div>
           </div>
         )}
-      </div>
     </AdminLayout>
   )
 }

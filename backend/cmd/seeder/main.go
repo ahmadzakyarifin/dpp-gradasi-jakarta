@@ -9,7 +9,6 @@ import (
 	kegiatanModel "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kegiatan/model"
 	kontakModel "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kontak/model"
 	pengurusModel "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/pengurus/model"
-	roleModel "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/role/model"
 	settingsModel "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/settings/model"
 	slidersModel "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/sliders/model"
 	userModel "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/user/model"
@@ -41,7 +40,6 @@ func main() {
 	db.Exec("ALTER TABLE sliders ADD COLUMN IF NOT EXISTS deleted_at DATETIME(3) NULL")
 	db.Exec("ALTER TABLE pesan_kontak ADD COLUMN IF NOT EXISTS deleted_at DATETIME(3) NULL")
 	db.Exec("ALTER TABLE kegiatan ADD COLUMN IF NOT EXISTS author_id INT NULL")
-	db.Exec("ALTER TABLE kegiatan MODIFY COLUMN event_date VARCHAR(200) NULL")
 	db.Exec("DROP TABLE IF EXISTS settings;")
 	err = db.AutoMigrate(&settingsModel.Settings{})
 	if err != nil {
@@ -53,7 +51,7 @@ func main() {
 	tables := []string{
 		"refresh_tokens", "password_reset_tokens", "activation_tokens",
 		"kegiatan_gallery", "kegiatan_tags", "berita_tags",
-		"users", "roles", "berita", "kegiatan", "pengurus", "sliders", "pesan_kontak", "activity_logs",
+		"users", "berita", "kegiatan", "pengurus", "sliders", "pesan_kontak", "activity_logs",
 	}
 	db.Exec("SET FOREIGN_KEY_CHECKS = 0;")
 	for _, t := range tables {
@@ -64,13 +62,7 @@ func main() {
 	// Helper for string pointers
 	strPtr := func(s string) *string { return &s }
 
-	// 3. Insert Roles (nama snake_case sesuai normalisasi 00016 & kontrak middleware)
-	log.Println("[3/10] Menyisipkan data Roles...")
-	roles := []roleModel.RoleModel{
-		{Name: "super_admin", DisplayName: "Super Administrator", IsSystem: true, IsActive: true},
-		{Name: "admin", DisplayName: "Admin", IsSystem: false, IsActive: true},
-	}
-	db.Create(&roles)
+	// 3. (Langkah ini dilewati karena tabel roles sudah dihapus dan diubah menjadi ENUM di tabel users)
 
 	// 4. Insert Super Admin dari .env root
 	adminName := cfg.Dev.SuperAdminName
@@ -93,7 +85,7 @@ func main() {
 	}
 
 	adminUser := userModel.UserModel{
-		RoleID:    roles[0].ID,
+		Role:      "super_admin",
 		Name:      adminName,
 		Email:     adminEmail,
 		Password:  string(hash),

@@ -5,6 +5,8 @@ import { beritaContent } from '../content/beritaContent'
 import { beritaService } from '../services/beritaService'
 import { formatDate } from '../utils/format'
 import { resolveAssetUrl } from '../utils/assetUrl'
+import { shareContent, getShareUrl, copyToClipboard } from '../utils/share'
+import ToastNotification from '../components/admin/ToastNotification'
 
 export default function BeritaList() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -18,7 +20,25 @@ export default function BeritaList() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [categories, setCategories] = useState([])
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
   const currentPage = page
+
+  const handleInstagramShare = (url) => {
+    copyToClipboard(url).then(success => {
+      if (success) {
+        setToast({ show: true, message: 'Tautan disalin! Membuka Instagram...', type: 'success' });
+        window.open('https://www.instagram.com/', '_blank');
+      }
+    });
+  };
+
+  const handleCopyLink = (url, label = 'Tautan') => {
+    copyToClipboard(url).then(success => {
+      if (success) {
+        setToast({ show: true, message: `${label} berhasil disalin!`, type: 'success' });
+      }
+    });
+  };
 
   useEffect(() => {
     beritaService.getCategories()
@@ -164,27 +184,50 @@ export default function BeritaList() {
                   </Link>
                   <p className="text-slate-500 text-[13px] flex-grow line-clamp-2 mb-4 leading-relaxed">{item.excerpt || '-'}</p>
                   <div className="pt-4 flex justify-between items-center border-t border-slate-100 mt-auto">
-                    <button onClick={() => {
-                      const url = `${window.location.origin}/berita/${item.slug}`;
-                      const choice = window.prompt(
-                        `Bagikan Berita: "${item.title}"\nKetik angka untuk memilih:\n1. WhatsApp\n2. Facebook\n3. Instagram (Salin Link)`,
-                        "1"
-                      );
-                      if (choice === "1") {
-                        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(`${item.title} ${url}`)}`, '_blank');
-                      } else if (choice === "2") {
-                        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
-                      } else if (choice === "3") {
-                        navigator.clipboard.writeText(url).then(() => {
-                          alert('Link disalin ke clipboard! Silakan bagikan di Instagram.');
-                        });
-                      }
-                    }} type="button" className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-brand-600 transition group/btn">
-                      <div className="w-7 h-7 rounded-full bg-slate-50 flex items-center justify-center group-hover/btn:bg-brand-50 transition-colors">
-                        <i className="ph-bold ph-share-network text-sm" />
+                      <div className="flex items-center gap-1.5">
+                        <button 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleInstagramShare(`${window.location.origin}/berita/${item.slug}`);
+                          }} 
+                          className="w-7 h-7 rounded-full bg-[#E1306C]/10 text-[#E1306C] hover:bg-[#E1306C] hover:text-white flex items-center justify-center transition" 
+                          title="Instagram"
+                        >
+                          <i className="ph-fill ph-instagram-logo text-xs" />
+                        </button>
+                        <a 
+                          href={getShareUrl('whatsapp', { title: item.title, text: item.excerpt, url: `${window.location.origin}/berita/${item.slug}` })} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-7 h-7 rounded-full bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366] hover:text-white flex items-center justify-center transition" 
+                          title="WhatsApp"
+                        >
+                          <i className="ph-fill ph-whatsapp-logo text-xs" />
+                        </a>
+                        <a 
+                          href={getShareUrl('facebook', { title: item.title, text: item.excerpt, url: `${window.location.origin}/berita/${item.slug}` })} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-7 h-7 rounded-full bg-[#1877F2]/10 text-[#1877F2] hover:bg-[#1877F2] hover:text-white flex items-center justify-center transition" 
+                          title="Facebook"
+                        >
+                          <i className="ph-fill ph-facebook-logo text-xs" />
+                        </a>
+                        <button 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleCopyLink(`${window.location.origin}/berita/${item.slug}`, 'Tautan berita');
+                          }} 
+                          className="w-7 h-7 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-600 hover:text-white flex items-center justify-center transition" 
+                          title="Salin Tautan"
+                        >
+                          <i className="ph-bold ph-link text-xs" />
+                        </button>
                       </div>
-                      <span className="hidden sm:inline">{beritaContent.publicList.share}</span>
-                    </button>
                     <Link to={`/berita/${item.slug}`} className="flex items-center gap-1.5 text-xs font-bold text-brand-600 hover:text-brand-800 transition">
                       {beritaContent.publicList.readMore} <i className="ph-bold ph-arrow-right" />
                     </Link>
@@ -236,6 +279,12 @@ export default function BeritaList() {
           )}
         </div>
       </section>
+      <ToastNotification 
+        show={toast.show} 
+        message={toast.message} 
+        type={toast.type} 
+        onClose={() => setToast(prev => ({ ...prev, show: false }))} 
+      />
     </PublicLayout>
   )
 }

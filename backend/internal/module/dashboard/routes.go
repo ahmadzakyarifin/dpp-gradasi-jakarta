@@ -14,7 +14,7 @@ func RegisterRoutes(
 ) {
 	g := apiGroup.Group("/admin/dashboard")
 	g.Use(middleware.AuthMiddleware(jwtSecret))
-	g.Use(middleware.RoleMiddleware("super_admin"))
+	g.Use(middleware.RoleMiddleware("super_admin", "admin"))
 	{
 		g.GET("/summary", h.Summary)
 	}

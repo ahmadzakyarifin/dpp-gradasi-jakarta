@@ -140,8 +140,8 @@ func (h *UserHandler) ToggleStatus(c *gin.Context) {
 		return
 	}
 
-	if user.RoleID == 1 && user.Status == "active" {
-		admins, _ := h.s.GetAll(c.Request.Context(), 1)
+	if user.Role == "super_admin" && user.Status == "active" {
+		admins, _ := h.s.GetAll(c.Request.Context(), "super_admin")
 		activeAdmins := 0
 		for _, a := range admins {
 			if a.Status == "active" {
@@ -179,7 +179,7 @@ func (h *UserHandler) Activate(c *gin.Context) {
 		return
 	}
 
-	accessToken, _ := helper.GenerateAccessToken(user.ID, user.Email, user.RoleID, user.Name, user.RoleName, h.cfg.JWT.Secret, h.cfg.JWT.AccessTTLMinutes)
+	accessToken, _ := helper.GenerateAccessToken(user.ID, user.Email, user.Name, user.Role, h.cfg.JWT.Secret, h.cfg.JWT.AccessTTLMinutes)
 	refreshToken, expiry, _ := helper.GenerateRefreshToken(h.cfg.JWT.RefreshTTLHours)
 	if err := h.s.SaveRefreshToken(ctx, user.ID, refreshToken, expiry); err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, "GAGAL_MENYIMPAN_SESSION", "gagal menyimpan session", nil)
@@ -192,10 +192,11 @@ func (h *UserHandler) Activate(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "AKUN_BERHASIL_DIAKTIFKAN", "akun berhasil diaktifkan", gin.H{
 		"access_token": accessToken,
 		"user": gin.H{
-			"id":      user.ID,
-			"name":    user.Name,
-			"email":   user.Email,
-			"role_id": user.RoleID,
+			"id":        user.ID,
+			"name":      user.Name,
+			"email":     user.Email,
+			"role":      user.Role,
+			"role_name": user.Role,
 		},
 	}, nil)
 }
@@ -246,7 +247,7 @@ func (h *UserHandler) BulkDelete(c *gin.Context) {
 		}
 
 		user, err := h.s.GetByID(c.Request.Context(), id)
-		if err == nil && user != nil && user.RoleID == 1 {
+		if err == nil && user != nil && user.Role == "super_admin" {
 			helper.ErrorResponse(c, http.StatusBadRequest, "UNAUTHORIZED_ACTION", fmt.Sprintf("Operasi dibatalkan: Akun %s adalah Admin dan tidak boleh dihapus", user.Name), nil)
 			return
 		}

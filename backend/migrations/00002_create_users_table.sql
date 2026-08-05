@@ -2,7 +2,7 @@
 -- +goose StatementBegin
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    role_id INT NOT NULL,
+    role ENUM("super_admin", "admin") NOT NULL,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
     password VARCHAR(255) DEFAULT NULL,
@@ -15,8 +15,7 @@ CREATE TABLE users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP NULL,
 
-    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT,
-    INDEX idx_role_id (role_id),
+    INDEX idx_role (role),
     INDEX idx_status (status),
     INDEX idx_deleted_at (deleted_at),
     INDEX idx_email (email)

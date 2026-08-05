@@ -6,15 +6,22 @@ import (
 )
 
 func UserEntityToAuth(user userentity.User) dto.AuthUser {
+	var roleID uint = 10
+	roleDisplayName := "Admin"
+	if user.Role == "superadmin" || user.Role == "super_admin" {
+		roleID = 9
+		roleDisplayName = "Super Administrator"
+	}
+
 	return dto.AuthUser{
 		ID:        user.ID,
 		Name:      user.Name,
 		Email:     user.Email,
 		PhotoPath: user.PhotoPath,
 		Role: dto.AuthRole{
-			ID:          user.RoleID,
-			Name:        user.RoleName,
-			DisplayName: user.RoleDisplayName,
+			ID:          roleID,
+			Name:        user.Role,
+			DisplayName: roleDisplayName,
 		},
 		Status:             user.Status,
 		MustChangePassword: user.MustChangePassword,

@@ -6,6 +6,7 @@ import { resolveAssetUrl } from '../utils/assetUrl'
 import { beritaContent } from '../content/beritaContent'
 import { beritaService } from '../services/beritaService'
 import { formatDate } from '../utils/format'
+import { shareContent, getShareUrl, copyToClipboard } from '../utils/share'
 
 export default function BeritaDetail() {
   const { settings } = useSettings()
@@ -13,6 +14,7 @@ export default function BeritaDetail() {
   const [article, setArticle] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -30,22 +32,33 @@ export default function BeritaDetail() {
     load()
   }, [slug])
 
-  function shareTo(platform) {
-    const url = window.location.href
-    const text = article?.title || beritaContent.detail.defaultTitle
-    if (platform === 'instagram') {
-      navigator.clipboard.writeText(url).then(() => {
-        alert('Link berita berhasil disalin ke clipboard! Silakan bagikan di Instagram.')
-      }).catch(() => {
-        alert('Gagal menyalin link. Silakan salin URL di address bar browser Anda.')
-      })
-      return
+  useEffect(() => {
+    if (article?.title) {
+      document.title = `${article.title} - DPP GRADASI`
     }
-    const links = {
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-      whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(`${text} ${url}`)}`,
+    return () => {
+      document.title = 'DPP GRADASI - Generasi Digital Indonesia'
     }
-    window.open(links[platform], '_blank', 'noopener,noreferrer')
+  }, [article])
+
+
+  const handleInstagramShare = () => {
+    copyToClipboard(window.location.href).then(success => {
+      if (success) {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+        window.open('https://www.instagram.com/', '_blank')
+      }
+    })
+  }
+
+  const handleCopyLink = () => {
+    copyToClipboard(window.location.href).then(success => {
+      if (success) {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      }
+    })
   }
 
   return (
@@ -131,15 +144,27 @@ export default function BeritaDetail() {
 
                 <aside className="w-full lg:w-1/3">
                   <div className="sticky top-28 space-y-6">
-                    <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+                    <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm animate-fade-in">
                       <h4 className="font-heading font-bold text-slate-900 text-sm mb-4 flex items-center gap-2">
                         <i className="ph-bold ph-share-network text-brand-600" /> {beritaContent.detail.shareTitle}
                       </h4>
-                      <div className="grid grid-cols-3 gap-2">
-                        <button onClick={() => shareTo('facebook')} className="flex items-center justify-center w-full h-11 rounded-xl bg-[#1877F2]/10 text-[#1877F2] hover:bg-[#1877F2] hover:text-white transition" title="Facebook"><i className="ph-fill ph-facebook-logo text-lg" /></button>
-                        <button onClick={() => shareTo('whatsapp')} className="flex items-center justify-center w-full h-11 rounded-xl bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366] hover:text-white transition" title="WhatsApp"><i className="ph-fill ph-whatsapp-logo text-lg" /></button>
-                        <button onClick={() => shareTo('instagram')} className="flex items-center justify-center w-full h-11 rounded-xl bg-[#E1306C]/10 text-[#E1306C] hover:bg-[#E1306C] hover:text-white transition" title="Instagram"><i className="ph-fill ph-instagram-logo text-lg" /></button>
+                      <div className="grid grid-cols-4 gap-2">
+                        <button onClick={handleInstagramShare} className="flex items-center justify-center w-full h-11 rounded-xl bg-[#E1306C]/10 text-[#E1306C] hover:bg-[#E1306C] hover:text-white transition" title="Instagram"><i className="ph-fill ph-instagram-logo text-lg" /></button>
+                        <a href={getShareUrl('whatsapp', { title: article.title, text: article.excerpt })} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full h-11 rounded-xl bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366] hover:text-white transition" title="WhatsApp"><i className="ph-fill ph-whatsapp-logo text-lg" /></a>
+                        <a href={getShareUrl('facebook', { title: article.title, text: article.excerpt })} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full h-11 rounded-xl bg-[#1877F2]/10 text-[#1877F2] hover:bg-[#1877F2] hover:text-white transition" title="Facebook"><i className="ph-fill ph-facebook-logo text-lg" /></a>
+                        <button 
+                          onClick={handleCopyLink} 
+                          className={`flex items-center justify-center w-full h-11 rounded-xl transition ${copied ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-600 hover:text-white'}`}
+                          title={copied ? "Tautan Berhasil Disalin" : "Salin Tautan"}
+                        >
+                          <i className={`text-lg ${copied ? 'ph-bold ph-check' : 'ph-bold ph-link'}`} />
+                        </button>
                       </div>
+                      {copied && (
+                        <p className="text-[10px] text-emerald-600 font-semibold mt-2 text-center animate-pulse">
+                          Tautan berhasil disalin ke papan klip!
+                        </p>
+                      )}
                     </div>
                   </div>
                 </aside>

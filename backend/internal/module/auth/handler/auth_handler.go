@@ -228,7 +228,7 @@ func (h *AuthHandler) ActivateAccount(c *gin.Context) {
 		return
 	}
 
-	accessToken, _ := helper.GenerateAccessToken(user.ID, user.Email, user.RoleID, user.Name, user.RoleName, h.cfg.JWT.Secret, h.cfg.JWT.AccessTTLMinutes)
+	accessToken, _ := helper.GenerateAccessToken(user.ID, user.Email, user.Name, user.Role, h.cfg.JWT.Secret, h.cfg.JWT.AccessTTLMinutes)
 	refreshToken, expiry, _ := helper.GenerateRefreshToken(h.cfg.JWT.RefreshTTLHours)
 	if err := h.s.SaveRefreshToken(ctx, user.ID, refreshToken, expiry); err != nil {
 		helper.ErrorResponse(c, http.StatusInternalServerError, "SERVER_ERROR", "Terjadi kesalahan pada server.", nil)

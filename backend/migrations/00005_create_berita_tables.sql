@@ -5,7 +5,7 @@ CREATE TABLE berita (
     slug VARCHAR(250) NOT NULL UNIQUE,
     title VARCHAR(300) NOT NULL,
     category VARCHAR(100) DEFAULT 'Berita Organisasi',
-    published_date DATE NOT NULL,
+    published_date VARCHAR(100) NOT NULL,
     author_id INT,
     image_path VARCHAR(500),
     excerpt TEXT,

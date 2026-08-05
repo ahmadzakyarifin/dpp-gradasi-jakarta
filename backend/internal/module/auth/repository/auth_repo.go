@@ -42,7 +42,7 @@ func (r *authRepo) GetDB() *gorm.DB {
 
 func (r *authRepo) FindByEmail(ctx context.Context, email string) (*userentity.User, error) {
 	var u usermodel.UserModel
-	err := r.db.WithContext(ctx).Unscoped().Preload("Role").Where("users.email = ?", email).First(&u).Error
+	err := r.db.WithContext(ctx).Unscoped().Where("users.email = ?", email).First(&u).Error
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (r *authRepo) FindByEmail(ctx context.Context, email string) (*userentity.U
 
 func (r *authRepo) FindUserByID(ctx context.Context, id uint) (*userentity.User, error) {
 	var u usermodel.UserModel
-	err := r.db.WithContext(ctx).Preload("Role").Where("users.id = ?", id).First(&u).Error
+	err := r.db.WithContext(ctx).Where("users.id = ?", id).First(&u).Error
 	if err != nil {
 		return nil, err
 	}

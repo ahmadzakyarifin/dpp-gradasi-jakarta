@@ -33,7 +33,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 //   berita/kegiatan/pengurus/sliders/kontak/settings : super_admin, admin
 //   profile : semua role yang sudah login
 const ROLES = {
-  DASHBOARD: ['super_admin'],
+  DASHBOARD: ['super_admin', 'admin'],
   BERITA: ['super_admin', 'admin'],
   KEGIATAN: ['super_admin', 'admin'],
   PENGURUS: ['super_admin', 'admin'],
@@ -41,7 +41,7 @@ const ROLES = {
   KONTAK: ['super_admin', 'admin'],
   USERS: ['super_admin'],
   ACTIVITY_LOG: ['super_admin'],
-  SETTINGS: ['super_admin', 'admin'],
+  SETTINGS: ['super_admin'],
 }
 
 function PageLoader() {

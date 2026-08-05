@@ -22,7 +22,7 @@ import (
 )
 
 type UserService interface {
-	GetAll(ctx context.Context, roleID uint) ([]entity.User, error)
+	GetAll(ctx context.Context, role string) ([]entity.User, error)
 	GetPaginated(ctx context.Context, req dto.UserQueryReq) ([]entity.User, int, error)
 	Create(ctx context.Context, req dto.UserCreateReq) (*entity.User, error)
 	Update(ctx context.Context, id uint, req dto.UserUpdateReq) (*entity.User, error)
@@ -88,8 +88,8 @@ func (s *userService) log(ctx context.Context, db *gorm.DB, input *activitylogdt
 	_ = s.audit.Log(ctx, db, input)
 }
 
-func (s *userService) GetAll(ctx context.Context, roleID uint) ([]entity.User, error) {
-	return s.repo.FindAll(ctx, roleID)
+func (s *userService) GetAll(ctx context.Context, role string) ([]entity.User, error) {
+	return s.repo.FindAll(ctx, role)
 }
 
 func (s *userService) GetByID(ctx context.Context, id uint) (*entity.User, error) {
@@ -133,7 +133,7 @@ func (s *userService) Create(ctx context.Context, req dto.UserCreateReq) (*entit
 	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		ActorID:     &user.ID,
 		ActorName:   user.Name,
-		ActorRole:   user.RoleName,
+		ActorRole:   user.Role,
 		Action:      "users.create",
 		EntityType:  "users",
 		EntityID:    &user.ID,
@@ -177,7 +177,7 @@ func (s *userService) Update(ctx context.Context, id uint, req dto.UserUpdateReq
 	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		ActorID:     &user.ID,
 		ActorName:   user.Name,
-		ActorRole:   user.RoleName,
+		ActorRole:   user.Role,
 		Action:      "users.update",
 		EntityType:  "users",
 		EntityID:    &user.ID,
@@ -209,7 +209,7 @@ func (s *userService) Delete(ctx context.Context, id uint) error {
 	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		ActorID:     &user.ID,
 		ActorName:   user.Name,
-		ActorRole:   user.RoleName,
+		ActorRole:   user.Role,
 		Action:      "users.delete",
 		EntityType:  "users",
 		EntityID:    &user.ID,
@@ -242,7 +242,7 @@ func (s *userService) ToggleStatus(ctx context.Context, id uint) error {
 	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		ActorID:     &user.ID,
 		ActorName:   user.Name,
-		ActorRole:   user.RoleName,
+		ActorRole:   user.Role,
 		Action:      "users.toggle_status",
 		EntityType:  "users",
 		EntityID:    &user.ID,
@@ -288,7 +288,7 @@ func (s *userService) Restore(ctx context.Context, id uint) error {
 	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		ActorID:     &user.ID,
 		ActorName:   user.Name,
-		ActorRole:   user.RoleName,
+		ActorRole:   user.Role,
 		Action:      "users.restore",
 		EntityType:  "users",
 		EntityID:    &user.ID,
@@ -362,7 +362,7 @@ func (s *userService) ResendNotification(ctx context.Context, id uint) error {
 	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		ActorID:     &user.ID,
 		ActorName:   user.Name,
-		ActorRole:   user.RoleName,
+		ActorRole:   user.Role,
 		Action:      "users.resend_activation",
 		EntityType:  "users",
 		EntityID:    &user.ID,
@@ -450,7 +450,7 @@ func (s *userService) ActivateAccount(ctx context.Context, token string, passwor
 	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		ActorID:     &user.ID,
 		ActorName:   user.Name,
-		ActorRole:   user.RoleName,
+		ActorRole:   user.Role,
 		Action:      "users.activate",
 		EntityType:  "users",
 		EntityID:    &user.ID,
@@ -538,7 +538,7 @@ func (s *userService) UpdateProfile(ctx context.Context, id uint, name string, e
 	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		ActorID:     &user.ID,
 		ActorName:   user.Name,
-		ActorRole:   user.RoleName,
+		ActorRole:   user.Role,
 		Action:      "users.update_profile",
 		EntityType:  "users",
 		EntityID:    &user.ID,
@@ -599,7 +599,7 @@ func (s *userService) ChangePassword(ctx context.Context, userID uint, oldPasswo
 	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 		ActorID:     &userID,
 		ActorName:   user.Name,
-		ActorRole:   user.RoleName,
+		ActorRole:   user.Role,
 		Action:      "users.change_password",
 		EntityType:  "users",
 		EntityID:    &userID,
@@ -636,7 +636,7 @@ func (s *userService) VerifyEmail(ctx context.Context, userID uint, token string
 		s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
 			ActorID:     &userID,
 			ActorName:   user.Name,
-			ActorRole:   user.RoleName,
+			ActorRole:   user.Role,
 			Action:      "users.verify_email",
 			EntityType:  "users",
 			EntityID:    &userID,

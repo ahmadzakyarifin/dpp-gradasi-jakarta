@@ -87,7 +87,7 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest, ip string
 		s.log(ctx, s.r.GetDB(), &activitylogdto.ActivityLogInput{
 			ActorID:     &user.ID,
 			ActorName:   user.Name,
-			ActorRole:   user.RoleName,
+			ActorRole:   user.Role,
 			Action:      "auth.login_failed",
 			EntityType:  "user",
 			EntityID:    &user.ID,
@@ -108,7 +108,7 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest, ip string
 		s.log(ctx, s.r.GetDB(), &activitylogdto.ActivityLogInput{
 			ActorID:     &user.ID,
 			ActorName:   user.Name,
-			ActorRole:   user.RoleName,
+			ActorRole:   user.Role,
 			Action:      "auth.login_failed",
 			EntityType:  "user",
 			EntityID:    &user.ID,
@@ -124,7 +124,7 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest, ip string
 		return nil, &helper.AuthenticationError{Message: "Email atau password salah.", Code: "AUTH_INVALID_CREDENTIALS"}
 	}
 
-	accessToken, err := helper.GenerateAccessToken(user.ID, user.Email, user.RoleID, user.Name, user.RoleName, s.cfg.JWT.Secret, s.cfg.JWT.AccessTTLMinutes)
+	accessToken, err := helper.GenerateAccessToken(user.ID, user.Email, user.Name, user.Role, s.cfg.JWT.Secret, s.cfg.JWT.AccessTTLMinutes)
 	if err != nil {
 		return nil, errors.New("gagal membuat access token")
 	}
@@ -146,7 +146,7 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest, ip string
 	s.log(ctx, s.r.GetDB(), &activitylogdto.ActivityLogInput{
 		ActorID:     &user.ID,
 		ActorName:   user.Name,
-		ActorRole:   user.RoleName,
+		ActorRole:   user.Role,
 		Action:      "auth.login",
 		EntityType:  "user",
 		EntityID:    &user.ID,
@@ -192,7 +192,7 @@ func (s *authService) RefreshToken(ctx context.Context, refreshToken string) (*d
 		return nil, errors.New("gagal menyimpan session baru")
 	}
 
-	newAccessToken, err := helper.GenerateAccessToken(user.ID, user.Email, user.RoleID, user.Name, user.RoleName, s.cfg.JWT.Secret, s.cfg.JWT.AccessTTLMinutes)
+	newAccessToken, err := helper.GenerateAccessToken(user.ID, user.Email, user.Name, user.Role, s.cfg.JWT.Secret, s.cfg.JWT.AccessTTLMinutes)
 	if err != nil {
 		return nil, errors.New("gagal membuat access token baru")
 	}
@@ -201,7 +201,7 @@ func (s *authService) RefreshToken(ctx context.Context, refreshToken string) (*d
 	s.log(ctx, s.r.GetDB(), &activitylogdto.ActivityLogInput{
 		ActorID:     &user.ID,
 		ActorName:   user.Name,
-		ActorRole:   user.RoleName,
+		ActorRole:   user.Role,
 		Action:      "auth.refresh_token",
 		EntityType:  "user",
 		EntityID:    &user.ID,
@@ -261,7 +261,7 @@ func (s *authService) ForgotPassword(ctx context.Context, req dto.ForgotPassword
 	s.log(ctx, s.r.GetDB(), &activitylogdto.ActivityLogInput{
 		ActorID:     &user.ID,
 		ActorName:   user.Name,
-		ActorRole:   user.RoleName,
+		ActorRole:   user.Role,
 		Action:      "auth.forgot_password",
 		EntityType:  "user",
 		EntityID:    &user.ID,
@@ -368,7 +368,7 @@ func (s *authService) ChangePassword(ctx context.Context, userID uint, req dto.C
 		s.log(ctx, s.r.GetDB(), &activitylogdto.ActivityLogInput{
 			ActorID:     &user.ID,
 			ActorName:   user.Name,
-			ActorRole:   user.RoleName,
+			ActorRole:   user.Role,
 			Action:      "auth.change_password_failed",
 			EntityType:  "user",
 			EntityID:    &user.ID,
@@ -387,7 +387,7 @@ func (s *authService) ChangePassword(ctx context.Context, userID uint, req dto.C
 		s.log(ctx, s.r.GetDB(), &activitylogdto.ActivityLogInput{
 			ActorID:     &user.ID,
 			ActorName:   user.Name,
-			ActorRole:   user.RoleName,
+			ActorRole:   user.Role,
 			Action:      "auth.change_password_failed",
 			EntityType:  "user",
 			EntityID:    &user.ID,
@@ -413,7 +413,7 @@ func (s *authService) ChangePassword(ctx context.Context, userID uint, req dto.C
 		s.log(ctx, s.r.GetDB(), &activitylogdto.ActivityLogInput{
 			ActorID:     &user.ID,
 			ActorName:   user.Name,
-			ActorRole:   user.RoleName,
+			ActorRole:   user.Role,
 			Action:      "auth.change_password_failed",
 			EntityType:  "user",
 			EntityID:    &user.ID,
@@ -441,7 +441,7 @@ func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 		s.log(ctx, s.r.GetDB(), &activitylogdto.ActivityLogInput{
 			ActorID:     &user.ID,
 			ActorName:   user.Name,
-			ActorRole:   user.RoleName,
+			ActorRole:   user.Role,
 			Action:      "auth.logout",
 			EntityType:  "user",
 			EntityID:    &user.ID,
@@ -518,7 +518,7 @@ func (s *authService) ActivateAccount(ctx context.Context, token string, passwor
 	s.log(ctx, s.r.GetDB(), &activitylogdto.ActivityLogInput{
 		ActorID:     &user.ID,
 		ActorName:   user.Name,
-		ActorRole:   user.RoleName,
+		ActorRole:   user.Role,
 		Action:      "users.activate",
 		EntityType:  "users",
 		EntityID:    &user.ID,

@@ -4,7 +4,7 @@ package dto
 type KegiatanCreateRequest struct {
 	Title       string `json:"title" binding:"required,min=5,max=300"`
 	Category    string `json:"category"`
-	EventDate   string `json:"event_date"`
+	EventDate   string `json:"event_date" binding:"required"`
 	Location    string `json:"location"`
 	Organizer   string `json:"organizer"`
 	AuthorID    *uint  `json:"author_id,omitempty"`

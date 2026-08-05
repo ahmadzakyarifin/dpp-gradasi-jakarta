@@ -24,6 +24,8 @@ CREATE TABLE settings (
     greeting_date VARCHAR(100),
     greeting_content TEXT,
     greeting_image_path VARCHAR(500),
+    login_hero_title VARCHAR(255) NULL,
+    login_hero_description TEXT NULL,
     updated_by INT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

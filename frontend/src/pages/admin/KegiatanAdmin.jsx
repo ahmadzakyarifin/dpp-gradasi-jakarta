@@ -8,6 +8,18 @@ import { resolveAssetUrl } from '../../utils/assetUrl'
 
 const PAGE_SIZE = 5
 
+const getTodayDateString = () => {
+  const months = [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  ]
+  const today = new Date()
+  const day = String(today.getDate()).padStart(2, '0')
+  const month = months[today.getMonth()]
+  const year = today.getFullYear()
+  return `${day} ${month} ${year}`
+}
+
 export default function KegiatanAdmin() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(false)
@@ -33,7 +45,7 @@ export default function KegiatanAdmin() {
     title: '',
     category: 'Kegiatan',
     organizer: 'DPP GRADASI',
-    eventDate: '',
+    eventDate: getTodayDateString(),
     location: '',
     image: '',
     excerpt: '',
@@ -70,6 +82,9 @@ export default function KegiatanAdmin() {
       errors.title = 'Judul minimal 5 karakter.'
     } else if (data.title.trim().length > 300) {
       errors.title = 'Judul maksimal 300 karakter.'
+    }
+    if (!data.eventDate || !data.eventDate.trim()) {
+      errors.eventDate = 'Tanggal event wajib diisi.'
     }
     if (!data.content || !data.content.trim()) {
       errors.content = 'Konten lengkap wajib diisi.'
@@ -156,6 +171,7 @@ export default function KegiatanAdmin() {
         .then(res => {
           if (res?.data) {
             const d = res.data
+            console.log("Detail Kegiatan dari API:", d)
             setFormData(prev => ({
               ...prev,
               content: d.content ?? prev.content,
@@ -184,7 +200,7 @@ export default function KegiatanAdmin() {
         title: '',
         category: 'Kegiatan',
         organizer: 'DPP GRADASI',
-        eventDate: '',
+        eventDate: getTodayDateString(),
         location: '',
         image: '',
         excerpt: '',
@@ -530,7 +546,7 @@ export default function KegiatanAdmin() {
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-3">
-                        <img src={item.image_url} alt="" className="w-16 h-12 rounded-lg object-cover border border-slate-200 shrink-0" />
+                        <img src={resolveAssetUrl(item.image_url)} alt="" className="w-16 h-12 rounded-lg object-cover border border-slate-200 shrink-0" />
                         <p className="font-bold text-slate-900 line-clamp-1">{item.title}</p>
                       </div>
                     </td>
@@ -698,8 +714,31 @@ export default function KegiatanAdmin() {
                     </div>
 
                     <div className="col-span-2 sm:col-span-1">
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Tanggal Event <span className="text-gray-400 font-normal">(opsional)</span></label>
-                      <input type="text" value={formData.eventDate} onChange={e => setFormData({ ...formData, eventDate: e.target.value })} placeholder="31 Desember 2025" className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
+                      <label className="block text-xs font-semibold text-slate-500 mb-1">Tanggal Event <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        value={formData.eventDate}
+                        placeholder="Contoh: 31 Desember 2025"
+                        onChange={e => {
+                          setFormData({ ...formData, eventDate: e.target.value })
+                          clearFieldError('event_date')
+                          if (touched.eventDate) {
+                            const errs = validateForm({ ...formData, eventDate: e.target.value })
+                            setFormErrors(prev => ({ ...prev, eventDate: errs.eventDate }))
+                          }
+                        }}
+                        onBlur={() => {
+                          setTouched(prev => ({ ...prev, eventDate: true }))
+                          const errs = validateForm()
+                          setFormErrors(prev => ({ ...prev, eventDate: errs.eventDate }))
+                        }}
+                        className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors ${touched.eventDate && formErrors.eventDate ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
+                      />
+                      {touched.eventDate && formErrors.eventDate && (
+                        <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
+                          <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.eventDate}
+                        </p>
+                      )}
                     </div>
 
                     <div className="col-span-2">

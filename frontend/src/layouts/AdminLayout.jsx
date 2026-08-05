@@ -12,7 +12,7 @@ const sidebarLinks = [
   { path: '/admin/kontak', label: 'Pesan Kontak', icon: 'ph-envelope-simple' },
   { path: '/admin/users', label: 'Manajemen Admin', icon: 'ph-user-gear', roles: ['super_admin'] },
   { path: '/admin/activity-log', label: 'Activity Log', icon: 'ph-clock-counter-clockwise', roles: ['super_admin'] },
-  { path: '/admin/settings', label: 'Pengaturan Website', icon: 'ph-gear' },
+  { path: '/admin/settings', label: 'Pengaturan Website', icon: 'ph-gear', roles: ['super_admin'] },
 ]
 
 export default function AdminLayout({ children, title = 'Admin Panel', headerContent }) {
