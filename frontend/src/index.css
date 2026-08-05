@@ -326,6 +326,16 @@ main textarea {
   padding: 0.7rem 0.9rem !important; /* larger height and width padding */
 }
 
+/* Ensure search inputs with icons have enough left padding and absolute icons are aligned */
+main input.pl-9,
+main input.pl-10 {
+  padding-left: 2.75rem !important;
+}
+
+main .relative i.ph-magnifying-glass {
+  left: 1rem !important;
+}
+
 main input:focus,
 main select:focus,
 main textarea:focus {
@@ -399,4 +409,16 @@ td {
   font-size: 0.75rem;
   letter-spacing: 0.025em;
   text-transform: uppercase;
+}
+
+/* Image Lightbox Click to Preview Sizing & Hover Aura */
+.previewable-image {
+  cursor: zoom-in !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.previewable-image:hover {
+  transform: scale(1.06);
+  filter: brightness(0.95);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
 }

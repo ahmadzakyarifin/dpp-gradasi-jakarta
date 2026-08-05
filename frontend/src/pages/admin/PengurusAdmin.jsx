@@ -522,7 +522,7 @@ export default function PengurusAdmin() {
                           <td className="p-4 font-medium text-slate-900">
                             <div className="flex items-center gap-3">
                               {item.image_url ? (
-                                <img src={resolveAssetUrl(item.image_url)} alt="" className="w-10 h-10 rounded-full object-cover border border-gray-200" />
+                                <img src={resolveAssetUrl(item.image_url)} alt="" className="w-10 h-10 rounded-full object-cover border border-gray-200 previewable-image" />
                               ) : (
                                 <div className="w-10 h-10 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold text-sm">
                                   {item.name.charAt(0).toUpperCase()}
@@ -546,10 +546,10 @@ export default function PengurusAdmin() {
                               </span>
                             ) : (
                               <button onClick={() => confirmAction('toggle_status', item)} className="inline-flex items-center gap-2 cursor-pointer">
-                                <div className={`relative w-9 h-5 rounded-full transition-colors ${item.is_active ? 'bg-emerald-500' : 'bg-slate-200'}`}>
+                                <div className={`relative w-9 h-5 rounded-full transition-colors ${item.is_active ? 'bg-brand-600' : 'bg-slate-200'}`}>
                                   <div className={`absolute top-[2px] left-[2px] w-4 h-4 bg-white rounded-full transition-transform ${item.is_active ? 'translate-x-4' : 'translate-x-0'}`} />
                                 </div>
-                                <span className={`text-xs font-semibold ${item.is_active ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                <span className={`text-xs font-semibold ${item.is_active ? 'text-brand-600' : 'text-slate-400'}`}>
                                   {item.is_active ? 'Aktif' : 'Non-aktif'}
                                 </span>
                               </button>

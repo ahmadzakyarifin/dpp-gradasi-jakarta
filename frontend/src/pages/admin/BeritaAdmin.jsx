@@ -503,7 +503,7 @@ export default function BeritaAdmin() {
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         {item.image_url || item.image_path ? (
-                          <img src={resolveAssetUrl(item.image_url || item.image_path)} alt="" className="w-12 h-9 rounded object-cover border border-slate-200 shrink-0" />
+                          <img src={resolveAssetUrl(item.image_url || item.image_path)} alt="" className="w-12 h-9 rounded object-cover border border-slate-200 shrink-0 previewable-image" />
                         ) : (
                           <div className="w-12 h-9 rounded bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center text-slate-300">
                             <i className="ph ph-image text-base" />

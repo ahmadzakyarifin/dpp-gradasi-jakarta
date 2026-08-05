@@ -401,24 +401,30 @@ export default function UsersAdmin() {
 
         {/* Bulk Actions Bar */}
         {selectedIds.length > 0 && (
-          <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3 flex items-center justify-between shadow-sm animate-fade-in">
-            <span className="text-sm text-indigo-800 font-medium">{selectedIds.length} akun terpilih</span>
-            <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2 bg-brand-50/60 border border-brand-100 rounded-xl px-4 py-2.5 shadow-sm animate-fade-in">
+            <span className="text-sm font-semibold text-brand-700">{selectedIds.length} akun terpilih</span>
+            <div className="flex gap-2 ml-auto">
               {currentTab === 'active' ? (
                 <button
                   onClick={() => triggerConfirm('bulk_delete')}
-                  className="bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors"
+                  className="bg-red-600 hover:bg-red-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
                 >
                   <i className="ph ph-trash" /> Hapus Massal
                 </button>
               ) : (
                 <button
                   onClick={() => triggerConfirm('bulk_restore')}
-                  className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
                 >
                   <i className="ph ph-arrow-counter-clockwise" /> Pulihkan Massal
                 </button>
               )}
+              <button
+                onClick={() => setSelectedIds([])}
+                className="bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+              >
+                Batal
+              </button>
             </div>
           </div>
         )}
@@ -511,10 +517,10 @@ export default function UsersAdmin() {
                               onClick={() => triggerConfirm(item.status === 'active' ? 'deactivate' : 'activate', item.id)}
                               className={`inline-flex items-center gap-2 ${isProtected ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
                             >
-                              <div className={`relative w-9 h-5 rounded-full transition-colors ${item.status === 'active' ? 'bg-emerald-500' : 'bg-slate-200'}`}>
+                              <div className={`relative w-9 h-5 rounded-full transition-colors ${item.status === 'active' ? 'bg-brand-600' : 'bg-slate-200'}`}>
                                 <div className={`absolute top-[2px] left-[2px] w-4 h-4 bg-white rounded-full transition-transform ${item.status === 'active' ? 'translate-x-4' : 'translate-x-0'}`} />
                               </div>
-                              <span className={`text-xs font-semibold ${item.status === 'active' ? 'text-emerald-600' : 'text-slate-400'}`}>
+                              <span className={`text-xs font-semibold ${item.status === 'active' ? 'text-brand-600' : 'text-slate-400'}`}>
                                 {item.status === 'active' ? 'Aktif' : 'Nonaktif'}
                               </span>
                             </button>

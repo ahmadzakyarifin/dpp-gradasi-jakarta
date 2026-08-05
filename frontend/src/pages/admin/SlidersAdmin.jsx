@@ -425,24 +425,30 @@ export default function SlidersAdmin() {
 
         {/* Bulk Actions Bar */}
         {selectedItems.length > 0 && (
-          <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3 flex items-center justify-between shadow-sm">
-            <span className="text-sm text-indigo-800 font-medium">{selectedItems.length} item terpilih</span>
-            <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2 bg-brand-50/60 border border-brand-100 rounded-xl px-4 py-2.5 shadow-sm">
+            <span className="text-sm font-semibold text-brand-700">{selectedItems.length} item terpilih</span>
+            <div className="flex gap-2 ml-auto">
               {currentTab === 'trash' ? (
                 <button
                   onClick={() => confirmAction('bulk_restore')}
-                  className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
                 >
                   <i className="ph-bold ph-arrow-counter-clockwise" /> Pulihkan Massal
                 </button>
               ) : (
                 <button
                   onClick={() => confirmAction('bulk_delete')}
-                  className="bg-red-100 text-red-700 hover:bg-red-200 px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-colors"
+                  className="bg-red-600 hover:bg-red-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
                 >
                   <i className="ph-bold ph-trash" /> Hapus Massal
                 </button>
               )}
+              <button
+                onClick={() => setSelectedItems([])}
+                className="bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+              >
+                Batal
+              </button>
             </div>
           </div>
         )}

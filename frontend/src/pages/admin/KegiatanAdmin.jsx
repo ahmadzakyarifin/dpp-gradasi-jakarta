@@ -561,7 +561,7 @@ export default function KegiatanAdmin() {
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-3">
-                        <img src={resolveAssetUrl(item.image_url)} alt="" className="w-16 h-12 rounded-lg object-cover border border-slate-200 shrink-0" />
+                        <img src={resolveAssetUrl(item.image_url)} alt="" className="w-16 h-12 rounded-lg object-cover border border-slate-200 shrink-0 previewable-image" />
                         <p className="font-bold text-slate-900 line-clamp-1">{item.title}</p>
                       </div>
                     </td>
