@@ -3,7 +3,7 @@
 // Base URL default mengikuti API base di src/api/index.js.
 const BASE_URL = import.meta.env.VITE_API_URL?.startsWith('http')
   ? new URL(import.meta.env.VITE_API_URL).origin
-  : 'http://127.0.0.1:8080'
+  : '' // Gunakan path relatif (same-origin) jika menggunakan proxy (/api/v1)
 
 export function resolveAssetUrl(url) {
   if (!url) return ''

@@ -2,6 +2,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import { useAuthStore } from '../store/useAuthStore'
 import { resolveAssetUrl } from '../utils/assetUrl'
+import { useSettings } from '../context/useSettings'
 
 const sidebarLinks = [
   { path: '/dashboard', label: 'Dashboard', icon: 'ph-squares-four' },
@@ -16,6 +17,7 @@ const sidebarLinks = [
 ]
 
 export default function AdminLayout({ children, title = 'Admin Panel', headerContent }) {
+  const { settings } = useSettings()
   const navigate = useNavigate()
   const location = useLocation()
   const logout = useAuthStore((state) => state.logout)
@@ -95,8 +97,16 @@ export default function AdminLayout({ children, title = 'Admin Panel', headerCon
       <aside className={`fixed inset-y-0 left-0 w-64 bg-brand-950 text-white flex flex-col h-full shrink-0 shadow-[4px_0_24px_rgba(23,37,84,0.15)] border-r border-brand-900/50 z-50 lg:z-10 lg:relative transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="h-16 flex items-center justify-between px-6 border-b border-brand-900/50 shrink-0 bg-brand-950/40">
           <span className="font-heading font-extrabold text-xl tracking-wide flex items-center gap-2">
-            <span className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white text-base font-black shadow-lg shadow-brand-500/30">G</span>
-            <span>GRADASI<span className="text-brand-400 font-medium">.</span></span>
+            {settings?.logo_path ? (
+              <img 
+                src={resolveAssetUrl(settings.logo_path)} 
+                alt="Logo" 
+                className="w-8 h-8 rounded-lg object-contain bg-white p-1 shadow-lg shadow-brand-500/20" 
+              />
+            ) : (
+              <span className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white text-base font-black shadow-lg shadow-brand-500/30">G</span>
+            )}
+            <span>{settings?.site_name || 'GRADASI'}<span className="text-brand-400 font-medium">.</span></span>
           </span>
           <button 
             onClick={() => setIsSidebarOpen(false)} 

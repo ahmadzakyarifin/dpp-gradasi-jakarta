@@ -166,6 +166,7 @@ export default function KegiatanAdmin() {
         image: item.image_url || item.image_path || '',
         excerpt: item.excerpt || '',
         content: item.content || item.excerpt || '',
+        tags: Array.isArray(item.tags) ? item.tags.join(', ') : (item.tags ?? ''),
         isPublished: item.is_published !== false
       })
       // list_admin tidak menyertakan content/tags/gallery — ambil detail penuh dulu
@@ -182,6 +183,7 @@ export default function KegiatanAdmin() {
               location: d.location ?? prev.location,
               organizer: d.organizer ?? prev.organizer,
               image: d.image_path || d.image_url || prev.image,
+              tags: Array.isArray(d.tags) ? d.tags.join(', ') : (d.tags ?? prev.tags),
             }))
             // Isi galeri dari detail (id sudah ada → bisa dihapus per item via API)
             if (Array.isArray(d.gallery)) {
@@ -209,6 +211,7 @@ export default function KegiatanAdmin() {
         image: '',
         excerpt: '',
         content: '',
+        tags: '',
         isPublished: true
       })
       setGallery([])
@@ -257,6 +260,7 @@ export default function KegiatanAdmin() {
       image_path: formData.image,
       excerpt: formData.excerpt,
       content: formData.content,
+      tags: formData.tags,
       is_published: formData.isPublished,
       // Galeri: item baru (tanpa id) dikirim, item lama dengan id tetap dipertahankan
       gallery: JSON.stringify(gallery.map((g, idx) => ({
@@ -804,6 +808,11 @@ export default function KegiatanAdmin() {
                       </p>
                     )}
                   </div>
+<br/>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Tags (pisahkan dengan koma) <span className="text-gray-400 font-normal">(opsional)</span></label>
+                    <input type="text" value={formData.tags || ''} onChange={e => setFormData({ ...formData, tags: e.target.value })} placeholder="kegiatan, pemuda, digital" className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
+                  </div>
 
                   {/* Galeri Gambar Kegiatan */}
                   <div>
@@ -859,7 +868,7 @@ export default function KegiatanAdmin() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-500 mb-1">Ringkasan <span className="text-gray-400 font-normal">(opsional)</span></label>
-                    <textarea rows={3} value={formData.excerpt} onChange={e => { setFormData({ ...formData, excerpt: e.target.value }); clearFieldError('excerpt') }} className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors resize-none" />
+                    <textarea rows={3} value={formData.excerpt} onChange={e => { setFormData({ ...formData, excerpt: e.target.value }); clearFieldError('excerpt') }} className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors overflow-y-auto resize-y min-h-[80px]" />
                   </div>
 
                   <div>
@@ -880,7 +889,7 @@ export default function KegiatanAdmin() {
                         const errs = validateForm()
                         setFormErrors(prev => ({ ...prev, content: errs.content }))
                       }}
-                      className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors resize-none ${touched.content && formErrors.content ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
+                      className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors overflow-y-auto resize-y min-h-[160px] ${touched.content && formErrors.content ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
                     />
                     {touched.content && formErrors.content && (
                       <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">

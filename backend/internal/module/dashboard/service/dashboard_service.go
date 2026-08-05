@@ -64,10 +64,10 @@ func (s *dashboardService) GetSummary(ctx context.Context) (*dashdto.DashboardSu
 
 	// Admin users (non-super, tidak terhapus)
 	var totalAdmin, pendingAdmin int64
-	if err := s.db.Model(&usermodel.UserModel{}).Where("role_id <> ? AND deleted_at IS NULL", 1).Count(&totalAdmin).Error; err != nil {
+	if err := s.db.Model(&usermodel.UserModel{}).Where("role <> ? AND deleted_at IS NULL", "super_admin").Count(&totalAdmin).Error; err != nil {
 		return nil, err
 	}
-	if err := s.db.Model(&usermodel.UserModel{}).Where("role_id <> ? AND deleted_at IS NULL AND status = ? AND (password = ? OR password IS NULL)", 1, "inactive", "").Count(&pendingAdmin).Error; err != nil {
+	if err := s.db.Model(&usermodel.UserModel{}).Where("role <> ? AND deleted_at IS NULL AND status = ? AND (password = ? OR password IS NULL)", "super_admin", "inactive", "").Count(&pendingAdmin).Error; err != nil {
 		return nil, err
 	}
 	res.TotalAdmin = totalAdmin

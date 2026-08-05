@@ -298,7 +298,7 @@ export default function SettingsAdmin() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">Visi Utama</label>
-                  <textarea rows="2" value={formData.about_vision} onChange={e => setFormData({...formData, about_vision: e.target.value})} className={inputCls} />
+                  <textarea rows="3" value={formData.about_vision} onChange={e => setFormData({...formData, about_vision: e.target.value})} className={`${inputCls} overflow-y-auto resize-y min-h-[80px]`} />
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-2">
@@ -354,11 +354,7 @@ export default function SettingsAdmin() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">Sejarah / Tentang Kami</label>
-                  <textarea rows="4" value={formData.history} onChange={e => setFormData({...formData, history: e.target.value})} className={inputCls} />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Selayang Pandang (Paragraf Kedua)</label>
-                  <textarea rows="3" value={formData.about_tutorial} onChange={e => setFormData({...formData, about_tutorial: e.target.value})} className={inputCls} />
+                  <textarea rows="6" value={formData.history} onChange={e => setFormData({...formData, history: e.target.value})} className={`${inputCls} overflow-y-auto resize-y min-h-[120px]`} />
                 </div>
               </div>
             )}
@@ -380,7 +376,7 @@ export default function SettingsAdmin() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">Isi Sambutan</label>
-                  <textarea rows="5" value={formData.greeting_content} onChange={e => setFormData({...formData, greeting_content: e.target.value})} className={inputCls} />
+                  <textarea rows="5" value={formData.greeting_content} onChange={e => setFormData({...formData, greeting_content: e.target.value})} className={`${inputCls} overflow-y-auto resize-y min-h-[120px]`} />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">URL Gambar / Poster Sambutan</label>

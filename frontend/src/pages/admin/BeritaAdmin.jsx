@@ -783,7 +783,7 @@ export default function BeritaAdmin() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-500 mb-1">Ringkasan (Excerpt) <span className="text-gray-400 font-normal">(opsional)</span></label>
-                    <textarea rows={3} value={formData.excerpt} onChange={e => setFormData({ ...formData, excerpt: e.target.value })} placeholder="Tulis ringkasan berita singkat..." className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors resize-none" />
+                    <textarea rows={3} value={formData.excerpt} onChange={e => setFormData({ ...formData, excerpt: e.target.value })} placeholder="Tulis ringkasan berita singkat..." className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors overflow-y-auto resize-y min-h-[80px]" />
                   </div>
 
                   <div>
@@ -805,7 +805,7 @@ export default function BeritaAdmin() {
                         setFormErrors(prev => ({ ...prev, content: errs.content }))
                       }}
                       placeholder="Isi berita lengkap di sini..."
-                      className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors resize-none ${touched.content && formErrors.content ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
+                      className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors overflow-y-auto resize-y min-h-[160px] ${touched.content && formErrors.content ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
                     />
                     {touched.content && formErrors.content && (
                       <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">

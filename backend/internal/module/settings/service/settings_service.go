@@ -154,6 +154,17 @@ func (s *settingsService) UpdateSettings(ctx context.Context, values map[string]
 			continue
 		}
 
+		// Penanganan khusus untuk log_retention_days (integer)
+		if key == "log_retention_days" {
+			numVal, ok := val.(float64)
+			if !ok {
+				errorsMap[key] = "Tipe data tidak valid. Harus angka."
+				continue
+			}
+			updates[key] = int(numVal)
+			continue
+		}
+
 		// Field biasa: string
 		strVal, ok := val.(string)
 		if !ok {

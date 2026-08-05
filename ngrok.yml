@@ -1,0 +1,11 @@
+authtoken: 3DKXERov6DGfGZYTYToxvBLUIdd_7j2ahjw2egkECyku1TBXE
+version: "2"
+tunnels:
+  frontend:
+    proto: http
+    addr: 5173
+  # Backend tidak perlu tunnel sendiri karena Vite proxy sudah meneruskan
+  # request /api/* ke localhost:8080 secara otomatis.
+  # backend:
+  #   proto: http
+  #   addr: 8080
