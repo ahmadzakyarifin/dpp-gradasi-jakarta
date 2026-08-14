@@ -94,8 +94,8 @@ export default function AdminLayout({ children, title = 'Admin Panel', headerCon
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 w-64 bg-brand-950 text-white flex flex-col h-full shrink-0 shadow-[4px_0_24px_rgba(23,37,84,0.15)] border-r border-brand-900/50 z-50 lg:z-10 lg:relative transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="h-16 flex items-center justify-between px-6 border-b border-brand-900/50 shrink-0 bg-brand-950/40">
+      <aside className={`fixed inset-y-0 left-0 w-64 bg-brand-900 text-white flex flex-col h-full shrink-0 shadow-[4px_0_24px_rgba(23,37,84,0.12)] z-50 lg:z-10 lg:relative transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="h-16 flex items-center justify-between px-6 shrink-0 bg-brand-900/40">
           <span className="font-heading font-extrabold text-xl tracking-wide flex items-center gap-2">
             {settings?.logo_path ? (
               <img 
@@ -126,7 +126,7 @@ export default function AdminLayout({ children, title = 'Admin Panel', headerCon
                 className={`flex items-center px-4 py-3 rounded-xl transition-all duration-200 btn-press group ${
                   isActive
                     ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/30 font-bold'
-                    : 'text-brand-200/70 hover:bg-brand-900/40 hover:text-white'
+                    : 'text-brand-100/80 hover:bg-brand-800/40 hover:text-white'
                 }`}
               >
                 <i className={`ph ${link.icon} text-lg mr-3.5 transition-transform duration-200 group-hover:scale-110`} /> 
@@ -135,7 +135,7 @@ export default function AdminLayout({ children, title = 'Admin Panel', headerCon
             )
           })}
         </nav>
-        <div className="p-4 border-t border-brand-900/50 shrink-0 bg-brand-950/20">
+        <div className="p-4 shrink-0 bg-brand-900/20">
           <button
             onClick={handleLogout}
             className="w-full flex items-center px-4 py-3 rounded-xl text-red-300 hover:bg-red-500/10 hover:text-red-200 transition-all duration-200 btn-press font-semibold text-[13px] tracking-wide"
@@ -169,8 +169,8 @@ export default function AdminLayout({ children, title = 'Admin Panel', headerCon
 
           <div className="flex items-center gap-4 shrink-0">
             <div className="relative">
-              <button
-                onClick={() => setUserMenuOpen(!userMenuOpen)}
+              <Link
+                to="/admin/profile"
                 className="flex items-center gap-2.5 hover:bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100 transition-all shadow-sm"
               >
                 <img
@@ -179,26 +179,14 @@ export default function AdminLayout({ children, title = 'Admin Panel', headerCon
                   alt={user?.name || 'Admin'}
                 />
                 <span className="text-xs font-semibold text-slate-700 hidden sm:inline">{user?.name || 'Admin'}</span>
-                <i className="ph ph-caret-down text-gray-400 text-xs" />
-              </button>
-              {userMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-1.5 z-50 animate-scale-in">
-                  <Link
-                    to="/admin/profile"
-                    onClick={() => setUserMenuOpen(false)}
-                    className="flex items-center px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-brand-600 transition-colors"
-                  >
-                    <i className="ph ph-user-circle mr-2 text-base" /> Profil Saya
-                  </Link>
-                </div>
-              )}
+              </Link>
             </div>
           </div>
         </header>
 
         {/* Content Area */}
         <div className="flex-1 overflow-auto bg-[#f8fafc] p-4 sm:p-8">
-          <div className="animate-fade-in-up duration-300">
+          <div className="animate-fade-in duration-300">
             {children}
           </div>
         </div>

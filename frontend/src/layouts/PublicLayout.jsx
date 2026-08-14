@@ -11,6 +11,7 @@ export default function PublicLayout({ children }) {
   const [informasiDropdown, setInformasiDropdown] = useState(false)
   const [scrolled, setScrolled] = useState(false)
 
+  const [floatingOpen, setFloatingOpen] = useState(false)
   const location = useLocation()
   const isHome = location.pathname === '/'
 
@@ -265,6 +266,44 @@ export default function PublicLayout({ children }) {
           </div>
         </div>
       </footer>
+
+      {/* Floating Headset Contact Widget — placed outside animation container so it stays fixed to screen viewport */}
+      <div className="fixed bottom-6 right-6 z-[999] flex flex-col items-end">
+        {floatingOpen && (
+          <div className="mb-4 space-y-3 flex flex-col items-end animate-scale-in">
+            {settings.contact_email && (
+              <a 
+                href={`mailto:${settings.contact_email}`}
+                className="flex items-center gap-4 bg-white/90 backdrop-blur-md px-5 py-3 rounded-2xl shadow-lg border border-slate-200/50 hover:bg-white transition"
+              >
+                <span className="text-sm font-bold text-slate-700">{settings.contact_email}</span>
+                <div className="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center text-brand-600">
+                  <i className="ph-bold ph-envelope-simple text-xl" />
+                </div>
+              </a>
+            )}
+            {settings.contact_phone && (
+              <a 
+                href={`tel:${settings.contact_phone}`}
+                className="flex items-center gap-4 bg-white/90 backdrop-blur-md px-5 py-3 rounded-2xl shadow-lg border border-slate-200/50 hover:bg-white transition"
+              >
+                <span className="text-sm font-bold text-slate-700">{settings.contact_phone}</span>
+                <div className="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center text-brand-600">
+                  <i className="ph-bold ph-phone-call text-xl" />
+                </div>
+              </a>
+            )}
+          </div>
+        )}
+        <button 
+          onClick={() => setFloatingOpen(!floatingOpen)}
+          className={`w-16 h-16 rounded-full shadow-2xl flex items-center justify-center text-3xl text-white transition-all duration-300 ${
+            floatingOpen ? 'bg-slate-800 rotate-[135deg]' : 'bg-brand-700 hover:bg-brand-600'
+          }`}
+        >
+          <i className={`ph-bold ${floatingOpen ? 'ph-plus' : 'ph-headset'}`} />
+        </button>
+      </div>
     </div>
   )
 }

@@ -578,33 +578,36 @@ export default function SlidersAdmin() {
 
             {/* Pagination */}
             {filteredItems.length > 0 && (
-              <div className="bg-gray-50 border-t border-gray-200 px-4 py-3 flex items-center justify-between sm:px-6 rounded-b-xl">
-                <div className="text-sm text-gray-500">
-                  Menampilkan <span className="font-medium text-gray-900">{pageStart}</span> sampai <span className="font-medium text-gray-900">{pageEnd}</span> dari <span className="font-medium text-gray-900">{filteredItems.length}</span> hasil
-                </div>
-                <div className="flex gap-1">
+              <div className="bg-white border-t border-slate-200 px-4 py-3 flex items-center justify-between sm:px-6 rounded-b-xl">
+                <span className="text-xs text-slate-500">
+                  Hal {currentPage} dari {totalPages} · {filteredItems.length} data
+                </span>
+                <div className="flex items-center gap-1.5">
                   <button
+                    type="button"
+                    disabled={currentPage <= 1}
                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="px-3 py-1 border border-gray-200 bg-white text-gray-500 rounded hover:bg-gray-50 disabled:opacity-50 text-sm"
+                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:border-brand-500 hover:text-brand-600 disabled:opacity-40 transition"
                   >
-                    Prev
+                    <i className="ph-bold ph-caret-left text-sm" />
                   </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                  {Array.from({ length: totalPages || 1 }, (_, i) => i + 1).map((n) => (
                     <button
-                      key={p}
-                      onClick={() => setCurrentPage(p)}
-                      className={`px-3 py-1 border rounded text-sm ${currentPage === p ? 'border-brand-500 bg-brand-50 text-brand-600 font-medium' : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'}`}
+                      key={n}
+                      type="button"
+                      onClick={() => setCurrentPage(n)}
+                      className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-semibold transition ${n === currentPage ? 'bg-brand-600 text-white' : 'border border-slate-200 text-slate-500 hover:border-brand-500 hover:text-brand-600'}`}
                     >
-                      {p}
+                      {n}
                     </button>
                   ))}
                   <button
+                    type="button"
+                    disabled={currentPage >= totalPages}
                     onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-1 border border-gray-200 bg-white text-gray-500 rounded hover:bg-gray-50 disabled:opacity-50 text-sm"
+                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:border-brand-500 hover:text-brand-600 disabled:opacity-40 transition"
                   >
-                    Next
+                    <i className="ph-bold ph-caret-right text-sm" />
                   </button>
                 </div>
               </div>

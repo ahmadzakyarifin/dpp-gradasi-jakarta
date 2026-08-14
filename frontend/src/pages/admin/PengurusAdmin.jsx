@@ -603,36 +603,37 @@ export default function PengurusAdmin() {
               </div>
 
               {/* Pagination */}
-                <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
-                  <span className="text-xs text-slate-500">Hal {currentPage} dari {totalPages} · {totalData} data</span>
-                  {totalPages > 1 && (
-                  <div className="flex items-center gap-1.5">
+              <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200">
+                <span className="text-xs text-slate-500">Hal {currentPage} dari {totalPages} · {totalData} data</span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    disabled={currentPage <= 1}
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:border-brand-500 hover:text-brand-600 disabled:opacity-40 transition"
+                  >
+                    <i className="ph-bold ph-caret-left text-sm" />
+                  </button>
+                  {Array.from({ length: totalPages || 1 }, (_, i) => i + 1).map((n) => (
                     <button
-                      disabled={currentPage <= 1}
-                      onClick={() => setCurrentPage(p => p - 1)}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-slate-500 hover:border-brand-500 hover:text-brand-600 disabled:opacity-40"
+                      key={n}
+                      type="button"
+                      onClick={() => setCurrentPage(n)}
+                      className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-semibold transition ${n === currentPage ? 'bg-brand-600 text-white' : 'border border-slate-200 text-slate-500 hover:border-brand-500 hover:text-brand-600'}`}
                     >
-                      <i className="ph-bold ph-caret-left" />
+                      {n}
                     </button>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold ${page === currentPage ? 'bg-brand-700 text-white' : 'border border-gray-200 text-slate-600 hover:border-brand-500'}`}
-                      >
-                        {page}
-                      </button>
-                    ))}
-                    <button
-                      disabled={currentPage >= totalPages}
-                      onClick={() => setCurrentPage(p => p + 1)}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-slate-500 hover:border-brand-500 hover:text-brand-600 disabled:opacity-40"
-                    >
-                      <i className="ph-bold ph-caret-right" />
-                    </button>
-                  </div>
-                  )}
+                  ))}
+                  <button
+                    type="button"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:border-brand-500 hover:text-brand-600 disabled:opacity-40 transition"
+                  >
+                    <i className="ph-bold ph-caret-right text-sm" />
+                  </button>
                 </div>
+              </div>
             </>
           )}
         </div>

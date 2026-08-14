@@ -595,31 +595,38 @@ export default function UsersAdmin() {
                 </tbody>
               </table>
             )}
-          </div>
-
-          {/* Pagination */}
+          </div>          {/* Pagination */}
           {!loading && !error && users.length > 0 && (
-            <div className="bg-gray-50 border-t border-gray-200 px-4 py-3 flex items-center justify-between sm:px-6 rounded-b-xl">
-              <div className="text-sm text-gray-500">
-                Menampilkan <span className="font-medium text-gray-900">{(page - 1) * limit + 1}</span> sampai <span className="font-medium text-gray-900">{Math.min(page * limit, total)}</span> dari <span className="font-medium text-gray-900">{total}</span> hasil
-              </div>
-              <div className="flex gap-1">
+            <div className="bg-white border-t border-slate-200 px-4 py-3 flex items-center justify-between sm:px-6 rounded-b-xl">
+              <span className="text-xs text-slate-500">
+                Hal {page} dari {totalPages} · {total} data
+              </span>
+              <div className="flex items-center gap-1.5">
                 <button
+                  type="button"
+                  disabled={page <= 1}
                   onClick={() => setPage(p => Math.max(p - 1, 1))}
-                  disabled={page === 1}
-                  className="px-3 py-1 border border-gray-200 bg-white text-gray-500 rounded hover:bg-gray-50 disabled:opacity-50 transition"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:border-brand-500 hover:text-brand-600 disabled:opacity-40 transition"
                 >
-                  Prev
+                  <i className="ph-bold ph-caret-left text-sm" />
                 </button>
-                
-                {renderPagination()}
-
+                {Array.from({ length: totalPages || 1 }, (_, i) => i + 1).map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setPage(n)}
+                    className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-semibold transition ${n === page ? 'bg-brand-600 text-white' : 'border border-slate-200 text-slate-500 hover:border-brand-500 hover:text-brand-600'}`}
+                  >
+                    {n}
+                  </button>
+                ))}
                 <button
+                  type="button"
+                  disabled={page >= totalPages}
                   onClick={() => setPage(p => Math.min(p + 1, totalPages))}
-                  disabled={page === totalPages}
-                  className="px-3 py-1 border border-gray-200 bg-white text-gray-500 rounded hover:bg-gray-50 disabled:opacity-50 transition"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:border-brand-500 hover:text-brand-600 disabled:opacity-40 transition"
                 >
-                  Next
+                  <i className="ph-bold ph-caret-right text-sm" />
                 </button>
               </div>
             </div>

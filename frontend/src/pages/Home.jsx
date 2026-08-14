@@ -48,6 +48,8 @@ export default function Home() {
   const [sekjen, setSekjen] = useState(null)
 
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const [activeShareId, setActiveShareId] = useState(null) // ID format: 'kegiatan-ID' atau 'berita-ID'
   const [progress, setProgress] = useState(0)
   const [aboutTab, setAboutTab] = useState('selayang')
 
@@ -59,8 +61,6 @@ export default function Home() {
   const [contactCaptchaError, setContactCaptchaError] = useState(false)
   const captchaEnabled = !!settings?.captcha_enabled
 
-  // Floating Headset Contact Toggle
-  const [floatingOpen, setFloatingOpen] = useState(false)
 
   // Video Playing State
   const [isPlayingVideo, setIsPlayingVideo] = useState(false)
@@ -79,7 +79,7 @@ export default function Home() {
           // Normalisasi: API kirim image_path → FE pakai image_url di JSX
           setSliders(list.map(s => ({ ...s, image_url: s.image_path || s.image_url })))
         }
-      }).catch(() => {})
+      }).catch(() => { })
 
     // Load Kegiatan
     kegiatanService.list()
@@ -88,7 +88,7 @@ export default function Home() {
           const list = Array.isArray(res.data) ? res.data : (res.data.kegiatan || [])
           setFeaturedKegiatan(list.map(k => ({ ...k, image_url: k.image_path || k.image_url })))
         }
-      }).catch(() => {})
+      }).catch(() => { })
 
     // Load Berita
     beritaService.list()
@@ -97,7 +97,7 @@ export default function Home() {
           const list = Array.isArray(res.data) ? res.data : (res.data.berita || [])
           setRecentBerita(list.map(b => ({ ...b, image_url: b.image_path || b.image_url })))
         }
-      }).catch(() => {})
+      }).catch(() => { })
 
     // Load Pengurus untuk Tanda Tangan Sambutan Ketua Umum
     pengurusService.list({ limit: 100 })
@@ -109,7 +109,7 @@ export default function Home() {
           setKetuaUmum(ketua)
           setSekjen(sek)
         }
-      }).catch(() => {})
+      }).catch(() => { })
   }, [])
 
   useEffect(() => {
@@ -140,20 +140,38 @@ export default function Home() {
     return () => clearTimeout(timer)
   }, [location.hash])
 
+  // Global click listener to close popovers
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      setActiveShareId(null)
+    }
+    window.addEventListener('click', handleGlobalClick)
+    return () => window.removeEventListener('click', handleGlobalClick)
+  }, [])
+
+  const triggerSlideChange = useCallback((nextIndex) => {
+    setIsTransitioning(true)
+    setTimeout(() => {
+      setCurrentSlide(nextIndex)
+      setProgress(0)
+      setIsTransitioning(false)
+    }, 250)
+  }, [sliders])
+
   // Auto-play timer logic for hero slider
   useEffect(() => {
     if (sliders.length === 0) return
     const interval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 100) {
-          setCurrentSlide(curr => (curr + 1) % sliders.length)
+          triggerSlideChange((currentSlide + 1) % sliders.length)
           return 0
         }
-        return prev + 2
+        return prev + 1.5
       })
     }, 100)
     return () => clearInterval(interval)
-  }, [sliders])
+  }, [sliders, currentSlide, triggerSlideChange])
 
   const getMissions = () => {
     try {
@@ -203,13 +221,12 @@ export default function Home() {
     <PublicLayout>
       {/* 1. HERO CAROUSEL WITH 3D FLYER FOCUS */}
       <section className="relative bg-brand-950 overflow-hidden pt-28 pb-20 md:pt-40 md:pb-24 border-b border-brand-900 min-h-screen flex items-center">
-        {/* Slide Background Overlay */}
         <div className="absolute inset-0 z-0">
           {activeSlide.image_url && (
-            <img 
-              src={resolveAssetUrl(activeSlide.image_url)} 
-              alt={activeSlide.title} 
-              className="w-full h-full object-cover transition-all duration-700 blur-sm scale-110 opacity-40"
+            <img
+              src={resolveAssetUrl(activeSlide.image_url)}
+              alt={activeSlide.title}
+              className={`w-full h-full object-cover transition-all duration-[750ms] blur-sm scale-110 opacity-40 ${isTransitioning ? 'opacity-0' : 'opacity-40'}`}
             />
           )}
           <div className="absolute inset-0 bg-gradient-to-r from-brand-950 via-brand-950/90 to-brand-900/60" />
@@ -223,9 +240,9 @@ export default function Home() {
         {/* Hero Content Grid */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
           <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-            
+
             {/* Left: Information */}
-            <div className="w-full lg:w-1/2 text-left order-2 lg:order-1 space-y-6">
+            <div className={`w-full lg:w-1/2 text-left order-2 lg:order-1 space-y-6 transition-all duration-500 transform ${isTransitioning ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'}`}>
               <div className="flex flex-wrap items-center gap-3">
                 {activeSlide.is_new && (
                   <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-red-600 to-red-500 text-white text-[11px] font-extrabold px-4 py-1.5 rounded-full shadow-[0_0_20px_rgba(239,68,68,0.6)] animate-pulse uppercase tracking-wider border border-red-400/50">
@@ -239,7 +256,7 @@ export default function Home() {
                 )}
               </div>
 
-              <h1 className="font-heading text-4xl sm:text-5xl lg:text-[4rem] font-black text-white tracking-tight leading-tight drop-shadow-2xl">
+              <h1 className="font-heading text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold text-white tracking-tight leading-[1.1] drop-shadow-md">
                 {activeSlide.title}
               </h1>
 
@@ -275,8 +292,8 @@ export default function Home() {
 
               {activeSlide.link_url && (
                 <div className="pt-2">
-                  <a 
-                    href={activeSlide.link_url || '#'} 
+                  <a
+                    href={activeSlide.link_url || '#'}
                     className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-8 py-3.5 rounded-xl font-bold text-sm transition-all shadow-sm hover:shadow-md transform hover:-translate-y-1"
                   >
                     Lihat Detail Event <i className="ph-bold ph-arrow-right text-lg" />
@@ -286,16 +303,16 @@ export default function Home() {
             </div>
 
             {/* Right: 3D Stack Flyer Container */}
-            <div className="w-full lg:w-1/2 order-1 lg:order-2 flex justify-center lg:justify-end relative">
+            <div className={`w-full lg:w-1/2 order-1 lg:order-2 flex justify-center lg:justify-end relative transition-all duration-500 transform ${isTransitioning ? 'opacity-0 scale-98 rotate-1' : 'opacity-100 scale-100'}`}>
               <div className="relative w-full max-w-sm lg:max-w-md aspect-[4/5] group">
                 <div className="absolute inset-0 bg-brand-800/40 backdrop-blur-xl border border-white/10 rounded-3xl transform -rotate-6 scale-95 transition-transform duration-700 group-hover:-rotate-12 shadow-2xl origin-bottom-left" />
                 <div className="absolute inset-0 bg-gradient-to-br from-brand-600/30 to-amber-500/20 backdrop-blur-md border border-white/20 rounded-3xl transform rotate-3 scale-100 transition-transform duration-700 group-hover:rotate-6 shadow-xl origin-bottom-right" />
                 <div className="absolute inset-0 rounded-3xl overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.6)] border-[4px] border-white/10 transform transition-transform duration-700 hover:scale-[1.03] bg-brand-950">
                   {activeSlide.image_url && (
-                    <img 
-                      src={resolveAssetUrl(activeSlide.image_url)} 
-                      alt={activeSlide.title} 
-                      className="w-full h-full object-cover"
+                    <img
+                      src={resolveAssetUrl(activeSlide.image_url)}
+                      alt={activeSlide.title}
+                      className={`w-full h-full object-cover transition-transform duration-[8000ms] ease-out ${isTransitioning ? 'scale-100' : 'scale-105'}`}
                     />
                   )}
                 </div>
@@ -309,33 +326,40 @@ export default function Home() {
           <div className="absolute bottom-8 left-0 right-0 z-20">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
               <div className="flex gap-3">
-                <button 
-                  onClick={() => { setCurrentSlide((currentSlide - 1 + sliders.length) % sliders.length); setProgress(0); }}
+                <button
+                  onClick={() => triggerSlideChange((currentSlide - 1 + sliders.length) % sliders.length)}
                   className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center justify-center transition backdrop-blur-sm"
                 >
                   <i className="ph-bold ph-caret-left text-xl" />
                 </button>
-                <button 
-                  onClick={() => { setCurrentSlide((currentSlide + 1) % sliders.length); setProgress(0); }}
+                <button
+                  onClick={() => triggerSlideChange((currentSlide + 1) % sliders.length)}
                   className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white flex items-center justify-center transition backdrop-blur-sm"
                 >
                   <i className="ph-bold ph-caret-right text-xl" />
                 </button>
               </div>
-              
-              <div className="flex flex-col items-end gap-3">
-                <div className="flex gap-2">
-                  {sliders.map((_, idx) => (
-                    <button 
+              <div className="flex items-center gap-3">
+                {sliders.map((_, idx) => {
+                  const isActive = currentSlide === idx
+                  return (
+                    <button
                       key={idx}
-                      onClick={() => { setCurrentSlide(idx); setProgress(0); }}
-                      className={`h-2.5 rounded-full transition-all duration-500 ${currentSlide === idx ? 'w-8 bg-amber-400' : 'w-2.5 bg-white/30 hover:bg-white/60'}`}
-                    />
-                  ))}
-                </div>
-                <div className="w-32 h-1 bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-brand-500 transition-all duration-100 ease-linear" style={{ width: `${progress}%` }} />
-                </div>
+                      onClick={() => triggerSlideChange(idx)}
+                      className="group relative h-2.5 rounded-full bg-white/20 overflow-hidden transition-all duration-300"
+                      style={{ width: isActive ? '48px' : '10px' }}
+                      title={`Ke slide ${idx + 1}`}
+                    >
+                      {isActive && (
+                        <div
+                          className="absolute inset-y-0 left-0 bg-gradient-to-r from-amber-400 to-amber-300 transition-all duration-100 ease-linear"
+                          style={{ width: `${progress}%` }}
+                        />
+                      )}
+                      <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                  )
+                })}
               </div>
             </div>
           </div>
@@ -346,12 +370,12 @@ export default function Home() {
       <section className="py-24 bg-white border-b border-slate-200 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row gap-16 items-center">
-            
+
             {/* Poster Image */}
             <div className="w-full lg:w-5/12 relative">
               <div className="absolute inset-0 bg-brand-500/20 blur-[80px] rounded-full" />
               <div className="relative rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-white transform transition hover:-translate-y-2 duration-500">
-                <img 
+                <img
                   src={resolveAssetUrl(settings.greeting_image_path) || ''}
                   alt="Poster Sambutan"
                   className="w-full h-auto object-contain"
@@ -430,19 +454,37 @@ export default function Home() {
           <div className="flex flex-col lg:flex-row gap-16 items-center">
             {/* Foto Pimpinan */}
             {ketuaUmum && (
-              <div className="w-full lg:w-1/3 flex justify-center">
+              <div className="w-full lg:w-1/3 flex flex-col items-center">
                 <div className="relative group">
                   <div className="w-72 aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl border-4 border-white mx-auto relative z-10 transform transition duration-500 group-hover:-translate-y-2">
-                    <img 
+                    <img
                       src={resolveAssetUrl(ketuaUmum.image_path) || ""}
                       alt={ketuaUmum.name}
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent p-6 pt-12 text-center">
-                      <h4 className="font-heading font-bold text-white text-lg">{ketuaUmum.name}</h4>
-                      <p className="text-[11px] text-brand-400 font-bold uppercase tracking-widest mt-1">{ketuaUmum.role}</p>
-                    </div>
                   </div>
+                </div>
+                <div className="mt-4 text-center">
+                  <h4 className="font-heading font-extrabold text-slate-800 text-lg">{ketuaUmum.name}</h4>
+                  {(() => {
+                    const roleText = ketuaUmum.role || '';
+                    const yearRegex = /(\d{4}\s*-\s*\d{4}|\d{4})/g;
+                    const match = roleText.match(yearRegex);
+                    let mainRole = roleText;
+                    let yearPart = '';
+                    if (match) {
+                      yearPart = match[0];
+                      mainRole = roleText.replace(yearPart, '').trim();
+                    }
+                    return (
+                      <>
+                        <p className="text-[11px] text-brand-600 font-black uppercase tracking-wider leading-snug max-w-[260px] mx-auto">{mainRole}</p>
+                        {yearPart && (
+                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{yearPart}</p>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             )}
@@ -451,19 +493,19 @@ export default function Home() {
             <div className="w-full lg:w-2/3">
               {/* PILL TABS */}
               <div className="inline-flex bg-white rounded-full p-1.5 shadow-sm border border-slate-200 mb-8 max-w-full overflow-x-auto">
-                <button 
+                <button
                   onClick={() => setAboutTab('selayang')}
                   className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all whitespace-nowrap ${aboutTab === 'selayang' ? 'bg-brand-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}`}
                 >
                   Selayang Pandang
                 </button>
-                <button 
+                <button
                   onClick={() => setAboutTab('tanggal')}
                   className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all whitespace-nowrap ${aboutTab === 'tanggal' ? 'bg-brand-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}`}
                 >
                   Sejarah Terbentuk
                 </button>
-                <button 
+                <button
                   onClick={() => setAboutTab('lokasi')}
                   className={`px-6 py-2.5 rounded-full font-bold text-sm transition-all whitespace-nowrap ${aboutTab === 'lokasi' ? 'bg-brand-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'}`}
                 >
@@ -566,25 +608,24 @@ export default function Home() {
                 <h3 className="font-heading text-xl font-extrabold text-slate-900 mb-8 flex items-center gap-2">
                   <i className="ph-bold ph-list-numbers text-brand-600 text-2xl" /> Misi Organisasi
                 </h3>
-                
+
                 <div className="space-y-6">
                   {getMissions().map((mission, idx) => (
-                    <div 
-                      key={idx} 
+                    <div
+                      key={idx}
                       className="flex gap-4 items-start group relative"
                     >
                       {/* Stepper Circle */}
                       <div className="flex flex-col items-center flex-shrink-0">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-sm transition-all duration-300 group-hover:scale-110 ${
-                          idx % 3 === 0 ? 'bg-blue-50 text-blue-600 border border-blue-200' : idx % 3 === 1 ? 'bg-teal-50 text-teal-600 border border-teal-200' : 'bg-amber-50 text-amber-600 border border-amber-200'
-                        }`}>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-sm transition-all duration-300 group-hover:scale-110 ${idx % 3 === 0 ? 'bg-blue-50 text-blue-600 border border-blue-200' : idx % 3 === 1 ? 'bg-teal-50 text-teal-600 border border-teal-200' : 'bg-amber-50 text-amber-600 border border-amber-200'
+                          }`}>
                           {idx + 1}
                         </div>
                         {idx < getMissions().length - 1 && (
                           <div className="w-[1.5px] bg-slate-100 flex-grow h-12 mt-2" />
                         )}
                       </div>
-                      
+
                       {/* Mission Card */}
                       <div className="flex-1 bg-slate-50/40 hover:bg-slate-50 group-hover:translate-x-1 border border-slate-200/40 rounded-2xl p-5 transition-all duration-300">
                         <h4 className="font-bold text-slate-800 text-xs mb-1.5 uppercase tracking-wider">Misi Ke-{idx + 1}</h4>
@@ -608,13 +649,13 @@ export default function Home() {
           </div>
 
           <div className="max-w-[1098px] mx-auto relative group">
-            <button 
+            <button
               onClick={() => kegiatanSliderRef.current?.scrollBy({ left: -380, behavior: 'smooth' })}
               className="absolute -left-12 lg:-left-16 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/95 backdrop-blur rounded-full shadow-[0_5px_15px_rgba(0,0,0,0.15)] border border-slate-100 text-brand-600 hover:bg-brand-50 hidden md:flex items-center justify-center transition hover:scale-110"
             >
               <i className="ph-bold ph-caret-left text-xl" />
             </button>
-            <button 
+            <button
               onClick={() => kegiatanSliderRef.current?.scrollBy({ left: 380, behavior: 'smooth' })}
               className="absolute -right-12 lg:-right-16 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/95 backdrop-blur rounded-full shadow-[0_5px_15px_rgba(0,0,0,0.15)] border border-slate-100 text-brand-600 hover:bg-brand-50 hidden md:flex items-center justify-center transition hover:scale-110"
             >
@@ -625,9 +666,9 @@ export default function Home() {
               {featuredKegiatan.map((item, idx) => (
                 <div key={item.id || idx} className="w-[85vw] sm:w-[350px] flex-shrink-0 snap-center card-minimal overflow-hidden flex flex-col group cursor-pointer">
                   <div className="image-zoom-container h-56 relative">
-                    <img 
-                      src={item.image_url ? resolveAssetUrl(item.image_url) : 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=600'} 
-                      alt={item.title} 
+                    <img
+                      src={item.image_url ? resolveAssetUrl(item.image_url) : 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=600'}
+                      alt={item.title}
                       className="w-full h-full object-cover"
                     />
                     {idx === 0 && (
@@ -648,49 +689,68 @@ export default function Home() {
                     </Link>
                     <p className="text-slate-600 text-sm flex-grow line-clamp-3 mb-4 leading-relaxed">{item.excerpt}</p>
                     <div className="border-t border-slate-100 pt-4 flex justify-between items-center mt-auto">
-                      <div className="flex items-center gap-1.5">
-                        <button 
+                      <div className="relative">
+                        <button
                           onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleInstagramShare(`${window.location.origin}/kegiatan/${item.slug}`);
-                          }} 
-                          className="w-7 h-7 rounded-full bg-[#E1306C]/10 text-[#E1306C] hover:bg-[#E1306C] hover:text-white flex items-center justify-center transition" 
-                          title="Instagram"
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setActiveShareId(activeShareId === `kegiatan-${item.id}` ? null : `kegiatan-${item.id}`)
+                          }}
+                          className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${activeShareId === `kegiatan-${item.id}` ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-brand-50 hover:text-brand-600'}`}
+                          title="Bagikan"
                         >
-                          <i className="ph-fill ph-instagram-logo text-xs" />
+                          <i className="ph-bold ph-share-network text-sm" />
                         </button>
-                        <a 
-                          href={getShareUrl('whatsapp', { title: item.title, text: item.excerpt, url: `${window.location.origin}/kegiatan/${item.slug}` })} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-7 h-7 rounded-full bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366] hover:text-white flex items-center justify-center transition" 
-                          title="WhatsApp"
-                        >
-                          <i className="ph-fill ph-whatsapp-logo text-xs" />
-                        </a>
-                        <a 
-                          href={getShareUrl('facebook', { title: item.title, text: item.excerpt, url: `${window.location.origin}/kegiatan/${item.slug}` })} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-7 h-7 rounded-full bg-[#1877F2]/10 text-[#1877F2] hover:bg-[#1877F2] hover:text-white flex items-center justify-center transition" 
-                          title="Facebook"
-                        >
-                          <i className="ph-fill ph-facebook-logo text-xs" />
-                        </a>
-                        <button 
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleCopyLink(`${window.location.origin}/kegiatan/${item.slug}`, 'Tautan kegiatan');
-                          }} 
-                          className="w-7 h-7 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-600 hover:text-white flex items-center justify-center transition" 
-                          title="Salin Tautan"
-                        >
-                          <i className="ph-bold ph-link text-xs" />
-                        </button>
+
+                        {activeShareId === `kegiatan-${item.id}` && (
+                          <div
+                            className="absolute bottom-full left-0 mb-2 bg-white/95 backdrop-blur-md border border-slate-200/80 p-2.5 rounded-2xl shadow-xl z-30 flex gap-2 animate-scale-in"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleInstagramShare(`${window.location.origin}/kegiatan/${item.slug}`);
+                              }}
+                              className="w-8 h-8 rounded-xl bg-[#E1306C]/10 text-[#E1306C] hover:bg-[#E1306C] hover:text-white flex items-center justify-center transition"
+                              title="Instagram"
+                            >
+                              <i className="ph-fill ph-instagram-logo text-sm" />
+                            </button>
+                            <a
+                              href={getShareUrl('whatsapp', { title: item.title, text: item.excerpt, url: `${window.location.origin}/kegiatan/${item.slug}` })}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-8 h-8 rounded-xl bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366] hover:text-white flex items-center justify-center transition"
+                              title="WhatsApp"
+                            >
+                              <i className="ph-fill ph-whatsapp-logo text-sm" />
+                            </a>
+                            <a
+                              href={getShareUrl('facebook', { title: item.title, text: item.excerpt, url: `${window.location.origin}/kegiatan/${item.slug}` })}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-8 h-8 rounded-xl bg-[#1877F2]/10 text-[#1877F2] hover:bg-[#1877F2] hover:text-white flex items-center justify-center transition"
+                              title="Facebook"
+                            >
+                              <i className="ph-fill ph-facebook-logo text-sm" />
+                            </a>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleCopyLink(`${window.location.origin}/kegiatan/${item.slug}`, 'Tautan kegiatan');
+                              }}
+                              className="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-600 hover:text-white flex items-center justify-center transition"
+                              title="Salin Tautan"
+                            >
+                              <i className="ph-bold ph-link text-sm" />
+                            </button>
+                          </div>
+                        )}
                       </div>
                       <Link to={`/kegiatan/${item.slug}`} className="flex items-center gap-1.5 text-xs font-bold text-brand-600 hover:text-brand-800 transition">
                         Baca Selengkapnya <i className="ph-bold ph-arrow-right" />
@@ -725,25 +785,25 @@ export default function Home() {
             <div className="aspect-video bg-black rounded-3xl overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.8)] relative ring-1 ring-white/10">
               {!isPlayingVideo && (
                 <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/60 transition-opacity duration-500">
-                  <img 
-                    src="https://images.unsplash.com/photo-1475721025871-872ba5bb619a?q=80&w=2070&auto=format&fit=crop" 
+                  <img
+                    src="https://images.unsplash.com/photo-1475721025871-872ba5bb619a?q=80&w=2070&auto=format&fit=crop"
                     alt="Video Cover"
-                    className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-60" 
+                    className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-60"
                   />
-                  <button 
-                    onClick={() => { if (videoRef.current) { videoRef.current.play(); setIsPlayingVideo(true); } }} 
+                  <button
+                    onClick={() => { if (videoRef.current) { videoRef.current.play(); setIsPlayingVideo(true); } }}
                     className="relative z-20 w-24 h-24 bg-brand-600 hover:bg-brand-500 text-white rounded-full flex items-center justify-center text-4xl shadow-[0_0_40px_rgba(37,99,235,0.8)] transform transition-all hover:scale-110 border-4 border-white/20"
                   >
                     <i className="ph-fill ph-play ml-2" />
                   </button>
                 </div>
               )}
-              <video 
-                ref={videoRef} 
-                onPause={() => setIsPlayingVideo(false)} 
-                onPlay={() => setIsPlayingVideo(true)} 
-                className="w-full h-full object-cover" 
-                controls 
+              <video
+                ref={videoRef}
+                onPause={() => setIsPlayingVideo(false)}
+                onPlay={() => setIsPlayingVideo(true)}
+                className="w-full h-full object-cover"
+                controls
                 preload="metadata"
               >
                 <source src={resolveAssetUrl(settings.video_profile_path) || ''} type="video/mp4" />
@@ -763,13 +823,13 @@ export default function Home() {
           </div>
 
           <div className="max-w-[1098px] mx-auto relative group">
-            <button 
+            <button
               onClick={() => beritaSliderRef.current?.scrollBy({ left: -380, behavior: 'smooth' })}
               className="absolute -left-12 lg:-left-16 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/95 backdrop-blur rounded-full shadow-[0_5px_15px_rgba(0,0,0,0.15)] border border-slate-100 text-brand-600 hover:bg-brand-50 hidden md:flex items-center justify-center transition hover:scale-110"
             >
               <i className="ph-bold ph-caret-left text-xl" />
             </button>
-            <button 
+            <button
               onClick={() => beritaSliderRef.current?.scrollBy({ left: 380, behavior: 'smooth' })}
               className="absolute -right-12 lg:-right-16 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white/95 backdrop-blur rounded-full shadow-[0_5px_15px_rgba(0,0,0,0.15)] border border-slate-100 text-brand-600 hover:bg-brand-50 hidden md:flex items-center justify-center transition hover:scale-110"
             >
@@ -780,9 +840,9 @@ export default function Home() {
               {recentBerita.map((item, idx) => (
                 <div key={item.id || idx} className="w-[85vw] sm:w-[350px] flex-shrink-0 snap-center card-minimal overflow-hidden flex flex-col group cursor-pointer">
                   <div className="image-zoom-container h-48 relative">
-                    <img 
-                      src={item.image_url ? resolveAssetUrl(item.image_url) : 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=600'} 
-                      alt={item.title} 
+                    <img
+                      src={item.image_url ? resolveAssetUrl(item.image_url) : 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=600'}
+                      alt={item.title}
                       className="w-full h-full object-cover"
                     />
                     {idx === 0 && (
@@ -800,49 +860,68 @@ export default function Home() {
                     </Link>
                     <p className="text-slate-600 text-sm flex-grow line-clamp-2 mb-4 leading-relaxed">{item.excerpt}</p>
                     <div className="border-t border-slate-100 pt-4 flex justify-between items-center mt-auto">
-                      <div className="flex items-center gap-1.5">
-                        <button 
+                      <div className="relative">
+                        <button
                           onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleInstagramShare(`${window.location.origin}/berita/${item.slug}`);
-                          }} 
-                          className="w-7 h-7 rounded-full bg-[#E1306C]/10 text-[#E1306C] hover:bg-[#E1306C] hover:text-white flex items-center justify-center transition" 
-                          title="Instagram"
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setActiveShareId(activeShareId === `berita-${item.id}` ? null : `berita-${item.id}`)
+                          }}
+                          className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${activeShareId === `berita-${item.id}` ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-brand-50 hover:text-brand-600'}`}
+                          title="Bagikan"
                         >
-                          <i className="ph-fill ph-instagram-logo text-xs" />
+                          <i className="ph-bold ph-share-network text-sm" />
                         </button>
-                        <a 
-                          href={getShareUrl('whatsapp', { title: item.title, text: item.excerpt, url: `${window.location.origin}/berita/${item.slug}` })} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-7 h-7 rounded-full bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366] hover:text-white flex items-center justify-center transition" 
-                          title="WhatsApp"
-                        >
-                          <i className="ph-fill ph-whatsapp-logo text-xs" />
-                        </a>
-                        <a 
-                          href={getShareUrl('facebook', { title: item.title, text: item.excerpt, url: `${window.location.origin}/berita/${item.slug}` })} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-7 h-7 rounded-full bg-[#1877F2]/10 text-[#1877F2] hover:bg-[#1877F2] hover:text-white flex items-center justify-center transition" 
-                          title="Facebook"
-                        >
-                          <i className="ph-fill ph-facebook-logo text-xs" />
-                        </a>
-                        <button 
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleCopyLink(`${window.location.origin}/berita/${item.slug}`, 'Tautan berita');
-                          }} 
-                          className="w-7 h-7 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-600 hover:text-white flex items-center justify-center transition" 
-                          title="Salin Tautan"
-                        >
-                          <i className="ph-bold ph-link text-xs" />
-                        </button>
+
+                        {activeShareId === `berita-${item.id}` && (
+                          <div
+                            className="absolute bottom-full left-0 mb-2 bg-white/95 backdrop-blur-md border border-slate-200/80 p-2.5 rounded-2xl shadow-xl z-30 flex gap-2 animate-scale-in"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleInstagramShare(`${window.location.origin}/berita/${item.slug}`);
+                              }}
+                              className="w-8 h-8 rounded-xl bg-[#E1306C]/10 text-[#E1306C] hover:bg-[#E1306C] hover:text-white flex items-center justify-center transition"
+                              title="Instagram"
+                            >
+                              <i className="ph-fill ph-instagram-logo text-sm" />
+                            </button>
+                            <a
+                              href={getShareUrl('whatsapp', { title: item.title, text: item.excerpt, url: `${window.location.origin}/berita/${item.slug}` })}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-8 h-8 rounded-xl bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366] hover:text-white flex items-center justify-center transition"
+                              title="WhatsApp"
+                            >
+                              <i className="ph-fill ph-whatsapp-logo text-sm" />
+                            </a>
+                            <a
+                              href={getShareUrl('facebook', { title: item.title, text: item.excerpt, url: `${window.location.origin}/berita/${item.slug}` })}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-8 h-8 rounded-xl bg-[#1877F2]/10 text-[#1877F2] hover:bg-[#1877F2] hover:text-white flex items-center justify-center transition"
+                              title="Facebook"
+                            >
+                              <i className="ph-fill ph-facebook-logo text-sm" />
+                            </a>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleCopyLink(`${window.location.origin}/berita/${item.slug}`, 'Tautan berita');
+                              }}
+                              className="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-600 hover:text-white flex items-center justify-center transition"
+                              title="Salin Tautan"
+                            >
+                              <i className="ph-bold ph-link text-sm" />
+                            </button>
+                          </div>
+                        )}
                       </div>
                       <Link to={`/berita/${item.slug}`} className="flex items-center gap-1.5 text-xs font-bold text-brand-600 hover:text-brand-800 transition">
                         Baca Berita <i className="ph-bold ph-arrow-right" />
@@ -871,10 +950,10 @@ export default function Home() {
               <div className="h-[400px] relative bg-white border border-slate-200 rounded-xl overflow-hidden shadow-inner">
                 <iframe
                   src={resolveAssetUrl(settings.maps_embed_url) || ""}
-                  width="100%" 
-                  height="100%" 
-                  style={{ border: 0 }} 
-                  allowFullScreen="" 
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen=""
                   loading="lazy"
                 />
               </div>
@@ -896,8 +975,8 @@ export default function Home() {
                   <div className="grid grid-cols-2 gap-5">
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">Nama Lengkap</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         required
                         value={contactForm.nama}
                         onChange={e => setContactForm({ ...contactForm, nama: e.target.value })}
@@ -906,8 +985,8 @@ export default function Home() {
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">Email</label>
-                      <input 
-                        type="email" 
+                      <input
+                        type="email"
                         required
                         value={contactForm.email}
                         onChange={e => setContactForm({ ...contactForm, email: e.target.value })}
@@ -917,8 +996,8 @@ export default function Home() {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">Subjek / Perihal</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={contactForm.subjek}
                       onChange={e => setContactForm({ ...contactForm, subjek: e.target.value })}
                       className="w-full px-4 py-3 rounded-lg border border-slate-200 text-sm focus:border-brand-500 focus:outline-none bg-white transition"
@@ -926,8 +1005,8 @@ export default function Home() {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">Pesan Anda</label>
-                    <textarea 
-                      rows="4" 
+                    <textarea
+                      rows="4"
                       required
                       value={contactForm.pesan}
                       onChange={e => setContactForm({ ...contactForm, pesan: e.target.value })}
@@ -937,12 +1016,12 @@ export default function Home() {
                   {captchaEnabled && (
                     <CaptchaWidget onVerify={(token) => { setContactCaptchaToken(token); setContactCaptchaError(false) }} hasError={contactCaptchaError} />
                   )}
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     disabled={contactLoading}
                     className="bg-brand-600 hover:bg-brand-700 text-white px-8 py-3.5 rounded-xl text-sm font-bold transition shadow-sm hover:shadow flex items-center justify-center gap-2"
                   >
-                    <i className="ph-bold ph-paper-plane-right text-lg" /> 
+                    <i className="ph-bold ph-paper-plane-right text-lg" />
                     <span>{contactLoading ? 'Mengirim...' : 'Kirim Pesan Sekarang'}</span>
                   </button>
                 </form>
@@ -952,44 +1031,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 9. FLOATING CONTACT WIDGET */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
-        {floatingOpen && (
-          <div className="mb-4 space-y-3 flex flex-col items-end animate-fadeIn">
-            <a 
-              href={`mailto:${settings.contact_email}`}
-              className="flex items-center gap-4 bg-white/90 backdrop-blur-md px-5 py-3 rounded-2xl shadow-lg border border-white/50 hover:bg-white transition"
-            >
-              <span className="text-sm font-bold text-slate-700">{settings.contact_email}</span>
-              <div className="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center text-brand-600">
-                <i className="ph-bold ph-envelope-simple text-xl" />
-              </div>
-            </a>
-            <a 
-              href={`tel:${settings.contact_phone}`}
-              className="flex items-center gap-4 bg-white/90 backdrop-blur-md px-5 py-3 rounded-2xl shadow-lg border border-white/50 hover:bg-white transition"
-            >
-              <span className="text-sm font-bold text-slate-700">{settings.contact_phone}</span>
-              <div className="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center text-brand-600">
-                <i className="ph-bold ph-phone-call text-xl" />
-              </div>
-            </a>
-          </div>
-        )}
-        <button 
-          onClick={() => setFloatingOpen(!floatingOpen)}
-          className={`w-16 h-16 rounded-full shadow-2xl flex items-center justify-center text-3xl text-white transition-all duration-300 ${
-            floatingOpen ? 'bg-slate-800 rotate-[135deg]' : 'bg-brand-700 hover:bg-brand-600'
-          }`}
-        >
-          <i className={`ph-bold ${floatingOpen ? 'ph-plus' : 'ph-headset'}`} />
-        </button>
-      </div>
-      <ToastNotification 
-        show={toast.show} 
-        message={toast.message} 
-        type={toast.type} 
-        onClose={() => setToast(prev => ({ ...prev, show: false }))} 
+      <ToastNotification
+        show={toast.show}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast(prev => ({ ...prev, show: false }))}
       />
     </PublicLayout>
   )

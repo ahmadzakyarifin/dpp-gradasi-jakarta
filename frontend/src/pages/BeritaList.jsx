@@ -21,7 +21,17 @@ export default function BeritaList() {
   const [error, setError] = useState(null)
   const [categories, setCategories] = useState([])
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
+  const [activeShareId, setActiveShareId] = useState(null)
   const currentPage = page
+
+  // Global click listener to close popover
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      setActiveShareId(null)
+    }
+    window.addEventListener('click', handleGlobalClick)
+    return () => window.removeEventListener('click', handleGlobalClick)
+  }, [])
 
   const handleInstagramShare = (url) => {
     copyToClipboard(url).then(success => {
@@ -128,11 +138,11 @@ export default function BeritaList() {
               />
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+            <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto items-center">
               <select 
                 value={filterCategory} 
                 onChange={(e) => updateFilter({ category: e.target.value })}
-                className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-600 outline-none cursor-pointer"
+                className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-600 outline-none cursor-pointer w-full sm:w-auto"
               >
                 <option value="">Semua Kategori</option>
                 {categories.map(cat => (
@@ -143,11 +153,21 @@ export default function BeritaList() {
               <select 
                 value={sortBy} 
                 onChange={(e) => updateFilter({ sort: e.target.value })}
-                className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-600 outline-none cursor-pointer"
+                className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-600 outline-none cursor-pointer w-full sm:w-auto"
               >
                 <option value="newest">Urutkan: Terbaru</option>
                 <option value="oldest">Urutkan: Terlama</option>
               </select>
+
+              {(searchQuery || filterCategory || sortBy !== 'newest') && (
+                <button
+                  onClick={() => setSearchParams({})}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm font-semibold flex items-center gap-1.5 transition btn-press cursor-pointer w-full sm:w-auto justify-center"
+                  title="Reset Filter"
+                >
+                  <i className="ph-bold ph-arrows-counter-clockwise text-base" /> Reset
+                </button>
+              )}
             </div>
           </div>
 
@@ -184,49 +204,68 @@ export default function BeritaList() {
                   </Link>
                   <p className="text-slate-500 text-[13px] flex-grow line-clamp-2 mb-4 leading-relaxed">{item.excerpt || '-'}</p>
                   <div className="pt-4 flex justify-between items-center border-t border-slate-100 mt-auto">
-                      <div className="flex items-center gap-1.5">
-                        <button 
+                      <div className="relative">
+                        <button
                           onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleInstagramShare(`${window.location.origin}/berita/${item.slug}`);
-                          }} 
-                          className="w-7 h-7 rounded-full bg-[#E1306C]/10 text-[#E1306C] hover:bg-[#E1306C] hover:text-white flex items-center justify-center transition" 
-                          title="Instagram"
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setActiveShareId(activeShareId === `berita-${item.id}` ? null : `berita-${item.id}`)
+                          }}
+                          className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${activeShareId === `berita-${item.id}` ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-brand-50 hover:text-brand-600'}`}
+                          title="Bagikan"
                         >
-                          <i className="ph-fill ph-instagram-logo text-xs" />
+                          <i className="ph-bold ph-share-network text-sm" />
                         </button>
-                        <a 
-                          href={getShareUrl('whatsapp', { title: item.title, text: item.excerpt, url: `${window.location.origin}/berita/${item.slug}` })} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-7 h-7 rounded-full bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366] hover:text-white flex items-center justify-center transition" 
-                          title="WhatsApp"
-                        >
-                          <i className="ph-fill ph-whatsapp-logo text-xs" />
-                        </a>
-                        <a 
-                          href={getShareUrl('facebook', { title: item.title, text: item.excerpt, url: `${window.location.origin}/berita/${item.slug}` })} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-7 h-7 rounded-full bg-[#1877F2]/10 text-[#1877F2] hover:bg-[#1877F2] hover:text-white flex items-center justify-center transition" 
-                          title="Facebook"
-                        >
-                          <i className="ph-fill ph-facebook-logo text-xs" />
-                        </a>
-                        <button 
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleCopyLink(`${window.location.origin}/berita/${item.slug}`, 'Tautan berita');
-                          }} 
-                          className="w-7 h-7 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-600 hover:text-white flex items-center justify-center transition" 
-                          title="Salin Tautan"
-                        >
-                          <i className="ph-bold ph-link text-xs" />
-                        </button>
+                        
+                        {activeShareId === `berita-${item.id}` && (
+                          <div 
+                            className="absolute bottom-full left-0 mb-2 bg-white/95 backdrop-blur-md border border-slate-200/80 p-2.5 rounded-2xl shadow-xl z-30 flex gap-2 animate-scale-in"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleInstagramShare(`${window.location.origin}/berita/${item.slug}`);
+                              }}
+                              className="w-8 h-8 rounded-xl bg-[#E1306C]/10 text-[#E1306C] hover:bg-[#E1306C] hover:text-white flex items-center justify-center transition"
+                              title="Instagram"
+                            >
+                              <i className="ph-fill ph-instagram-logo text-sm" />
+                            </button>
+                            <a
+                              href={getShareUrl('whatsapp', { title: item.title, text: item.excerpt, url: `${window.location.origin}/berita/${item.slug}` })}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-8 h-8 rounded-xl bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366] hover:text-white flex items-center justify-center transition"
+                              title="WhatsApp"
+                            >
+                              <i className="ph-fill ph-whatsapp-logo text-sm" />
+                            </a>
+                            <a
+                              href={getShareUrl('facebook', { title: item.title, text: item.excerpt, url: `${window.location.origin}/berita/${item.slug}` })}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-8 h-8 rounded-xl bg-[#1877F2]/10 text-[#1877F2] hover:bg-[#1877F2] hover:text-white flex items-center justify-center transition"
+                              title="Facebook"
+                            >
+                              <i className="ph-fill ph-facebook-logo text-sm" />
+                            </a>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleCopyLink(`${window.location.origin}/berita/${item.slug}`, 'Tautan berita');
+                              }}
+                              className="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-600 hover:text-white flex items-center justify-center transition"
+                              title="Salin Tautan"
+                            >
+                              <i className="ph-bold ph-link text-sm" />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     <Link to={`/berita/${item.slug}`} className="flex items-center gap-1.5 text-xs font-bold text-brand-600 hover:text-brand-800 transition">
                       {beritaContent.publicList.readMore} <i className="ph-bold ph-arrow-right" />

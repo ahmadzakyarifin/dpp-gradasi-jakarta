@@ -77,7 +77,7 @@ export default function SettingsAdmin() {
           }
           setFormData({ ...data, about_mission: missionArray })
         }
-      }).catch(() => {})
+      }).catch(() => { })
   }, [])
 
   const showToast = (msg, isError = false) => {
@@ -189,7 +189,7 @@ export default function SettingsAdmin() {
       <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 animate-fade-in-up">
 
         {/* Navigation Tabs */}
-         <div className="md:col-span-1 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col gap-1 h-fit">
+        <div className="md:col-span-1 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col gap-1 h-fit">
           <button onClick={() => setCurrentTab('profil')} type="button" className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition-all duration-200 btn-press ${currentTab === 'profil' ? 'bg-brand-50 text-brand-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}>Profil & Sejarah</button>
           <button onClick={() => setCurrentTab('sambutan')} type="button" className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition-all duration-200 btn-press ${currentTab === 'sambutan' ? 'bg-brand-50 text-brand-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}>Sambutan Depan</button>
           <button onClick={() => setCurrentTab('kontak')} type="button" className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition-all duration-200 btn-press ${currentTab === 'kontak' ? 'bg-brand-50 text-brand-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}>Informasi Kontak</button>
@@ -261,10 +261,10 @@ export default function SettingsAdmin() {
                       type="text"
                       value={formData.site_name}
                       onChange={e => {
-                        setFormData({...formData, site_name: e.target.value})
+                        setFormData({ ...formData, site_name: e.target.value })
                         clearFieldError('site_name')
                         if (touched.site_name) {
-                          const errs = validateForm({...formData, site_name: e.target.value})
+                          const errs = validateForm({ ...formData, site_name: e.target.value })
                           setFormErrors(prev => ({ ...prev, site_name: errs.site_name }))
                         }
                       }}
@@ -283,22 +283,22 @@ export default function SettingsAdmin() {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">Tagline</label>
-                    <input type="text" value={formData.tagline} onChange={e => setFormData({...formData, tagline: e.target.value})} className={inputCls} />
+                    <input type="text" value={formData.tagline} onChange={e => setFormData({ ...formData, tagline: e.target.value })} className={inputCls} />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">Tanggal Terbentuk</label>
-                    <input type="text" value={formData.about_formation_date} onChange={e => setFormData({...formData, about_formation_date: e.target.value})} className={inputCls} />
+                    <input type="text" value={formData.about_formation_date} onChange={e => setFormData({ ...formData, about_formation_date: e.target.value })} className={inputCls} />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">Nomor SK Legalitas</label>
-                    <input type="text" value={formData.about_no_sk} onChange={e => setFormData({...formData, about_no_sk: e.target.value})} className={inputCls} />
+                    <input type="text" value={formData.about_no_sk} onChange={e => setFormData({ ...formData, about_no_sk: e.target.value })} className={inputCls} />
                   </div>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">Visi Utama</label>
-                  <textarea rows="3" value={formData.about_vision} onChange={e => setFormData({...formData, about_vision: e.target.value})} className={`${inputCls} overflow-y-auto resize-y min-h-[80px]`} />
+                  <textarea rows="3" value={formData.about_vision} onChange={e => setFormData({ ...formData, about_vision: e.target.value })} className={`${inputCls} overflow-y-auto resize-y min-h-[80px]`} />
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-2">
@@ -316,7 +316,7 @@ export default function SettingsAdmin() {
                       <i className="ph-bold ph-plus-circle text-sm" /> Tambah Misi
                     </button>
                   </div>
-                  
+
                   <div className="max-h-56 overflow-y-auto space-y-2.5 pr-2 border border-slate-200/60 rounded-xl p-3 bg-slate-50/50">
                     {(formData.about_mission || []).length === 0 ? (
                       <p className="text-xs text-gray-400 text-center py-2">Belum ada misi. Klik Tambah Misi.</p>
@@ -354,7 +354,7 @@ export default function SettingsAdmin() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">Sejarah / Tentang Kami</label>
-                  <textarea rows="6" value={formData.history} onChange={e => setFormData({...formData, history: e.target.value})} className={`${inputCls} overflow-y-auto resize-y min-h-[120px]`} />
+                  <textarea rows="6" value={formData.history} onChange={e => setFormData({ ...formData, history: e.target.value })} className={`${inputCls} overflow-y-auto resize-y min-h-[120px]`} />
                 </div>
               </div>
             )}
@@ -364,43 +364,43 @@ export default function SettingsAdmin() {
                 <h3 className="font-heading font-bold text-gray-800 text-base border-b pb-2">Sambutan Halaman Depan</h3>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">Judul Sambutan</label>
-                  <input type="text" value={formData.greeting_title} onChange={e => setFormData({...formData, greeting_title: e.target.value})} className={inputCls} />
+                  <input type="text" value={formData.greeting_title} onChange={e => setFormData({ ...formData, greeting_title: e.target.value })} className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">Sub Judul</label>
-                  <input type="text" value={formData.greeting_subtitle} onChange={e => setFormData({...formData, greeting_subtitle: e.target.value})} className={inputCls} />
+                  <input type="text" value={formData.greeting_subtitle} onChange={e => setFormData({ ...formData, greeting_subtitle: e.target.value })} className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">Tanggal Sambutan</label>
-                  <input type="text" value={formData.greeting_date} onChange={e => setFormData({...formData, greeting_date: e.target.value})} className={inputCls} />
+                  <input type="text" value={formData.greeting_date} onChange={e => setFormData({ ...formData, greeting_date: e.target.value })} className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">Isi Sambutan</label>
-                  <textarea rows="5" value={formData.greeting_content} onChange={e => setFormData({...formData, greeting_content: e.target.value})} className={`${inputCls} overflow-y-auto resize-y min-h-[120px]`} />
+                  <textarea rows="5" value={formData.greeting_content} onChange={e => setFormData({ ...formData, greeting_content: e.target.value })} className={`${inputCls} overflow-y-auto resize-y min-h-[120px]`} />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">URL Gambar / Poster Sambutan</label>
-                  <input type="text" value={formData.greeting_image_path} onChange={e => setFormData({...formData, greeting_image_path: e.target.value})} className={inputCls} />
+                  <input type="text" value={formData.greeting_image_path} onChange={e => setFormData({ ...formData, greeting_image_path: e.target.value })} className={inputCls} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">Nama Organisasi / Pengirim di Tanda Tangan (Signature)</label>
-                    <input 
-                      type="text" 
-                      placeholder="Contoh: GRADASI (Kosongkan untuk default nama website)" 
-                      value={formData.greeting_sign_name || ''} 
-                      onChange={e => setFormData({...formData, greeting_sign_name: e.target.value})} 
-                      className={inputCls} 
+                    <input
+                      type="text"
+                      placeholder="Contoh: GRADASI (Kosongkan untuk default nama website)"
+                      value={formData.greeting_sign_name || ''}
+                      onChange={e => setFormData({ ...formData, greeting_sign_name: e.target.value })}
+                      className={inputCls}
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">Nama Penandatangan (Signature)</label>
-                    <input 
-                      type="text" 
-                      placeholder="Contoh: Upi Asmaradhana & Junaidi, S.Kom (Kosongkan untuk default data pengurus)" 
-                      value={formData.greeting_sign_subtitle || ''} 
-                      onChange={e => setFormData({...formData, greeting_sign_subtitle: e.target.value})} 
-                      className={inputCls} 
+                    <input
+                      type="text"
+                      placeholder="Contoh: Upi Asmaradhana & Junaidi, S.Kom (Kosongkan untuk default data pengurus)"
+                      value={formData.greeting_sign_subtitle || ''}
+                      onChange={e => setFormData({ ...formData, greeting_sign_subtitle: e.target.value })}
+                      className={inputCls}
                     />
                   </div>
                 </div>
@@ -417,10 +417,10 @@ export default function SettingsAdmin() {
                       type="email"
                       value={formData.contact_email}
                       onChange={e => {
-                        setFormData({...formData, contact_email: e.target.value})
+                        setFormData({ ...formData, contact_email: e.target.value })
                         clearFieldError('contact_email')
                         if (touched.contact_email) {
-                          const errs = validateForm({...formData, contact_email: e.target.value})
+                          const errs = validateForm({ ...formData, contact_email: e.target.value })
                           setFormErrors(prev => ({ ...prev, contact_email: errs.contact_email }))
                         }
                       }}
@@ -439,16 +439,16 @@ export default function SettingsAdmin() {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">Telepon / WhatsApp</label>
-                    <input type="text" value={formData.contact_phone} onChange={e => setFormData({...formData, contact_phone: e.target.value})} className={inputCls} />
+                    <input type="text" value={formData.contact_phone} onChange={e => setFormData({ ...formData, contact_phone: e.target.value })} className={inputCls} />
                   </div>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">Alamat Kantor</label>
-                  <input type="text" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className={inputCls} />
+                  <input type="text" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">Google Maps Embed URL</label>
-                  <input type="text" value={formData.maps_embed_url} onChange={e => setFormData({...formData, maps_embed_url: e.target.value})} className={inputCls} />
+                  <input type="text" value={formData.maps_embed_url} onChange={e => setFormData({ ...formData, maps_embed_url: e.target.value })} className={inputCls} />
                 </div>
               </div>
             )}
@@ -458,19 +458,19 @@ export default function SettingsAdmin() {
                 <h3 className="font-heading font-bold text-gray-800 text-base border-b pb-2">Social Media & Profil Link</h3>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">Facebook URL</label>
-                  <input type="text" value={formData.facebook_url} onChange={e => setFormData({...formData, facebook_url: e.target.value})} className={inputCls} />
+                  <input type="text" value={formData.facebook_url} onChange={e => setFormData({ ...formData, facebook_url: e.target.value })} className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">Instagram URL</label>
-                  <input type="text" value={formData.instagram_url} onChange={e => setFormData({...formData, instagram_url: e.target.value})} className={inputCls} />
+                  <input type="text" value={formData.instagram_url} onChange={e => setFormData({ ...formData, instagram_url: e.target.value })} className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">YouTube Channel URL</label>
-                  <input type="text" value={formData.youtube_url} onChange={e => setFormData({...formData, youtube_url: e.target.value})} className={inputCls} />
+                  <input type="text" value={formData.youtube_url} onChange={e => setFormData({ ...formData, youtube_url: e.target.value })} className={inputCls} />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 mb-1">Video Profile URL (Youtube Embed)</label>
-                  <input type="text" value={formData.video_profile_path} onChange={e => setFormData({...formData, video_profile_path: e.target.value})} className={inputCls} />
+                  <input type="text" value={formData.video_profile_path} onChange={e => setFormData({ ...formData, video_profile_path: e.target.value })} className={inputCls} />
                 </div>
               </div>
             )}
@@ -487,9 +487,8 @@ export default function SettingsAdmin() {
 
       {/* Floating Toast Notification */}
       {saved && (
-        <div className={`fixed bottom-4 right-4 z-50 flex items-center p-4 rounded-xl shadow-xl text-white transition-opacity duration-300 ${
-          saved.isError ? 'bg-red-500' : 'bg-emerald-500'
-        }`}>
+        <div className={`fixed bottom-4 right-4 z-50 flex items-center p-4 rounded-xl shadow-xl text-white transition-opacity duration-300 ${saved.isError ? 'bg-red-500' : 'bg-emerald-500'
+          }`}>
           <i className={`text-xl mr-2 ph ${saved.isError ? 'ph-warning-circle' : 'ph-check-circle'}`} />
           <span className="text-sm font-semibold">{saved.msg}</span>
         </div>

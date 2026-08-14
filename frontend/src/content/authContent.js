@@ -1,7 +1,7 @@
 export const authContent = {
   brandName: 'DPP GRADASI',
   logoUrl: 'https://gradasi.org/uploads/img/logo/1737187847.png',
-  backgroundUrl: 'https://images.unsplash.com/photo-1573164713988-8665fc963095?q=80&w=2069&auto=format&fit=crop',
+  backgroundUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop',
   homePath: '/',
   adminPath: '/dashboard',
   copyright: '© 2026 DPP GRADASI.',

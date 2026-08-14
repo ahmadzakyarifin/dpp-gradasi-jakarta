@@ -601,42 +601,38 @@ export default function KontakAdmin() {
 
           {/* Pagination */}
           {!loading && !error && messages.length > 0 && (
-            <div className="bg-gray-50 border-t border-gray-200 px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 sm:px-6 rounded-b-xl">
-              <div className="text-sm text-gray-500">
-                Menampilkan <span className="font-medium text-gray-900">{showingFrom}</span> sampai{' '}
-                <span className="font-medium text-gray-900">{showingTo}</span> dari{' '}
-                <span className="font-medium text-gray-900">{total}</span> pesan
-              </div>
-              <nav className="flex gap-1" aria-label="Navigasi halaman">
+            <div className="bg-white border-t border-slate-200 px-4 py-3 flex items-center justify-between sm:px-6 rounded-b-xl">
+              <span className="text-xs text-slate-500">
+                Hal {page} dari {totalPages} · {total} data
+              </span>
+              <div className="flex items-center gap-1.5">
                 <button
-                  onClick={() => setPage(p => Math.max(p - 1, 1))}
+                  type="button"
                   disabled={page <= 1}
-                  className="px-3 py-1 border border-gray-200 bg-white text-gray-500 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  onClick={() => setPage(p => Math.max(p - 1, 1))}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:border-brand-500 hover:text-brand-600 disabled:opacity-40 transition"
                 >
-                  Prev
+                  <i className="ph-bold ph-caret-left text-sm" />
                 </button>
-                {pageNumbers.map(n => (
+                {Array.from({ length: totalPages || 1 }, (_, i) => i + 1).map((n) => (
                   <button
                     key={n}
+                    type="button"
                     onClick={() => setPage(n)}
-                    aria-current={page === n ? 'page' : undefined}
-                    className={`px-3 py-1 border rounded transition ${
-                      page === n
-                        ? 'border-brand-500 bg-brand-50 text-brand-600 font-medium'
-                        : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'
-                    }`}
+                    className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-semibold transition ${n === page ? 'bg-brand-600 text-white' : 'border border-slate-200 text-slate-500 hover:border-brand-500 hover:text-brand-600'}`}
                   >
                     {n}
                   </button>
                 ))}
                 <button
-                  onClick={() => setPage(p => Math.min(p + 1, totalPages))}
+                  type="button"
                   disabled={page >= totalPages}
-                  className="px-3 py-1 border border-gray-200 bg-white text-gray-500 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  onClick={() => setPage(p => Math.min(p + 1, totalPages))}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:border-brand-500 hover:text-brand-600 disabled:opacity-40 transition"
                 >
-                  Next
+                  <i className="ph-bold ph-caret-right text-sm" />
                 </button>
-              </nav>
+              </div>
             </div>
           )}
         </div>

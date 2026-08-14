@@ -625,7 +625,6 @@ export default function KegiatanAdmin() {
               <span className="text-xs text-slate-500">
                 Hal {currentPage} dari {totalPages} · {totalData} data
               </span>
-              {totalPages > 1 && (
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
@@ -635,7 +634,7 @@ export default function KegiatanAdmin() {
                 >
                   <i className="ph-bold ph-caret-left text-sm" />
                 </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+                {Array.from({ length: totalPages || 1 }, (_, i) => i + 1).map((n) => (
                   <button
                     key={n}
                     type="button"
@@ -654,7 +653,6 @@ export default function KegiatanAdmin() {
                   <i className="ph-bold ph-caret-right text-sm" />
                 </button>
               </div>
-              )}
             </div>
           </>
           )}

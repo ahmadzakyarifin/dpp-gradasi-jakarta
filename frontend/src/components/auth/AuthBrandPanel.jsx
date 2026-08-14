@@ -8,10 +8,10 @@ export default function AuthBrandPanel({ variant = 'login' }) {
   const data = variant === 'reset' ? authContent.reset : authContent.login
 
   const logoUrl = settings?.logo_path ? resolveAssetUrl(settings.logo_path) : ''
-  const heroTitle = variant === 'reset' 
-    ? (settings?.site_name || '') 
+  const heroTitle = variant === 'reset'
+    ? (settings?.site_name || '')
     : (settings?.login_hero_title || '')
-  
+
   const heroDesc = variant === 'reset'
     ? data.heroDescription
     : (settings?.login_hero_description || '')
