@@ -9,6 +9,7 @@ export default function PublicLayout({ children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [kegiatanDropdown, setKegiatanDropdown] = useState(false)
   const [informasiDropdown, setInformasiDropdown] = useState(false)
+  const [kepengurusanDropdown, setKepengurusanDropdown] = useState(false)
   const [scrolled, setScrolled] = useState(false)
 
   const [floatingOpen, setFloatingOpen] = useState(false)

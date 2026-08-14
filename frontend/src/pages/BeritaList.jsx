@@ -63,7 +63,7 @@ export default function BeritaList() {
   useEffect(() => {
     setLoading(true)
     setError(null)
-    const params = { page: currentPage, limit: 6, sort: sortBy }
+    const params = { page: currentPage, limit: 24, sort: sortBy }
     if (searchQuery.trim()) params.search = searchQuery.trim()
     if (filterCategory) params.category = filterCategory
     beritaService.list(params)

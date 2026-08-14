@@ -42,6 +42,22 @@ func (h *PengurusHandler) Regions(c *gin.Context) {
 	helper.SuccessResponse(c, http.StatusOK, "PENGURUS_REGIONS", "Daftar wilayah berhasil diambil", resp, nil)
 }
 
+// GET /api/v1/pengurus/:id
+func (h *PengurusHandler) GetByID(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "ID tidak valid", nil)
+		return
+	}
+
+	resp, err := h.svc.GetByID(c.Request.Context(), uint(id))
+	if err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+	helper.SuccessResponse(c, http.StatusOK, "PENGURUS_DETAIL", "Detail pengurus berhasil diambil", resp, nil)
+}
+
 // GET /api/v1/admin/pengurus
 func (h *PengurusHandler) ListAdmin(c *gin.Context) {
 	var q dto.PengurusQuery

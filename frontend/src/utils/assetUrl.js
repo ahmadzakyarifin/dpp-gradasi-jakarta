@@ -9,5 +9,5 @@ export function resolveAssetUrl(url) {
   if (!url) return ''
   if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url
   if (url.startsWith('/')) return `${BASE_URL}${url}`
-  return url
+  return `${BASE_URL}/${url}`
 }

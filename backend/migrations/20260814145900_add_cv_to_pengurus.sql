@@ -1,0 +1,1 @@
+ALTER TABLE pengurus ADD COLUMN cv_path VARCHAR(500) DEFAULT NULL AFTER image_path;

@@ -11,6 +11,7 @@ const BeritaDetail = lazy(() => import('./pages/BeritaDetail'))
 const KegiatanList = lazy(() => import('./pages/KegiatanList'))
 const KegiatanDetail = lazy(() => import('./pages/KegiatanDetail'))
 const Kepengurusan = lazy(() => import('./pages/Kepengurusan'))
+const KepengurusanDetail = lazy(() => import('./pages/KepengurusanDetail'))
 const Home = lazy(() => import('./pages/Home'))
 
 // Admin Pages
@@ -92,6 +93,7 @@ function App() {
 
             {/* Public Kepengurusan */}
             <Route path="/kepengurusan" element={<Kepengurusan />} />
+            <Route path="/kepengurusan/profile/:id" element={<KepengurusanDetail />} />
 
             {/* Dashboard */}
             <Route

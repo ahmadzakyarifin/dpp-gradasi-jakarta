@@ -139,7 +139,7 @@ export default function Home() {
       .then(res => {
         if (res.success && res.data) {
           const list = Array.isArray(res.data) ? res.data : (res.data.data || res.data.pengurus || [])
-          const ketua = list.find(p => p.level === 'ketua')
+          const ketua = list.find(p => p.level === 'Ketua Umum')
           const sek = list.find(p => (p.role || '').toLowerCase().includes('sekretaris jenderal') || (p.role || '').toLowerCase().includes('sekjen'))
           setKetuaUmum(ketua)
           setSekjen(sek)

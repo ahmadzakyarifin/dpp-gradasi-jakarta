@@ -183,6 +183,13 @@ func (s *pengurusService) Create(ctx context.Context, req *dto.PengurusRequest) 
 
 	p := mapper.CreateReqToEntity(req, imageURL, isActive)
 
+	if req.CV != nil {
+		cvURL, err := s.handleUpload(req.CV)
+		if err == nil && cvURL != "" {
+			p.CVPath = &cvURL
+		}
+	}
+
 	if err := s.repo.Create(p); err != nil {
 		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal membuat data pengurus.", err)
 	}
@@ -225,6 +232,13 @@ func (s *pengurusService) Update(ctx context.Context, id uint, req *dto.Pengurus
 		newImg, err := s.handleUpload(req.Image)
 		if err == nil && newImg != "" {
 			p.ImagePath = newImg
+		}
+	}
+
+	if req.CV != nil {
+		newCV, err := s.handleUpload(req.CV)
+		if err == nil && newCV != "" {
+			p.CVPath = &newCV
 		}
 	}
 

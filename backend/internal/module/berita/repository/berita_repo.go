@@ -111,7 +111,7 @@ func (r *beritaRepo) query(publishedOnly bool, q dto.BeritaQuery) ([]entity.Beri
 		page = 1
 	}
 	if limit <= 0 {
-		limit = 10
+		limit = 1000
 	}
 	offset := (page - 1) * limit
 

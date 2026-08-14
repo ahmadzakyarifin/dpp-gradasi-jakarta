@@ -30,6 +30,14 @@ export const pengurusService = {
     return apiRequest('/pengurus/regions')
   },
 
+  // Publik - detail profil
+  detailById(id) {
+    return apiRequest(`/pengurus/${id}`).then(res => {
+      if (res?.data) res.data = normalizeImage(res.data)
+      return res
+    })
+  },
+
   listAdmin(params = {}) {
     return apiRequest(`/admin/pengurus${toQuery(params)}`).then(res => {
       if (Array.isArray(res?.data)) {

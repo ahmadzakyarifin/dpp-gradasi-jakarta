@@ -45,10 +45,16 @@ func CreateReqToEntity(req *dto.PengurusRequest, imageURL string, isActive bool)
 		Provinsi:     StrPtr(req.Provinsi),
 		Kabupaten:    StrPtr(req.Kabupaten),
 		ImagePath:    imageURL,
+		CVPath:       StrPtr(""), // We handle CV upload in service
 		FacebookURL:  StrPtr(req.FacebookURL),
 		InstagramURL: StrPtr(req.InstagramURL),
 		LinkedinURL:  StrPtr(req.LinkedinURL),
 		Whatsapp:     StrPtr(req.Whatsapp),
+		Email:        StrPtr(req.Email),
+		Pekerjaan:    StrPtr(req.Pekerjaan),
+		Bio:          StrPtr(req.Bio),
+		Pendidikan:   StrPtr(req.Pendidikan),
+		Sertifikasi:  StrPtr(req.Sertifikasi),
 		Periode:      req.Periode,
 		SortOrder:    req.SortOrder,
 		IsActive:     isActive,
@@ -70,6 +76,11 @@ func ApplyUpdate(e *entity.Pengurus, req *dto.PengurusRequest) {
 	e.InstagramURL = StrPtr(req.InstagramURL)
 	e.LinkedinURL = StrPtr(req.LinkedinURL)
 	e.Whatsapp = StrPtr(req.Whatsapp)
+	e.Email = StrPtr(req.Email)
+	e.Pekerjaan = StrPtr(req.Pekerjaan)
+	e.Bio = StrPtr(req.Bio)
+	e.Pendidikan = StrPtr(req.Pendidikan)
+	e.Sertifikasi = StrPtr(req.Sertifikasi)
 	e.Periode = req.Periode
 	e.SortOrder = req.SortOrder
 	if req.IsActive != nil {
@@ -91,10 +102,16 @@ func EntityToModel(e *entity.Pengurus) *model.Pengurus {
 		Provinsi:     e.Provinsi,
 		Kabupaten:    e.Kabupaten,
 		ImagePath:    e.ImagePath,
+		CVPath:       e.CVPath,
 		FacebookURL:  e.FacebookURL,
 		InstagramURL: e.InstagramURL,
 		LinkedinURL:  e.LinkedinURL,
 		Whatsapp:     e.Whatsapp,
+		Email:        e.Email,
+		Pekerjaan:    e.Pekerjaan,
+		Bio:          e.Bio,
+		Pendidikan:   e.Pendidikan,
+		Sertifikasi:  e.Sertifikasi,
 		Periode:      e.Periode,
 		SortOrder:    e.SortOrder,
 		IsActive:     e.IsActive,
@@ -118,10 +135,16 @@ func ModelToEntity(m *model.Pengurus) *entity.Pengurus {
 		Provinsi:     m.Provinsi,
 		Kabupaten:    m.Kabupaten,
 		ImagePath:    m.ImagePath,
+		CVPath:       m.CVPath,
 		FacebookURL:  m.FacebookURL,
 		InstagramURL: m.InstagramURL,
 		LinkedinURL:  m.LinkedinURL,
 		Whatsapp:     m.Whatsapp,
+		Email:        m.Email,
+		Pekerjaan:    m.Pekerjaan,
+		Bio:          m.Bio,
+		Pendidikan:   m.Pendidikan,
+		Sertifikasi:  m.Sertifikasi,
 		Periode:      m.Periode,
 		SortOrder:    m.SortOrder,
 		IsActive:     m.IsActive,
@@ -169,6 +192,9 @@ func EntityToResponse(e *entity.Pengurus) dto.PengurusResponse {
 	if e.FacebookURL != nil {
 		resp.FacebookURL = *e.FacebookURL
 	}
+	if e.CVPath != nil {
+		resp.CVPath = *e.CVPath
+	}
 	if e.InstagramURL != nil {
 		resp.InstagramURL = *e.InstagramURL
 	}
@@ -177,6 +203,21 @@ func EntityToResponse(e *entity.Pengurus) dto.PengurusResponse {
 	}
 	if e.Whatsapp != nil {
 		resp.Whatsapp = *e.Whatsapp
+	}
+	if e.Email != nil {
+		resp.Email = *e.Email
+	}
+	if e.Pekerjaan != nil {
+		resp.Pekerjaan = *e.Pekerjaan
+	}
+	if e.Bio != nil {
+		resp.Bio = *e.Bio
+	}
+	if e.Pendidikan != nil {
+		resp.Pendidikan = *e.Pendidikan
+	}
+	if e.Sertifikasi != nil {
+		resp.Sertifikasi = *e.Sertifikasi
 	}
 	return resp
 }

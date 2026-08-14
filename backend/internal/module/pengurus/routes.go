@@ -12,6 +12,7 @@ func RegisterRoutes(api *gin.RouterGroup, h *handler.PengurusHandler, jwtSecret 
 	{
 		pengurus.GET("", h.ListPublic)
 		pengurus.GET("/regions", h.Regions)
+		pengurus.GET("/:id", h.GetByID)
 	}
 
 	// Admin — super_admin, admin, editor

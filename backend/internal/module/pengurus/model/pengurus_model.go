@@ -15,10 +15,16 @@ type Pengurus struct {
 	Provinsi     *string `gorm:"size:100"`
 	Kabupaten    *string `gorm:"size:100"`
 	ImagePath    string  `gorm:"size:500;not null"`
+	CVPath       *string `gorm:"size:500"`
 	FacebookURL  *string `gorm:"size:500"`
 	InstagramURL *string `gorm:"size:500"`
 	LinkedinURL  *string `gorm:"size:500"`
 	Whatsapp     *string `gorm:"size:20"`
+	Email        *string `gorm:"size:150"`
+	Pekerjaan    *string `gorm:"size:150"`
+	Bio          *string `gorm:"type:text"`
+	Pendidikan   *string `gorm:"type:text"`
+	Sertifikasi  *string `gorm:"type:text"`
 	Periode      string  `gorm:"size:50;not null"`
 	SortOrder    int     `gorm:"default:0"`
 	IsActive     bool

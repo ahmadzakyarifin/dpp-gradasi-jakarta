@@ -88,10 +88,11 @@ export async function apiRequest(path, options = {}) {
       }
       return retryData
     } catch (refreshErr) {
-      // Refresh gagal → sesi benar-benar berakhir, bersihkan token lokal.
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('user_role')
-      window.location.href = '/login?expired=1'
+      // Refresh gagal → sesi benar-benar berakhir.
+      // Gunakan SPA redirect instant lewat auth store alih-alih hard reload.
+      import('../store/useAuthStore').then(({ useAuthStore }) => {
+        useAuthStore.getState().logoutLocal()
+      })
       const error = new Error(refreshErr?.message || 'Sesi berakhir, silakan login kembali.')
       error.status = 401
       error.code = 'AUTH_SESSION_EXPIRED'

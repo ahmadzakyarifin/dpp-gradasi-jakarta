@@ -101,7 +101,7 @@ func (r *kegiatanRepo) query(publishedOnly bool, q dto.KegiatanQuery) ([]entity.
 	}
 	limit := q.Limit
 	if limit <= 0 {
-		limit = 10
+		limit = 1000
 	}
 	offset := (page - 1) * limit
 

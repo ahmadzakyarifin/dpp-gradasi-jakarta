@@ -12,10 +12,16 @@ type Pengurus struct {
 	Provinsi     *string
 	Kabupaten    *string
 	ImagePath    string
+	CVPath       *string
 	FacebookURL  *string
 	InstagramURL *string
 	LinkedinURL  *string
 	Whatsapp     *string
+	Email        *string
+	Pekerjaan    *string
+	Bio          *string
+	Pendidikan   *string
+	Sertifikasi  *string
 	Periode      string
 	SortOrder    int
 	IsActive     bool

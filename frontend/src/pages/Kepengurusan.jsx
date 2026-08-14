@@ -1,19 +1,19 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, Link } from 'react-router-dom'
 import PublicLayout from '../layouts/PublicLayout'
 import { pengurusService } from '../services/pengurusService'
 import { resolveAssetUrl } from '../utils/assetUrl'
 
 export default function Kepengurusan() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const activeTab = searchParams.get('tab') || 'ketua'
+  const activeTab = searchParams.get('tab') || 'Ketua Umum'
   
   const [allPengurus, setAllPengurus] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedProvinsi, setSelectedProvinsi] = useState('')
   const [selectedKabupaten, setSelectedKabupaten] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 4
+  const itemsPerPage = 24
 
   useEffect(() => {
     pengurusService.list({ limit: 100 })
@@ -77,9 +77,9 @@ export default function Kepengurusan() {
             <i className="ph-bold ph-users-three" /> Struktur Kepengurusan
           </div>
           <h1 className="font-heading text-3xl md:text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">
-            {activeTab === 'ketua' ? 'Ketua Umum DPP' :
-             activeTab === 'dpp' ? 'Pengurus Pusat (DPP)' : 
-             activeTab === 'dpd' ? 'Pengurus Daerah (DPD)' : 'Pengurus Cabang (DPC)'}
+            {activeTab === 'Ketua Umum' ? 'Ketua Umum' :
+             activeTab === 'Pengurus Pusat' ? 'Pengurus Pusat' : 
+             activeTab === 'Pengurus Provinsi' ? 'Pengurus Provinsi' : 'Pengurus Kab/Kota'}
           </h1>
           <p className="text-base text-slate-500 max-w-2xl mx-auto font-medium">
             GRADASI telah hadir di 38 provinsi di Indonesia. Kenali individu-individu berdedikasi yang siap mendorong akselerasi digital nasional.
@@ -91,28 +91,28 @@ export default function Kepengurusan() {
       <div className="bg-slate-50 border-b border-slate-200 py-3 sticky top-16 z-30 shadow-xs">
         <div className="max-w-6xl mx-auto px-4 flex flex-wrap gap-2 justify-center">
           <button 
-            onClick={() => handleTabChange('ketua')}
-            className={`px-5 py-2.5 text-sm font-bold rounded-xl transition ${activeTab === 'ketua' ? 'bg-brand-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-200/60'}`}
+            onClick={() => handleTabChange('Ketua Umum')}
+            className={`px-5 py-2.5 text-sm font-bold rounded-xl transition ${activeTab === 'Ketua Umum' ? 'bg-brand-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-200/60'}`}
           >
             Ketua Umum
           </button>
           <button 
-            onClick={() => handleTabChange('dpp')}
-            className={`px-5 py-2.5 text-sm font-bold rounded-xl transition ${activeTab === 'dpp' ? 'bg-brand-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-200/60'}`}
+            onClick={() => handleTabChange('Pengurus Pusat')}
+            className={`px-5 py-2.5 text-sm font-bold rounded-xl transition ${activeTab === 'Pengurus Pusat' ? 'bg-brand-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-200/60'}`}
           >
-            Pengurus Pusat (DPP)
+            Pengurus Pusat
           </button>
           <button 
-            onClick={() => handleTabChange('dpd')}
-            className={`px-5 py-2.5 text-sm font-bold rounded-xl transition ${activeTab === 'dpd' ? 'bg-brand-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-200/60'}`}
+            onClick={() => handleTabChange('Pengurus Provinsi')}
+            className={`px-5 py-2.5 text-sm font-bold rounded-xl transition ${activeTab === 'Pengurus Provinsi' ? 'bg-brand-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-200/60'}`}
           >
-            Pengurus Daerah (DPD)
+            Pengurus Provinsi
           </button>
           <button 
-            onClick={() => handleTabChange('dpc')}
-            className={`px-5 py-2.5 text-sm font-bold rounded-xl transition ${activeTab === 'dpc' ? 'bg-brand-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-200/60'}`}
+            onClick={() => handleTabChange('Pengurus Kab/Kota')}
+            className={`px-5 py-2.5 text-sm font-bold rounded-xl transition ${activeTab === 'Pengurus Kab/Kota' ? 'bg-brand-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-200/60'}`}
           >
-            Pengurus Cabang (DPC)
+            Pengurus Kab/Kota
           </button>
         </div>
       </div>
@@ -121,7 +121,7 @@ export default function Kepengurusan() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
           {/* Clean Search & Filter Bar */}
-          {activeTab !== 'ketua' && (
+          {activeTab !== 'Ketua Umum' && (
             <div className="max-w-4xl mx-auto mb-10 bg-white p-3 sm:p-3.5 rounded-2xl border border-slate-200/60 shadow-[0_4px_25px_rgba(0,0,0,0.03)] flex flex-col md:flex-row gap-3 justify-between items-center w-full">
               <div className="relative w-full md:w-80">
                 <i className="ph-bold ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-base" />
@@ -134,7 +134,7 @@ export default function Kepengurusan() {
                 />
               </div>
 
-              {(activeTab === 'dpd' || activeTab === 'dpc') && (
+              {(activeTab === 'Pengurus Provinsi' || activeTab === 'Pengurus Kab/Kota') && (
                 <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                   <select
                     value={selectedProvinsi}
@@ -147,7 +147,7 @@ export default function Kepengurusan() {
                     ))}
                   </select>
 
-                  {activeTab === 'dpc' && (
+                  {activeTab === 'Pengurus Kab/Kota' && (
                     <select
                       value={selectedKabupaten}
                       onChange={(e) => setSelectedKabupaten(e.target.value)}
@@ -165,25 +165,32 @@ export default function Kepengurusan() {
           )}
 
           {/* KETUA UMUM SPECIAL HERO CARD */}
-          {activeTab === 'ketua' && (
+          {activeTab === 'Ketua Umum' && (
             <div className="flex justify-center my-6">
-              {allPengurus.filter(item => item.level === 'ketua').length === 0 ? (
+              {allPengurus.filter(item => item.level === 'Ketua Umum').length === 0 ? (
                 <div className="bg-white rounded-3xl p-8 md:p-12 border border-slate-200/80 shadow-[0_15px_40px_rgba(0,0,0,0.03)] flex flex-col items-center text-center max-w-md w-full">
                   <i className="ph-bold ph-user-focus text-4xl text-slate-300 mb-3 block" />
                   <h3 className="font-heading font-bold text-slate-800 text-lg mb-1">Ketua Umum belum diatur</h3>
                   <p className="text-xs text-slate-400 font-semibold">Data Ketua Umum belum dimasukkan ke database.</p>
                 </div>
               ) : (
-                allPengurus.filter(item => item.level === 'ketua').map(item => (
+                allPengurus.filter(item => item.level === 'Ketua Umum').map(item => (
                   <div key={item.id} className="bg-white rounded-3xl p-8 md:p-12 border border-slate-200/80 shadow-[0_15px_40px_rgba(0,0,0,0.06)] flex flex-col items-center text-center max-w-md w-full">
                     <div className="w-40 h-40 rounded-full overflow-hidden mb-6 border-4 border-brand-100 p-1 shadow-md bg-slate-50">
                       <img src={resolveAssetUrl(item.image_url || item.image_path)} alt={item.name} className="w-full h-full object-cover rounded-full" />
                     </div>
-                    <h3 className="font-heading font-extrabold text-slate-900 text-2xl md:text-3xl mb-1 tracking-tight">{item.name}</h3>
+                    <h3 className="font-heading font-extrabold text-slate-900 text-2xl md:text-3xl mb-1 tracking-tight hover:text-brand-600 transition">
+                      <Link to={`/kepengurusan/profile/${item.id}`}>{item.name}</Link>
+                    </h3>
                     <p className="text-sm font-bold text-brand-600 tracking-wider uppercase mb-1">{item.role}</p>
                     <p className="text-xs text-slate-400 font-semibold mb-6">Masa Bakti {item.periode || '2024 - 2029'}</p>
                     
                     <div className="flex justify-center gap-4 pt-6 border-t border-slate-100 w-full">
+                      {item.cv_path && (
+                        <a href={resolveAssetUrl(item.cv_path)} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:bg-brand-600 hover:text-white flex items-center justify-center transition shadow-xs" title="Download CV">
+                          <i className="ph-fill ph-file-pdf text-xl" />
+                        </a>
+                      )}
                       {item.facebook_url && (
                         <a href={item.facebook_url} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:bg-brand-600 hover:text-white flex items-center justify-center transition shadow-xs">
                           <i className="ph-fill ph-facebook-logo text-lg" />
@@ -199,6 +206,16 @@ export default function Kepengurusan() {
                           <i className="ph-fill ph-linkedin-logo text-lg" />
                         </a>
                       )}
+                      {item.email && (
+                        <a href={`mailto:${item.email}`} className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:bg-brand-600 hover:text-white flex items-center justify-center transition shadow-xs">
+                          <i className="ph-fill ph-envelope-simple text-lg" />
+                        </a>
+                      )}
+                      {item.whatsapp && (
+                        <a href={`https://wa.me/${item.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:bg-brand-600 hover:text-white flex items-center justify-center transition shadow-xs">
+                          <i className="ph-fill ph-whatsapp-logo text-lg" />
+                        </a>
+                      )}
                     </div>
                   </div>
                 ))
@@ -207,7 +224,7 @@ export default function Kepengurusan() {
           )}
 
           {/* GRID CARD FOR DPP, DPD, DPC */}
-          {activeTab !== 'ketua' && (
+          {activeTab !== 'Ketua Umum' && (
             filteredList.length === 0 ? (
               <div className="py-16 text-center text-slate-500 bg-white rounded-2xl border border-slate-200/60 p-8 w-full max-w-lg mx-auto">
                 <i className="ph-bold ph-users text-4xl text-slate-300 mb-2 block" />
@@ -222,11 +239,18 @@ export default function Kepengurusan() {
                       <img src={resolveAssetUrl(item.image_url || item.image_path)} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
                     </div>
                     <div className="flex-grow flex flex-col w-full">
-                      <h4 className="font-heading font-bold text-slate-900 text-base mb-1 group-hover:text-brand-600 transition">{item.name}</h4>
+                      <h4 className="font-heading font-bold text-slate-900 text-base mb-1 group-hover:text-brand-600 transition">
+                        <Link to={`/kepengurusan/profile/${item.id}`}>{item.name}</Link>
+                      </h4>
                       <p className="text-xs font-semibold text-brand-600 mb-2">{item.role}</p>
                       {item.provinsi && <p className="text-[11px] text-slate-400 font-medium mb-4">{item.provinsi} {item.kabupaten ? `• ${item.kabupaten}` : ''}</p>}
                       
                       <div className="flex justify-center gap-3 mt-auto pt-4 border-t border-slate-100">
+                        {item.cv_path && (
+                          <a href={resolveAssetUrl(item.cv_path)} target="_blank" rel="noreferrer" className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:text-brand-600 flex items-center justify-center transition" title="Download CV">
+                            <i className="ph-fill ph-file-pdf text-lg" />
+                          </a>
+                        )}
                         {item.facebook_url && (
                           <a href={item.facebook_url} target="_blank" rel="noreferrer" className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:text-brand-600 flex items-center justify-center transition">
                             <i className="ph-fill ph-facebook-logo" />
@@ -242,6 +266,16 @@ export default function Kepengurusan() {
                             <i className="ph-fill ph-linkedin-logo" />
                           </a>
                         )}
+                        {item.email && (
+                          <a href={`mailto:${item.email}`} className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:text-brand-600 flex items-center justify-center transition">
+                            <i className="ph-fill ph-envelope-simple" />
+                          </a>
+                        )}
+                        {item.whatsapp && (
+                          <a href={`https://wa.me/${item.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:text-brand-600 flex items-center justify-center transition">
+                            <i className="ph-fill ph-whatsapp-logo" />
+                          </a>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -251,7 +285,7 @@ export default function Kepengurusan() {
           )}
 
           {/* ALWAYS VISIBLE PAGINATION FOR DPP, DPD, DPC */}
-          {activeTab !== 'ketua' && filteredList.length > 0 && (
+          {activeTab !== 'Ketua Umum' && filteredList.length > 0 && (
             <div className="mt-16 flex justify-center">
               <nav className="flex items-center gap-2">
                 {showArrows && (

@@ -44,7 +44,7 @@ export default function KegiatanList() {
   const [categoryFilter, setCategoryFilter] = useState(categoryParam)
   const [sortBy, setSortBy] = useState('newest')
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 6
+  const itemsPerPage = 24
 
   useEffect(() => {
     if (categoryParam) setCategoryFilter(categoryParam)
