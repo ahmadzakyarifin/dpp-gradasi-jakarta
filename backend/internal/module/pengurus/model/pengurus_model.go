@@ -21,7 +21,7 @@ type Pengurus struct {
 	Whatsapp     *string `gorm:"size:20"`
 	Periode      string  `gorm:"size:50;not null"`
 	SortOrder    int     `gorm:"default:0"`
-	IsActive     bool    `gorm:"default:true"`
+	IsActive     bool
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 	DeletedAt    gorm.DeletedAt `gorm:"index"`

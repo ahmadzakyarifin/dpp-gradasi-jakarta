@@ -372,6 +372,20 @@ export default function PengurusAdmin() {
     setSelectedItems(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
   }
 
+  const getVisiblePageNumbers = (currentPage, totalPagesCount, maxVisible = 5) => {
+    const totalP = totalPagesCount || 1
+    if (totalP <= maxVisible) {
+      return Array.from({ length: totalP }, (_, i) => i + 1)
+    }
+    let start = Math.max(1, currentPage - Math.floor(maxVisible / 2))
+    let end = start + maxVisible - 1
+    if (end > totalP) {
+      end = totalP
+      start = Math.max(1, end - maxVisible + 1)
+    }
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i)
+  }
+
   const totalPages = Math.max(1, meta.total_pages || 1)
   const totalData = meta.total_data ?? allItems.length
 
@@ -614,7 +628,7 @@ export default function PengurusAdmin() {
                   >
                     <i className="ph-bold ph-caret-left text-sm" />
                   </button>
-                  {Array.from({ length: totalPages || 1 }, (_, i) => i + 1).map((n) => (
+                  {getVisiblePageNumbers(currentPage, totalPages, 5).map((n) => (
                     <button
                       key={n}
                       type="button"

@@ -44,6 +44,8 @@ export default function BeritaAdmin() {
     excerpt: '',
     content: '',
     tags: '',
+    footnote: '',
+    image_source: '',
     is_published: true,
   })
   const [formErrors, setFormErrors] = useState({})
@@ -72,6 +74,9 @@ export default function BeritaAdmin() {
     }
     if (!data.content || !data.content.trim()) {
       errors.content = 'Konten lengkap wajib diisi.'
+    }
+    if (data.image_source && data.image_source.trim().length > 150) {
+      errors.image_source = 'Keterangan foto maksimal 150 karakter.'
     }
     return errors
   }, [formData])
@@ -179,6 +184,8 @@ export default function BeritaAdmin() {
           excerpt: d.excerpt ?? item.excerpt ?? '',
           content: d.content ?? '',
           tags: Array.isArray(d.tags) ? d.tags.join(', ') : (d.tags ?? ''),
+          footnote: d.footnote ?? item.footnote ?? '',
+          image_source: d.image_source ?? item.image_source ?? '',
           is_published: typeof d.is_published === 'boolean' ? d.is_published : !!item.is_published,
         })
         setCategorySearch(d.category ?? item.category ?? '')
@@ -200,6 +207,8 @@ export default function BeritaAdmin() {
         excerpt: '',
         content: '',
         tags: '',
+        footnote: '',
+        image_source: '',
         is_published: true,
       })
       setCategorySearch(defaultCat)
@@ -356,6 +365,20 @@ export default function BeritaAdmin() {
     setFilterSort('newest')
     setCurrentPage(1)
     showToast('Filter direset.', 'info')
+  }
+
+  const getVisiblePageNumbers = (currentPage, totalPagesCount, maxVisible = 5) => {
+    const totalP = totalPagesCount || 1
+    if (totalP <= maxVisible) {
+      return Array.from({ length: totalP }, (_, i) => i + 1)
+    }
+    let start = Math.max(1, currentPage - Math.floor(maxVisible / 2))
+    let end = start + maxVisible - 1
+    if (end > totalP) {
+      end = totalP
+      start = Math.max(1, end - maxVisible + 1)
+    }
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i)
   }
 
   // Filter/search ditangani backend via query param — lihat loadBerita().
@@ -585,7 +608,7 @@ export default function BeritaAdmin() {
                 >
                   <i className="ph-bold ph-caret-left text-sm" />
                 </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+                {getVisiblePageNumbers(currentPage, totalPages, 5).map((n) => (
                   <button
                     key={n}
                     type="button"
@@ -767,14 +790,14 @@ export default function BeritaAdmin() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Gambar Cover <span className="text-gray-400 font-normal">(opsional)</span></label>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Foto Cover <span className="text-gray-400 font-normal">(opsional)</span></label>
                     <div className="flex items-center gap-3">
                       {formData.image_path && (
                         <img src={resolveAssetUrl(formData.image_path)} alt="Cover" className="w-20 h-14 rounded-lg object-cover border border-slate-200 shrink-0" />
                       )}
                       <label className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 text-sm font-semibold cursor-pointer transition shrink-0">
                         <i className="ph-bold ph-upload-simple" />
-                        {imageUploading ? 'Mengunggah...' : (formData.image_path ? 'Ganti Gambar' : 'Upload Gambar')}
+                        {imageUploading ? 'Mengunggah...' : (formData.image_path ? 'Ganti Foto Cover' : 'Upload Foto Cover')}
                         <input
                           type="file"
                           accept="image/png,image/jpeg,image/webp"
@@ -790,13 +813,39 @@ export default function BeritaAdmin() {
                       {formData.image_path && (
                         <button
                           type="button"
-                          onClick={() => setFormData({ ...formData, image_path: '' })}
+                          onClick={() => setFormData({ ...formData, image_path: '', image_source: '' })}
                           className="text-xs text-red-500 hover:text-red-700 font-medium"
                         >
                           Hapus
                         </button>
                       )}
                     </div>
+                    {formData.image_path && (
+                      <div className="mt-2.5 animate-fade-in">
+                        <div className="flex justify-between items-center mb-1">
+                          <label className="block text-[11px] font-semibold text-slate-500">Sumber / Kredit Foto Cover</label>
+                          <span className={`text-[10px] font-semibold ${(formData.image_source || '').length > 150 ? 'text-red-500' : 'text-slate-400'}`}>
+                            {(formData.image_source || '').length}/150
+                          </span>
+                        </div>
+                        <input
+                          type="text"
+                          value={formData.image_source || ''}
+                          onChange={e => {
+                            let val = e.target.value
+                            // Trim repeated consecutive characters (> 4 repeated)
+                            val = val.replace(/(.)\1{4,}/g, '$1$1')
+                            setFormData({ ...formData, image_source: val })
+                          }}
+                          placeholder="Contoh: Foto: Humas / Unsplash"
+                          maxLength={150}
+                          className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
+                        />
+                        {(formData.image_source || '').length > 150 && (
+                          <p className="text-red-500 text-[10px] mt-1">Keterangan foto maksimal 150 karakter.</p>
+                        )}
+                      </div>
+                    )}
                     <p className="text-[10px] text-slate-400 mt-1.5">PNG / JPG / WEBP · Maks 5MB.</p>
                   </div>
 
@@ -818,6 +867,11 @@ export default function BeritaAdmin() {
                   <div>
                     <label className="block text-xs font-semibold text-slate-500 mb-1">Ringkasan (Excerpt) <span className="text-gray-400 font-normal">(opsional)</span></label>
                     <textarea rows={3} value={formData.excerpt} onChange={e => setFormData({ ...formData, excerpt: e.target.value })} placeholder="Tulis ringkasan berita singkat..." className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors overflow-y-auto resize-y min-h-[80px]" />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Sumber / Footnote <span className="text-gray-400 font-normal">(opsional)</span></label>
+                    <input type="text" value={formData.footnote} onChange={e => setFormData({ ...formData, footnote: e.target.value })} placeholder="Contoh: Humas DPP GRADASI, DetikNews, dll." className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
                   </div>
 
                   <div>
@@ -885,7 +939,12 @@ export default function BeritaAdmin() {
               ) : detailData ? (
                 <div className="space-y-4">
                   {(detailData.image_url || detailData.image_path) && (
-                    <img src={resolveAssetUrl(detailData.image_url || detailData.image_path)} alt="" className="w-full h-48 object-cover rounded-xl border border-slate-200" />
+                    <div>
+                      <img src={resolveAssetUrl(detailData.image_url || detailData.image_path)} alt="" className="w-full h-48 object-cover rounded-xl border border-slate-200" />
+                      {detailData.image_source && (
+                        <p className="text-[10px] text-slate-400 mt-1.5 text-right italic font-medium">{detailData.image_source}</p>
+                      )}
+                    </div>
                   )}
                   <div>
                     <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Judul</span>
@@ -915,6 +974,12 @@ export default function BeritaAdmin() {
                     <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Konten Lengkap</span>
                     <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-line break-words">{detailData.content || '-'}</p>
                   </div>
+                  {detailData.footnote && (
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Sumber / Footnote</span>
+                      <p className="text-slate-700 text-sm italic">{detailData.footnote}</p>
+                    </div>
+                  )}
                   {Array.isArray(detailData.tags) && detailData.tags.length > 0 && (
                     <div>
                       <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Tags</span>

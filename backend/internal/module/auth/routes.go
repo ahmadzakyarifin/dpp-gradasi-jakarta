@@ -15,9 +15,6 @@ func RegisterRoutes(
 ) {
 	requireAuth := middleware.AuthMiddleware(jwtSecret)
 
-	// Captcha hanya aktif jika CAPTCHA_ENABLED=true + secret key terisi.
-	needCaptcha := middleware.RequiredCaptchaMiddleware(authH.Cfg())
-
 	// Rate limit: login & forgot-password
 	loginLimit := middleware.RateLimitRules("auth",
 		middleware.IPEmail(5, time.Minute),
@@ -43,10 +40,10 @@ func RegisterRoutes(
 
 	auth := api.Group("/auth")
 	{
-		auth.POST("/login", needCaptcha, loginLimit, authH.Login)
+		auth.POST("/login", loginLimit, authH.Login)
 		auth.POST("/refresh", authH.Refresh)
 		auth.POST("/logout", requireAuth, authH.Logout)
-		auth.POST("/forgot-password", needCaptcha, forgotLimit, authH.ForgotPassword)
+		auth.POST("/forgot-password", forgotLimit, authH.ForgotPassword)
 		auth.POST("/reset-password", resetSubmitLimit, authH.ResetPassword)
 		auth.GET("/validate-reset-token", validateResetLimit, authH.ValidateResetToken)
 		auth.POST("/change-password", requireAuth, authH.ChangePassword)

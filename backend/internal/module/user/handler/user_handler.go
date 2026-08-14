@@ -25,7 +25,13 @@ func NewUserHandler(s service.UserService, cfg *config.Config) *UserHandler {
 	return &UserHandler{s: s, cfg: cfg}
 }
 
-func (h *UserHandler) secureCookie() bool {
+func (h *UserHandler) secureCookie(c *gin.Context) bool {
+	if h.cfg != nil && h.cfg.Cookie.Secure {
+		return true
+	}
+	if c != nil && (c.GetHeader("X-Forwarded-Proto") == "https" || c.Request.TLS != nil) {
+		return true
+	}
 	return h.cfg != nil && h.cfg.App.Env == "production"
 }
 
@@ -187,7 +193,7 @@ func (h *UserHandler) Activate(c *gin.Context) {
 	}
 
 	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie("refresh_token", refreshToken, int(time.Until(expiry).Seconds()), "/", "", h.secureCookie(), true)
+	c.SetCookie("refresh_token", refreshToken, int(time.Until(expiry).Seconds()), "/", "", h.secureCookie(c), true)
 
 	helper.SuccessResponse(c, http.StatusOK, "AKUN_BERHASIL_DIAKTIFKAN", "akun berhasil diaktifkan", gin.H{
 		"access_token": accessToken,

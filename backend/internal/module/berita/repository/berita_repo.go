@@ -97,11 +97,11 @@ func (r *beritaRepo) query(publishedOnly bool, q dto.BeritaQuery) ([]entity.Beri
 	// Sort
 	switch q.Sort {
 	case "oldest":
-		db = db.Order("published_date ASC, created_at ASC")
+		db = db.Order("berita.created_at ASC")
 	case "most_viewed":
-		db = db.Order("views DESC, published_date DESC")
+		db = db.Order("berita.views DESC, berita.created_at DESC")
 	default:
-		db = db.Order("published_date DESC, created_at DESC")
+		db = db.Order("berita.created_at DESC")
 	}
 
 	// Pagination

@@ -1,4 +1,4 @@
-// Package email berisi template email HTML untuk SchoolPay.
+// Package email berisi template email HTML untuk DPP Gradasi.
 // Template dirender dengan html/template dan disisipkan ke binary lewat embed
 // sehingga tidak bergantung pada filesystem saat runtime.
 package email

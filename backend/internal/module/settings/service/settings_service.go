@@ -295,21 +295,14 @@ func (s *settingsService) UploadLogo(ctx context.Context, file *multipart.FileHe
 	}
 
 	logoPath := "/uploads/settings/" + filename
-	if err := s.repo.UpdateLogo(logoPath, updatedBy); err != nil {
-		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal memperbarui logo website.", err)
+
+	settings, err := s.repo.Get()
+	if err != nil {
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil konfigurasi website.", err)
 	}
 
-	settingsID := uint(1)
-	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
-		Action:      "settings.update",
-		EntityType:  "settings",
-		EntityID:    &settingsID,
-		EntityLabel: "Logo Website",
-		Description: "Mengunggah logo website",
-		Metadata: map[string]any{
-			"logo_path": logoPath,
-		},
-	})
+	resp := mapper.EntityToResponse(mapper.ModelToEntity(settings))
+	resp.LogoPath = logoPath
 
-	return s.GetSettings(ctx)
+	return resp, nil
 }

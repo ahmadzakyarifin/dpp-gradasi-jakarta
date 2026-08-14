@@ -7,24 +7,16 @@ import { authContent } from '../content/authContent'
 import { authService } from '../services/authService'
 import { validateEmail, validatePassword } from '../utils/validation'
 import { useSettings } from '../context/useSettings'
-import { resolveAssetUrl } from '../utils/assetUrl'
 
 export default function Login() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const login = useAuthStore((state) => state.login)
-  // Status CAPTCHA dari backend (single source of truth)
-  const { settings } = useSettings()
-  const captchaEnabled = !!settings?.captcha_enabled
 
   const initialView = searchParams.get('view') === 'forgot' ? 'forgot' : 'login'
   const [view, setView] = useState(initialView)
   const [loginForm, setLoginForm] = useState({ email: '', password: '', rememberMe: false })
   const [forgotEmail, setForgotEmail] = useState('')
-  const [captchaToken, setCaptchaToken] = useState('')
-  const [forgotCaptchaToken, setForgotCaptchaToken] = useState('')
-  const [captchaError, setCaptchaError] = useState(false)
-  const [forgotCaptchaError, setForgotCaptchaError] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [touched, setTouched] = useState({ email: false, password: false, forgotEmail: false })
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -35,8 +27,6 @@ export default function Login() {
   useEffect(() => {
     const savedEmail = localStorage.getItem('remembered_email')
     setLoginForm({ email: savedEmail || '', password: '', rememberMe: !!savedEmail })
-    setCaptchaToken('')
-    setCaptchaError(false)
 
     if (searchParams.get('expired') === '1') {
       setNotice({ type: 'error', message: 'Sesi login telah berakhir. Silakan login kembali.' })
@@ -73,8 +63,6 @@ export default function Login() {
     setTouched({ email: false, password: false, forgotEmail: false })
     setNotice({ type: '', message: '' })
     setCooldown(0)
-    setForgotCaptchaToken('')
-    setForgotCaptchaError(false)
   }
 
   function switchToLogin() {
@@ -82,40 +70,19 @@ export default function Login() {
     setTouched({ email: false, password: false, forgotEmail: false })
     setNotice({ type: '', message: '' })
     setCooldown(0)
-    setCaptchaToken('')
-    setCaptchaError(false)
   }
 
   async function handleLogin(event) {
     event.preventDefault()
     setTouched((prev) => ({ ...prev, email: true, password: true }))
     setNotice({ type: '', message: '' })
-    setCaptchaError(false)
 
     if (Object.keys(loginErrors).length > 0) return
-
-    // Resolusi token CAPTCHA: state React (callback onVerify) atau fallback
-    // hidden input cf-turnstile-response yang ditulis langsung oleh Cloudflare.
-    let token = captchaToken
-    if (captchaEnabled && !token) {
-      // Tunggu widget selesai render (maks ~2 detik) — user yang klik submit
-      // terlalu cepat sebelum Turnstile selesai load akan tetap berhasil.
-      for (let i = 0; i < 10 && !token; i++) {
-        await new Promise((r) => setTimeout(r, 200))
-        token = document.querySelector('input[name="cf-turnstile-response"]')?.value || ''
-      }
-    }
-    // JANGAN hard-block submit di sini: backend yang memutuskan apakah CAPTCHA
-    // wajib (CAPTCHA_ENABLED=true + environment production). Kalau token kosong
-    // tapi backend tidak butuh (mode dev / captcha off), login tetap jalan.
-    // Kalau backend butuh dan token kosong, ia akan balas AUTH_CAPTCHA_REQUIRED
-    // yang ditampilkan di notice + reset widget.
 
     setIsSubmitting(true)
     try {
       await login({
-        ...loginForm,
-        captcha_token: token
+        ...loginForm
       })
 
       // Simpan/hapus email berdasarkan rememberMe
@@ -133,13 +100,6 @@ export default function Login() {
         navigate(authContent.adminPath)
       }
     } catch (error) {
-      // CAPTCHA diminta backend tapi token kosong/tidak valid → reset widget
-      // supaya user bisa coba sekali lagi.
-      if (error?.code === 'AUTH_CAPTCHA_REQUIRED' || error?.data?.code === 'AUTH_CAPTCHA_REQUIRED') {
-        setCaptchaError(true)
-        setNotice({ type: 'error', message: 'Silakan selesaikan verifikasi CAPTCHA terlebih dahulu.' })
-        return
-      }
       if (error.retryAfter > 0) {
         setCooldown(error.retryAfter)
         setNotice({ type: 'error', message: 'Terlalu banyak percobaan. Silakan tunggu sebelum mencoba lagi.' })
@@ -149,8 +109,6 @@ export default function Login() {
       // Reset inputan email & password (biar aman dari keylogger / salah input berulang)
       setLoginForm((prev) => ({ ...prev, email: '', password: '' }))
       setTouched({ email: false, password: false, forgotEmail: false })
-      setCaptchaToken('')
-      setCaptchaError(false)
     } finally {
       setIsSubmitting(false)
     }
@@ -160,32 +118,22 @@ export default function Login() {
     event.preventDefault()
     setTouched((prev) => ({ ...prev, forgotEmail: true }))
     setNotice({ type: '', message: '' })
-    setForgotCaptchaError(false)
     if (Object.keys(forgotErrors).length > 0) return
-
-    if (captchaEnabled && !forgotCaptchaToken) {
-      // JANGAN hard-block: backend yang memutuskan (dev mode = skip captcha).
-      // Kalau backend butuh captcha, ia balas AUTH_CAPTCHA_REQUIRED.
-      setForgotCaptchaError(false)
-    }
 
     setIsSubmitting(true)
     try {
-      const response = await authService.forgotPassword(forgotEmail, forgotCaptchaToken)
+      const response = await authService.forgotPassword(forgotEmail)
       setNotice({
         type: 'success',
         message: response?.message || authContent.forgot.successMessage,
       })
       setForgotEmail('')
-      setForgotCaptchaToken('')
-      setForgotCaptchaError(false)
-      setTouched({ email: false, password: false, forgotEmail: false })
     } catch (error) {
       if (error.retryAfter > 0) {
         setCooldown(error.retryAfter)
-        setNotice({ type: 'error', message: 'Terlalu banyak permintaan. Silakan tunggu sebelum mencoba lagi.' })
+        setNotice({ type: 'error', message: 'Terlalu banyak percobaan. Silakan tunggu sebelum mencoba lagi.' })
       } else {
-        setNotice({ type: 'error', message: error.message || 'Gagal mengirim link reset password' })
+        setNotice({ type: 'error', message: error.message || 'Gagal mengirim email reset password' })
       }
     } finally {
       setIsSubmitting(false)
@@ -208,26 +156,27 @@ export default function Login() {
 
       <div className="w-full max-w-md mt-12 md:mt-0">
         <div className="mb-10 text-center md:text-left">
-          <div className="md:hidden inline-flex w-16 h-16 bg-white rounded-xl p-2 shadow-lg mb-6 border border-slate-100">
-            <img src={settings?.logo_path ? resolveAssetUrl(settings.logo_path) : ""} alt={settings?.site_name || ""} className="w-full h-full object-contain" />
-          </div>
           <h2 className="font-heading text-3xl font-extrabold text-slate-900 mb-2 tracking-tight">{content.title}</h2>
           <p className="text-slate-500 text-sm font-medium">{content.subtitle}</p>
         </div>
 
+        {/* Global Alert Notification */}
         {notice.message && (
           <div className={`mb-5 rounded-xl border px-4 py-3 text-sm font-medium ${notice.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
-            {notice.message}
-            {cooldown > 0 && (
-              <span className="block mt-1 font-bold tabular-nums">
-                Coba lagi dalam {cooldown} detik.
-              </span>
-            )}
+            <span className="leading-relaxed">
+              {notice.message}
+              {cooldown > 0 && (
+                <span className="block mt-1 font-bold tabular-nums">
+                  Coba lagi dalam {cooldown} detik.
+                </span>
+              )}
+            </span>
           </div>
         )}
 
         {view === 'login' ? (
-          <form onSubmit={handleLogin} autoComplete="off" className="w-full flex flex-col gap-5">
+          <form onSubmit={handleLogin} autoComplete="on" className="w-full flex flex-col gap-5">
+            {/* Input Email */}
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-1.5">{authContent.login.emailLabel} <span className="text-red-500">*</span></label>
               <div className="relative group">
@@ -236,7 +185,7 @@ export default function Login() {
                 </div>
                 <input
                   type="email"
-                  autoComplete="off"
+                  autoComplete="email"
                   value={loginForm.email}
                   onChange={(event) => {
                     setLoginForm((prev) => ({ ...prev, email: event.target.value }))
@@ -250,11 +199,12 @@ export default function Login() {
               {touched.email && loginErrors.email && <p className="text-red-500 text-[11px] font-bold mt-1.5 ml-1">{loginErrors.email}</p>}
             </div>
 
+            {/* Input Password */}
             <div>
               <div className="flex justify-between items-center mb-1.5">
-                <label className="block text-sm font-bold text-slate-700">{authContent.login.passwordLabel} <span className="text-red-500">*</span></label>
-                <button type="button" onClick={switchToForgot} className="text-[11px] font-bold text-brand-600 hover:text-brand-800 transition uppercase tracking-wider">
-                  {authContent.login.forgotButton}
+                <label className="text-sm font-bold text-slate-700">{authContent.login.passwordLabel} <span className="text-red-500">*</span></label>
+                <button type="button" onClick={switchToForgot} className="text-xs font-bold text-slate-400 hover:text-brand-600 transition">
+                  {authContent.login.forgotLink}
                 </button>
               </div>
               <div className="relative group">
@@ -280,10 +230,6 @@ export default function Login() {
               {touched.password && loginErrors.password && <p className="text-red-500 text-[11px] font-bold mt-1.5 ml-1">{loginErrors.password}</p>}
             </div>
 
-            {captchaEnabled && (
-              <CaptchaWidget onVerify={(token) => setCaptchaToken(token)} hasError={captchaError} />
-            )}
-
             <label className="flex items-center gap-2 text-sm text-slate-600 font-medium">
               <input
                 type="checkbox"
@@ -301,6 +247,7 @@ export default function Login() {
           </form>
         ) : (
           <form onSubmit={handleForgot} autoComplete="off" className="w-full flex flex-col gap-5">
+            {/* Input Email Reset */}
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-1.5">{authContent.forgot.emailLabel} <span className="text-red-500">*</span></label>
               <div className="relative group">
@@ -322,10 +269,6 @@ export default function Login() {
               </div>
               {touched.forgotEmail && forgotErrors.forgotEmail && <p className="text-red-500 text-[11px] font-bold mt-1.5 ml-1">{forgotErrors.forgotEmail}</p>}
             </div>
-
-            {captchaEnabled && (
-              <CaptchaWidget onVerify={(token) => setForgotCaptchaToken(token)} hasError={forgotCaptchaError} />
-            )}
 
             <button type="submit" disabled={isSubmitting || cooldown > 0} className="group relative overflow-hidden bg-brand-600 hover:bg-brand-700 text-white w-full py-3.5 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 mt-2 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
               <span>{isSubmitting ? authContent.forgot.submittingButton : cooldown > 0 ? `Tunggu ${cooldown}s` : authContent.forgot.submitButton}</span>

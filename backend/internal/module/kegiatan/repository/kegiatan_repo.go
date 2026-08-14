@@ -88,11 +88,11 @@ func (r *kegiatanRepo) query(publishedOnly bool, q dto.KegiatanQuery) ([]entity.
 
 	switch q.Sort {
 	case "oldest":
-		db = db.Order("event_date ASC, created_at ASC")
+		db = db.Order("kegiatan.created_at ASC")
 	case "most_viewed":
-		db = db.Order("views DESC, event_date DESC")
+		db = db.Order("kegiatan.views DESC, kegiatan.created_at DESC")
 	default:
-		db = db.Order("event_date DESC, created_at DESC")
+		db = db.Order("kegiatan.created_at DESC")
 	}
 
 	page := q.Page

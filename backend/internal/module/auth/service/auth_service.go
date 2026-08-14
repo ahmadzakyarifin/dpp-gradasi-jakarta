@@ -231,6 +231,38 @@ func (s *authService) ForgotPassword(ctx context.Context, req dto.ForgotPassword
 		return "", nil
 	}
 
+	if user.DeletedAt != nil {
+		// Jika akun sudah dihapus (soft delete), jangan kirim email apa pun
+		return "", nil
+	}
+
+	if user.Status != "active" {
+		var settings struct {
+			LogoPath string `gorm:"column:logo_path"`
+		}
+		logoURL := "https://gradasi.org/uploads/img/logo/1737187847.png"
+		if err := s.r.GetDB().Table("settings").Select("logo_path").First(&settings).Error; err == nil && settings.LogoPath != "" {
+			if strings.HasPrefix(settings.LogoPath, "http://") || strings.HasPrefix(settings.LogoPath, "https://") {
+				logoURL = settings.LogoPath
+			} else {
+				logoURL = strings.TrimSuffix(s.cfg.App.URL, "/") + "/" + strings.TrimPrefix(settings.LogoPath, "/")
+			}
+		}
+
+		html, err := emailtemplate.Render("account_inactive.html", map[string]any{
+			"Name": user.Name,
+			"Logo": logoURL,
+		})
+		if err != nil {
+			return "", fmt.Errorf("gagal merender template email: %w", err)
+		}
+
+		if err := s.mailer.Send(user.Email, "Akun Dinonaktifkan", html); err != nil {
+			return "", errors.New("gagal mengirim email pemberitahuan akun nonaktif")
+		}
+		return "", nil
+	}
+
 	token := uuid.New().String()
 
 	expiryMinutes := s.cfg.JWT.PasswordResetTTLMinutes
@@ -245,10 +277,23 @@ func (s *authService) ForgotPassword(ctx context.Context, req dto.ForgotPassword
 		fmt.Printf("\n[DEBUG] Forgot Password Link for %s: %s\n\n", user.Email, link)
 	}
 
+	var settings struct {
+		LogoPath string `gorm:"column:logo_path"`
+	}
+	logoURL := "https://gradasi.org/uploads/img/logo/1737187847.png"
+	if err := s.r.GetDB().Table("settings").Select("logo_path").First(&settings).Error; err == nil && settings.LogoPath != "" {
+		if strings.HasPrefix(settings.LogoPath, "http://") || strings.HasPrefix(settings.LogoPath, "https://") {
+			logoURL = settings.LogoPath
+		} else {
+			logoURL = strings.TrimSuffix(s.cfg.App.URL, "/") + "/" + strings.TrimPrefix(settings.LogoPath, "/")
+		}
+	}
+
 	html, err := emailtemplate.Render("forgot_password.html", map[string]any{
 		"Name":    user.Name,
 		"URL":     link,
 		"Expired": expiryMinutes,
+		"Logo":    logoURL,
 	})
 	if err != nil {
 		return "", fmt.Errorf("gagal merender template email: %w", err)

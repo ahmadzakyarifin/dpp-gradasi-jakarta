@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import PublicLayout from '../layouts/PublicLayout'
 import { kegiatanService } from '../services/kegiatanService'
 import { resolveAssetUrl } from '../utils/assetUrl'
 import { useSettings } from '../context/useSettings'
 import { shareContent, getShareUrl, copyToClipboard } from '../utils/share'
+import ArticleSource from '../components/ArticleSource'
+import ArticleCaption from '../components/ArticleCaption'
 
 export default function KegiatanDetail() {
   const { settings } = useSettings()
   const { slug } = useParams()
   const [kegiatan, setKegiatan] = useState(null)
   const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
   const [error, setError] = useState(null)
   const [copied, setCopied] = useState(false)
   const [activeImageIndex, setActiveImageIndex] = useState(null)
@@ -64,15 +67,23 @@ export default function KegiatanDetail() {
       <div className="fixed top-0 left-0 h-[3px] bg-gradient-to-r from-brand-600 to-brand-400 z-[9999] w-full" />
       <section className="pt-28 pb-0 bg-white border-b border-slate-100">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex items-center gap-2 text-sm py-4">
-            <Link to="/" className="text-slate-400 hover:text-brand-600 transition flex items-center gap-1">
-              <i className="ph-bold ph-house text-xs" /> Beranda
-            </Link>
-            <i className="ph-bold ph-caret-right text-[10px] text-slate-300" />
-            <Link to="/kegiatan" className="text-slate-400 hover:text-brand-600 transition">Kegiatan</Link>
-            <i className="ph-bold ph-caret-right text-[10px] text-slate-300" />
-            <span className="text-brand-600 font-semibold truncate max-w-[250px]">{kegiatan?.title || 'Detail Kegiatan'}</span>
-          </nav>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-4">
+            <nav className="flex items-center gap-2 text-sm">
+              <Link to="/" className="text-slate-400 hover:text-brand-600 transition flex items-center gap-1">
+                <i className="ph-bold ph-house text-xs" /> Beranda
+              </Link>
+              <i className="ph-bold ph-caret-right text-[10px] text-slate-300" />
+              <Link to="/kegiatan" className="text-slate-400 hover:text-brand-600 transition">Kegiatan</Link>
+              <i className="ph-bold ph-caret-right text-[10px] text-slate-300" />
+              <span className="text-brand-600 font-semibold truncate max-w-[250px]">{kegiatan?.title || 'Detail Kegiatan'}</span>
+            </nav>
+            <button
+              onClick={() => navigate('/')}
+              className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-brand-600 transition bg-slate-100 hover:bg-brand-50 px-3.5 py-2 rounded-xl border border-slate-200/60 w-fit cursor-pointer btn-press"
+            >
+              <i className="ph-bold ph-arrow-left text-[11px]" /> Kembali ke Beranda
+            </button>
+          </div>
         </div>
       </section>
 
@@ -113,9 +124,12 @@ export default function KegiatanDetail() {
               </h1>
 
               {kegiatan.image_url && (
-                <div className="relative overflow-hidden rounded-2xl mb-8">
-                  <img src={resolveAssetUrl(kegiatan.image_url)} alt={kegiatan.title} className="w-full h-64 md:h-96 lg:h-[480px] object-cover rounded-2xl" />
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/30 to-transparent h-24 rounded-b-2xl" />
+                <div className="mb-8">
+                  <div className="relative overflow-hidden rounded-2xl">
+                    <img src={resolveAssetUrl(kegiatan.image_url)} alt={kegiatan.title} className="w-full h-64 md:h-96 lg:h-[480px] object-cover rounded-2xl" />
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/30 to-transparent h-24 rounded-b-2xl" />
+                  </div>
+                      <ArticleCaption source={kegiatan.image_source} />
                 </div>
               )}
             </div>
@@ -131,10 +145,12 @@ export default function KegiatanDetail() {
                     </p>
                   )}
 
-                  <div 
+                  <div
                     className="prose max-w-none text-slate-700 leading-relaxed break-words whitespace-pre-line"
                     dangerouslySetInnerHTML={{ __html: kegiatan.content }}
                   />
+
+                  <ArticleSource footnote={kegiatan.footnote} />
 
                   {/* Gallery Section */}
                   {kegiatan.gallery && kegiatan.gallery.length > 0 && (
@@ -145,14 +161,14 @@ export default function KegiatanDetail() {
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {kegiatan.gallery.map((img, idx) => (
-                          <div 
-                            key={img.id} 
+                          <div
+                            key={img.id}
                             onClick={() => setActiveImageIndex(idx)}
                             className="group relative rounded-2xl overflow-hidden border border-slate-200 shadow-sm aspect-video bg-slate-50 cursor-pointer"
                           >
-                            <img 
-                              src={resolveAssetUrl(img.image_url || img.image_path)} 
-                              alt={img.caption || kegiatan.title} 
+                            <img
+                              src={resolveAssetUrl(img.image_url || img.image_path)}
+                              alt={img.caption || kegiatan.title}
                               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                             />
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3.5">
@@ -168,13 +184,13 @@ export default function KegiatanDetail() {
                       {/* Premium Lightbox Modal */}
                       {activeImageIndex !== null && (
                         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-fade-in">
-                          <div 
+                          <div
                             className="fixed inset-0 bg-slate-950/80 backdrop-blur-md transition-opacity"
                             onClick={() => setActiveImageIndex(null)}
                           />
                           <div className="relative max-w-4xl w-full max-h-[85vh] flex flex-col justify-center items-center z-10 animate-scale-up">
                             {/* Close Button */}
-                            <button 
+                            <button
                               onClick={() => setActiveImageIndex(null)}
                               className="absolute -top-12 right-0 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition border border-white/10 shadow"
                               title="Tutup"
@@ -184,9 +200,9 @@ export default function KegiatanDetail() {
 
                             {/* Main Image */}
                             <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-white/5 bg-slate-900 max-h-[75vh]">
-                              <img 
-                                src={resolveAssetUrl(kegiatan.gallery[activeImageIndex].image_url || kegiatan.gallery[activeImageIndex].image_path)} 
-                                alt={kegiatan.gallery[activeImageIndex].caption || 'Detail foto'} 
+                              <img
+                                src={resolveAssetUrl(kegiatan.gallery[activeImageIndex].image_url || kegiatan.gallery[activeImageIndex].image_path)}
+                                alt={kegiatan.gallery[activeImageIndex].caption || 'Detail foto'}
                                 className="w-full h-auto max-h-[75vh] object-contain mx-auto"
                               />
                               {kegiatan.gallery[activeImageIndex].caption && (
@@ -263,8 +279,8 @@ export default function KegiatanDetail() {
                         <button onClick={handleInstagramShare} className="flex items-center justify-center w-full h-11 rounded-xl bg-[#E1306C]/10 text-[#E1306C] hover:bg-[#E1306C] hover:text-white transition" title="Instagram"><i className="ph-fill ph-instagram-logo text-lg" /></button>
                         <a href={getShareUrl('whatsapp', { title: kegiatan.title, text: kegiatan.excerpt })} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full h-11 rounded-xl bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366] hover:text-white transition" title="WhatsApp"><i className="ph-fill ph-whatsapp-logo text-lg" /></a>
                         <a href={getShareUrl('facebook', { title: kegiatan.title, text: kegiatan.excerpt })} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full h-11 rounded-xl bg-[#1877F2]/10 text-[#1877F2] hover:bg-[#1877F2] hover:text-white transition" title="Facebook"><i className="ph-fill ph-facebook-logo text-lg" /></a>
-                        <button 
-                          onClick={handleCopyLink} 
+                        <button
+                          onClick={handleCopyLink}
                           className={`flex items-center justify-center w-full h-11 rounded-xl transition ${copied ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-600 hover:text-white'}`}
                           title={copied ? "Tautan Berhasil Disalin" : "Salin Tautan"}
                         >

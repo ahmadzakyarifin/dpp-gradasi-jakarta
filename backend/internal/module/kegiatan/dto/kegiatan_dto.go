@@ -11,6 +11,8 @@ type KegiatanCreateRequest struct {
 	ImagePath   string `json:"image_path"`
 	Excerpt     string `json:"excerpt"`
 	Content     string `json:"content" binding:"required"`
+	Footnote    string `json:"footnote"`
+	ImageSource string `json:"image_source"`
 	IsPublished *bool  `json:"is_published"`
 	Tags        string `json:"tags"`    // comma-separated
 	GalleryJSON string `json:"gallery"` // JSON string: [{"image_path":"...","caption":"...","sort_order":0}]
@@ -27,6 +29,8 @@ type KegiatanUpdateRequest struct {
 	ImagePath   string `json:"image_path"`
 	Excerpt     string `json:"excerpt"`
 	Content     string `json:"content"`
+	Footnote    string `json:"footnote"`
+	ImageSource string `json:"image_source"`
 	IsPublished *bool  `json:"is_published"`
 	Tags        string `json:"tags"`    // comma-separated
 	GalleryJSON string `json:"gallery"` // JSON string: [{"image_path":"...","caption":"...","sort_order":0}]
@@ -62,6 +66,8 @@ type KegiatanDetailResponse struct {
 	ImagePath   string             `json:"image_path,omitempty"`
 	Excerpt     string             `json:"excerpt,omitempty"`
 	Content     string             `json:"content,omitempty"`
+	Footnote    string             `json:"footnote,omitempty"`
+	ImageSource string             `json:"image_source,omitempty"`
 	IsPublished bool               `json:"is_published"`
 	Views       int                `json:"views"`
 	Tags        []string           `json:"tags,omitempty"`

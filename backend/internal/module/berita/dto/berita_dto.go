@@ -9,6 +9,8 @@ type BeritaCreateRequest struct {
 	ImagePath     string `json:"image_path"`
 	Excerpt       string `json:"excerpt"`
 	Content       string `json:"content" binding:"required"`
+	Footnote      string `json:"footnote"`
+	ImageSource   string `json:"image_source"`
 	IsFeatured    *bool  `json:"is_featured"`
 	IsPublished   *bool  `json:"is_published"`
 	Tags          string `json:"tags"` // comma-separated
@@ -23,6 +25,8 @@ type BeritaUpdateRequest struct {
 	ImagePath     string `json:"image_path"`
 	Excerpt       string `json:"excerpt"`
 	Content       string `json:"content"`
+	Footnote      string `json:"footnote"`
+	ImageSource   string `json:"image_source"`
 	IsFeatured    *bool  `json:"is_featured"`
 	IsPublished   *bool  `json:"is_published"`
 	Tags          string `json:"tags"` // comma-separated
@@ -54,6 +58,8 @@ type BeritaDetailResponse struct {
 	ImagePath     string   `json:"image_path,omitempty"`
 	Excerpt       string   `json:"excerpt,omitempty"`
 	Content       string   `json:"content,omitempty"`
+	Footnote      string   `json:"footnote,omitempty"`
+	ImageSource   string   `json:"image_source,omitempty"`
 	IsFeatured    bool     `json:"is_featured"`
 	IsPublished   bool     `json:"is_published"`
 	Views         int      `json:"views"`

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import PublicLayout from '../layouts/PublicLayout'
 import { useSettings } from '../context/useSettings'
 import { resolveAssetUrl } from '../utils/assetUrl'
@@ -7,6 +7,8 @@ import { beritaContent } from '../content/beritaContent'
 import { beritaService } from '../services/beritaService'
 import { formatDate } from '../utils/format'
 import { shareContent, getShareUrl, copyToClipboard } from '../utils/share'
+import ArticleSource from '../components/ArticleSource'
+import ArticleCaption from '../components/ArticleCaption'
 
 export default function BeritaDetail() {
   const { settings } = useSettings()
@@ -15,6 +17,7 @@ export default function BeritaDetail() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
+  const navigate = useNavigate()
 
   useEffect(() => {
     async function load() {
@@ -66,15 +69,23 @@ export default function BeritaDetail() {
       <div className="fixed top-0 left-0 h-[3px] bg-gradient-to-r from-brand-600 to-brand-400 z-[9999] w-full" />
       <section className="pt-28 pb-0 bg-white border-b border-slate-100">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex items-center gap-2 text-sm py-4">
-            <Link to="/" className="text-slate-400 hover:text-brand-600 transition flex items-center gap-1">
-              <i className="ph-bold ph-house text-xs" /> {beritaContent.detail.breadcrumbHome}
-            </Link>
-            <i className="ph-bold ph-caret-right text-[10px] text-slate-300" />
-            <Link to="/berita" className="text-slate-400 hover:text-brand-600 transition">{beritaContent.detail.breadcrumbInfo}</Link>
-            <i className="ph-bold ph-caret-right text-[10px] text-slate-300" />
-            <span className="text-brand-600 font-semibold truncate max-w-[250px]">{article?.title || beritaContent.detail.defaultTitle}</span>
-          </nav>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-4">
+            <nav className="flex items-center gap-2 text-sm">
+              <Link to="/" className="text-slate-400 hover:text-brand-600 transition flex items-center gap-1">
+                <i className="ph-bold ph-house text-xs" /> {beritaContent.detail.breadcrumbHome}
+              </Link>
+              <i className="ph-bold ph-caret-right text-[10px] text-slate-300" />
+              <Link to="/berita" className="text-slate-400 hover:text-brand-600 transition">{beritaContent.detail.breadcrumbInfo}</Link>
+              <i className="ph-bold ph-caret-right text-[10px] text-slate-300" />
+              <span className="text-brand-600 font-semibold truncate max-w-[250px]">{article?.title || beritaContent.detail.defaultTitle}</span>
+            </nav>
+            <button
+              onClick={() => navigate('/')}
+              className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-brand-600 transition bg-slate-100 hover:bg-brand-50 px-3.5 py-2 rounded-xl border border-slate-200/60 w-fit cursor-pointer btn-press"
+            >
+              <i className="ph-bold ph-arrow-left text-[11px]" /> Kembali ke Beranda
+            </button>
+          </div>
         </div>
       </section>
 
@@ -102,9 +113,12 @@ export default function BeritaDetail() {
               </h1>
 
               {article.image_url && (
-                <div className="relative overflow-hidden rounded-2xl mb-8">
-                  <img src={resolveAssetUrl(article.image_url)} alt={article.title} className="w-full h-64 md:h-96 lg:h-[480px] object-cover rounded-2xl" />
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/30 to-transparent h-24 rounded-b-2xl" />
+                <div className="mb-8">
+                  <div className="relative overflow-hidden rounded-2xl">
+                    <img src={resolveAssetUrl(article.image_url)} alt={article.title} className="w-full h-64 md:h-96 lg:h-[480px] object-cover rounded-2xl" />
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/30 to-transparent h-24 rounded-b-2xl" />
+                  </div>
+                      <ArticleCaption source={article.image_source} />
                 </div>
               )}
             </div>
@@ -117,6 +131,8 @@ export default function BeritaDetail() {
                   <p className="article-content text-[15px] sm:text-base text-slate-700 leading-relaxed whitespace-pre-line break-words">
                     {article.content || article.excerpt || ''}
                   </p>
+
+                  <ArticleSource footnote={article.footnote} />
 
                   <div className="mt-10 pt-8 border-t border-slate-100">
                     <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
@@ -152,8 +168,8 @@ export default function BeritaDetail() {
                         <button onClick={handleInstagramShare} className="flex items-center justify-center w-full h-11 rounded-xl bg-[#E1306C]/10 text-[#E1306C] hover:bg-[#E1306C] hover:text-white transition" title="Instagram"><i className="ph-fill ph-instagram-logo text-lg" /></button>
                         <a href={getShareUrl('whatsapp', { title: article.title, text: article.excerpt })} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full h-11 rounded-xl bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366] hover:text-white transition" title="WhatsApp"><i className="ph-fill ph-whatsapp-logo text-lg" /></a>
                         <a href={getShareUrl('facebook', { title: article.title, text: article.excerpt })} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full h-11 rounded-xl bg-[#1877F2]/10 text-[#1877F2] hover:bg-[#1877F2] hover:text-white transition" title="Facebook"><i className="ph-fill ph-facebook-logo text-lg" /></a>
-                        <button 
-                          onClick={handleCopyLink} 
+                        <button
+                          onClick={handleCopyLink}
                           className={`flex items-center justify-center w-full h-11 rounded-xl transition ${copied ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-600 hover:text-white'}`}
                           title={copied ? "Tautan Berhasil Disalin" : "Salin Tautan"}
                         >

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -339,9 +340,22 @@ func (s *userService) sendActivationEmail(ctx context.Context, user *entity.User
 		rawToken,
 	)
 
+	var settings struct {
+		LogoPath string `gorm:"column:logo_path"`
+	}
+	logoURL := "https://gradasi.org/uploads/img/logo/1737187847.png"
+	if err := s.db.Table("settings").Select("logo_path").First(&settings).Error; err == nil && settings.LogoPath != "" {
+		if strings.HasPrefix(settings.LogoPath, "http://") || strings.HasPrefix(settings.LogoPath, "https://") {
+			logoURL = settings.LogoPath
+		} else {
+			logoURL = strings.TrimSuffix(s.cfg.App.URL, "/") + "/" + strings.TrimPrefix(settings.LogoPath, "/")
+		}
+	}
+
 	html, err := emailtemplate.Render("account_activation.html", map[string]any{
 		"Name": user.Name,
 		"URL":  link,
+		"Logo": logoURL,
 	})
 	if err != nil {
 		return rawToken, fmt.Errorf("gagal merender template email: %w", err)
@@ -370,9 +384,22 @@ func (s *userService) sendEmailChangeOTP(ctx context.Context, user *entity.User)
 		targetEmail = *user.EmailPending
 	}
 
+	var settings struct {
+		LogoPath string `gorm:"column:logo_path"`
+	}
+	logoURL := "https://gradasi.org/uploads/img/logo/1737187847.png"
+	if err := s.db.Table("settings").Select("logo_path").First(&settings).Error; err == nil && settings.LogoPath != "" {
+		if strings.HasPrefix(settings.LogoPath, "http://") || strings.HasPrefix(settings.LogoPath, "https://") {
+			logoURL = settings.LogoPath
+		} else {
+			logoURL = strings.TrimSuffix(s.cfg.App.URL, "/") + "/" + strings.TrimPrefix(settings.LogoPath, "/")
+		}
+	}
+
 	html, err := emailtemplate.Render("otp_notification.html", map[string]any{
 		"Name": user.Name,
 		"OTP":  rawToken,
+		"Logo": logoURL,
 	})
 	if err != nil {
 		return rawToken, fmt.Errorf("gagal merender template email: %w", err)
@@ -565,10 +592,11 @@ func (s *userService) UpdateProfile(ctx context.Context, id uint, name string, e
 
 	token := ""
 	if emailChanged {
-		// Kirim verifikasi ke email pending
 		var err error
 		token, err = s.sendEmailChangeOTP(ctx, user)
-		_ = err
+		if err != nil {
+			log.Printf("Gagal mengirim email verifikasi OTP: %v", err)
+		}
 	}
 
 	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{

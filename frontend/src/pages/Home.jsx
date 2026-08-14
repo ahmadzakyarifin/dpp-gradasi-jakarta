@@ -12,6 +12,7 @@ import { pengurusService } from '../services/pengurusService'
 import useReveal from '../hooks/useReveal'
 import { shareContent, getShareUrl, copyToClipboard } from '../utils/share'
 import ToastNotification from '../components/admin/ToastNotification'
+import { parseApiError } from '../utils/parseApiError'
 
 export default function Home() {
   const { settings } = useSettings()
@@ -57,9 +58,43 @@ export default function Home() {
   const [contactForm, setContactForm] = useState({ nama: '', email: '', subjek: '', pesan: '' })
   const [contactSuccess, setContactSuccess] = useState(false)
   const [contactLoading, setContactLoading] = useState(false)
-  const [contactCaptchaToken, setContactCaptchaToken] = useState('')
-  const [contactCaptchaError, setContactCaptchaError] = useState(false)
+  const [contactErrors, setContactErrors] = useState({})
+  const [contactTouched, setContactTouched] = useState({})
   const captchaEnabled = !!settings?.captcha_enabled
+
+  const validateContactForm = (data = contactForm) => {
+    const errors = {}
+    if (!data.nama || !data.nama.trim()) {
+      errors.nama = 'Nama lengkap wajib diisi.'
+    }
+    if (!data.email || !data.email.trim()) {
+      errors.email = 'Alamat email wajib diisi.'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+      errors.email = 'Format email tidak valid, contoh: nama@email.com'
+    }
+    if (!data.pesan || !data.pesan.trim()) {
+      errors.pesan = 'Pesan Anda wajib diisi.'
+    } else if (data.pesan.trim().length < 10) {
+      errors.pesan = 'Pesan minimal harus 10 karakter.'
+    }
+    return errors
+  }
+
+  const handleContactChange = (field, val) => {
+    const next = { ...contactForm, [field]: val }
+    setContactForm(next)
+    
+    if (contactTouched[field]) {
+      const errs = validateContactForm(next)
+      setContactErrors(prev => ({ ...prev, [field]: errs[field] }))
+    }
+  }
+
+  const handleContactBlur = (field) => {
+    setContactTouched(prev => ({ ...prev, [field]: true }))
+    const errs = validateContactForm()
+    setContactErrors(prev => ({ ...prev, [field]: errs[field] }))
+  }
 
 
   // Video Playing State
@@ -186,21 +221,32 @@ export default function Home() {
 
   const handleContactSubmit = async (e) => {
     e.preventDefault()
-    if (!contactForm.nama || !contactForm.email || !contactForm.pesan) return
-    if (captchaEnabled && !contactCaptchaToken) {
-      setContactCaptchaError(true)
-      return
+    
+    const touchedAll = { nama: true, email: true, subjek: true, pesan: true }
+    setContactTouched(touchedAll)
+    
+    const errors = validateContactForm()
+    if (Object.keys(errors).length > 0) {
+       setContactErrors(errors)
+       setToast({ show: true, message: 'Validasi gagal. Periksa kembali isian form.', type: 'error' })
+       return
     }
+    
     setContactLoading(true)
     try {
-      await kontakService.submit({ ...contactForm, captcha_token: contactCaptchaToken || undefined })
+      await kontakService.submit(contactForm)
       setContactSuccess(true)
       setContactForm({ nama: '', email: '', subjek: '', pesan: '' })
-      setContactCaptchaToken('')
-      setContactCaptchaError(false)
+      setContactTouched({})
+      setContactErrors({})
+      setToast({ show: true, message: 'Pesan Anda berhasil terkirim!', type: 'success' })
       setTimeout(() => setContactSuccess(false), 5000)
     } catch (err) {
-      alert('Gagal mengirim pesan: ' + (err.response?.data?.message || err.message))
+      const parsed = parseApiError(err)
+      if (parsed.fieldErrors && Object.keys(parsed.fieldErrors).length > 0) {
+        setContactErrors(parsed.fieldErrors)
+      }
+      setToast({ show: true, message: parsed.message || 'Gagal mengirim pesan.', type: 'error' })
     } finally {
       setContactLoading(false)
     }
@@ -979,9 +1025,17 @@ export default function Home() {
                         type="text"
                         required
                         value={contactForm.nama}
-                        onChange={e => setContactForm({ ...contactForm, nama: e.target.value })}
-                        className="w-full px-4 py-3 rounded-lg border border-slate-200 text-sm focus:border-brand-500 focus:outline-none bg-white transition"
+                        onChange={e => handleContactChange('nama', e.target.value)}
+                        onBlur={() => handleContactBlur('nama')}
+                        className={`w-full px-4 py-3 rounded-lg border ${
+                          contactTouched.nama && contactErrors.nama ? 'border-red-500 focus:ring-1 focus:ring-red-500' : 'border-slate-200 focus:border-brand-500'
+                        } text-sm focus:outline-none bg-white transition`}
                       />
+                      {contactTouched.nama && contactErrors.nama && (
+                        <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
+                          <i className="ph-bold ph-warning-circle text-xs" /> {contactErrors.nama}
+                        </p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">Email</label>
@@ -989,17 +1043,25 @@ export default function Home() {
                         type="email"
                         required
                         value={contactForm.email}
-                        onChange={e => setContactForm({ ...contactForm, email: e.target.value })}
-                        className="w-full px-4 py-3 rounded-lg border border-slate-200 text-sm focus:border-brand-500 focus:outline-none bg-white transition"
+                        onChange={e => handleContactChange('email', e.target.value)}
+                        onBlur={() => handleContactBlur('email')}
+                        className={`w-full px-4 py-3 rounded-lg border ${
+                          contactTouched.email && contactErrors.email ? 'border-red-500 focus:ring-1 focus:ring-red-500' : 'border-slate-200 focus:border-brand-500'
+                        } text-sm focus:outline-none bg-white transition`}
                       />
+                      {contactTouched.email && contactErrors.email && (
+                        <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
+                          <i className="ph-bold ph-warning-circle text-xs" /> {contactErrors.email}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">Subjek / Perihal</label>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">Subjek / Perihal <span className="text-gray-400 font-normal text-[10px]">(opsional)</span></label>
                     <input
                       type="text"
                       value={contactForm.subjek}
-                      onChange={e => setContactForm({ ...contactForm, subjek: e.target.value })}
+                      onChange={e => handleContactChange('subjek', e.target.value)}
                       className="w-full px-4 py-3 rounded-lg border border-slate-200 text-sm focus:border-brand-500 focus:outline-none bg-white transition"
                     />
                   </div>
@@ -1009,17 +1071,22 @@ export default function Home() {
                       rows="4"
                       required
                       value={contactForm.pesan}
-                      onChange={e => setContactForm({ ...contactForm, pesan: e.target.value })}
-                      className="w-full px-4 py-3 rounded-lg border border-slate-200 text-sm focus:border-brand-500 focus:outline-none bg-white transition resize-none"
+                      onChange={e => handleContactChange('pesan', e.target.value)}
+                      onBlur={() => handleContactBlur('pesan')}
+                      className={`w-full px-4 py-3 rounded-lg border ${
+                        contactTouched.pesan && contactErrors.pesan ? 'border-red-500 focus:ring-1 focus:ring-red-500' : 'border-slate-200 focus:border-brand-500'
+                      } text-sm focus:outline-none bg-white transition resize-none`}
                     />
+                    {contactTouched.pesan && contactErrors.pesan && (
+                      <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
+                        <i className="ph-bold ph-warning-circle text-xs" /> {contactErrors.pesan}
+                      </p>
+                    )}
                   </div>
-                  {captchaEnabled && (
-                    <CaptchaWidget onVerify={(token) => { setContactCaptchaToken(token); setContactCaptchaError(false) }} hasError={contactCaptchaError} />
-                  )}
                   <button
                     type="submit"
-                    disabled={contactLoading}
-                    className="bg-brand-600 hover:bg-brand-700 text-white px-8 py-3.5 rounded-xl text-sm font-bold transition shadow-sm hover:shadow flex items-center justify-center gap-2"
+                    disabled={contactLoading || !contactForm.nama?.trim() || !contactForm.email?.trim() || !contactForm.pesan?.trim()}
+                    className="bg-brand-600 hover:bg-brand-700 text-white px-8 py-3.5 rounded-xl text-sm font-bold transition shadow-sm hover:shadow flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <i className="ph-bold ph-paper-plane-right text-lg" />
                     <span>{contactLoading ? 'Mengirim...' : 'Kirim Pesan Sekarang'}</span>

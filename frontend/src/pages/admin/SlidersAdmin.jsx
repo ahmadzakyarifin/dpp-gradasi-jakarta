@@ -125,6 +125,20 @@ export default function SlidersAdmin() {
     })
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
 
+  const getVisiblePageNumbers = (currentPage, totalPagesCount, maxVisible = 5) => {
+    const totalP = totalPagesCount || 1
+    if (totalP <= maxVisible) {
+      return Array.from({ length: totalP }, (_, i) => i + 1)
+    }
+    let start = Math.max(1, currentPage - Math.floor(maxVisible / 2))
+    let end = start + maxVisible - 1
+    if (end > totalP) {
+      end = totalP
+      start = Math.max(1, end - maxVisible + 1)
+    }
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i)
+  }
+
   const totalPages = Math.ceil(filteredItems.length / PAGE_SIZE) || 1
   const paginatedItems = filteredItems.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
   const pageStart = filteredItems.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1
@@ -591,7 +605,7 @@ export default function SlidersAdmin() {
                   >
                     <i className="ph-bold ph-caret-left text-sm" />
                   </button>
-                  {Array.from({ length: totalPages || 1 }, (_, i) => i + 1).map((n) => (
+                  {getVisiblePageNumbers(currentPage, totalPages, 5).map((n) => (
                     <button
                       key={n}
                       type="button"

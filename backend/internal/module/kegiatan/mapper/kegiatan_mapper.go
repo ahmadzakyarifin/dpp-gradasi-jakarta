@@ -99,6 +99,8 @@ func CreateReqToEntity(req *dto.KegiatanCreateRequest) *entity.Kegiatan {
 		ImagePath: strPtr(req.ImagePath),
 		Excerpt:   strPtr(req.Excerpt),
 		Content:   strPtr(req.Content),
+		Footnote:  strPtr(req.Footnote),
+		ImageSource: strPtr(req.ImageSource),
 		Tags:      TagsToEntity(req.Tags),
 	}
 }
@@ -131,6 +133,12 @@ func UpdateReqToEntity(req *dto.KegiatanUpdateRequest, k *entity.Kegiatan) {
 	}
 	if req.Content != "" {
 		k.Content = strPtr(req.Content)
+	}
+	if req.Footnote != "" {
+		k.Footnote = strPtr(req.Footnote)
+	}
+	if req.ImageSource != "" {
+		k.ImageSource = strPtr(req.ImageSource)
 	}
 	if req.IsPublished != nil {
 		k.IsPublished = *req.IsPublished
@@ -180,6 +188,8 @@ func EntityToModel(e *entity.Kegiatan) *model.Kegiatan {
 		ImagePath:   e.ImagePath,
 		Excerpt:     e.Excerpt,
 		Content:     e.Content,
+		Footnote:    e.Footnote,
+		ImageSource: e.ImageSource,
 		IsPublished: e.IsPublished,
 		Views:       e.Views,
 		Tags:        tags,
@@ -222,6 +232,8 @@ func ModelToEntity(m *model.Kegiatan) *entity.Kegiatan {
 		ImagePath:   m.ImagePath,
 		Excerpt:     m.Excerpt,
 		Content:     m.Content,
+		Footnote:    m.Footnote,
+		ImageSource: m.ImageSource,
 		IsPublished: m.IsPublished,
 		Views:       m.Views,
 		Tags:        tags,
@@ -307,6 +319,12 @@ func EntityToDetail(e *entity.Kegiatan) dto.KegiatanDetailResponse {
 	}
 	if e.Content != nil {
 		resp.Content = *e.Content
+	}
+	if e.Footnote != nil {
+		resp.Footnote = *e.Footnote
+	}
+	if e.ImageSource != nil {
+		resp.ImageSource = *e.ImageSource
 	}
 	for _, t := range e.Tags {
 		resp.Tags = append(resp.Tags, t.Tag)

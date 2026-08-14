@@ -52,6 +52,8 @@ export default function KegiatanAdmin() {
     image: '',
     excerpt: '',
     content: '',
+    footnote: '',
+    imageSource: '',
     isPublished: true
   })
 
@@ -90,6 +92,9 @@ export default function KegiatanAdmin() {
     }
     if (!data.content || !data.content.trim()) {
       errors.content = 'Konten lengkap wajib diisi.'
+    }
+    if (data.imageSource && data.imageSource.trim().length > 150) {
+      errors.imageSource = 'Keterangan foto maksimal 150 karakter.'
     }
     return errors
   }, [formData])
@@ -167,6 +172,8 @@ export default function KegiatanAdmin() {
         excerpt: item.excerpt || '',
         content: item.content || item.excerpt || '',
         tags: Array.isArray(item.tags) ? item.tags.join(', ') : (item.tags ?? ''),
+        footnote: item.footnote || '',
+        imageSource: item.image_source || '',
         isPublished: item.is_published !== false
       })
       // list_admin tidak menyertakan content/tags/gallery — ambil detail penuh dulu
@@ -184,6 +191,8 @@ export default function KegiatanAdmin() {
               organizer: d.organizer ?? prev.organizer,
               image: d.image_path || d.image_url || prev.image,
               tags: Array.isArray(d.tags) ? d.tags.join(', ') : (d.tags ?? prev.tags),
+              footnote: d.footnote ?? prev.footnote,
+              imageSource: d.image_source ?? prev.imageSource,
             }))
             setCategorySearch(d.category ?? item.category ?? '')
             // Isi galeri dari detail (id sudah ada → bisa dihapus per item via API)
@@ -212,6 +221,8 @@ export default function KegiatanAdmin() {
         excerpt: '',
         content: '',
         tags: '',
+        footnote: '',
+        imageSource: '',
         isPublished: true
       })
       setCategorySearch('Kegiatan')
@@ -260,6 +271,8 @@ export default function KegiatanAdmin() {
       excerpt: formData.excerpt,
       content: formData.content,
       tags: formData.tags,
+      footnote: formData.footnote,
+      image_source: formData.imageSource,
       is_published: formData.isPublished,
       // Galeri: item baru (tanpa id) dikirim, item lama dengan id tetap dipertahankan
       gallery: JSON.stringify(gallery.map((g, idx) => ({
@@ -425,6 +438,20 @@ export default function KegiatanAdmin() {
     setFilterSort('newest')
     setCurrentPage(1)
     showToast('Filter direset.', 'info')
+  }
+
+  const getVisiblePageNumbers = (currentPage, totalPagesCount, maxVisible = 5) => {
+    const totalP = totalPagesCount || 1
+    if (totalP <= maxVisible) {
+      return Array.from({ length: totalP }, (_, i) => i + 1)
+    }
+    let start = Math.max(1, currentPage - Math.floor(maxVisible / 2))
+    let end = start + maxVisible - 1
+    if (end > totalP) {
+      end = totalP
+      start = Math.max(1, end - maxVisible + 1)
+    }
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i)
   }
 
   const headerContent = (
@@ -634,7 +661,7 @@ export default function KegiatanAdmin() {
                 >
                   <i className="ph-bold ph-caret-left text-sm" />
                 </button>
-                {Array.from({ length: totalPages || 1 }, (_, i) => i + 1).map((n) => (
+                {getVisiblePageNumbers(currentPage, totalPages, 5).map((n) => (
                   <button
                     key={n}
                     type="button"
@@ -810,14 +837,14 @@ export default function KegiatanAdmin() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Gambar Cover <span className="text-gray-400 font-normal">(opsional)</span></label>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Foto Cover <span className="text-gray-400 font-normal">(opsional)</span></label>
                     <div className="flex items-center gap-3">
                       {formData.image && (
                         <img src={resolveAssetUrl(formData.image)} alt="Cover" className="w-24 h-16 rounded-lg object-cover border border-slate-200 shrink-0" />
                       )}
                       <label className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 text-sm font-semibold cursor-pointer transition shrink-0">
                         <i className="ph-bold ph-upload-simple" />
-                        {coverUploading ? 'Mengunggah...' : (formData.image ? 'Ganti Cover' : 'Upload Cover')}
+                        {coverUploading ? 'Mengunggah...' : (formData.image ? 'Ganti Foto Cover' : 'Upload Foto Cover')}
                         <input
                           type="file"
                           accept="image/png,image/jpeg,image/webp"
@@ -833,13 +860,39 @@ export default function KegiatanAdmin() {
                       {formData.image && (
                         <button
                           type="button"
-                          onClick={() => setFormData({ ...formData, image: '' })}
+                          onClick={() => setFormData({ ...formData, image: '', imageSource: '' })}
                           className="text-xs text-red-500 hover:text-red-700 font-medium"
                         >
                           Hapus
                         </button>
                       )}
                     </div>
+                    {formData.image && (
+                      <div className="mt-2.5 animate-fade-in">
+                        <div className="flex justify-between items-center mb-1">
+                          <label className="block text-[11px] font-semibold text-slate-500">Sumber / Kredit Foto Cover</label>
+                          <span className={`text-[10px] font-semibold ${(formData.imageSource || '').length > 150 ? 'text-red-500' : 'text-slate-400'}`}>
+                            {(formData.imageSource || '').length}/150
+                          </span>
+                        </div>
+                        <input
+                          type="text"
+                          value={formData.imageSource || ''}
+                          onChange={e => {
+                            let val = e.target.value
+                            // Trim repeated consecutive characters (> 4 repeated)
+                            val = val.replace(/(.)\1{4,}/g, '$1$1')
+                            setFormData({ ...formData, imageSource: val })
+                          }}
+                          placeholder="Contoh: Foto: Panitia / Unsplash"
+                          maxLength={150}
+                          className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
+                        />
+                        {(formData.imageSource || '').length > 150 && (
+                          <p className="text-red-500 text-[10px] mt-1">Keterangan foto maksimal 150 karakter.</p>
+                        )}
+                      </div>
+                    )}
                     {fieldErrors.image && (
                       <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
                         <i className="ph-bold ph-warning-circle text-xs" /> {fieldErrors.image}
@@ -858,27 +911,43 @@ export default function KegiatanAdmin() {
                     {gallery.length > 0 && (
                       <div className="grid grid-cols-3 gap-3 mb-3">
                         {gallery.map((g, idx) => (
-                          <div key={g.id || `new-${idx}`} className="relative group rounded-xl overflow-hidden border border-slate-200">
-                            <img src={resolveAssetUrl(g.image_path)} alt={`Galeri ${idx + 1}`} className="w-full h-24 object-cover" />
-                            <input
-                              type="text"
-                              value={g.caption || ''}
-                              placeholder="Caption (opsional)"
-                              onChange={e => {
-                                const next = [...gallery]
-                                next[idx] = { ...g, caption: e.target.value }
-                                setGallery(next)
-                              }}
-                              className="absolute bottom-0 left-0 right-0 px-2 py-1 bg-black/60 text-white text-[10px] outline-none placeholder:text-white/60"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveGallery(idx)}
-                              className="absolute top-1.5 right-1.5 w-6 h-6 flex items-center justify-center rounded-full bg-red-600 text-white text-xs transition-opacity shadow"
-                              title="Hapus gambar"
-                            >
-                              <i className="ph-bold ph-x" />
-                            </button>
+                          <div key={g.id || `new-${idx}`} className="flex flex-col rounded-xl overflow-hidden border border-slate-200 bg-white shadow-xs">
+                            <div className="relative h-24 w-full bg-slate-100 shrink-0">
+                              <img src={resolveAssetUrl(g.image_path)} alt={`Galeri ${idx + 1}`} className="w-full h-full object-cover" />
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveGallery(idx)}
+                                className="absolute top-1.5 right-1.5 w-6 h-6 flex items-center justify-center rounded-full bg-red-600/90 hover:bg-red-600 text-white text-xs transition shadow"
+                                title="Hapus gambar"
+                              >
+                                <i className="ph-bold ph-x" />
+                              </button>
+                            </div>
+                            
+                            <div className="p-2.5 bg-slate-50/50 border-t border-slate-100 flex flex-col gap-1.5">
+                              <div className="flex justify-between items-center text-[10px] text-slate-400">
+                                <span className="font-semibold">Keterangan foto</span>
+                                <span className={g.caption?.length > 100 ? 'text-red-500 font-bold' : ''}>
+                                  {(g.caption || '').length}/100
+                                </span>
+                              </div>
+                              <input
+                                type="text"
+                                value={g.caption || ''}
+                                placeholder="Caption gambar (opsional)"
+                                maxLength={100}
+                                aria-label={`Caption untuk gambar ${idx + 1}`}
+                                onChange={e => {
+                                  let val = e.target.value
+                                  // Trim repeated consecutive characters (> 4 repeated)
+                                  val = val.replace(/(.)\1{4,}/g, '$1$1')
+                                  const next = [...gallery]
+                                  next[idx] = { ...g, caption: val }
+                                  setGallery(next)
+                                }}
+                                className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
+                              />
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -890,10 +959,13 @@ export default function KegiatanAdmin() {
                         type="file"
                         accept="image/png,image/jpeg,image/webp"
                         className="hidden"
+                        multiple
                         disabled={galleryUploading}
-                        onChange={e => {
-                          const file = e.target.files?.[0]
-                          if (file) handleImageUpload(file, 'gallery')
+                        onChange={async e => {
+                          const files = Array.from(e.target.files || [])
+                          for (const file of files) {
+                            await handleImageUpload(file, 'gallery')
+                          }
                           e.target.value = ''
                         }}
                       />
@@ -907,6 +979,11 @@ export default function KegiatanAdmin() {
                   <div>
                     <label className="block text-xs font-semibold text-slate-500 mb-1">Ringkasan <span className="text-gray-400 font-normal">(opsional)</span></label>
                     <textarea rows={3} value={formData.excerpt} onChange={e => { setFormData({ ...formData, excerpt: e.target.value }); clearFieldError('excerpt') }} className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors overflow-y-auto resize-y min-h-[80px]" />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Sumber / Footnote <span className="text-gray-400 font-normal">(opsional)</span></label>
+                    <input type="text" value={formData.footnote} onChange={e => setFormData({ ...formData, footnote: e.target.value })} placeholder="Contoh: Panitia Munas, Humas DPD, dll." className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
                   </div>
 
                   <div>
@@ -986,7 +1063,12 @@ export default function KegiatanAdmin() {
               ) : detailData ? (
                 <div className="space-y-4">
                   {(detailData.image_url || detailData.image_path) && (
-                    <img src={resolveAssetUrl(detailData.image_url || detailData.image_path)} alt="" className="w-full h-48 object-cover rounded-xl border border-slate-200" />
+                    <div>
+                      <img src={resolveAssetUrl(detailData.image_url || detailData.image_path)} alt="" className="w-full h-48 object-cover rounded-xl border border-slate-200" />
+                      {detailData.image_source && (
+                        <p className="text-[10px] text-slate-400 mt-1.5 text-right italic font-medium">{detailData.image_source}</p>
+                      )}
+                    </div>
                   )}
                   <div>
                     <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Judul</span>
@@ -1028,6 +1110,12 @@ export default function KegiatanAdmin() {
                     <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Konten Lengkap</span>
                     <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-line break-words">{detailData.content || '-'}</p>
                   </div>
+                  {detailData.footnote && (
+                    <div>
+                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Sumber / Footnote</span>
+                      <p className="text-slate-700 text-sm italic">{detailData.footnote}</p>
+                    </div>
+                  )}
                   {Array.isArray(detailData.gallery) && detailData.gallery.length > 0 && (
                     <div>
                       <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Galeri Foto</span>

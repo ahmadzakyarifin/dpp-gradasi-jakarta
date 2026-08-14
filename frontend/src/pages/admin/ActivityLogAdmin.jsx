@@ -181,6 +181,20 @@ export default function ActivityLogAdmin() {
     </div>
   )
 
+  const getVisiblePageNumbers = (currentPage, totalPagesCount, maxVisible = 5) => {
+    const totalP = totalPagesCount || 1
+    if (totalP <= maxVisible) {
+      return Array.from({ length: totalP }, (_, i) => i + 1)
+    }
+    let start = Math.max(1, currentPage - Math.floor(maxVisible / 2))
+    let end = start + maxVisible - 1
+    if (end > totalP) {
+      end = totalP
+      start = Math.max(1, end - maxVisible + 1)
+    }
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i)
+  }
+
   return (
     <AdminLayout title="Catatan Aktivitas Sistem" headerContent={headerContent}>
       <div className="max-w-7xl mx-auto space-y-6 animate-fade-in-up">
@@ -302,7 +316,7 @@ export default function ActivityLogAdmin() {
                 >
                   <i className="ph-bold ph-caret-left text-sm" />
                 </button>
-                {Array.from({ length: totalPages || 1 }, (_, i) => i + 1).map((n) => (
+                {getVisiblePageNumbers(page, totalPages, 5).map((n) => (
                   <button
                     key={n}
                     type="button"

@@ -34,6 +34,8 @@ type Kegiatan struct {
 	Content     *string
 	IsPublished bool
 	Views       int
+	Footnote    *string
+	ImageSource *string
 	Tags        []KegiatanTag
 	Gallery     []KegiatanGallery
 	CreatedAt   time.Time

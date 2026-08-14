@@ -345,16 +345,16 @@ export default function KontakAdmin() {
         : 'Belum ada pesan masuk.'
 
   const headerContent = (
-    <div className="flex items-center gap-2 w-full max-w-3xl animate-fade-in-up">
+    <div className="flex gap-2 items-center w-full max-w-3xl animate-fade-in-up">
       <div className="relative w-full">
-        <i className="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <i className="absolute left-3 top-1/2 text-gray-400 -translate-y-1/2 ph ph-magnifying-glass" />
         <input
           type="text"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           placeholder="Cari nama / email / subjek / isi pesan..."
           aria-label="Cari pesan masuk"
-          className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors"
+          className="py-2 pr-4 pl-9 w-full text-sm bg-gray-50 rounded-lg border border-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
         />
       </div>
 
@@ -363,7 +363,7 @@ export default function KontakAdmin() {
           value={filterStatus}
           onChange={(e) => changeStatus(e.target.value)}
           aria-label="Filter status dibaca"
-          className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
+          className="px-3 py-2 text-sm bg-gray-50 rounded-lg border border-gray-200 transition-colors cursor-pointer shrink-0 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
         >
           <option value="all">Semua Status</option>
           <option value="unread">Belum Dibaca</option>
@@ -375,7 +375,7 @@ export default function KontakAdmin() {
         value={filterSort}
         onChange={(e) => changeSort(e.target.value)}
         aria-label="Urutkan pesan"
-        className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
+        className="px-3 py-2 text-sm bg-gray-50 rounded-lg border border-gray-200 transition-colors cursor-pointer shrink-0 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white"
       >
         <option value="newest">Terbaru</option>
         <option value="oldest">Terlama</option>
@@ -384,9 +384,9 @@ export default function KontakAdmin() {
       <button
         type="button"
         onClick={resetFilter}
-        className="shrink-0 bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all btn-press"
+        className="flex gap-2 items-center px-3 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg border border-gray-200 transition-all shrink-0 hover:bg-gray-100 btn-press"
       >
-        <i className="ph ph-arrows-counter-clockwise text-lg" /> Reset
+        <i className="text-lg ph ph-arrows-counter-clockwise" /> Reset
       </button>
     </div>
   )
@@ -408,10 +408,10 @@ export default function KontakAdmin() {
         onClose={() => setConfirm(prev => ({ ...prev, isOpen: false, action: null }))}
       />
 
-      <div className="max-w-7xl mx-auto space-y-6 animate-fade-in-up">
+      <div className="mx-auto space-y-6 max-w-7xl animate-fade-in-up">
         {/* Tabs */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex bg-white rounded-lg p-1 border border-gray-200 shadow-sm">
+        <div className="flex flex-col gap-4 justify-between items-start sm:flex-row sm:items-center">
+          <div className="flex p-1 bg-white rounded-lg border border-gray-200 shadow-sm">
             <button
               onClick={() => changeTab('active')}
               className={`px-4 py-1.5 rounded-md text-sm transition-all duration-200 ${
@@ -472,16 +472,16 @@ export default function KontakAdmin() {
         )}
 
         {/* Table Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="overflow-hidden bg-white rounded-xl border border-gray-200 shadow-sm">
           <div className="overflow-x-auto">
             {loading ? (
               <div className="py-12 text-center text-gray-500" role="status" aria-live="polite">
-                <i className="ph ph-spinner text-2xl animate-spin block mx-auto mb-2" />
+                <i className="block mx-auto mb-2 text-2xl animate-spin ph ph-spinner" />
                 Memuat pesan...
               </div>
             ) : error ? (
               <div className="py-12 text-center" role="alert">
-                <i className="ph ph-warning-circle text-4xl text-red-300 mb-2 block mx-auto" />
+                <i className="block mx-auto mb-2 text-4xl text-red-300 ph ph-warning-circle" />
                 <p className="text-red-600">{error}</p>
                 <button
                   onClick={fetchMessages}
@@ -492,12 +492,12 @@ export default function KontakAdmin() {
               </div>
             ) : messages.length === 0 ? (
               <div className="py-12 text-center text-gray-500">
-                <i className="ph ph-envelope-open text-4xl text-gray-300 mb-2 block mx-auto" />
+                <i className="block mx-auto mb-2 text-4xl text-gray-300 ph ph-envelope-open" />
                 {emptyStateText}
                 {hasActiveFilter && (
                   <button
                     onClick={resetFilter}
-                    className="mt-3 block mx-auto text-sm text-brand-600 hover:text-brand-700 font-medium"
+                    className="block mx-auto mt-3 text-sm font-medium text-brand-600 hover:text-brand-700"
                   >
                     Reset filter
                   </button>
@@ -506,7 +506,7 @@ export default function KontakAdmin() {
             ) : (
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                  <tr className="text-xs font-semibold tracking-wider text-gray-500 uppercase bg-gray-50 border-b border-gray-200">
                     <th scope="col" className="p-4 w-12 text-center">
                       <input
                         ref={selectAllRef}
@@ -523,7 +523,7 @@ export default function KontakAdmin() {
                     <th scope="col" className="p-4 text-right">Aksi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 text-sm">
+                <tbody className="text-sm divide-y divide-gray-100">
                   {messages.map((item) => {
                     const isUnread = !item.is_read && currentTab === 'active'
                     return (
@@ -550,25 +550,25 @@ export default function KontakAdmin() {
                           </div>
                         </td>
                         <td className="p-4">
-                          <div className="flex items-center gap-2">
+                          <div className="flex gap-2 items-center">
                             {isUnread && <span className="w-2 h-2 rounded-full bg-brand-500 shrink-0" title="Belum dibaca" />}
-                            <span className="truncate max-w-xs">{item.subjek || '-'}</span>
+                            <span className="max-w-xs truncate">{item.subjek || '-'}</span>
                           </div>
                         </td>
                         <td className="p-4">
-                          <span className="text-gray-500 font-normal">
+                          <span className="font-normal text-gray-500">
                             {formatDateTime(currentTab === 'trash' ? (item.deleted_at || item.created_at) : item.created_at)}
                           </span>
                         </td>
                         <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex gap-2 justify-end items-center">
                             <button
                               onClick={() => openViewModal(item)}
                               className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded"
                               title="Lihat Detail"
                               aria-label="Lihat detail pesan"
                             >
-                              <i className="ph ph-eye text-lg" />
+                              <i className="text-lg ph ph-eye" />
                             </button>
                             {currentTab === 'active' ? (
                               <button
@@ -577,7 +577,7 @@ export default function KontakAdmin() {
                                 title="Hapus"
                                 aria-label="Hapus pesan"
                               >
-                                <i className="ph ph-trash text-lg" />
+                                <i className="text-lg ph ph-trash" />
                               </button>
                             ) : (
                               <button
@@ -586,7 +586,7 @@ export default function KontakAdmin() {
                                 title="Pulihkan"
                                 aria-label="Pulihkan pesan"
                               >
-                                <i className="ph ph-arrow-counter-clockwise text-lg" />
+                                <i className="text-lg ph ph-arrow-counter-clockwise" />
                               </button>
                             )}
                           </div>
@@ -601,7 +601,7 @@ export default function KontakAdmin() {
 
           {/* Pagination */}
           {!loading && !error && messages.length > 0 && (
-            <div className="bg-white border-t border-slate-200 px-4 py-3 flex items-center justify-between sm:px-6 rounded-b-xl">
+            <div className="flex justify-between items-center px-4 py-3 bg-white rounded-b-xl border-t border-slate-200 sm:px-6">
               <span className="text-xs text-slate-500">
                 Hal {page} dari {totalPages} · {total} data
               </span>
@@ -610,11 +610,11 @@ export default function KontakAdmin() {
                   type="button"
                   disabled={page <= 1}
                   onClick={() => setPage(p => Math.max(p - 1, 1))}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:border-brand-500 hover:text-brand-600 disabled:opacity-40 transition"
+                  className="flex justify-center items-center w-8 h-8 rounded-lg border transition border-slate-200 text-slate-500 hover:border-brand-500 hover:text-brand-600 disabled:opacity-40"
                 >
-                  <i className="ph-bold ph-caret-left text-sm" />
+                  <i className="text-sm ph-bold ph-caret-left" />
                 </button>
-                {Array.from({ length: totalPages || 1 }, (_, i) => i + 1).map((n) => (
+                {pageNumbers.map((n) => (
                   <button
                     key={n}
                     type="button"
@@ -628,9 +628,9 @@ export default function KontakAdmin() {
                   type="button"
                   disabled={page >= totalPages}
                   onClick={() => setPage(p => Math.min(p + 1, totalPages))}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:border-brand-500 hover:text-brand-600 disabled:opacity-40 transition"
+                  className="flex justify-center items-center w-8 h-8 rounded-lg border transition border-slate-200 text-slate-500 hover:border-brand-500 hover:text-brand-600 disabled:opacity-40"
                 >
-                  <i className="ph-bold ph-caret-right text-sm" />
+                  <i className="text-sm ph-bold ph-caret-right" />
                 </button>
               </div>
             </div>
@@ -642,48 +642,48 @@ export default function KontakAdmin() {
       {isViewOpen && viewData && (
         // z-50 (bukan z-[60]) — ConfirmDialog ada di z-[60] dan harus tetap di atas
         // modal ini, kalau tidak overlay-nya menelan klik tombol konfirmasi.
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Detail pesan">
+        <div className="flex fixed inset-0 z-50 justify-center items-center p-4" role="dialog" aria-modal="true" aria-label="Detail pesan">
           <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px]" onClick={closeViewModal} />
 
           <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
-            <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h3 className="text-lg leading-6 font-heading font-semibold text-gray-900">Detail Pesan</h3>
-              <div className="flex items-center gap-2">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold leading-6 text-gray-900 font-heading">Detail Pesan</h3>
+              <div className="flex gap-2 items-center">
                 {viewIsTrashed ? (
                   <button
                     onClick={() => confirmAction('restore', viewData.id)}
-                    className="text-gray-400 hover:text-emerald-600 p-1"
+                    className="p-1 text-gray-400 hover:text-emerald-600"
                     title="Pulihkan"
                     aria-label="Pulihkan pesan"
                   >
-                    <i className="ph ph-arrow-counter-clockwise text-xl" />
+                    <i className="text-xl ph ph-arrow-counter-clockwise" />
                   </button>
                 ) : (
                   <button
                     onClick={() => confirmAction('delete', viewData.id)}
-                    className="text-gray-400 hover:text-red-500 p-1"
+                    className="p-1 text-gray-400 hover:text-red-500"
                     title="Hapus"
                     aria-label="Hapus pesan"
                   >
-                    <i className="ph ph-trash text-xl" />
+                    <i className="text-xl ph ph-trash" />
                   </button>
                 )}
                 <button
                   onClick={closeViewModal}
-                  className="text-gray-400 hover:text-gray-600 p-1"
+                  className="p-1 text-gray-400 hover:text-gray-600"
                   aria-label="Tutup"
                 >
-                  <i className="ph ph-x text-xl" />
+                  <i className="text-xl ph ph-x" />
                 </button>
               </div>
             </div>
 
-            <div className="px-6 py-5 space-y-6 overflow-y-auto">
-              <div className="flex justify-between items-start gap-4">
+            <div className="overflow-y-auto px-6 py-5 space-y-6">
+              <div className="flex gap-4 justify-between items-start">
                 <div className="min-w-0">
                   <h4 className="text-xl font-bold text-gray-900 break-words">{viewData.subjek || '(tanpa subjek)'}</h4>
-                  <div className="mt-2 flex items-center gap-2">
-                    <div className="w-10 h-10 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold text-sm shrink-0">
+                  <div className="flex gap-2 items-center mt-2">
+                    <div className="flex justify-center items-center w-10 h-10 text-sm font-bold rounded-full bg-brand-100 text-brand-600 shrink-0">
                       {(viewData.nama || 'K').charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0">
@@ -693,7 +693,7 @@ export default function KontakAdmin() {
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <span className="text-xs text-gray-500 block">{formatDateTime(viewData.created_at)}</span>
+                  <span className="block text-xs text-gray-500">{formatDateTime(viewData.created_at)}</span>
                   {viewIsTrashed ? (
                     <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
                       <i className="ph ph-trash" /> Di Sampah
@@ -710,7 +710,7 @@ export default function KontakAdmin() {
                 </div>
               </div>
 
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 text-sm text-gray-800 whitespace-pre-wrap break-words">
+              <div className="p-4 text-sm text-gray-800 whitespace-pre-wrap break-words bg-gray-50 rounded-lg border border-gray-100">
                 {viewLoading && !viewData.pesan
                   ? 'Memuat isi pesan...'
                   : (viewData.pesan || '(pesan kosong)')}
@@ -718,21 +718,34 @@ export default function KontakAdmin() {
 
               {viewData.response_note && (
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Catatan Tindak Lanjut</p>
-                  <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 text-sm text-amber-900 whitespace-pre-wrap break-words">
+                  <p className="mb-1 text-xs font-semibold tracking-wider text-gray-500 uppercase">Catatan Tindak Lanjut</p>
+                  <div className="p-3 text-sm text-amber-900 whitespace-pre-wrap break-words bg-amber-50 rounded-lg border border-amber-100">
                     {viewData.response_note}
                   </div>
                 </div>
               )}
 
               {viewData.email && (
-                <div className="border-t border-gray-200 pt-4">
+                <div className="flex gap-3 pt-4 border-t border-gray-200">
                   <a
-                    href={`mailto:${viewData.email}?subject=${encodeURIComponent(`Re: ${viewData.subjek || ''}`)}`}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 shadow-sm rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    href={`https://mail.google.com/mail/?view=cm&fs=1&to=${viewData.email}&su=${encodeURIComponent(`Re: ${viewData.subjek || ''}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex gap-2 items-center px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors bg-brand-600 hover:bg-brand-700"
                   >
-                    <i className="ph ph-paper-plane-tilt text-lg" /> Balas via Email
+                    <i className="text-lg ph ph-paper-plane-tilt" /> Balas via Gmail
                   </a>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(viewData.email).then(() => {
+                        showToast('Alamat email berhasil disalin!', 'success')
+                      })
+                    }}
+                    className="inline-flex gap-2 items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-lg border border-gray-300 shadow-sm transition-colors hover:bg-gray-50"
+                  >
+                    <i className="text-lg ph ph-copy" /> Salin Email
+                  </button>
                 </div>
               )}
             </div>

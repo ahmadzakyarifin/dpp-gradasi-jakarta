@@ -24,6 +24,8 @@ type Berita struct {
 	IsFeatured    bool
 	IsPublished   bool
 	Views         int
+	Footnote      *string
+	ImageSource   *string
 	Tags          []BeritaTag
 	CreatedAt     time.Time
 	UpdatedAt     time.Time

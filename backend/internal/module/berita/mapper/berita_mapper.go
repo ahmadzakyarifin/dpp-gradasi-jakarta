@@ -56,6 +56,8 @@ func CreateReqToEntity(req *dto.BeritaCreateRequest) *entity.Berita {
 		ImagePath:     strPtr(req.ImagePath),
 		Excerpt:       strPtr(req.Excerpt),
 		Content:       strPtr(req.Content),
+		Footnote:      strPtr(req.Footnote),
+		ImageSource:   strPtr(req.ImageSource),
 		Tags:          TagsToEntity(req.Tags),
 	}
 	// is_published & is_featured wajib di-map — default DB is_published=1
@@ -94,6 +96,12 @@ func UpdateReqToEntity(req *dto.BeritaUpdateRequest, b *entity.Berita) {
 	if req.Content != "" {
 		b.Content = strPtr(req.Content)
 	}
+	if req.Footnote != "" {
+		b.Footnote = strPtr(req.Footnote)
+	}
+	if req.ImageSource != "" {
+		b.ImageSource = strPtr(req.ImageSource)
+	}
 	if req.IsFeatured != nil {
 		b.IsFeatured = *req.IsFeatured
 	}
@@ -128,6 +136,8 @@ func EntityToModel(e *entity.Berita) *model.Berita {
 		ImagePath:     e.ImagePath,
 		Excerpt:       e.Excerpt,
 		Content:       e.Content,
+		Footnote:      e.Footnote,
+		ImageSource:   e.ImageSource,
 		IsFeatured:    e.IsFeatured,
 		IsPublished:   e.IsPublished,
 		Views:         e.Views,
@@ -163,6 +173,8 @@ func ModelToEntity(m *model.Berita) *entity.Berita {
 		ImagePath:     m.ImagePath,
 		Excerpt:       m.Excerpt,
 		Content:       m.Content,
+		Footnote:      m.Footnote,
+		ImageSource:   m.ImageSource,
 		IsFeatured:    m.IsFeatured,
 		IsPublished:   m.IsPublished,
 		Views:         m.Views,
@@ -244,6 +256,12 @@ func EntityToDetail(e *entity.Berita) dto.BeritaDetailResponse {
 	}
 	if e.Content != nil {
 		resp.Content = *e.Content
+	}
+	if e.Footnote != nil {
+		resp.Footnote = *e.Footnote
+	}
+	if e.ImageSource != nil {
+		resp.ImageSource = *e.ImageSource
 	}
 	for _, t := range e.Tags {
 		resp.Tags = append(resp.Tags, t.Tag)

@@ -109,8 +109,7 @@ export default function SettingsAdmin() {
       const res = await settingsService.uploadLogo(file)
       if (res.success && res.data) {
         setFormData(prev => ({ ...prev, logo_path: res.data.logo_path }))
-        showToast('Logo berhasil diunggah!')
-        refresh()
+        showToast('Logo terpilih. Klik "Simpan Semua Pengaturan" untuk menerapkan.')
       } else {
         showToast(res.message || 'Gagal mengunggah logo.', true)
       }

@@ -20,6 +20,8 @@ type Berita struct {
 	IsFeatured    bool    `gorm:"default:false"`
 	IsPublished   bool
 	Views         int     `gorm:"default:0"`
+	Footnote      *string `gorm:"size:500"`
+	ImageSource   *string `gorm:"size:250"`
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	DeletedAt     gorm.DeletedAt `gorm:"index"`

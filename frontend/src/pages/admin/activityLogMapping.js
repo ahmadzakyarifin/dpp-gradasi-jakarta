@@ -31,8 +31,8 @@ function formatCreatedAt(isoString) {
       date = new Date(+y, +mo - 1, +d, +h, +mi, +s)
     }
   }
-  const datePart = date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
-  const hourPart = date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  const datePart = date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta' })
+  const hourPart = date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Jakarta' })
   return { datePart, hourPart }
 }
 

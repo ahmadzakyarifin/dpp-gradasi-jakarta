@@ -31,7 +31,13 @@ func (h *AuthHandler) Cfg() *config.Config {
 	return h.cfg
 }
 
-func (h *AuthHandler) secureCookie() bool {
+func (h *AuthHandler) secureCookie(c *gin.Context) bool {
+	if h.cfg != nil && h.cfg.Cookie.Secure {
+		return true
+	}
+	if c != nil && (c.GetHeader("X-Forwarded-Proto") == "https" || c.Request.TLS != nil) {
+		return true
+	}
 	return h.cfg != nil && h.cfg.App.Env == "production"
 }
 
@@ -52,7 +58,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie("refresh_token", res.RefreshToken, int(time.Until(res.RefreshTokenExpiry).Seconds()), "/", "", h.secureCookie(), true)
+	c.SetCookie("refresh_token", res.RefreshToken, int(time.Until(res.RefreshTokenExpiry).Seconds()), "/", "", h.secureCookie(c), true)
 
 	helper.SuccessResponse(c, http.StatusOK, "AUTH_LOGIN_SUCCESS", "Login berhasil.", gin.H{
 		"access_token": res.AccessToken,
@@ -74,7 +80,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	}
 
 	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie("refresh_token", res.RefreshToken, int(time.Until(res.RefreshTokenExpiry).Seconds()), "/", "", h.secureCookie(), true)
+	c.SetCookie("refresh_token", res.RefreshToken, int(time.Until(res.RefreshTokenExpiry).Seconds()), "/", "", h.secureCookie(c), true)
 
 	helper.SuccessResponse(c, http.StatusOK, "AUTH_REFRESH_SUCCESS", "Sesi berhasil diperbarui.", gin.H{
 		"access_token": res.AccessToken,
@@ -88,7 +94,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	}
 
 	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie("refresh_token", "", -1, "/", "", h.secureCookie(), true)
+	c.SetCookie("refresh_token", "", -1, "/", "", h.secureCookie(c), true)
 
 	helper.SuccessResponse(c, http.StatusOK, "AUTH_LOGOUT_SUCCESS", "Logout berhasil.", nil, nil)
 }
@@ -169,7 +175,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	}
 
 	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie("refresh_token", "", -1, "/", "", h.secureCookie(), true)
+	c.SetCookie("refresh_token", "", -1, "/", "", h.secureCookie(c), true)
 
 	helper.SuccessResponse(c, http.StatusOK, "AUTH_CHANGE_PASSWORD_SUCCESS", "Password berhasil diperbarui, silakan login ulang.", nil, nil)
 }
@@ -236,7 +242,7 @@ func (h *AuthHandler) ActivateAccount(c *gin.Context) {
 	}
 
 	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie("refresh_token", refreshToken, int(time.Until(expiry).Seconds()), "/", "", h.secureCookie(), true)
+	c.SetCookie("refresh_token", refreshToken, int(time.Until(expiry).Seconds()), "/", "", h.secureCookie(c), true)
 
 	helper.SuccessResponse(c, http.StatusOK, "AUTH_ACCOUNT_ACTIVATED", "Akun berhasil diaktifkan. Silakan login.", gin.H{
 		"access_token": accessToken,
