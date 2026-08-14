@@ -70,6 +70,9 @@ func CreateReqToEntity(req *dto.BeritaCreateRequest) *entity.Berita {
 	if req.IsFeatured != nil {
 		b.IsFeatured = *req.IsFeatured
 	}
+	if req.IsNew != nil {
+		b.IsNew = *req.IsNew
+	}
 	return b
 }
 
@@ -105,6 +108,9 @@ func UpdateReqToEntity(req *dto.BeritaUpdateRequest, b *entity.Berita) {
 	if req.IsFeatured != nil {
 		b.IsFeatured = *req.IsFeatured
 	}
+	if req.IsNew != nil {
+		b.IsNew = *req.IsNew
+	}
 	if req.IsPublished != nil {
 		b.IsPublished = *req.IsPublished
 	}
@@ -139,6 +145,7 @@ func EntityToModel(e *entity.Berita) *model.Berita {
 		Footnote:      e.Footnote,
 		ImageSource:   e.ImageSource,
 		IsFeatured:    e.IsFeatured,
+		IsNew:         e.IsNew,
 		IsPublished:   e.IsPublished,
 		Views:         e.Views,
 		Tags:          tags,
@@ -176,6 +183,7 @@ func ModelToEntity(m *model.Berita) *entity.Berita {
 		Footnote:      m.Footnote,
 		ImageSource:   m.ImageSource,
 		IsFeatured:    m.IsFeatured,
+		IsNew:         m.IsNew,
 		IsPublished:   m.IsPublished,
 		Views:         m.Views,
 		Tags:          tags,
@@ -206,6 +214,7 @@ func EntityToListItem(e *entity.Berita) dto.BeritaListItem {
 		Category:      e.Category,
 		PublishedDate: FormatDate(e.PublishedDate),
 		IsFeatured:    e.IsFeatured,
+		IsNew:         e.IsNew,
 		IsPublished:   &e.IsPublished,
 		Views:         e.Views,
 		AuthorName:    e.AuthorName,
@@ -242,10 +251,12 @@ func EntityToDetail(e *entity.Berita) dto.BeritaDetailResponse {
 		Category:      e.Category,
 		PublishedDate: FormatDate(e.PublishedDate),
 		IsFeatured:    e.IsFeatured,
+		IsNew:         e.IsNew,
 		IsPublished:   e.IsPublished,
 		Views:         e.Views,
 		AuthorName:    e.AuthorName,
 		CreatedAt:     e.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		UpdatedAt:     e.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 		Tags:          make([]string, 0),
 	}
 	if e.ImagePath != nil {

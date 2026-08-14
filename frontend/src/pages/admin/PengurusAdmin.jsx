@@ -6,7 +6,7 @@ import ToastNotification from '../../components/admin/ToastNotification'
 import { resolveAssetUrl } from '../../utils/assetUrl'
 import { useFormErrors, useRateLimitCooldown } from '../../utils/parseApiError'
 
-const PAGE_SIZE = 10
+const PAGE_SIZE = 30
 
 export default function PengurusAdmin() {
   const [items, setItems] = useState([]) // untuk tampilanNg paginated

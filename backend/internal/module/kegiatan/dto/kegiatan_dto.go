@@ -14,6 +14,7 @@ type KegiatanCreateRequest struct {
 	Footnote    string `json:"footnote"`
 	ImageSource string `json:"image_source"`
 	IsPublished *bool  `json:"is_published"`
+	IsNew       *bool  `json:"is_new"`
 	Tags        string `json:"tags"`    // comma-separated
 	GalleryJSON string `json:"gallery"` // JSON string: [{"image_path":"...","caption":"...","sort_order":0}]
 }
@@ -32,6 +33,7 @@ type KegiatanUpdateRequest struct {
 	Footnote    string `json:"footnote"`
 	ImageSource string `json:"image_source"`
 	IsPublished *bool  `json:"is_published"`
+	IsNew       *bool  `json:"is_new"`
 	Tags        string `json:"tags"`    // comma-separated
 	GalleryJSON string `json:"gallery"` // JSON string: [{"image_path":"...","caption":"...","sort_order":0}]
 }
@@ -48,6 +50,7 @@ type KegiatanListItem struct {
 	ImagePath    string `json:"image_path,omitempty"`
 	Excerpt      string `json:"excerpt,omitempty"`
 	IsPublished  *bool  `json:"is_published,omitempty"`
+	IsNew        bool   `json:"is_new"`
 	Views        int    `json:"views"`
 	GalleryCount int    `json:"gallery_count,omitempty"`
 	CreatedAt    string `json:"created_at"`
@@ -69,6 +72,7 @@ type KegiatanDetailResponse struct {
 	Footnote    string             `json:"footnote,omitempty"`
 	ImageSource string             `json:"image_source,omitempty"`
 	IsPublished bool               `json:"is_published"`
+	IsNew       bool               `json:"is_new"`
 	Views       int                `json:"views"`
 	Tags        []string           `json:"tags,omitempty"`
 	Gallery     []GalleryImageItem `json:"gallery,omitempty"`
@@ -116,4 +120,9 @@ type KegiatanQuery struct {
 
 type BulkRequest struct {
 	IDs []uint `json:"ids" binding:"required,min=1"`
+}
+
+type CategoryRenameRequest struct {
+	OldName string `json:"old_name" binding:"required"`
+	NewName string `json:"new_name" binding:"required"`
 }

@@ -211,3 +211,31 @@ func (h *KegiatanHandler) BulkRestore(c *gin.Context) {
 	}
 	helper.SuccessResponse(c, http.StatusOK, "KEGIATAN_BULK_RESTORED", "Kegiatan berhasil dipulihkan massal.", nil, nil)
 }
+
+// PUT /api/v1/kegiatan/categories — admin
+func (h *KegiatanHandler) RenameCategory(c *gin.Context) {
+	var req dto.CategoryRenameRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "validasi gagal", validator.Errors(err))
+		return
+	}
+	if err := h.svc.RenameCategory(c.Request.Context(), req.OldName, req.NewName); err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+	helper.SuccessResponse(c, http.StatusOK, "CATEGORY_RENAMED", "Nama kategori berhasil diubah.", nil, nil)
+}
+
+// DELETE /api/v1/kegiatan/categories/:name — admin
+func (h *KegiatanHandler) DeleteCategory(c *gin.Context) {
+	name := c.Param("name")
+	if name == "" {
+		helper.ErrorResponse(c, http.StatusUnprocessableEntity, "VALIDATION_ERROR", "Nama kategori tidak valid", nil)
+		return
+	}
+	if err := h.svc.DeleteCategory(c.Request.Context(), name); err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+	helper.SuccessResponse(c, http.StatusOK, "CATEGORY_DELETED", "Kategori berhasil dihapus.", nil, nil)
+}

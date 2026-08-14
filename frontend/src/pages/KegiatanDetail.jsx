@@ -61,6 +61,15 @@ export default function KegiatanDetail() {
     })
   }
 
+  // Cek apakah data benar-benar masih "baru" (diupdate dalam 7 hari terakhir)
+  const isActuallyNew = (item) => {
+    if (!item || !item.is_new || !item.updated_at) return false
+    const updateTime = new Date(item.updated_at).getTime()
+    const now = new Date().getTime()
+    const diffDays = (now - updateTime) / (1000 * 60 * 60 * 24)
+    return diffDays <= 7
+  }
+
 
   return (
     <PublicLayout>
@@ -119,8 +128,13 @@ export default function KegiatanDetail() {
                 )}
               </div>
 
-              <h1 className="font-heading text-3xl md:text-4xl lg:text-[2.75rem] font-extrabold text-slate-900 leading-tight tracking-tight mb-6 break-words">
-                {kegiatan.title}
+              <h1 className="font-heading text-3xl md:text-4xl lg:text-[2.75rem] font-extrabold text-slate-900 leading-tight tracking-tight mb-6 break-words flex flex-wrap items-center gap-3">
+                <span>{kegiatan.title}</span>
+                {isActuallyNew(kegiatan) && (
+                  <span className="bg-amber-100 text-amber-700 text-[14px] font-bold px-2 py-1 rounded-md uppercase tracking-wider translate-y-[-2px]">
+                    Terbaru
+                  </span>
+                )}
               </h1>
 
               {kegiatan.image_url && (

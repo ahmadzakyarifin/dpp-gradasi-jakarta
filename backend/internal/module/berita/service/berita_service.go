@@ -37,6 +37,8 @@ type BeritaService interface {
 	BulkRestore(ctx context.Context, ids []uint) error
 	GetCategories(ctx context.Context) ([]string, error)
 	UploadImage(ctx context.Context, file *multipart.FileHeader) (*dto.UploadImageResponse, error)
+	RenameCategory(ctx context.Context, oldName, newName string) error
+	DeleteCategory(ctx context.Context, name string) error
 }
 
 type beritaService struct {
@@ -51,7 +53,7 @@ func NewBeritaService(db *gorm.DB, repo repository.BeritaRepo, audit activitylog
 		db:         db,
 		repo:       repo,
 		audit:      audit,
-		uploadPath: "public/uploads/berita",
+		uploadPath: "public/uploads/img/berita",
 	}
 }
 
@@ -217,7 +219,7 @@ func (s *beritaService) UploadImage(ctx context.Context, file *multipart.FileHea
 		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal menyimpan file gambar.", err)
 	}
 
-	imagePath := "/uploads/berita/" + filename
+	imagePath := "/uploads/img/berita/" + filename
 	return &dto.UploadImageResponse{ImagePath: imagePath}, nil
 }
 
@@ -438,4 +440,34 @@ func (s *beritaService) GetCategories(ctx context.Context) ([]string, error) {
 		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil daftar kategori.", err)
 	}
 	return categories, nil
+}
+
+func (s *beritaService) RenameCategory(ctx context.Context, oldName, newName string) error {
+	if oldName == "" || newName == "" {
+		return helper.NewServiceError("VALIDATION_ERROR", "Nama kategori tidak boleh kosong.", nil)
+	}
+	if err := s.repo.RenameCategory(oldName, newName); err != nil {
+		return helper.NewServiceError("SERVER_ERROR", "Gagal mengubah nama kategori.", err)
+	}
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
+		Action:      "berita.category_rename",
+		EntityType:  "kategori",
+		Description: "Mengubah nama kategori dari " + oldName + " menjadi " + newName,
+	})
+	return nil
+}
+
+func (s *beritaService) DeleteCategory(ctx context.Context, name string) error {
+	if name == "" {
+		return helper.NewServiceError("VALIDATION_ERROR", "Nama kategori tidak valid.", nil)
+	}
+	if err := s.repo.DeleteCategory(name); err != nil {
+		return helper.NewServiceError("SERVER_ERROR", "Gagal menghapus kategori.", err)
+	}
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
+		Action:      "berita.category_delete",
+		EntityType:  "kategori",
+		Description: "Menghapus kategori " + name + " secara global",
+	})
+	return nil
 }

@@ -87,4 +87,17 @@ export const beritaService = {
       body: JSON.stringify({ ids }),
     })
   },
+
+  renameCategory(oldName, newName) {
+    return apiRequest('/berita/categories', {
+      method: 'PUT',
+      body: JSON.stringify({ old_name: oldName, new_name: newName }),
+    })
+  },
+
+  deleteCategory(name) {
+    return apiRequest(`/berita/categories/${encodeURIComponent(name)}`, {
+      method: 'DELETE',
+    })
+  },
 }

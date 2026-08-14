@@ -91,4 +91,17 @@ export const kegiatanService = {
       body: JSON.stringify({ ids }),
     })
   },
+
+  renameCategory(oldName, newName) {
+    return apiRequest('/kegiatan/categories', {
+      method: 'PUT',
+      body: JSON.stringify({ old_name: oldName, new_name: newName }),
+    })
+  },
+
+  deleteCategory(name) {
+    return apiRequest(`/kegiatan/categories/${encodeURIComponent(name)}`, {
+      method: 'DELETE',
+    })
+  },
 }

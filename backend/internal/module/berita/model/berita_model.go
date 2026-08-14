@@ -16,9 +16,10 @@ type Berita struct {
 	AuthorName    string  `gorm:"->;-:migration"`
 	ImagePath     *string `gorm:"size:500"`
 	Excerpt       *string `gorm:"type:text"`
-	Content       *string `gorm:"type:longtext"`
+	Content       *string `gorm:"type:longtext;not null"`
 	IsFeatured    bool    `gorm:"default:false"`
-	IsPublished   bool
+	IsNew         bool    `gorm:"default:false"`
+	IsPublished   bool    `gorm:"default:false"`
 	Views         int     `gorm:"default:0"`
 	Footnote      *string `gorm:"size:500"`
 	ImageSource   *string `gorm:"size:250"`

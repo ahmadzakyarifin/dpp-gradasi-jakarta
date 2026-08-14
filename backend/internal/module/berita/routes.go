@@ -25,6 +25,8 @@ func RegisterRoutes(api *gin.RouterGroup, h *handler.BeritaHandler, jwtSecret st
 		admin.GET("/id/:id", h.GetByID)
 		admin.POST("", h.Create)
 		admin.POST("/upload-image", h.UploadImage)
+		admin.PUT("/categories", h.RenameCategory)
+		admin.DELETE("/categories/:name", h.DeleteCategory)
 		admin.PUT("/:id", h.Update)
 		admin.POST("/bulk-delete", h.BulkDelete)
 		admin.POST("/bulk-restore", h.BulkRestore)

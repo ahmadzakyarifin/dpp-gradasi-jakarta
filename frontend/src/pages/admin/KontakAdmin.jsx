@@ -5,7 +5,7 @@ import ConfirmDialog from '../../components/admin/ConfirmDialog'
 import ToastNotification from '../../components/admin/ToastNotification'
 import { parseApiError } from '../../utils/parseApiError'
 
-const PAGE_SIZE = 10
+const PAGE_SIZE = 30
 const SEARCH_DEBOUNCE_MS = 350
 
 // Tanggal + jam — untuk pesan masuk, jam ikut relevan (beda dengan berita/kegiatan).
@@ -172,7 +172,7 @@ export default function KontakAdmin() {
     setFilterStatus('all')
     setFilterSort('newest')
     setPage(1)
-    showToast('Filter direset.', 'info')
+    showToast('Filter direset.', 'success')
   }
 
   // Urutan bukan filter, dan filter status tidak dikirim di tab Sampah — keduanya

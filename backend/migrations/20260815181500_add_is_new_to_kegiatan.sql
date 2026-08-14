@@ -1,0 +1,2 @@
+ALTER TABLE kegiatan
+ADD COLUMN is_new BOOLEAN NOT NULL DEFAULT FALSE AFTER is_published;

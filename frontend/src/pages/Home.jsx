@@ -264,10 +264,10 @@ export default function Home() {
     updated_at: ''
   }
 
-  // Cek apakah slide ini benar-benar masih "baru" (diupdate dalam 7 hari terakhir)
-  const isActuallyNew = (slide) => {
-    if (!slide || !slide.is_new || !slide.updated_at) return false
-    const updateTime = new Date(slide.updated_at).getTime()
+  // Cek apakah data benar-benar masih "baru" (diupdate dalam 7 hari terakhir)
+  const isActuallyNew = (item) => {
+    if (!item || !item.is_new || !item.updated_at) return false
+    const updateTime = new Date(item.updated_at).getTime()
     const now = new Date().getTime()
     const diffDays = (now - updateTime) / (1000 * 60 * 60 * 24)
     return diffDays <= 7
@@ -913,7 +913,7 @@ export default function Home() {
                       alt={item.title}
                       className="object-cover w-full h-full"
                     />
-                    {idx === 0 && (
+                    {item.is_new && isActuallyNew(item) && (
                       <div className="absolute top-4 right-4 bg-red-500 text-white text-[10px] font-extrabold px-3 py-1.5 rounded animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)] z-10 tracking-wider flex items-center gap-1">
                         <i className="ph-fill ph-fire" /> TERBARU
                       </div>

@@ -12,6 +12,7 @@ type BeritaCreateRequest struct {
 	Footnote      string `json:"footnote"`
 	ImageSource   string `json:"image_source"`
 	IsFeatured    *bool  `json:"is_featured"`
+	IsNew         *bool  `json:"is_new"`
 	IsPublished   *bool  `json:"is_published"`
 	Tags          string `json:"tags"` // comma-separated
 }
@@ -28,6 +29,7 @@ type BeritaUpdateRequest struct {
 	Footnote      string `json:"footnote"`
 	ImageSource   string `json:"image_source"`
 	IsFeatured    *bool  `json:"is_featured"`
+	IsNew         *bool  `json:"is_new"`
 	IsPublished   *bool  `json:"is_published"`
 	Tags          string `json:"tags"` // comma-separated
 }
@@ -42,6 +44,7 @@ type BeritaListItem struct {
 	ImagePath     string `json:"image_path,omitempty"`
 	Excerpt       string `json:"excerpt,omitempty"`
 	IsFeatured    bool   `json:"is_featured"`
+	IsNew         bool   `json:"is_new"`
 	IsPublished   *bool  `json:"is_published,omitempty"`
 	Views         int    `json:"views"`
 	CreatedAt     string `json:"created_at"`
@@ -61,10 +64,12 @@ type BeritaDetailResponse struct {
 	Footnote      string   `json:"footnote,omitempty"`
 	ImageSource   string   `json:"image_source,omitempty"`
 	IsFeatured    bool     `json:"is_featured"`
+	IsNew         bool     `json:"is_new"`
 	IsPublished   bool     `json:"is_published"`
 	Views         int      `json:"views"`
 	Tags          []string `json:"tags,omitempty"`
 	CreatedAt     string   `json:"created_at"`
+	UpdatedAt     string   `json:"updated_at,omitempty"`
 }
 
 type BeritaListResponse struct {
@@ -91,6 +96,11 @@ type BeritaQuery struct {
 
 type BulkRequest struct {
 	IDs []uint `json:"ids" binding:"required,min=1"`
+}
+
+type CategoryRenameRequest struct {
+	OldName string `json:"old_name" binding:"required"`
+	NewName string `json:"new_name" binding:"required"`
 }
 
 // UploadImageResponse — hasil upload gambar berita (cover)

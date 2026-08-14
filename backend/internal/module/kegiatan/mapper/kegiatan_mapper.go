@@ -143,6 +143,9 @@ func UpdateReqToEntity(req *dto.KegiatanUpdateRequest, k *entity.Kegiatan) {
 	if req.IsPublished != nil {
 		k.IsPublished = *req.IsPublished
 	}
+	if req.IsNew != nil {
+		k.IsNew = *req.IsNew
+	}
 	if req.AuthorID != nil {
 		k.AuthorID = req.AuthorID
 	}
@@ -191,6 +194,7 @@ func EntityToModel(e *entity.Kegiatan) *model.Kegiatan {
 		Footnote:    e.Footnote,
 		ImageSource: e.ImageSource,
 		IsPublished: e.IsPublished,
+		IsNew:       e.IsNew,
 		Views:       e.Views,
 		Tags:        tags,
 		Gallery:     gallery,
@@ -214,11 +218,17 @@ func ModelToEntity(m *model.Kegiatan) *entity.Kegiatan {
 		gallery = append(gallery, entity.KegiatanGallery{
 			ID:         g.ID,
 			KegiatanID: g.KegiatanID,
-			ImagePath:  g.ImagePath,
+			ImagePath:  strings.ReplaceAll(g.ImagePath, "uploads/img/event", "uploads/img/kegiatan"),
 			Caption:    g.Caption,
 			SortOrder:  g.SortOrder,
 		})
 	}
+	var fixedImagePath *string
+	if m.ImagePath != nil {
+		fixed := strings.ReplaceAll(*m.ImagePath, "uploads/img/event", "uploads/img/kegiatan")
+		fixedImagePath = &fixed
+	}
+
 	return &entity.Kegiatan{
 		ID:          m.ID,
 		Slug:        m.Slug,
@@ -229,12 +239,13 @@ func ModelToEntity(m *model.Kegiatan) *entity.Kegiatan {
 		Organizer:   m.Organizer,
 		AuthorID:    m.AuthorID,
 		AuthorName:  m.AuthorName,
-		ImagePath:   m.ImagePath,
+		ImagePath:   fixedImagePath,
 		Excerpt:     m.Excerpt,
 		Content:     m.Content,
 		Footnote:    m.Footnote,
 		ImageSource: m.ImageSource,
 		IsPublished: m.IsPublished,
+		IsNew:       m.IsNew,
 		Views:       m.Views,
 		Tags:        tags,
 		Gallery:     gallery,
@@ -269,6 +280,7 @@ func EntityToListItem(e *entity.Kegiatan) dto.KegiatanListItem {
 		AuthorName:   e.AuthorName,
 		Views:        e.Views,
 		IsPublished:  &e.IsPublished,
+		IsNew:        e.IsNew,
 		GalleryCount: len(e.Gallery),
 		CreatedAt:    e.CreatedAt.Format("2006-01-02T15:04:05Z"),
 		UpdatedAt:    e.UpdatedAt.Format("2006-01-02T15:04:05Z"),
@@ -306,6 +318,7 @@ func EntityToDetail(e *entity.Kegiatan) dto.KegiatanDetailResponse {
 		Organizer:   e.Organizer,
 		AuthorName:  e.AuthorName,
 		IsPublished: e.IsPublished,
+		IsNew:       e.IsNew,
 		Views:       e.Views,
 		CreatedAt:   e.CreatedAt.Format("2006-01-02T15:04:05Z"),
 		Tags:        make([]string, 0),

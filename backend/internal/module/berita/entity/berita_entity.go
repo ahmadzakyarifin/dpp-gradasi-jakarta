@@ -22,6 +22,7 @@ type Berita struct {
 	Excerpt       *string
 	Content       *string
 	IsFeatured    bool
+	IsNew         bool
 	IsPublished   bool
 	Views         int
 	Footnote      *string

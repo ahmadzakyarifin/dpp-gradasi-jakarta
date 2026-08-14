@@ -39,6 +39,8 @@ type KegiatanService interface {
 	BulkRestore(ctx context.Context, ids []uint) error
 	DeleteGalleryImage(ctx context.Context, galleryID uint) error
 	GetCategories(ctx context.Context) ([]string, error)
+	RenameCategory(ctx context.Context, oldName string, newName string) error
+	DeleteCategory(ctx context.Context, name string) error
 }
 
 type kegiatanService struct {
@@ -49,7 +51,7 @@ type kegiatanService struct {
 }
 
 func NewKegiatanService(db *gorm.DB, repo repository.KegiatanRepo, audit activitylogservice.ActivityLogService) KegiatanService {
-	uploadPath := "public/uploads/kegiatan"
+	uploadPath := "public/uploads/img/kegiatan"
 	if err := os.MkdirAll(uploadPath, 0o755); err != nil {
 		helper.Logger.Error("gagal buat direktori upload kegiatan", zap.Error(err))
 	}
@@ -178,9 +180,13 @@ func (s *kegiatanService) Create(ctx context.Context, req *dto.KegiatanCreateReq
 		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal memvalidasi slug.", err)
 	}
 
-	isPub := true
+	isPub := false
 	if req.IsPublished != nil {
 		isPub = *req.IsPublished
+	}
+	isNew := false
+	if req.IsNew != nil {
+		isNew = *req.IsNew
 	}
 
 	k := mapper.CreateReqToEntity(req)
@@ -188,6 +194,7 @@ func (s *kegiatanService) Create(ctx context.Context, req *dto.KegiatanCreateReq
 	k.Title = title
 	k.Category = cat
 	k.IsPublished = isPub
+	k.IsNew = isNew
 
 	if req.AuthorID != nil {
 		k.AuthorID = req.AuthorID
@@ -367,7 +374,7 @@ func (s *kegiatanService) UploadImage(ctx context.Context, file *multipart.FileH
 		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal menyimpan file gambar.", err)
 	}
 
-	imagePath := "/uploads/kegiatan/" + filename
+	imagePath := "/uploads/img/kegiatan/" + filename
 	return &dto.UploadImageResponse{ImagePath: imagePath}, nil
 }
 
@@ -463,4 +470,45 @@ func (s *kegiatanService) GetCategories(ctx context.Context) ([]string, error) {
 		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil daftar kategori.", err)
 	}
 	return categories, nil
+}
+
+func (s *kegiatanService) RenameCategory(ctx context.Context, oldName string, newName string) error {
+	oldName = strings.TrimSpace(oldName)
+	newName = strings.TrimSpace(newName)
+	if oldName == "" || newName == "" {
+		v := helper.NewValidationError()
+		v.Add("name", "Nama kategori tidak boleh kosong")
+		return v
+	}
+	if err := s.repo.RenameCategory(oldName, newName); err != nil {
+		return helper.NewServiceError("SERVER_ERROR", "Gagal mengubah nama kategori.", err)
+	}
+
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
+		Action:      "kegiatan.rename_category",
+		EntityType:  "kegiatan",
+		Description: fmt.Sprintf("Mengubah nama kategori kegiatan dari '%s' menjadi '%s'", oldName, newName),
+	})
+
+	return nil
+}
+
+func (s *kegiatanService) DeleteCategory(ctx context.Context, name string) error {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		v := helper.NewValidationError()
+		v.Add("name", "Nama kategori tidak boleh kosong")
+		return v
+	}
+	if err := s.repo.DeleteCategory(name); err != nil {
+		return helper.NewServiceError("SERVER_ERROR", "Gagal menghapus kategori.", err)
+	}
+
+	s.log(ctx, s.db, &activitylogdto.ActivityLogInput{
+		Action:      "kegiatan.delete_category",
+		EntityType:  "kegiatan",
+		Description: fmt.Sprintf("Menghapus kategori kegiatan global: '%s'", name),
+	})
+
+	return nil
 }

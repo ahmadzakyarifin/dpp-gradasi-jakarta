@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import AdminLayout from '../../layouts/AdminLayout'
 import { beritaService } from '../../services/beritaService'
 import { beritaContent } from '../../content/beritaContent'
@@ -13,7 +13,7 @@ const getTodayIndonesian = () => {
   return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-const PAGE_SIZE = 10
+const PAGE_SIZE = 30
 
 export default function BeritaAdmin() {
   const [items, setItems] = useState([])
@@ -30,8 +30,26 @@ export default function BeritaAdmin() {
   const [selectedItems, setSelectedItems] = useState([])
 
   const [categories, setCategories] = useState(beritaContent.categories)
-  const [categorySearch, setCategorySearch] = useState('')
+  const categoryDropdownRef = useRef(null)
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
+  const [isAddingCategory, setIsAddingCategory] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [editingCategory, setEditingCategory] = useState(null)
+  const [editCategoryName, setEditCategoryName] = useState('')
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(event.target)) {
+        setShowCategoryDropdown(false)
+        setIsAddingCategory(false)
+        setNewCategoryName('')
+        setEditingCategory(null)
+        setEditCategoryName('')
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [formMode, setFormMode] = useState('create')
   const [formLoading, setFormLoading] = useState(false)
@@ -164,6 +182,15 @@ export default function BeritaAdmin() {
     setSelectedItems([])
   }, [currentTab, searchQuery, filterStatus, filterSort])
 
+  // Helper untuk mengecek apakah berita masih baru (7 hari dari update terakhir)
+  const isActuallyNew = (item) => {
+    if (!item || !item.is_new || !item.updated_at) return false
+    const updateTime = new Date(item.updated_at).getTime()
+    const now = new Date().getTime()
+    const diffDays = (now - updateTime) / (1000 * 60 * 60 * 24)
+    return diffDays <= 7
+  }
+
   async function openForm(item = null) {
     setFormErrors({})
     setTouched({})
@@ -186,9 +213,9 @@ export default function BeritaAdmin() {
           tags: Array.isArray(d.tags) ? d.tags.join(', ') : (d.tags ?? ''),
           footnote: d.footnote ?? item.footnote ?? '',
           image_source: d.image_source ?? item.image_source ?? '',
+          is_new: d.is_new && isActuallyNew(d),
           is_published: typeof d.is_published === 'boolean' ? d.is_published : !!item.is_published,
         })
-        setCategorySearch(d.category ?? item.category ?? '')
         setIsFormOpen(true)
       } catch (err) {
         showToast(err?.message || 'Gagal memuat detail berita.', 'error')
@@ -209,9 +236,9 @@ export default function BeritaAdmin() {
         tags: '',
         footnote: '',
         image_source: '',
-        is_published: true,
+        is_new: true, // Default to true (Otomatis pudar dalam 7 hari)
+        is_published: false, // Default false sesuai request
       })
-      setCategorySearch(defaultCat)
       setIsFormOpen(true)
     }
   }
@@ -228,6 +255,49 @@ export default function BeritaAdmin() {
     } finally {
       setDetailLoading(false)
     }
+  }
+
+  async function handleSaveEditCategory(oldName) {
+    const trimmed = editCategoryName.trim()
+    if (!trimmed || trimmed === oldName) {
+      setEditingCategory(null)
+      return
+    }
+    try {
+      await beritaService.renameCategory(oldName, trimmed)
+      showToast('Kategori berhasil diubah.', 'success')
+      setCategories(prev => prev.map(c => c === oldName ? trimmed : c))
+      if (formData.category === oldName) {
+        setFormData(prev => ({ ...prev, category: trimmed }))
+      }
+      setEditingCategory(null)
+      loadBerita() // Reload to update table
+    } catch (err) {
+      showToast(err?.message || 'Gagal mengubah kategori.', 'error')
+    }
+  }
+
+  function confirmDeleteCategory(name) {
+    setConfirm({
+      isOpen: true,
+      type: 'danger',
+      title: 'Hapus Kategori',
+      message: `Anda yakin ingin menghapus kategori "${name}"? Berita dengan kategori ini akan dipindahkan ke "Berita Organisasi".`,
+      action: async () => {
+        try {
+          await beritaService.deleteCategory(name)
+          showToast('Kategori berhasil dihapus.', 'success')
+          setCategories(prev => prev.filter(c => c !== name))
+          if (formData.category === name) {
+            setFormData(prev => ({ ...prev, category: 'Berita Organisasi' }))
+          }
+          setConfirm({ isOpen: false })
+          loadBerita() // Reload to update table
+        } catch (err) {
+          showToast(err?.message || 'Gagal menghapus kategori.', 'error')
+        }
+      }
+    })
   }
 
   async function handleSubmit(e) {
@@ -364,7 +434,7 @@ export default function BeritaAdmin() {
     setFilterStatus('')
     setFilterSort('newest')
     setCurrentPage(1)
-    showToast('Filter direset.', 'info')
+    showToast('Filter direset.', 'success')
   }
 
   const getVisiblePageNumbers = (currentPage, totalPagesCount, maxVisible = 5) => {
@@ -531,9 +601,14 @@ export default function BeritaAdmin() {
                             <i className="ph ph-image text-base" />
                           </div>
                         )}
-                        <span className="font-semibold text-slate-900 leading-snug line-clamp-1 max-w-[200px]" title={item.title}>
-                          {item.title}
-                        </span>
+                        <div>
+                          <span className="font-semibold text-slate-900 leading-snug line-clamp-1 max-w-[200px]" title={item.title}>
+                            {item.title}
+                          </span>
+                          {item.is_new && isActuallyNew(item) && (
+                            <span className="inline-block mt-1 bg-brand-50 text-brand-600 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">TERBARU</span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="p-4">
@@ -653,7 +728,12 @@ export default function BeritaAdmin() {
                 {/* Left Column: Meta & Media */}
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Judul Berita <span className="text-red-500">*</span></label>
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="block text-[11px] font-semibold text-slate-500">Judul Berita <span className="text-red-500">*</span></label>
+                      <span className={`text-[10px] font-semibold ${(formData.title || '').length >= 300 ? 'text-red-500' : 'text-slate-400'}`}>
+                        {(formData.title || '').length}/300
+                      </span>
+                    </div>
                     <input
                       type="text"
                       value={formData.title}
@@ -671,6 +751,7 @@ export default function BeritaAdmin() {
                         setFormErrors(prev => ({ ...prev, title: errs.title }))
                       }}
                       placeholder="Masukkan judul berita..."
+                      maxLength={300}
                       className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors ${touched.title && formErrors.title ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
                     />
                     {touched.title && formErrors.title && (
@@ -683,75 +764,158 @@ export default function BeritaAdmin() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-semibold text-slate-500 mb-1">Kategori <span className="text-red-500">*</span></label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={categorySearch}
-                          onChange={e => {
-                            setCategorySearch(e.target.value)
-                            setShowCategoryDropdown(true)
-                            setFormData(prev => ({ ...prev, category: e.target.value }))
-                            clearFieldError('category')
+                      <div className="relative" ref={categoryDropdownRef}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowCategoryDropdown(!showCategoryDropdown)
+                            setIsAddingCategory(false)
                           }}
-                          onFocus={() => setShowCategoryDropdown(true)}
-                          onBlur={() => {
-                            setTimeout(() => setShowCategoryDropdown(false), 200)
-                            setTouched(prev => ({ ...prev, category: true }))
-                            const errs = validateForm()
-                            setFormErrors(prev => ({ ...prev, category: errs.category }))
-                          }}
-                          onKeyDown={e => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault()
-                              const trimmed = categorySearch.trim()
-                              if (trimmed) {
-                                setFormData(prev => ({ ...prev, category: trimmed }))
-                                setCategorySearch(trimmed)
-                                if (!categories.includes(trimmed)) {
-                                  setCategories(prev => [...prev, trimmed])
-                                }
-                                setShowCategoryDropdown(false)
-                              }
-                            }
-                          }}
-                          placeholder="Ketik atau pilih kategori..."
-                          className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none bg-white transition-colors ${touched.category && formErrors.category ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
-                        />
+                          className={`w-full px-3.5 py-2.5 border rounded-xl text-sm text-left outline-none bg-white transition-colors flex justify-between items-center ${touched.category && formErrors.category ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
+                        >
+                          <span className={formData.category ? 'text-slate-900' : 'text-slate-400'}>
+                            {formData.category || 'Pilih kategori...'}
+                          </span>
+                          <i className={`ph-bold ph-caret-down text-slate-400 transition-transform ${showCategoryDropdown ? 'rotate-180' : ''}`} />
+                        </button>
                         
                         {showCategoryDropdown && (
-                          <div className="absolute left-0 right-0 z-50 mt-1 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-xl">
-                            {categories
-                              .filter(c => c.toLowerCase().includes(categorySearch.toLowerCase()))
-                              .map(c => (
+                          <div className="absolute left-0 z-50 mt-1 w-[320px] bg-white border border-slate-200 rounded-xl shadow-xl flex flex-col overflow-hidden">
+                            <div className="max-h-48 overflow-y-auto py-1">
+                              {categories.map(c => (
+                                <div key={c} className="group relative w-full flex flex-col">
+                                  {editingCategory === c ? (
+                                    <div className="flex gap-2 p-2 bg-brand-50 border-y border-brand-100">
+                                      <input
+                                        type="text"
+                                        autoFocus
+                                        value={editCategoryName}
+                                        onChange={e => setEditCategoryName(e.target.value)}
+                                        className="flex-1 min-w-0 px-2 py-1.5 border border-brand-300 rounded text-sm outline-none focus:ring-1 focus:ring-brand-500"
+                                        onKeyDown={e => {
+                                          if (e.key === 'Enter') {
+                                            e.preventDefault()
+                                            handleSaveEditCategory(c)
+                                          } else if (e.key === 'Escape') {
+                                            setEditingCategory(null)
+                                          }
+                                        }}
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSaveEditCategory(c)}
+                                        className="px-2.5 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded text-sm font-bold shrink-0"
+                                      >
+                                        Save
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setEditingCategory(null)}
+                                        className="px-2 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-sm font-bold shrink-0"
+                                      >
+                                        Batal
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setFormData(prev => ({ ...prev, category: c }))
+                                          setShowCategoryDropdown(false)
+                                          setIsAddingCategory(false)
+                                          clearFieldError('category')
+                                        }}
+                                        className={`w-full px-4 py-2.5 text-left text-sm transition-colors font-medium ${formData.category === c ? 'bg-brand-50 text-brand-700' : 'text-slate-700 hover:bg-slate-50'}`}
+                                      >
+                                        {c}
+                                      </button>
+                                      <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity">
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            setEditingCategory(c)
+                                            setEditCategoryName(c)
+                                          }}
+                                          title="Ubah Nama Kategori Global"
+                                          className="p-1.5 text-brand-600 hover:bg-white bg-slate-100 hover:text-brand-700 rounded shadow-sm border border-transparent hover:border-brand-200"
+                                        >
+                                          <i className="ph-bold ph-pencil-simple" />
+                                        </button>
+                                        {c !== 'Berita Organisasi' && (
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation()
+                                              confirmDeleteCategory(c)
+                                            }}
+                                            title="Hapus Kategori Global"
+                                            className="p-1.5 text-red-500 hover:bg-white bg-slate-100 hover:text-red-600 rounded shadow-sm border border-transparent hover:border-red-200"
+                                          >
+                                            <i className="ph-bold ph-trash" />
+                                          </button>
+                                        )}
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                            
+                            <div className="border-t border-slate-100 p-2 bg-slate-50">
+                              {!isAddingCategory ? (
                                 <button
-                                  key={c}
                                   type="button"
-                                  onMouseDown={() => {
-                                    setFormData(prev => ({ ...prev, category: c }))
-                                    setCategorySearch(c)
-                                    setShowCategoryDropdown(false)
-                                  }}
-                                  className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 transition-colors font-medium"
+                                  onClick={() => setIsAddingCategory(true)}
+                                  className="w-full px-3 py-2 text-sm text-brand-600 hover:bg-brand-100/50 rounded-lg font-bold transition-colors flex items-center justify-center gap-1.5"
                                 >
-                                  {c}
+                                  <i className="ph-bold ph-plus" /> Tambah Kategori Baru
                                 </button>
-                              ))
-                            }
-                            {categorySearch.trim() && !categories.map(c => c.toLowerCase()).includes(categorySearch.trim().toLowerCase()) && (
-                              <button
-                                type="button"
-                                onMouseDown={() => {
-                                  const trimmed = categorySearch.trim()
-                                  setFormData(prev => ({ ...prev, category: trimmed }))
-                                  setCategorySearch(trimmed)
-                                  setCategories(prev => [...prev, trimmed])
-                                  setShowCategoryDropdown(false)
-                                }}
-                                className="w-full px-4 py-2.5 text-left text-sm text-brand-600 hover:bg-brand-50 font-bold transition-colors border-t border-slate-100"
-                              >
-                                + Tambah "{categorySearch.trim()}"
-                              </button>
-                            )}
+                              ) : (
+                                <div className="flex gap-2">
+                                  <input
+                                    type="text"
+                                    autoFocus
+                                    value={newCategoryName}
+                                    onChange={e => setNewCategoryName(e.target.value)}
+                                    placeholder="Kategori baru..."
+                                    className="flex-1 min-w-0 px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                                    onKeyDown={e => {
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault()
+                                        const trimmed = newCategoryName.trim()
+                                        if (trimmed) {
+                                          setFormData(prev => ({ ...prev, category: trimmed }))
+                                          if (!categories.includes(trimmed)) setCategories(prev => [...prev, trimmed])
+                                          setShowCategoryDropdown(false)
+                                          setIsAddingCategory(false)
+                                          setNewCategoryName('')
+                                          clearFieldError('category')
+                                        }
+                                      }
+                                    }}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const trimmed = newCategoryName.trim()
+                                      if (trimmed) {
+                                        setFormData(prev => ({ ...prev, category: trimmed }))
+                                        if (!categories.includes(trimmed)) setCategories(prev => [...prev, trimmed])
+                                        setShowCategoryDropdown(false)
+                                        setIsAddingCategory(false)
+                                        setNewCategoryName('')
+                                        clearFieldError('category')
+                                      }
+                                    }}
+                                    className="px-3 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm font-bold transition-colors shrink-0"
+                                  >
+                                    Add
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -820,8 +984,8 @@ export default function BeritaAdmin() {
                         </button>
                       )}
                     </div>
-                    {formData.image_path && (
-                      <div className="mt-2.5 animate-fade-in">
+                    
+                    <div className="mt-4">
                         <div className="flex justify-between items-center mb-1">
                           <label className="block text-[11px] font-semibold text-slate-500">Sumber / Kredit Foto Cover</label>
                           <span className={`text-[10px] font-semibold ${(formData.image_source || '').length > 150 ? 'text-red-500' : 'text-slate-400'}`}>
@@ -831,12 +995,7 @@ export default function BeritaAdmin() {
                         <input
                           type="text"
                           value={formData.image_source || ''}
-                          onChange={e => {
-                            let val = e.target.value
-                            // Trim repeated consecutive characters (> 4 repeated)
-                            val = val.replace(/(.)\1{4,}/g, '$1$1')
-                            setFormData({ ...formData, image_source: val })
-                          }}
+                          onChange={e => setFormData({ ...formData, image_source: e.target.value })}
                           placeholder="Contoh: Foto: Humas / Unsplash"
                           maxLength={150}
                           className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
@@ -845,13 +1004,17 @@ export default function BeritaAdmin() {
                           <p className="text-red-500 text-[10px] mt-1">Keterangan foto maksimal 150 karakter.</p>
                         )}
                       </div>
-                    )}
                     <p className="text-[10px] text-slate-400 mt-1.5">PNG / JPG / WEBP · Maks 5MB.</p>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Tags (pisahkan dengan koma) <span className="text-gray-400 font-normal">(opsional)</span></label>
-                    <input type="text" value={formData.tags} onChange={e => setFormData({ ...formData, tags: e.target.value })} placeholder="teknologi, pendidikan, digital" className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="block text-[11px] font-semibold text-slate-500">Tags (pisahkan dengan koma) <span className="text-gray-400 font-normal">(opsional)</span></label>
+                      <span className={`text-[10px] font-semibold ${(formData.tags || '').length >= 255 ? 'text-red-500' : 'text-slate-400'}`}>
+                        {(formData.tags || '').length}/255
+                      </span>
+                    </div>
+                    <input type="text" maxLength={255} value={formData.tags} onChange={e => setFormData({ ...formData, tags: e.target.value })} placeholder="teknologi, pendidikan, digital" className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
                   </div>
 
                   <div className="pt-2">
@@ -865,17 +1028,32 @@ export default function BeritaAdmin() {
                 {/* Right Column: Descriptions & Content */}
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Ringkasan (Excerpt) <span className="text-gray-400 font-normal">(opsional)</span></label>
-                    <textarea rows={3} value={formData.excerpt} onChange={e => setFormData({ ...formData, excerpt: e.target.value })} placeholder="Tulis ringkasan berita singkat..." className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors overflow-y-auto resize-y min-h-[80px]" />
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="block text-[11px] font-semibold text-slate-500">Ringkasan (Excerpt) <span className="text-gray-400 font-normal">(opsional)</span></label>
+                      <span className={`text-[10px] font-semibold ${(formData.excerpt || '').length >= 500 ? 'text-red-500' : 'text-slate-400'}`}>
+                        {(formData.excerpt || '').length}/500
+                      </span>
+                    </div>
+                    <textarea rows={3} maxLength={500} value={formData.excerpt} onChange={e => setFormData({ ...formData, excerpt: e.target.value })} placeholder="Tulis ringkasan berita singkat..." className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors overflow-y-auto resize-y min-h-[80px]" />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Sumber / Footnote <span className="text-gray-400 font-normal">(opsional)</span></label>
-                    <input type="text" value={formData.footnote} onChange={e => setFormData({ ...formData, footnote: e.target.value })} placeholder="Contoh: Humas DPP GRADASI, DetikNews, dll." className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="block text-[11px] font-semibold text-slate-500">Sumber / Footnote <span className="text-gray-400 font-normal">(opsional)</span></label>
+                      <span className={`text-[10px] font-semibold ${(formData.footnote || '').length >= 500 ? 'text-red-500' : 'text-slate-400'}`}>
+                        {(formData.footnote || '').length}/500
+                      </span>
+                    </div>
+                    <input type="text" maxLength={500} value={formData.footnote} onChange={e => setFormData({ ...formData, footnote: e.target.value })} placeholder="Contoh: Humas DPP GRADASI, DetikNews, dll." className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1">Konten Lengkap <span className="text-red-500">*</span></label>
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="block text-[11px] font-semibold text-slate-500">Konten Lengkap <span className="text-red-500">*</span></label>
+                      <span className="text-[10px] font-semibold text-slate-400">
+                        {(formData.content || '').length} karakter
+                      </span>
+                    </div>
                     <textarea
                       rows={8}
                       value={formData.content}
@@ -900,6 +1078,23 @@ export default function BeritaAdmin() {
                         <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.content}
                       </p>
                     )}
+                  </div>
+
+                  <div className="mt-6 p-4 bg-slate-50 border border-slate-100 rounded-xl space-y-4">
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.is_new}
+                        onChange={e => setFormData({ ...formData, is_new: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
+                      <span className="ml-3 text-sm font-medium text-gray-700">Tandai sebagai "TERBARU"</span>
+                    </label>
+                    <p className="text-xs text-gray-500 leading-relaxed flex gap-1.5 items-start">
+                      <i className="ph-fill ph-info text-blue-500 text-sm shrink-0 mt-0.5" />
+                      Tanda "TERBARU" akan otomatis hilang setelah 7 hari. Jika sudah hilang, Anda bisa memunculkannya kembali dengan mencentang kotak ini lalu klik Simpan.
+                    </p>
                   </div>
                 </div>
 

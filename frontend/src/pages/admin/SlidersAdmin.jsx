@@ -6,7 +6,7 @@ import ToastNotification from '../../components/admin/ToastNotification'
 import { resolveAssetUrl } from '../../utils/assetUrl'
 import { useFormErrors, useRateLimitCooldown } from '../../utils/parseApiError'
 
-const PAGE_SIZE = 10
+const PAGE_SIZE = 30
 
 export default function SlidersAdmin() {
   const [items, setItems] = useState([])
@@ -155,11 +155,23 @@ export default function SlidersAdmin() {
   const paginatedItems = filteredItems.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
   const pageStart = filteredItems.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1
   const pageEnd = Math.min(currentPage * PAGE_SIZE, filteredItems.length)
-  const isAllSelected = filteredItems.length > 0 && selectedItems.length === filteredItems.length
+
+  // Cek apakah SEMUA item DI HALAMAN SAAT INI (paginatedItems) sudah tercentang
+  const isAllSelected = paginatedItems.length > 0 && paginatedItems.every(i => selectedItems.includes(i.id))
 
   function toggleAll() {
-    setSelectedItems(isAllSelected ? [] : filteredItems.map(i => i.id))
+    if (isAllSelected) {
+      // Uncheck current page items
+      setSelectedItems(prev => prev.filter(id => !paginatedItems.find(i => i.id === id)))
+    } else {
+      // Check current page items (tanpa duplikat)
+      setSelectedItems(prev => {
+        const newIds = paginatedItems.map(i => i.id).filter(id => !prev.includes(id))
+        return [...prev, ...newIds]
+      })
+    }
   }
+
   function toggleOne(id) {
     setSelectedItems(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
   }

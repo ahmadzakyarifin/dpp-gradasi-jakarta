@@ -20,6 +20,7 @@ type Kegiatan struct {
 	Excerpt     *string `gorm:"type:text"`
 	Content     *string `gorm:"type:longtext"`
 	IsPublished bool
+	IsNew       bool    `gorm:"default:false"`
 	Views       int     `gorm:"default:0"`
 	Footnote    *string `gorm:"size:500"`
 	ImageSource *string `gorm:"size:250"`

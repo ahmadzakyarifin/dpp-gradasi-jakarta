@@ -108,7 +108,7 @@ export default function BeritaDetail() {
                 </span>
               </div>
 
-              <h1 className="font-heading text-3xl md:text-4xl lg:text-[2.75rem] font-extrabold text-slate-900 leading-tight tracking-tight mb-6 break-words">
+              <h1 className="font-heading text-3xl md:text-4xl lg:text-[2.75rem] font-extrabold text-slate-900 leading-tight tracking-tight mb-6 break-all">
                 {article.title}
               </h1>
 
@@ -128,7 +128,7 @@ export default function BeritaDetail() {
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex flex-col lg:flex-row gap-10">
                 <article className="w-full lg:w-2/3 min-w-0">
-                  <p className="article-content text-[15px] sm:text-base text-slate-700 leading-relaxed whitespace-pre-line break-words">
+                  <p className="article-content text-[15px] sm:text-base text-slate-700 leading-relaxed whitespace-pre-line break-all">
                     {article.content || article.excerpt || ''}
                   </p>
 

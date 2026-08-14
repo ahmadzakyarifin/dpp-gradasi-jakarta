@@ -28,6 +28,15 @@ export default function KegiatanList() {
     });
   };
 
+  // Cek apakah data benar-benar masih "baru" (diupdate dalam 7 hari terakhir)
+  const isActuallyNew = (item) => {
+    if (!item || !item.is_new || !item.updated_at) return false
+    const updateTime = new Date(item.updated_at).getTime()
+    const now = new Date().getTime()
+    const diffDays = (now - updateTime) / (1000 * 60 * 60 * 24)
+    return diffDays <= 7
+  }
+
   const handleCopyLink = (url, label = 'Tautan') => {
     copyToClipboard(url).then(success => {
       if (success) {
@@ -39,12 +48,13 @@ export default function KegiatanList() {
   const categoryParam = searchParams.get('category') || ''
 
   const [items, setItems] = useState([])
+  const [categories, setCategories] = useState([])
 
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState(categoryParam)
   const [sortBy, setSortBy] = useState('newest')
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 24
+  const itemsPerPage = 72
 
   useEffect(() => {
     if (categoryParam) setCategoryFilter(categoryParam)
@@ -56,6 +66,14 @@ export default function KegiatanList() {
         if (res.success && res.data) {
           const list = Array.isArray(res.data) ? res.data : (res.data.kegiatan || [])
           setItems(list)
+        }
+      })
+      .catch(() => {})
+
+    kegiatanService.getCategories()
+      .then(res => {
+        if (res && res.data && Array.isArray(res.data)) {
+          setCategories(res.data)
         }
       })
       .catch(() => {})
@@ -81,8 +99,6 @@ export default function KegiatanList() {
   const paginatedItems = filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
   // Panah < > hanya tampil saat minimal 3 data & lebih dari 1 halaman
   const showArrows = totalPages > 1 && filteredItems.length >= 3
-
-  const categories = [...new Set(items.map(item => item.category))].filter(Boolean)
 
   return (
     <PublicLayout>
@@ -122,7 +138,7 @@ export default function KegiatanList() {
               <select 
                 value={categoryFilter} 
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-600 outline-none cursor-pointer w-full sm:w-auto"
+                className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-600 outline-none cursor-pointer w-full sm:w-auto min-w-[200px]"
               >
                 <option value="">Semua Kategori</option>
                 {categories.map(cat => (
@@ -133,7 +149,7 @@ export default function KegiatanList() {
               <select 
                 value={sortBy} 
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-600 outline-none cursor-pointer w-full sm:w-auto"
+                className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-600 outline-none cursor-pointer w-full sm:w-auto min-w-[200px]"
               >
                 <option value="newest">Urutkan: Terbaru</option>
                 <option value="oldest">Urutkan: Terlama</option>
@@ -189,8 +205,13 @@ export default function KegiatanList() {
                           </p>
                         )}
                       </div>
-                      <Link to={`/kegiatan/${item.slug}`} className="font-heading text-lg font-bold text-slate-900 mb-2 group-hover:text-brand-600 transition leading-snug">
-                        {item.title}
+                      <Link to={`/kegiatan/${item.slug}`} className="font-heading text-lg font-bold text-slate-900 mb-2 group-hover:text-brand-600 transition leading-snug flex items-start gap-2">
+                        <span>{item.title}</span>
+                        {isActuallyNew(item) && (
+                          <span className="shrink-0 bg-amber-100 text-amber-700 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider mt-1">
+                            Terbaru
+                          </span>
+                        )}
                       </Link>
                       <p className="text-slate-500 text-[13px] flex-grow line-clamp-2 mb-4 leading-relaxed">{item.excerpt}</p>
                       <div className="pt-4 flex justify-between items-center border-t border-slate-100 mt-auto">

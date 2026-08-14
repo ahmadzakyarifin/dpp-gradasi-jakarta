@@ -27,6 +27,8 @@ type BeritaRepo interface {
 	IncrementViews(id uint) error
 	SaveTags(beritaID uint, tags []string) error
 	GetCategories() ([]string, error)
+	RenameCategory(oldName string, newName string) error
+	DeleteCategory(name string) error
 }
 
 type beritaRepo struct {
@@ -232,4 +234,12 @@ func (r *beritaRepo) GetCategories() ([]string, error) {
 		Order("category ASC").
 		Pluck("category", &categories).Error
 	return categories, err
+}
+
+func (r *beritaRepo) RenameCategory(oldName string, newName string) error {
+	return r.db.Unscoped().Model(&model.Berita{}).Where("category = ?", oldName).Update("category", newName).Error
+}
+
+func (r *beritaRepo) DeleteCategory(name string) error {
+	return r.db.Unscoped().Model(&model.Berita{}).Where("category = ?", name).Update("category", "Berita Organisasi").Error
 }

@@ -33,6 +33,7 @@ type Kegiatan struct {
 	Excerpt     *string
 	Content     *string
 	IsPublished bool
+	IsNew       bool
 	Views       int
 	Footnote    *string
 	ImageSource *string

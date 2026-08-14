@@ -24,6 +24,15 @@ export default function BeritaList() {
   const [activeShareId, setActiveShareId] = useState(null)
   const currentPage = page
 
+  // Cek apakah data benar-benar masih "baru" (diupdate dalam 7 hari terakhir)
+  const isActuallyNew = (item) => {
+    if (!item || !item.is_new || !item.updated_at) return false
+    const updateTime = new Date(item.updated_at).getTime()
+    const now = new Date().getTime()
+    const diffDays = (now - updateTime) / (1000 * 60 * 60 * 24)
+    return diffDays <= 7
+  }
+
   // Global click listener to close popover
   useEffect(() => {
     const handleGlobalClick = () => {
@@ -63,7 +72,7 @@ export default function BeritaList() {
   useEffect(() => {
     setLoading(true)
     setError(null)
-    const params = { page: currentPage, limit: 24, sort: sortBy }
+    const params = { page: currentPage, limit: 72, sort: sortBy }
     if (searchQuery.trim()) params.search = searchQuery.trim()
     if (filterCategory) params.category = filterCategory
     beritaService.list(params)
@@ -142,7 +151,7 @@ export default function BeritaList() {
               <select 
                 value={filterCategory} 
                 onChange={(e) => updateFilter({ category: e.target.value })}
-                className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-600 outline-none cursor-pointer w-full sm:w-auto"
+                className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-600 outline-none cursor-pointer w-full sm:w-auto min-w-[200px]"
               >
                 <option value="">Semua Kategori</option>
                 {categories.map(cat => (
@@ -153,7 +162,7 @@ export default function BeritaList() {
               <select 
                 value={sortBy} 
                 onChange={(e) => updateFilter({ sort: e.target.value })}
-                className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-600 outline-none cursor-pointer w-full sm:w-auto"
+                className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-600 outline-none cursor-pointer w-full sm:w-auto min-w-[200px]"
               >
                 <option value="newest">Urutkan: Terbaru</option>
                 <option value="oldest">Urutkan: Terlama</option>
@@ -194,6 +203,11 @@ export default function BeritaList() {
                     alt={item.title} 
                     className="w-full h-full object-cover transform group-hover:scale-105 transition duration-500" 
                   />
+                  {item.is_new && isActuallyNew(item) && (
+                    <div className="absolute top-4 right-4 bg-red-500 text-white text-[10px] font-extrabold px-3 py-1.5 rounded animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)] z-10 tracking-wider flex items-center gap-1">
+                      <i className="ph-fill ph-fire" /> TERBARU
+                    </div>
+                  )}
                 </div>
                 <div className="p-5 flex flex-col flex-grow">
                   <p className="text-brand-600 text-[10px] font-bold tracking-wider uppercase mb-2 flex items-center gap-1.5">

@@ -29,6 +29,8 @@ type KegiatanRepo interface {
 	SaveGallery(kegiatanID uint, items []dto.GalleryInput) error
 	DeleteGalleryImage(galleryID uint) error
 	GetCategories() ([]string, error)
+	RenameCategory(oldName string, newName string) error
+	DeleteCategory(name string) error
 }
 
 type kegiatanRepo struct{ db *gorm.DB }
@@ -240,4 +242,12 @@ func (r *kegiatanRepo) GetCategories() ([]string, error) {
 		Order("category ASC").
 		Pluck("category", &categories).Error
 	return categories, err
+}
+
+func (r *kegiatanRepo) RenameCategory(oldName string, newName string) error {
+	return r.db.Unscoped().Model(&model.Kegiatan{}).Where("category = ?", oldName).Update("category", newName).Error
+}
+
+func (r *kegiatanRepo) DeleteCategory(name string) error {
+	return r.db.Unscoped().Model(&model.Kegiatan{}).Where("category = ?", name).Update("category", "Kegiatan").Error
 }

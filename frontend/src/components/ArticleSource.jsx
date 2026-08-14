@@ -45,14 +45,16 @@ export default function ArticleSource({ footnote }) {
         }
 
         return (
-          <div key={idx} className="flex items-center gap-2.5">
+          <div key={idx} className="flex items-start gap-2.5">
             <i 
-              className={`${iconClass} text-[#6B7280] shrink-0 text-sm`} 
+              className={`${iconClass} text-[#6B7280] shrink-0 text-sm mt-0.5`} 
               title={iconLabel}
               aria-label={`Ikon ${iconLabel}`} 
             />
-            <span className="font-semibold text-slate-800">{label}:</span>
-            <span className="text-[#6B7280] font-medium">{value}</span>
+            <div className="flex flex-wrap gap-1">
+              <span className="font-semibold text-slate-800">{label}:</span>
+              <span className="text-[#6B7280] font-medium break-all">{value}</span>
+            </div>
           </div>
         )
       })}
