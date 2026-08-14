@@ -30,6 +30,8 @@ func (r *slidersRepo) FindAll(publishedOnly bool) ([]model.Slider, error) {
 	q := r.db.Order("sort_order ASC, created_at DESC")
 	if publishedOnly {
 		q = q.Where("is_published = ?", true)
+	} else {
+		q = q.Unscoped()
 	}
 	err := q.Find(&sliders).Error
 	return sliders, err
@@ -68,7 +70,7 @@ func (r *slidersRepo) Reorder(ids []uint) error {
 }
 
 func (r *slidersRepo) Restore(id uint) error {
-	return r.db.Unscoped().Model(&model.Slider{}).Where("id = ?", id).Update("deleted_at", nil).Error
+	return r.db.Unscoped().Model(&model.Slider{}).Where("id = ?", id).Update("deleted_at", gorm.Expr("NULL")).Error
 }
 
 func (r *slidersRepo) BulkSoftDelete(ids []uint) error {
@@ -76,5 +78,5 @@ func (r *slidersRepo) BulkSoftDelete(ids []uint) error {
 }
 
 func (r *slidersRepo) BulkRestore(ids []uint) error {
-	return r.db.Unscoped().Model(&model.Slider{}).Where("id IN ?", ids).Update("deleted_at", nil).Error
+	return r.db.Unscoped().Model(&model.Slider{}).Where("id IN ?", ids).Update("deleted_at", gorm.Expr("NULL")).Error
 }

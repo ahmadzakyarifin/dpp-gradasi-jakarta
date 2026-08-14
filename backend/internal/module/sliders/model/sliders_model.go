@@ -16,7 +16,7 @@ type Slider struct {
 	Location  *string `gorm:"size:200"`
 	ImagePath string  `gorm:"size:500;not null"`
 	SortOrder int     `gorm:"default:0"`
-	IsPublished bool    `gorm:"default:true;column:is_published"`
+	IsPublished bool    `gorm:"column:is_published"`
 	CreatedBy *uint
 	CreatedAt time.Time
 	UpdatedAt time.Time

@@ -37,6 +37,7 @@ export default function SlidersAdmin() {
   const [formErrors, setFormErrors] = useState({})
   const [touched, setTouched] = useState({})
   const [imageUploading, setImageUploading] = useState(false)
+  const [previewImage, setPreviewImage] = useState(null)
 
   const handleImageUpload = async (file) => {
     if (!file) return
@@ -107,11 +108,13 @@ export default function SlidersAdmin() {
   // --- Filtering (mirip sliders.html) ---
   const filteredItems = items
     .filter(item => {
-      const inTab = currentTab === 'trash' ? !item.is_published : true // default show all active/draft
+      const isDeleted = !!item.deleted_at
       if (currentTab === 'trash') {
-        // jika ada soft delete
-        return false // backend slider soft delete tidak support trash list di FE saat ini (terhapus permanen/soft delete tanpa list)
+        if (!isDeleted) return false // only show deleted items in trash
+      } else {
+        if (isDeleted) return false // hide deleted items in active tab
       }
+
       if (searchQuery) {
         const q = searchQuery.toLowerCase()
         const hay = `${item.title || ''} ${item.subtitle || ''}`.toLowerCase()
@@ -137,6 +140,15 @@ export default function SlidersAdmin() {
       start = Math.max(1, end - maxVisible + 1)
     }
     return Array.from({ length: end - start + 1 }, (_, i) => start + i)
+  }
+
+  // Helper untuk mengecek apakah slider masih baru (7 hari dari update terakhir)
+  const isActuallyNew = (item) => {
+    if (!item || !item.is_new || !item.updated_at) return false
+    const updateTime = new Date(item.updated_at).getTime()
+    const now = new Date().getTime()
+    const diffDays = (now - updateTime) / (1000 * 60 * 60 * 24)
+    return diffDays <= 7
   }
 
   const totalPages = Math.ceil(filteredItems.length / PAGE_SIZE) || 1
@@ -174,7 +186,7 @@ export default function SlidersAdmin() {
         sort_order: item.sort_order,
         event_date: item.event_date || '',
         location: item.location || '',
-        is_new: item.is_new,
+        is_new: item.is_new && isActuallyNew(item),
         is_published: item.is_published,
       })
     } else {
@@ -188,7 +200,7 @@ export default function SlidersAdmin() {
         sort_order: items.length + 1,
         event_date: '',
         location: '',
-        is_new: false,
+        is_new: true, // Default to true (Otomatis pudar dalam 7 hari)
         is_published: true,
       })
     }
@@ -319,9 +331,9 @@ export default function SlidersAdmin() {
         },
       },
       toggle_publish: {
-        type: item.is_published ? 'warning' : 'info',
-        title: item.is_published ? 'Jadikan Draft' : 'Terbitkan Slider',
-        message: `Anda akan ${item.is_published ? 'mengubah status slider menjadi draft' : 'menerbitkan slider'} "${title}". Lanjutkan?`,
+        type: item?.is_published ? 'warning' : 'info',
+        title: item?.is_published ? 'Jadikan Draft' : 'Terbitkan Slider',
+        message: `Anda akan ${item?.is_published ? 'mengubah status slider menjadi draft' : 'menerbitkan slider'} "${title}". Lanjutkan?`,
         action: async () => {
           const payload = {
             title: item.title,
@@ -387,15 +399,17 @@ export default function SlidersAdmin() {
           className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors"
         />
       </div>
-      <select
-        value={filterStatus}
-        onChange={e => setFilterStatus(e.target.value)}
-        className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
-      >
-        <option value="">Semua Status</option>
-        <option value="published">Terbit</option>
-        <option value="draft">Draft</option>
-      </select>
+      {currentTab !== 'trash' && (
+        <select
+          value={filterStatus}
+          onChange={e => setFilterStatus(e.target.value)}
+          className="shrink-0 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-colors cursor-pointer"
+        >
+          <option value="">Semua Status</option>
+          <option value="published">Terbit</option>
+          <option value="draft">Draft</option>
+        </select>
+      )}
       <button
         onClick={resetFilter}
         className="shrink-0 bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-all btn-press"
@@ -480,7 +494,7 @@ export default function SlidersAdmin() {
                       <input type="checkbox" checked={isAllSelected} onChange={toggleAll} className="rounded border-gray-300 text-brand-600 focus:ring-brand-500 accent-brand-600" />
                     </th>
                     <th className="p-4">Tampilan / Judul</th>
-                    <th className="p-4 w-24">Urutan</th>
+                    {currentTab !== 'trash' && <th className="p-4 w-24">Urutan</th>}
                     <th className="p-4">Status</th>
                     <th className="p-4 text-right">Aksi</th>
                   </tr>
@@ -501,7 +515,13 @@ export default function SlidersAdmin() {
                         <td className="p-4">
                           <div className="flex items-start gap-4">
                             {item.image_url ? (
-                              <img src={resolveAssetUrl(item.image_url)} alt={item.title} className="w-32 h-16 rounded object-cover border border-gray-200 shrink-0" />
+                              <img 
+                                src={resolveAssetUrl(item.image_url)} 
+                                alt={item.title} 
+                                onClick={() => setPreviewImage(resolveAssetUrl(item.image_url))}
+                                className="w-32 h-16 rounded object-cover border border-gray-200 shrink-0 cursor-pointer hover:opacity-80 transition-opacity" 
+                                title="Klik untuk memperbesar"
+                              />
                             ) : (
                               <div className="w-32 h-16 rounded bg-gray-100 border border-gray-200 shrink-0 flex items-center justify-center">
                                 <i className="ph ph-image text-gray-300 text-2xl" />
@@ -510,34 +530,36 @@ export default function SlidersAdmin() {
                             <div>
                               <p className="font-medium text-gray-900 leading-snug">{item.title}</p>
                               {item.subtitle && <p className="text-xs text-gray-500 mt-1">{item.subtitle}</p>}
-                              {item.is_new && (
+                              {item.is_new && isActuallyNew(item) && (
                                 <span className="inline-block mt-1 bg-brand-50 text-brand-600 text-[10px] px-2 py-0.5 rounded-full font-medium">NEW</span>
                               )}
                             </div>
                           </div>
                         </td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-3">
-                            <button
-                              type="button"
-                              disabled={globalIndex === 0}
-                              onClick={() => handleMove(globalIndex, 'up')}
-                              className="p-1 hover:bg-slate-100 text-slate-500 hover:text-slate-700 rounded disabled:opacity-20 transition-all"
-                              title="Pindahkan ke atas"
-                            >
-                              <i className="ph-bold ph-arrow-up text-base" />
-                            </button>
-                            <button
-                              type="button"
-                              disabled={globalIndex === filteredItems.length - 1}
-                              onClick={() => handleMove(globalIndex, 'down')}
-                              className="p-1 hover:bg-slate-100 text-slate-500 hover:text-slate-700 rounded disabled:opacity-20 transition-all"
-                              title="Pindahkan ke bawah"
-                            >
-                              <i className="ph-bold ph-arrow-down text-base" />
-                            </button>
-                          </div>
-                        </td>
+                        {currentTab !== 'trash' && (
+                          <td className="p-4">
+                            <div className="flex items-center gap-3">
+                              <button
+                                type="button"
+                                disabled={globalIndex === 0}
+                                onClick={() => handleMove(globalIndex, 'up')}
+                                className="p-1 hover:bg-slate-100 text-slate-500 hover:text-slate-700 rounded disabled:opacity-20 transition-all"
+                                title="Pindahkan ke atas"
+                              >
+                                <i className="ph-bold ph-arrow-up text-base" />
+                              </button>
+                              <button
+                                type="button"
+                                disabled={globalIndex === filteredItems.length - 1}
+                                onClick={() => handleMove(globalIndex, 'down')}
+                                className="p-1 hover:bg-slate-100 text-slate-500 hover:text-slate-700 rounded disabled:opacity-20 transition-all"
+                                title="Pindahkan ke bawah"
+                              >
+                                <i className="ph-bold ph-arrow-down text-base" />
+                              </button>
+                            </div>
+                          </td>
+                        )}
                       <td className="p-4">
                         {currentTab === 'active' ? (
                           <button
@@ -663,6 +685,7 @@ export default function SlidersAdmin() {
                       const errs = validateForm()
                       setFormErrors(prev => ({ ...prev, title: errs.title }))
                     }}
+                    maxLength={200}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none transition-colors ${touched.title && formErrors.title ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-gray-300'}`}
                   />
                   {touched.title && formErrors.title && (
@@ -677,6 +700,7 @@ export default function SlidersAdmin() {
                     type="text"
                     value={formData.subtitle}
                     onChange={e => setFormData({ ...formData, subtitle: e.target.value })}
+                    maxLength={250}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none"
                   />
                 </div>
@@ -686,6 +710,7 @@ export default function SlidersAdmin() {
                     type="text"
                     value={formData.tag}
                     onChange={e => setFormData({ ...formData, tag: e.target.value })}
+                    maxLength={50}
                     placeholder="Misal: Webinar, Event"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none"
                   />
@@ -694,7 +719,13 @@ export default function SlidersAdmin() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Gambar Slider <span className="text-red-500">*</span></label>
                   <div className="flex items-center gap-3">
                     {formData.image_path && (
-                      <img src={resolveAssetUrl(formData.image_path)} alt="Slider Cover" className="w-32 h-16 rounded-lg object-cover border border-slate-200 shrink-0" />
+                      <img 
+                        src={resolveAssetUrl(formData.image_path)} 
+                        alt="Slider Cover" 
+                        onClick={() => setPreviewImage(resolveAssetUrl(formData.image_path))}
+                        className="w-32 h-16 rounded-lg object-cover border border-slate-200 shrink-0 cursor-pointer hover:opacity-80 transition-opacity" 
+                        title="Klik untuk memperbesar"
+                      />
                     )}
                     <label className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 text-sm font-semibold cursor-pointer transition shrink-0">
                       <i className="ph-bold ph-upload-simple" />
@@ -734,6 +765,7 @@ export default function SlidersAdmin() {
                     type="text"
                     value={formData.event_date}
                     onChange={e => setFormData({ ...formData, event_date: e.target.value })}
+                    maxLength={100}
                     placeholder="20 Okt 2024"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none"
                   />
@@ -744,20 +776,30 @@ export default function SlidersAdmin() {
                     type="text"
                     value={formData.location}
                     onChange={e => setFormData({ ...formData, location: e.target.value })}
+                    maxLength={200}
                     placeholder="Jakarta"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-brand-500 focus:border-brand-500 text-sm outline-none"
                   />
                 </div>
-                <div className="md:col-span-2 flex gap-6">
-                  <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
-                    <input
-                      type="checkbox"
-                      checked={formData.is_new}
-                      onChange={e => setFormData({ ...formData, is_new: e.target.checked })}
-                      className="rounded border-gray-300 text-brand-600 focus:ring-brand-500 accent-brand-600 cursor-pointer"
-                    />
-                    <span className="text-sm">Tandai sebagai BARU (badge NEW)</span>
-                  </label>
+                <div className="md:col-span-2">
+                  <div className="mt-6 p-4 bg-slate-50 border border-slate-100 rounded-xl space-y-4">
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.is_new}
+                        onChange={e => setFormData({ ...formData, is_new: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
+                      <span className="ml-3 text-sm font-medium text-gray-700">Tandai sebagai "TERBARU"</span>
+                    </label>
+                    <p className="text-xs text-gray-500 leading-relaxed flex gap-1.5 items-start">
+                      <i className="ph-fill ph-info text-blue-500 text-sm shrink-0 mt-0.5" />
+                      Tanda "TERBARU" akan otomatis hilang setelah 7 hari. Jika sudah hilang, Anda bisa memunculkannya kembali dengan mencentang kotak ini lalu klik Simpan.
+                    </p>
+                  </div>
+                </div>
+                <div className="md:col-span-2">
                   <label className="flex items-center gap-2 cursor-pointer font-medium text-gray-700">
                     <input
                       type="checkbox"
@@ -792,6 +834,27 @@ export default function SlidersAdmin() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* LIGHTBOX PREVIEW */}
+      {previewImage && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm transition-opacity animate-fade-in-up" onClick={() => setPreviewImage(null)}>
+          <div className="relative max-w-5xl w-full max-h-[90vh] flex justify-center items-center">
+            <button 
+              onClick={() => setPreviewImage(null)}
+              className="absolute -top-10 right-0 text-white hover:text-gray-300 p-2 bg-black/50 rounded-full transition-colors"
+              title="Tutup"
+            >
+              <i className="ph-bold ph-x text-xl" />
+            </button>
+            <img 
+              src={previewImage} 
+              alt="Preview" 
+              className="max-w-full max-h-[85vh] rounded-xl shadow-2xl object-contain border border-white/10" 
+              onClick={e => e.stopPropagation()} // Prevent closing when clicking the image itself
+            />
           </div>
         </div>
       )}

@@ -239,7 +239,7 @@ func (s *slidersService) BulkRestore(ctx context.Context, ids []uint) error {
 
 func (s *slidersService) UploadImage(ctx context.Context, fileHeader *multipart.FileHeader) (*dto.UploadImageResponse, error) {
 	// Pastikan direktori upload ada
-	uploadPath := "public/uploads/sliders"
+	uploadPath := "public/uploads/img/slider"
 	if err := os.MkdirAll(uploadPath, 0755); err != nil {
 		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal membuat direktori upload sliders.", err)
 	}
@@ -267,6 +267,6 @@ func (s *slidersService) UploadImage(ctx context.Context, fileHeader *multipart.
 		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal menulis file", err)
 	}
 
-	imagePath := "/uploads/sliders/" + filename
+	imagePath := "/uploads/img/slider/" + filename
 	return &dto.UploadImageResponse{ImagePath: imagePath}, nil
 }

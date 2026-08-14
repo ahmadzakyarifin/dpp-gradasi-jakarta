@@ -129,6 +129,12 @@ func EntityToResponse(e *entity.Slider) dto.SliderResponse {
 	if e.Location != nil {
 		r.Location = *e.Location
 	}
+	// Always map updated_at (it's not a pointer, but we format it)
+	r.UpdatedAt = e.UpdatedAt.Format(time.RFC3339)
+
+	if e.DeletedAt != nil {
+		r.DeletedAt = e.DeletedAt.Format(time.RFC3339)
+	}
 	return r
 }
 
