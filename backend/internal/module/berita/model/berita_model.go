@@ -36,7 +36,7 @@ func (Berita) TableName() string {
 type BeritaTag struct {
 	ID       uint   `gorm:"primaryKey;autoIncrement"`
 	BeritaID uint   `gorm:"not null;index"`
-	Tag      string `gorm:"size:100;not null"`
+	Tag      string `gorm:"size:200;not null"`
 }
 
 func (BeritaTag) TableName() string {

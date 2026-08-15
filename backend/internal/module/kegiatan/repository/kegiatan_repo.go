@@ -173,7 +173,12 @@ func (r *kegiatanRepo) FindByID(id uint) (*entity.Kegiatan, error) {
 }
 
 func (r *kegiatanRepo) Create(k *entity.Kegiatan) error {
-	return r.db.Create(mapper.EntityToModel(k)).Error
+	m := mapper.EntityToModel(k)
+	if err := r.db.Create(m).Error; err != nil {
+		return err
+	}
+	k.ID = m.ID
+	return nil
 }
 
 func (r *kegiatanRepo) Update(k *entity.Kegiatan) error {

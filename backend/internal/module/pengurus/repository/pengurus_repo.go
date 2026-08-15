@@ -115,7 +115,12 @@ func (r *pengurusRepo) FindByID(id uint) (*entity.Pengurus, error) {
 }
 
 func (r *pengurusRepo) Create(pengurus *entity.Pengurus) error {
-	return r.db.Create(mapper.EntityToModel(pengurus)).Error
+	m := mapper.EntityToModel(pengurus)
+	if err := r.db.Create(m).Error; err != nil {
+		return err
+	}
+	pengurus.ID = m.ID
+	return nil
 }
 
 func (r *pengurusRepo) Update(pengurus *entity.Pengurus) error {

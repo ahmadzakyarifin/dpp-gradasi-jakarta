@@ -112,27 +112,27 @@ export default function KegiatanDetail() {
                 <span className="inline-flex items-center gap-1.5 bg-brand-50 text-brand-700 text-[11px] font-bold px-3.5 py-1.5 rounded-full border border-brand-100/80 uppercase tracking-wider">
                   <i className="ph-bold ph-calendar-blank" /> {kegiatan.category || 'Kegiatan'}
                 </span>
-                <span className="inline-flex items-center gap-1.5 text-slate-400 text-xs font-medium">
-                  <i className="ph-bold ph-calendar" /> {kegiatan.event_date}
+                <span className="flex items-start gap-1.5 text-slate-400 text-xs font-medium max-w-full">
+                  <i className="ph-bold ph-calendar shrink-0 mt-0.5" /> <span className="break-all">{kegiatan.event_date}</span>
                 </span>
-                <span className="inline-flex items-center gap-1.5 text-slate-400 text-xs font-medium">
-                  <i className="ph-bold ph-map-pin" /> {kegiatan.location}
+                <span className="flex items-start gap-1.5 text-slate-400 text-xs font-medium max-w-full">
+                  <i className="ph-bold ph-map-pin shrink-0 mt-0.5" /> <span className="break-all">{kegiatan.location}</span>
                 </span>
-                <span className="inline-flex items-center gap-1.5 text-slate-400 text-xs font-medium">
-                  <i className="ph-bold ph-buildings" /> Penyelenggara: {kegiatan.organizer}
+                <span className="flex items-start gap-1.5 text-slate-400 text-xs font-medium max-w-full">
+                  <i className="ph-bold ph-buildings shrink-0 mt-0.5" /> <span className="break-all">Penyelenggara: {kegiatan.organizer}</span>
                 </span>
                 {kegiatan.author_name && (
-                  <span className="inline-flex items-center gap-1.5 text-slate-400 text-xs font-medium">
-                    <i className="ph-bold ph-user" /> Penulis: {kegiatan.author_name}
+                  <span className="flex items-start gap-1.5 text-slate-400 text-xs font-medium max-w-full">
+                    <i className="ph-bold ph-user shrink-0 mt-0.5" /> <span className="break-all">Penulis: {kegiatan.author_name}</span>
                   </span>
                 )}
               </div>
 
-              <h1 className="font-heading text-3xl md:text-4xl lg:text-[2.75rem] font-extrabold text-slate-900 leading-tight tracking-tight mb-6 break-words flex flex-wrap items-center gap-3">
-                <span>{kegiatan.title}</span>
+              <h1 className="font-heading text-3xl md:text-4xl lg:text-[2.75rem] font-extrabold text-slate-900 leading-tight tracking-tight mb-6 flex flex-wrap items-center gap-3">
+                <span className="min-w-0 break-all">{kegiatan.title}</span>
                 {isActuallyNew(kegiatan) && (
-                  <span className="bg-amber-100 text-amber-700 text-[14px] font-bold px-2 py-1 rounded-md uppercase tracking-wider translate-y-[-2px]">
-                    Terbaru
+                  <span className="bg-red-500 text-white text-[12px] font-extrabold px-3 py-1.5 rounded animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)] flex items-center gap-1.5 shrink-0 translate-y-[-2px] uppercase tracking-wider">
+                    <i className="ph-fill ph-fire" /> TERBARU
                   </span>
                 )}
               </h1>
@@ -154,13 +154,13 @@ export default function KegiatanDetail() {
               <div className="flex flex-col lg:flex-row gap-10">
                 <article className="w-full lg:w-2/3 min-w-0 space-y-8">
                   {kegiatan.excerpt && (
-                    <p className="text-slate-500 font-medium italic border-l-4 border-brand-500 pl-4 py-1 text-lg break-words">
+                    <p className="text-slate-500 font-medium italic border-l-4 border-brand-500 pl-4 py-1 text-lg [word-break:break-word]">
                       {kegiatan.excerpt}
                     </p>
                   )}
 
                   <div
-                    className="prose max-w-none text-slate-700 leading-relaxed break-words whitespace-pre-line"
+                    className="prose max-w-none text-slate-700 leading-relaxed [word-break:break-word] whitespace-pre-line"
                     dangerouslySetInnerHTML={{ __html: kegiatan.content }}
                   />
 
@@ -275,8 +275,8 @@ export default function KegiatanDetail() {
                   {kegiatan.tags && kegiatan.tags.length > 0 && (
                     <div className="mt-8 flex flex-wrap gap-2">
                       {kegiatan.tags.map((tag) => (
-                        <span key={tag} className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full hover:bg-brand-50 hover:text-brand-600 transition cursor-pointer">
-                          <i className="ph-bold ph-hash text-[10px]" /> {tag}
+                        <span key={tag} className="inline-flex items-start gap-1 text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-2xl hover:bg-brand-50 hover:text-brand-600 transition cursor-pointer max-w-full">
+                          <i className="ph-bold ph-hash text-[10px] shrink-0 mt-1" /> <span className="break-all whitespace-normal leading-relaxed">{tag}</span>
                         </span>
                       ))}
                     </div>

@@ -23,6 +23,13 @@ export const userService = {
     })
   },
 
+  update(id, payload) {
+    return apiRequest(`/admin/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
+  },
+
   setStatus(id, status) {
     return apiRequest(`/admin/users/${id}/status`, {
       method: 'PUT',

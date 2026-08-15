@@ -20,8 +20,10 @@ export default function UsersAdmin() {
   // Selection
   const [selectedIds, setSelectedIds] = useState([])
 
-  // Modal Form (Create) — hanya 2 role: super_admin (1) & admin (2)
+  // Modal Form (Create / Edit) — hanya 2 role: super_admin (1) & admin (2)
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [formMode, setFormMode] = useState('create') // 'create' or 'edit'
+  const [editId, setEditId] = useState(null)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -65,6 +67,8 @@ export default function UsersAdmin() {
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
       errors.email = 'Format email tidak valid.'
     }
+    if (data.name && data.name.trim().length > 150) errors.name = 'Nama maksimal 150 karakter.'
+    if (data.email && data.email.trim().length > 150) errors.email = 'Email maksimal 150 karakter.'
     if (!data.role_id) {
       errors.role_id = 'Role akses wajib dipilih.'
     }
@@ -179,7 +183,15 @@ export default function UsersAdmin() {
         email: formData.email,
         role: formData.role_id === '1' ? 'super_admin' : 'admin'
       }
-      await userService.create(payload)
+
+      if (formMode === 'create') {
+        await userService.create(payload)
+        showToast('Admin berhasil dibuat. Kredensial login dikirim ke email admin!', 'success')
+      } else {
+        await userService.update(editId, payload)
+        showToast('Data admin berhasil diperbarui!', 'success')
+      }
+
       setIsFormOpen(false)
       setFormData({ name: '', email: '', role_id: '2' })
       setTouched({})
@@ -400,6 +412,8 @@ export default function UsersAdmin() {
           {currentTab === 'active' && (
             <button
               onClick={() => {
+                setFormMode('create')
+                setEditId(null)
                 setFormData({ name: '', email: '', role_id: '2' })
                 setFormErrors({})
                 setTouched({})
@@ -548,6 +562,25 @@ export default function UsersAdmin() {
                                   <div className="flex gap-2">
                                     <button
                                       onClick={() => {
+                                        setFormMode('edit')
+                                        setEditId(item.id)
+                                        setFormData({
+                                          name: item.name,
+                                          email: item.email,
+                                          role_id: item.role === 'super_admin' ? '1' : '2'
+                                        })
+                                        setFormErrors({})
+                                        setTouched({})
+                                        resetFieldErrors()
+                                        setIsFormOpen(true)
+                                      }}
+                                      className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded"
+                                      title="Edit Admin"
+                                    >
+                                      <i className="ph ph-pencil-simple text-lg" />
+                                    </button>
+                                    <button
+                                      onClick={() => {
                                         setResetUserId(item.id)
                                         setResetUserName(item.name)
                                         setNewPassword('')
@@ -570,6 +603,25 @@ export default function UsersAdmin() {
                                 )}
                                 {currentTab === 'pending' && (
                                   <div className="flex gap-2">
+                                    <button
+                                      onClick={() => {
+                                        setFormMode('edit')
+                                        setEditId(item.id)
+                                        setFormData({
+                                          name: item.name,
+                                          email: item.email,
+                                          role_id: item.role === 'super_admin' ? '1' : '2'
+                                        })
+                                        setFormErrors({})
+                                        setTouched({})
+                                        resetFieldErrors()
+                                        setIsFormOpen(true)
+                                      }}
+                                      className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded"
+                                      title="Edit Admin"
+                                    >
+                                      <i className="ph ph-pencil-simple text-lg" />
+                                    </button>
                                     <button
                                       onClick={() => triggerConfirm('resend', item.id)}
                                       className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-brand-50 rounded"
@@ -646,20 +698,27 @@ export default function UsersAdmin() {
             </div>
           )}
         </div>
-      </div>      {/* FORM MODAL (Create) */}
+      </div>      {/* FORM MODAL (Create / Edit) */}
       {isFormOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setIsFormOpen(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden z-10 animate-scale-up">
             <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-              <h3 className="font-heading font-bold text-slate-900 text-lg">Tambah Admin Baru</h3>
+              <h3 className="font-heading font-bold text-slate-900 text-lg">
+                {formMode === 'create' ? 'Tambah Admin Baru' : 'Edit Admin'}
+              </h3>
               <button onClick={() => setIsFormOpen(false)} className="text-slate-400 hover:text-slate-600 p-1">
                 <i className="ph-bold ph-x text-lg" />
               </button>
             </div>
             <form onSubmit={handleFormSubmit} noValidate id="createAdminForm" className="p-6 overflow-y-auto max-h-[calc(90vh-120px)] space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1">Nama Lengkap <span className="text-red-500">*</span></label>
+                <label className="flex justify-between items-center text-xs font-semibold text-gray-500 mb-1">
+                  <span>Nama Lengkap <span className="text-red-500">*</span></span>
+                  <span className={(formData.name?.length || 0) > 150 ? 'text-red-500 text-xs' : 'text-slate-400 text-xs'}>
+                    {(formData.name?.length || 0)}/150
+                  </span>
+                </label>
                 <input
                   type="text"
                   value={formData.name}
@@ -676,6 +735,7 @@ export default function UsersAdmin() {
                     const errs = validateForm()
                     setFormErrors(prev => ({ ...prev, name: errs.name }))
                   }}
+                  maxLength={150}
                   className={`w-full px-3 py-2 border rounded-xl focus:ring-brand-500 focus:border-brand-500 text-sm outline-none transition-colors ${touched.name && formErrors.name ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-gray-300'}`}
                 />
                 {touched.name && formErrors.name && (
@@ -685,7 +745,12 @@ export default function UsersAdmin() {
                 )}
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1">Email <span className="text-red-500">*</span></label>
+                <label className="flex justify-between items-center text-xs font-semibold text-gray-500 mb-1">
+                  <span>Email <span className="text-red-500">*</span></span>
+                  <span className={(formData.email?.length || 0) > 150 ? 'text-red-500 text-xs' : 'text-slate-400 text-xs'}>
+                    {(formData.email?.length || 0)}/150
+                  </span>
+                </label>
                 <input
                   type="email"
                   value={formData.email}
@@ -702,6 +767,7 @@ export default function UsersAdmin() {
                     const errs = validateForm()
                     setFormErrors(prev => ({ ...prev, email: errs.email }))
                   }}
+                  maxLength={150}
                   className={`w-full px-3 py-2 border rounded-xl focus:ring-brand-500 focus:border-brand-500 text-sm outline-none transition-colors ${touched.email && formErrors.email ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-gray-300'}`}
                 />
                 {touched.email && formErrors.email && (
@@ -709,7 +775,9 @@ export default function UsersAdmin() {
                     <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.email}
                   </p>
                 )}
-                <p className="text-[10px] text-gray-400 mt-1">Kredensial login (email & password default) akan dikirim ke email ini.</p>
+                {formMode === 'create' && (
+                  <p className="text-[10px] text-gray-400 mt-1">Kredensial login (email & password default) akan dikirim ke email ini.</p>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 mb-1">Role Akses <span className="text-red-500">*</span></label>
@@ -753,7 +821,8 @@ export default function UsersAdmin() {
                   type="submit"
                   className="px-5 py-2 bg-brand-600 text-white rounded-xl text-sm font-semibold hover:bg-brand-700 transition-colors flex items-center gap-2"
                 >
-                  <i className="ph ph-paper-plane-right" /> Buat & Kirim Kredensial
+                  <i className={formMode === 'create' ? "ph ph-paper-plane-right" : "ph ph-floppy-disk"} /> 
+                  {formMode === 'create' ? 'Buat & Kirim Kredensial' : 'Simpan Perubahan'}
                 </button>
               </div>
             </form>

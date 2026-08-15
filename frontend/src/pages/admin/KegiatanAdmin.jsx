@@ -20,6 +20,14 @@ const getTodayDateString = () => {
   return `${day} ${month} ${year}`
 }
 
+const isActuallyNew = (item) => {
+  if (!item || !item.is_new || !item.updated_at) return false
+  const updateTime = new Date(item.updated_at).getTime()
+  const now = new Date().getTime()
+  const diffDays = (now - updateTime) / (1000 * 60 * 60 * 24)
+  return diffDays <= 7
+}
+
 export default function KegiatanAdmin() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(false)
@@ -105,11 +113,19 @@ export default function KegiatanAdmin() {
       errors.title = 'Judul kegiatan wajib diisi.'
     } else if (data.title.trim().length < 5) {
       errors.title = 'Judul minimal 5 karakter.'
-    } else if (data.title.trim().length > 300) {
-      errors.title = 'Judul maksimal 300 karakter.'
+    } else if (data.title.trim().length > 250) {
+      errors.title = 'Judul maksimal 250 karakter.'
     }
     if (!data.eventDate || !data.eventDate.trim()) {
       errors.eventDate = 'Tanggal event wajib diisi.'
+    } else if (data.eventDate.trim().length > 200) {
+      errors.eventDate = 'Tanggal event maksimal 200 karakter.'
+    }
+    if (data.location && data.location.trim().length > 200) {
+      errors.location = 'Lokasi maksimal 200 karakter.'
+    }
+    if (data.organizer && data.organizer.trim().length > 200) {
+      errors.organizer = 'Penyelenggara maksimal 200 karakter.'
     }
     if (!data.content || !data.content.trim()) {
       errors.content = 'Konten lengkap wajib diisi.'
@@ -123,8 +139,10 @@ export default function KegiatanAdmin() {
     if (data.excerpt && data.excerpt.trim().length > 500) {
       errors.excerpt = 'Ringkasan maksimal 500 karakter.'
     }
-    if (data.tags && data.tags.trim().length > 200) {
-      errors.tags = 'Tags maksimal 200 karakter.'
+    if (data.tags && data.tags.trim()) {
+      if (data.tags.trim().length > 200) {
+        errors.tags = 'Tags maksimal 200 karakter keseluruhan.'
+      }
     }
     return errors
   }, [formData])
@@ -205,7 +223,7 @@ export default function KegiatanAdmin() {
         footnote: item.footnote || '',
         imageSource: item.image_source || '',
         isPublished: item.is_published !== false,
-        isNew: item.is_new || false
+        isNew: item.is_new && isActuallyNew(item)
       })
       // list_admin tidak menyertakan content/tags/gallery — ambil detail penuh dulu
       kegiatanService.detailById(item.id)
@@ -224,7 +242,7 @@ export default function KegiatanAdmin() {
               tags: Array.isArray(d.tags) ? d.tags.join(', ') : (d.tags ?? prev.tags),
               footnote: d.footnote ?? prev.footnote,
               imageSource: d.image_source ?? prev.imageSource,
-              isNew: d.is_new ?? prev.isNew
+              isNew: d.is_new && isActuallyNew(d)
             }))
             setCategorySearch(d.category ?? item.category ?? '')
             // Isi galeri dari detail (id sudah ada → bisa dihapus per item via API)
@@ -678,19 +696,17 @@ export default function KegiatanAdmin() {
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         <img src={resolveAssetUrl(item.image_url)} alt="" className="w-16 h-12 rounded-lg object-cover border border-slate-200 shrink-0 previewable-image" />
-                        <div>
-                          <p className="font-bold text-slate-900 line-clamp-1">{item.title}</p>
-                          {item.is_new && (
-                            <span className="inline-block mt-1 bg-amber-100 text-amber-700 text-[9px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wide">
-                              Terbaru
-                            </span>
+                        <div className="min-w-0">
+                          <p className="font-bold text-slate-900 truncate max-w-[500px] xl:max-w-[750px]" title={item.title}>{item.title}</p>
+                          {item.is_new && isActuallyNew(item) && (
+                            <span className="inline-block mt-1 bg-brand-50 text-brand-600 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">TERBARU</span>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="p-4 text-slate-500 text-xs">
-                      <p className="font-semibold text-slate-700">{item.event_date}</p>
-                      <p>{item.location}</p>
+                    <td className="p-4 text-slate-500 text-xs min-w-0">
+                      <p className="font-semibold text-slate-700 truncate max-w-[300px] xl:max-w-[450px]" title={item.event_date}>{item.event_date}</p>
+                      <p className="truncate max-w-[300px] xl:max-w-[450px]" title={item.location}>{item.location}</p>
                     </td>
                     <td className="p-4">
                       <span className="bg-brand-50 text-brand-700 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase">
@@ -799,8 +815,8 @@ export default function KegiatanAdmin() {
                   <div>
                     <label className="flex justify-between items-center text-xs font-semibold text-slate-500 mb-1">
                       <span>Judul Kegiatan <span className="text-red-500">*</span></span>
-                      <span className={formData.title.length > 300 ? 'text-red-500' : 'text-slate-400'}>
-                        {formData.title.length}/300
+                      <span className={formData.title.length > 250 ? 'text-red-500' : 'text-slate-400'}>
+                        {formData.title.length}/250
                       </span>
                     </label>
                     <input
@@ -819,6 +835,7 @@ export default function KegiatanAdmin() {
                         const errs = validateForm()
                         setFormErrors(prev => ({ ...prev, title: errs.title }))
                       }}
+                      maxLength={250}
                       className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors ${touched.title && formErrors.title ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
                     />
                     {touched.title && formErrors.title && (
@@ -855,6 +872,7 @@ export default function KegiatanAdmin() {
                                     <input
                                       type="text"
                                       autoFocus
+                                      maxLength={100}
                                       value={editCategoryName}
                                       onChange={e => setEditCategoryName(e.target.value)}
                                       className="flex-1 min-w-0 px-2 py-1.5 border border-brand-300 rounded text-sm outline-none focus:ring-1 focus:ring-brand-500"
@@ -943,6 +961,7 @@ export default function KegiatanAdmin() {
                                 <input
                                   type="text"
                                   autoFocus
+                                  maxLength={100}
                                   value={newCategoryName}
                                   onChange={e => setNewCategoryName(e.target.value)}
                                   placeholder="Kategori baru..."
@@ -987,7 +1006,12 @@ export default function KegiatanAdmin() {
                     </div>
 
                     <div className="col-span-2 sm:col-span-1">
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Tanggal Event <span className="text-red-500">*</span></label>
+                      <label className="flex justify-between items-center text-xs font-semibold text-slate-500 mb-1">
+                        <span>Tanggal Event <span className="text-red-500">*</span></span>
+                        <span className={(formData.eventDate?.length || 0) > 200 ? 'text-red-500' : 'text-slate-400'}>
+                          {(formData.eventDate?.length || 0)}/200
+                        </span>
+                      </label>
                       <input
                         type="text"
                         value={formData.eventDate}
@@ -1005,6 +1029,7 @@ export default function KegiatanAdmin() {
                           const errs = validateForm()
                           setFormErrors(prev => ({ ...prev, eventDate: errs.eventDate }))
                         }}
+                        maxLength={200}
                         className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors ${touched.eventDate && formErrors.eventDate ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
                       />
                       {touched.eventDate && formErrors.eventDate && (
@@ -1015,8 +1040,37 @@ export default function KegiatanAdmin() {
                     </div>
 
                     <div className="col-span-2">
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Lokasi <span className="text-gray-400 font-normal">(opsional)</span></label>
-                      <input type="text" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} placeholder="Jakarta" className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
+                      <label className="flex justify-between items-center text-xs font-semibold text-slate-500 mb-1">
+                        <span>Lokasi <span className="text-gray-400 font-normal">(opsional)</span></span>
+                        <span className={(formData.location?.length || 0) > 200 ? 'text-red-500' : 'text-slate-400'}>
+                          {(formData.location?.length || 0)}/200
+                        </span>
+                      </label>
+                      <input 
+                        type="text" 
+                        value={formData.location} 
+                        onChange={e => {
+                          setFormData({ ...formData, location: e.target.value })
+                          clearFieldError('location')
+                          if (touched.location) {
+                            const errs = validateForm({ ...formData, location: e.target.value })
+                            setFormErrors(prev => ({ ...prev, location: errs.location }))
+                          }
+                        }}
+                        onBlur={() => {
+                          setTouched(prev => ({ ...prev, location: true }))
+                          const errs = validateForm()
+                          setFormErrors(prev => ({ ...prev, location: errs.location }))
+                        }}
+                        maxLength={200}
+                        placeholder="Jakarta" 
+                        className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors ${touched.location && formErrors.location ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`} 
+                      />
+                      {touched.location && formErrors.location && (
+                        <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
+                          <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.location}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -1088,7 +1142,31 @@ export default function KegiatanAdmin() {
                         {(formData.tags || '').length}/200
                       </span>
                     </label>
-                    <input type="text" value={formData.tags || ''} onChange={e => setFormData({ ...formData, tags: e.target.value })} placeholder="kegiatan, pemuda, digital" className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
+                    <input 
+                      type="text" 
+                      value={formData.tags || ''} 
+                      onChange={e => {
+                        setFormData({ ...formData, tags: e.target.value })
+                        clearFieldError('tags')
+                        if (touched.tags) {
+                          const errs = validateForm({ ...formData, tags: e.target.value })
+                          setFormErrors(prev => ({ ...prev, tags: errs.tags }))
+                        }
+                      }}
+                      onBlur={() => {
+                        setTouched(prev => ({ ...prev, tags: true }))
+                        const errs = validateForm()
+                        setFormErrors(prev => ({ ...prev, tags: errs.tags }))
+                      }}
+                      maxLength={200}
+                      placeholder="kegiatan, pemuda, digital" 
+                      className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors ${touched.tags && formErrors.tags ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`} 
+                    />
+                    {touched.tags && formErrors.tags && (
+                      <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
+                        <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.tags}
+                      </p>
+                    )}
                   </div>
 
                   {/* Galeri Gambar Kegiatan */}
@@ -1173,7 +1251,7 @@ export default function KegiatanAdmin() {
                         {(formData.excerpt || '').length}/500
                       </span>
                     </label>
-                    <textarea rows={3} value={formData.excerpt} onChange={e => { setFormData({ ...formData, excerpt: e.target.value }); clearFieldError('excerpt') }} className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors overflow-y-auto resize-y min-h-[80px]" />
+                    <textarea rows={3} maxLength={500} value={formData.excerpt} onChange={e => { setFormData({ ...formData, excerpt: e.target.value }); clearFieldError('excerpt') }} className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors overflow-y-auto resize-y min-h-[80px]" />
                   </div>
 
                   <div>
@@ -1183,7 +1261,31 @@ export default function KegiatanAdmin() {
                         {(formData.footnote || '').length}/500
                       </span>
                     </label>
-                    <input type="text" value={formData.footnote} onChange={e => setFormData({ ...formData, footnote: e.target.value })} placeholder="Contoh: Panitia Munas, Humas DPD, dll." className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
+                    <input 
+                      type="text" 
+                      value={formData.footnote || ''} 
+                      onChange={e => {
+                        setFormData({ ...formData, footnote: e.target.value })
+                        clearFieldError('footnote')
+                        if (touched.footnote) {
+                          const errs = validateForm({ ...formData, footnote: e.target.value })
+                          setFormErrors(prev => ({ ...prev, footnote: errs.footnote }))
+                        }
+                      }}
+                      onBlur={() => {
+                        setTouched(prev => ({ ...prev, footnote: true }))
+                        const errs = validateForm()
+                        setFormErrors(prev => ({ ...prev, footnote: errs.footnote }))
+                      }}
+                      maxLength={500}
+                      placeholder="Contoh: Panitia Munas, Humas DPD, dll." 
+                      className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors ${touched.footnote && formErrors.footnote ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`} 
+                    />
+                    {touched.footnote && formErrors.footnote && (
+                      <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
+                        <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.footnote}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -1257,105 +1359,159 @@ export default function KegiatanAdmin() {
       {/* DETAIL MODAL (read-only) */}
       {isDetailOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setIsDetailOpen(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden z-10">
-            <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
-              <h3 className="font-heading font-bold text-slate-900 text-lg">Detail Kegiatan</h3>
-              <button onClick={() => setIsDetailOpen(false)} className="text-slate-400 hover:text-slate-600 p-1">
-                <i className="ph-bold ph-x text-lg" />
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={() => setIsDetailOpen(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden z-10 animate-fade-in-up border border-slate-100">
+            
+            {/* Header (Sticky) */}
+            <div className="border-b border-slate-100 px-6 py-4 flex items-center justify-between shrink-0 bg-white z-20">
+              <h3 className="font-heading font-bold text-slate-800 text-lg flex items-center gap-2">
+                <i className="ph-fill ph-calendar-star text-brand-500 text-xl" />
+                Detail Kegiatan
+              </h3>
+              <button onClick={() => setIsDetailOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors">
+                <i className="ph-bold ph-x" />
               </button>
             </div>
-            <div className="p-6 overflow-y-auto">
+            
+            {/* Scrollable Content */}
+            <div className="overflow-y-auto flex-1 relative bg-slate-50/30">
               {detailLoading ? (
-                <div className="py-16 text-center text-slate-500">Memuat detail...</div>
+                <div className="py-24 flex flex-col items-center justify-center text-slate-400 gap-3">
+                   <i className="ph-bold ph-circle-notch animate-spin text-3xl text-brand-500" />
+                   <span className="text-sm font-medium">Memuat data kegiatan...</span>
+                </div>
               ) : detailData ? (
-                <div className="space-y-4">
+                <div className="p-6 space-y-6">
+                  
+                  {/* Image Section */}
                   {(detailData.image_url || detailData.image_path) && (
-                    <div>
-                      <img src={resolveAssetUrl(detailData.image_url || detailData.image_path)} alt="" className="w-full h-48 object-cover rounded-xl border border-slate-200" />
+                    <div className="relative rounded-xl overflow-hidden shadow-sm group bg-slate-100">
+                      <img src={resolveAssetUrl(detailData.image_url || detailData.image_path)} alt={detailData.title} className="w-full aspect-[21/9] object-cover group-hover:scale-105 transition-transform duration-700" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-90" />
                       {detailData.image_source && (
-                        <p className="text-[10px] text-slate-400 mt-1.5 text-right italic font-medium">{detailData.image_source}</p>
+                        <p className="absolute bottom-3 right-4 text-[10px] text-white/90 italic font-medium drop-shadow-md">
+                          <i className="ph-fill ph-camera mr-1" /> {detailData.image_source}
+                        </p>
                       )}
                     </div>
                   )}
-                  <div>
-                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Judul</span>
-                    <p className="font-bold text-slate-900 text-lg leading-snug">{detailData.title}</p>
+
+                  {/* Header Title & Meta */}
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      <span className="px-2.5 py-1 bg-brand-50 text-brand-700 text-[10px] font-bold uppercase tracking-wider rounded-md border border-brand-100">
+                        {detailData.category || 'Kegiatan'}
+                      </span>
+                      {detailData.is_published ? (
+                        <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider rounded-md border border-emerald-100">
+                          Published
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-1 bg-amber-50 text-amber-700 text-[10px] font-bold uppercase tracking-wider rounded-md border border-amber-100">
+                          Draft
+                        </span>
+                      )}
+                    </div>
+                    
+                    <h1 className="font-heading font-black text-slate-900 text-2xl md:text-3xl leading-snug break-all">
+                      {detailData.title}
+                    </h1>
+
+                    <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-500 pt-2">
+                      <div className="flex items-center gap-1.5 min-w-0" title="Tanggal Event">
+                        <i className="ph-fill ph-calendar-blank text-slate-400 text-sm shrink-0" />
+                        <span className="break-all">{detailData.event_date || '-'}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 min-w-0" title="Lokasi">
+                        <i className="ph-fill ph-map-pin text-slate-400 text-sm shrink-0" />
+                        <span className="break-all">{detailData.location || '-'}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 min-w-0" title="Penulis">
+                        <i className="ph-fill ph-user text-slate-400 text-sm shrink-0" />
+                        <span className="break-all">{detailData.author_name || 'Admin'}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5" title="Dilihat">
+                        <i className="ph-fill ph-eye text-slate-400 text-sm" />
+                        {detailData.views ?? 0} kali
+                      </div>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Kategori</span>
-                      <p className="text-slate-700 text-sm">{detailData.category || '-'}</p>
-                    </div>
-                    <div>
-                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Tanggal Event</span>
-                      <p className="text-slate-700 text-sm">{detailData.event_date || '-'}</p>
-                    </div>
-                    <div>
-                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Lokasi</span>
-                      <p className="text-slate-700 text-sm">{detailData.location || '-'}</p>
-                    </div>
-                    <div>
-                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Penyelenggara</span>
-                      <p className="text-slate-700 text-sm">{detailData.organizer || '-'}</p>
-                    </div>
-                    <div>
-                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Penulis</span>
-                      <p className="text-slate-700 text-sm">{detailData.author_name || 'Admin'}</p>
-                    </div>
-                    <div>
-                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Dilihat</span>
-                      <p className="text-slate-700 text-sm">{detailData.views ?? 0} kali</p>
-                    </div>
-                  </div>
+
+                  {/* Ringkasan */}
                   {detailData.excerpt && (
-                    <div>
-                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Ringkasan</span>
-                      <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-line">{detailData.excerpt}</p>
+                    <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-sm relative overflow-hidden">
+                      <div className="absolute top-0 left-0 w-1 h-full bg-brand-500" />
+                      <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Ringkasan</h4>
+                      <p className="text-slate-700 text-sm leading-relaxed italic break-all">"{detailData.excerpt}"</p>
                     </div>
                   )}
-                  <div>
-                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Konten Lengkap</span>
-                    <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-line break-words">{detailData.content || '-'}</p>
+
+                  {/* Main Content */}
+                  <div className="bg-white p-5 sm:p-6 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">Konten Lengkap</h4>
+                    <div className="text-slate-700 text-sm leading-loose whitespace-pre-line break-all text-justify">
+                      {detailData.content || '-'}
+                    </div>
                   </div>
-                  {detailData.footnote && (
-                    <div>
-                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Sumber / Footnote</span>
-                      <p className="text-slate-700 text-sm italic">{detailData.footnote}</p>
+
+                  {/* Penyelenggara, Tags & Footnote */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <div className="min-w-0">
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Penyelenggara</span>
+                      <p className="text-slate-700 text-sm font-semibold break-all">{detailData.organizer || '-'}</p>
                     </div>
-                  )}
+                    {detailData.footnote && (
+                      <div className="min-w-0">
+                        <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Sumber / Footnote</span>
+                        <p className="text-slate-700 text-sm italic break-all">{detailData.footnote}</p>
+                      </div>
+                    )}
+                    {Array.isArray(detailData.tags) && detailData.tags.length > 0 && (
+                      <div className="col-span-1 sm:col-span-2 mt-2">
+                        <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Tags</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {detailData.tags.map(tag => (
+                            <span key={tag} className="bg-slate-100 text-slate-600 text-[11px] font-semibold px-2.5 py-1 rounded-md border border-slate-200 break-all">{tag}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Gallery */}
                   {Array.isArray(detailData.gallery) && detailData.gallery.length > 0 && (
-                    <div>
-                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Galeri Foto</span>
-                      <div className="grid grid-cols-3 gap-2 mt-1.5">
-                        {detailData.gallery.map(g => (
-                          <img key={g.id} src={resolveAssetUrl(g.image_path)} alt={g.caption || ''} className="w-full h-20 object-cover rounded-lg border border-slate-200" />
+                    <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                      <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">Galeri Foto ({detailData.gallery.length})</h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {detailData.gallery.map((g, idx) => (
+                          <div key={g.id || idx} className="group relative rounded-lg overflow-hidden border border-slate-200 aspect-square shadow-sm bg-slate-50">
+                            <img src={resolveAssetUrl(g.image_path)} alt={g.caption || `Galeri ${idx+1}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                            {g.caption && (
+                              <div className="absolute inset-x-0 bottom-0 p-2.5 bg-gradient-to-t from-slate-900/90 to-transparent">
+                                <p className="text-[10px] text-white/90 font-medium truncate">{g.caption}</p>
+                              </div>
+                            )}
+                          </div>
                         ))}
                       </div>
                     </div>
                   )}
-                  {Array.isArray(detailData.tags) && detailData.tags.length > 0 && (
-                    <div>
-                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Tags</span>
-                      <div className="flex flex-wrap gap-1.5 mt-1">
-                        {detailData.tags.map(tag => (
-                          <span key={tag} className="bg-slate-100 text-slate-600 text-[11px] font-semibold px-2.5 py-1 rounded-full">{tag}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  <div>
-                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Status</span>
-                    <p className="text-slate-700 text-sm">
-                      {detailData.is_published ? 'Terbit' : 'Draft'}
-                      {detailData.is_new && <span className="ml-2 bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-wide">Terbaru</span>}
-                    </p>
-                  </div>
+
+                  {/* Safe padding bottom for absolute certainty */}
+                  <div className="h-2"></div>
                 </div>
               ) : (
-                <div className="py-16 text-center text-slate-500">Data tidak ditemukan.</div>
+                <div className="py-16 text-center text-slate-500">Data tidak ditemukan</div>
               )}
             </div>
+
+            {/* Sticky Footer */}
+            <div className="border-t border-slate-200 px-6 py-4 bg-slate-50 shrink-0 flex justify-end">
+              <button onClick={() => setIsDetailOpen(false)} className="px-5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors shadow-sm focus:ring-2 focus:ring-slate-200 outline-none">
+                Tutup Detail
+              </button>
+            </div>
+
           </div>
         </div>
       )}

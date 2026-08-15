@@ -81,8 +81,8 @@ export default function BeritaAdmin() {
       errors.title = 'Judul berita wajib diisi.'
     } else if (data.title.trim().length < 5) {
       errors.title = 'Judul minimal 5 karakter.'
-    } else if (data.title.trim().length > 300) {
-      errors.title = 'Judul maksimal 300 karakter.'
+    } else if (data.title.trim().length > 250) {
+      errors.title = 'Judul maksimal 250 karakter.'
     }
     if (!data.category || !data.category.trim()) {
       errors.category = 'Kategori wajib dipilih.'
@@ -92,6 +92,11 @@ export default function BeritaAdmin() {
     }
     if (!data.content || !data.content.trim()) {
       errors.content = 'Konten lengkap wajib diisi.'
+    }
+    if (data.tags && data.tags.trim()) {
+      if (data.tags.trim().length > 200) {
+        errors.tags = 'Tags maksimal 200 karakter keseluruhan.'
+      }
     }
     if (data.image_source && data.image_source.trim().length > 150) {
       errors.image_source = 'Keterangan foto maksimal 150 karakter.'
@@ -601,8 +606,8 @@ export default function BeritaAdmin() {
                             <i className="ph ph-image text-base" />
                           </div>
                         )}
-                        <div>
-                          <span className="font-semibold text-slate-900 leading-snug line-clamp-1 max-w-[200px]" title={item.title}>
+                        <div className="min-w-0 flex flex-col items-start">
+                          <span className="font-semibold text-slate-900 truncate max-w-[500px] xl:max-w-[750px] block" title={item.title}>
                             {item.title}
                           </span>
                           {item.is_new && isActuallyNew(item) && (
@@ -728,12 +733,12 @@ export default function BeritaAdmin() {
                 {/* Left Column: Meta & Media */}
                 <div className="space-y-4">
                   <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <label className="block text-[11px] font-semibold text-slate-500">Judul Berita <span className="text-red-500">*</span></label>
-                      <span className={`text-[10px] font-semibold ${(formData.title || '').length >= 300 ? 'text-red-500' : 'text-slate-400'}`}>
-                        {(formData.title || '').length}/300
+                    <label className="flex justify-between items-center text-xs font-semibold text-slate-500 mb-1">
+                      <span>Judul Berita <span className="text-red-500">*</span></span>
+                      <span className={formData.title.length > 250 ? 'text-red-500' : 'text-slate-400'}>
+                        {formData.title.length}/250
                       </span>
-                    </div>
+                    </label>
                     <input
                       type="text"
                       value={formData.title}
@@ -751,7 +756,7 @@ export default function BeritaAdmin() {
                         setFormErrors(prev => ({ ...prev, title: errs.title }))
                       }}
                       placeholder="Masukkan judul berita..."
-                      maxLength={300}
+                      maxLength={250}
                       className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors ${touched.title && formErrors.title ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
                     />
                     {touched.title && formErrors.title && (
@@ -926,7 +931,12 @@ export default function BeritaAdmin() {
                       )}
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-500 mb-1">Tanggal Terbit <span className="text-red-500">*</span></label>
+                      <label className="flex justify-between items-center text-xs font-semibold text-slate-500 mb-1">
+                        <span>Tanggal Terbit <span className="text-red-500">*</span></span>
+                        <span className={(formData.published_date?.length || 0) > 200 ? 'text-red-500' : 'text-slate-400'}>
+                          {(formData.published_date?.length || 0)}/200
+                        </span>
+                      </label>
                       <input
                         type="text"
                         value={formData.published_date}
@@ -942,6 +952,7 @@ export default function BeritaAdmin() {
                           const errs = validateForm()
                           setFormErrors(prev => ({ ...prev, published_date: errs.published_date }))
                         }}
+                        maxLength={200}
                         placeholder="Contoh: 30 Desember 2026"
                         className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors ${touched.published_date && formErrors.published_date ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`}
                       />
@@ -1010,11 +1021,16 @@ export default function BeritaAdmin() {
                   <div>
                     <div className="flex justify-between items-center mb-1">
                       <label className="block text-[11px] font-semibold text-slate-500">Tags (pisahkan dengan koma) <span className="text-gray-400 font-normal">(opsional)</span></label>
-                      <span className={`text-[10px] font-semibold ${(formData.tags || '').length >= 255 ? 'text-red-500' : 'text-slate-400'}`}>
-                        {(formData.tags || '').length}/255
+                      <span className={`text-[10px] font-semibold ${(formData.tags || '').length > 200 ? 'text-red-500' : 'text-slate-400'}`}>
+                        {(formData.tags || '').length}/200
                       </span>
                     </div>
-                    <input type="text" maxLength={255} value={formData.tags} onChange={e => setFormData({ ...formData, tags: e.target.value })} placeholder="teknologi, pendidikan, digital" className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100 transition-colors" />
+                    <input type="text" maxLength={200} value={formData.tags} onChange={e => { setFormData({ ...formData, tags: e.target.value }); clearFieldError('tags') }} placeholder="teknologi, pendidikan, digital" className={`w-full px-3.5 py-2.5 border rounded-xl text-sm outline-none transition-colors ${formErrors.tags ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100'}`} />
+                    {formErrors.tags && (
+                      <p className="text-red-500 text-[11px] font-semibold mt-1.5 flex items-center gap-1">
+                        <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.tags}
+                      </p>
+                    )}
                   </div>
 
                   <div className="pt-2">
@@ -1120,80 +1136,137 @@ export default function BeritaAdmin() {
       {/* DETAIL MODAL (read-only) */}
       {isDetailOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => setIsDetailOpen(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden z-10">
-            <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
-              <h3 className="font-heading font-bold text-slate-900 text-lg">Detail Berita</h3>
-              <button onClick={() => setIsDetailOpen(false)} className="text-slate-400 hover:text-slate-600 p-1">
-                <i className="ph-bold ph-x text-lg" />
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={() => setIsDetailOpen(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden z-10 animate-fade-in-up border border-slate-100">
+            
+            {/* Header (Sticky) */}
+            <div className="border-b border-slate-100 px-6 py-4 flex items-center justify-between shrink-0 bg-white z-20">
+              <h3 className="font-heading font-bold text-slate-800 text-lg flex items-center gap-2">
+                <i className="ph-fill ph-newspaper text-brand-500 text-xl" />
+                Detail Berita
+              </h3>
+              <button onClick={() => setIsDetailOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors">
+                <i className="ph-bold ph-x" />
               </button>
             </div>
-            <div className="p-6 overflow-y-auto">
+            
+            {/* Scrollable Content */}
+            <div className="overflow-y-auto flex-1 relative bg-slate-50/30">
               {detailLoading ? (
-                <div className="py-16 text-center text-slate-500">Memuat detail...</div>
+                <div className="py-24 flex flex-col items-center justify-center text-slate-400 gap-3">
+                   <i className="ph-bold ph-circle-notch animate-spin text-3xl text-brand-500" />
+                   <span className="text-sm font-medium">Memuat data berita...</span>
+                </div>
               ) : detailData ? (
-                <div className="space-y-4">
+                <div className="p-6 space-y-6">
+                  
+                  {/* Image Section */}
                   {(detailData.image_url || detailData.image_path) && (
-                    <div>
-                      <img src={resolveAssetUrl(detailData.image_url || detailData.image_path)} alt="" className="w-full h-48 object-cover rounded-xl border border-slate-200" />
+                    <div className="relative rounded-xl overflow-hidden shadow-sm group bg-slate-100">
+                      <img src={resolveAssetUrl(detailData.image_url || detailData.image_path)} alt={detailData.title} className="w-full aspect-[21/9] object-cover group-hover:scale-105 transition-transform duration-700" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-90" />
                       {detailData.image_source && (
-                        <p className="text-[10px] text-slate-400 mt-1.5 text-right italic font-medium">{detailData.image_source}</p>
+                        <p className="absolute bottom-3 right-4 text-[10px] text-white/90 italic font-medium drop-shadow-md">
+                          <i className="ph-fill ph-camera mr-1" /> {detailData.image_source}
+                        </p>
                       )}
                     </div>
                   )}
-                  <div>
-                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Judul</span>
-                    <p className="font-bold text-slate-900 text-lg leading-snug">{detailData.title}</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Kategori</span>
-                      <p className="text-slate-700 text-sm">{detailData.category || '-'}</p>
+
+                  {/* Header Title & Meta */}
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      <span className="px-2.5 py-1 bg-brand-50 text-brand-700 text-[10px] font-bold uppercase tracking-wider rounded-md border border-brand-100">
+                        {detailData.category || 'Berita Organisasi'}
+                      </span>
+                      {detailData.is_published ? (
+                        <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider rounded-md border border-emerald-100">
+                          Published
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-1 bg-amber-50 text-amber-700 text-[10px] font-bold uppercase tracking-wider rounded-md border border-amber-100">
+                          Draft
+                        </span>
+                      )}
+                      {detailData.is_new && (
+                        <span className="px-2.5 py-1 bg-blue-50 text-blue-700 text-[10px] font-bold uppercase tracking-wider rounded-md border border-blue-100">
+                          Terbaru
+                        </span>
+                      )}
                     </div>
-                    <div>
-                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Tanggal Terbit</span>
-                      <p className="text-slate-700 text-sm">{detailData.published_date || '-'}</p>
-                    </div>
-                    <div>
-                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Penulis</span>
-                      <p className="text-slate-700 text-sm">{detailData.author_name || 'Admin'}</p>
-                    </div>
-                  </div>
-                  {detailData.excerpt && (
-                    <div>
-                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Ringkasan</span>
-                      <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-line">{detailData.excerpt}</p>
-                    </div>
-                  )}
-                  <div>
-                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Konten Lengkap</span>
-                    <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-line break-words">{detailData.content || '-'}</p>
-                  </div>
-                  {detailData.footnote && (
-                    <div>
-                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Sumber / Footnote</span>
-                      <p className="text-slate-700 text-sm italic">{detailData.footnote}</p>
-                    </div>
-                  )}
-                  {Array.isArray(detailData.tags) && detailData.tags.length > 0 && (
-                    <div>
-                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Tags</span>
-                      <div className="flex flex-wrap gap-1.5 mt-1">
-                        {detailData.tags.map(tag => (
-                          <span key={tag} className="bg-slate-100 text-slate-600 text-[11px] font-semibold px-2.5 py-1 rounded-full">{tag}</span>
-                        ))}
+                    
+                    <h1 className="font-heading font-black text-slate-900 text-2xl md:text-3xl leading-snug break-all">
+                      {detailData.title}
+                    </h1>
+
+                    <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-500 pt-2">
+                      <div className="flex items-center gap-1.5 min-w-0" title="Tanggal Terbit">
+                        <i className="ph-fill ph-calendar-blank text-slate-400 text-sm shrink-0" />
+                        <span className="break-all">{detailData.published_date || '-'}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 min-w-0" title="Penulis">
+                        <i className="ph-fill ph-user text-slate-400 text-sm shrink-0" />
+                        <span className="break-all">{detailData.author_name || 'Admin'}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5" title="Dilihat">
+                        <i className="ph-fill ph-eye text-slate-400 text-sm" />
+                        {detailData.views ?? 0} kali
                       </div>
                     </div>
-                  )}
-                  <div>
-                    <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Status</span>
-                    <p className="text-slate-700 text-sm">{detailData.is_published ? 'Published' : 'Draft'}</p>
                   </div>
+
+                  {/* Ringkasan */}
+                  {detailData.excerpt && (
+                    <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-sm relative overflow-hidden">
+                      <div className="absolute top-0 left-0 w-1 h-full bg-brand-500" />
+                      <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Ringkasan</h4>
+                      <p className="text-slate-700 text-sm leading-relaxed italic break-all">"{detailData.excerpt}"</p>
+                    </div>
+                  )}
+
+                  {/* Main Content */}
+                  <div className="bg-white p-5 sm:p-6 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">Konten Lengkap</h4>
+                    <div className="text-slate-700 text-sm leading-loose whitespace-pre-line break-all text-justify">
+                      {detailData.content || '-'}
+                    </div>
+                  </div>
+
+                  {/* Tags & Footnote */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    {detailData.footnote && (
+                      <div className="col-span-1 sm:col-span-2 min-w-0">
+                        <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Sumber / Footnote</span>
+                        <p className="text-slate-700 text-sm italic break-all">{detailData.footnote}</p>
+                      </div>
+                    )}
+                    {Array.isArray(detailData.tags) && detailData.tags.length > 0 && (
+                      <div className="col-span-1 sm:col-span-2 mt-2">
+                        <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Tags</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {detailData.tags.map(tag => (
+                            <span key={tag} className="bg-slate-100 text-slate-600 text-[11px] font-semibold px-2.5 py-1 rounded-md border border-slate-200 break-all">{tag}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Safe padding bottom for absolute certainty */}
+                  <div className="h-2"></div>
                 </div>
               ) : (
-                <div className="py-16 text-center text-slate-500">Data tidak ditemukan.</div>
+                <div className="py-16 text-center text-slate-500">Data tidak ditemukan</div>
               )}
             </div>
+
+            {/* Sticky Footer */}
+            <div className="border-t border-slate-200 px-6 py-4 bg-slate-50 shrink-0 flex justify-end">
+              <button onClick={() => setIsDetailOpen(false)} className="px-5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors shadow-sm focus:ring-2 focus:ring-slate-200 outline-none">
+                Tutup Detail
+              </button>
+            </div>
+
           </div>
         </div>
       )}

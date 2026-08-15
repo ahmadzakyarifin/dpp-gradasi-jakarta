@@ -77,6 +77,7 @@ type KegiatanDetailResponse struct {
 	Tags        []string           `json:"tags,omitempty"`
 	Gallery     []GalleryImageItem `json:"gallery,omitempty"`
 	CreatedAt   string             `json:"created_at"`
+	UpdatedAt   string             `json:"updated_at,omitempty"`
 }
 
 type GalleryImageItem struct {

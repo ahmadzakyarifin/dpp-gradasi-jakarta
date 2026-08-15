@@ -247,8 +247,6 @@ func ModelToEntity(m *model.Kegiatan) *entity.Kegiatan {
 		IsPublished: m.IsPublished,
 		IsNew:       m.IsNew,
 		Views:       m.Views,
-		Tags:        tags,
-		Gallery:     gallery,
 		CreatedAt:   m.CreatedAt,
 		UpdatedAt:   m.UpdatedAt,
 		DeletedAt:   fromGormDeletedAt(m.DeletedAt),
@@ -321,6 +319,7 @@ func EntityToDetail(e *entity.Kegiatan) dto.KegiatanDetailResponse {
 		IsNew:       e.IsNew,
 		Views:       e.Views,
 		CreatedAt:   e.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		UpdatedAt:   e.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 		Tags:        make([]string, 0),
 		Gallery:     make([]dto.GalleryImageItem, 0),
 	}

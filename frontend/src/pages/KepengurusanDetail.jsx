@@ -61,11 +61,11 @@ export default function KepengurusanDetail() {
   }
 
   const socials = pengurus ? [
-    { url: pengurus.cv_path ? resolveAssetUrl(pengurus.cv_path) : null, icon: 'ph-file-pdf', label: 'CV' },
+    { url: pengurus.cv_path ? resolveAssetUrl(pengurus.cv_path) : null, icon: 'ph-file-text', label: 'CV' },
     { url: pengurus.facebook_url, icon: 'ph-facebook-logo', label: 'Facebook' },
     { url: pengurus.instagram_url, icon: 'ph-instagram-logo', label: 'Instagram' },
     { url: pengurus.linkedin_url, icon: 'ph-linkedin-logo', label: 'LinkedIn' },
-    { url: pengurus.email ? `mailto:${pengurus.email}` : null, icon: 'ph-envelope-simple', label: 'Email' },
+    { url: pengurus.twitter_url, icon: 'ph-x-logo', label: 'X (Twitter)' },
     { url: pengurus.whatsapp ? `https://wa.me/${pengurus.whatsapp.replace(/\D/g, '')}` : null, icon: 'ph-whatsapp-logo', label: 'WhatsApp' },
   ].filter(s => s.url) : []
 
@@ -149,7 +149,11 @@ export default function KepengurusanDetail() {
                           title={s.label}
                           className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:bg-brand-50 hover:text-brand-600 transition-colors"
                         >
-                          <i className={`text-xl ph-fill ${s.icon}`} />
+                          {s.label === 'CV' ? (
+                            <span className="text-sm font-bold font-heading tracking-wide">CV</span>
+                          ) : (
+                            <i className={`text-xl ph-fill ${s.icon}`} />
+                          )}
                         </a>
                       ))}
                     </div>
@@ -184,9 +188,28 @@ export default function KepengurusanDetail() {
                       <div className="col-span-7 md:col-span-8 lg:col-span-9 text-slate-600 font-medium">{pengurus.whatsapp || '-'}</div>
                     </div>
                     <div className="grid grid-cols-12 gap-4">
-                      <div className="col-span-5 md:col-span-4 lg:col-span-3 font-bold text-slate-900">Kepengurusan</div>
+                      <div className="col-span-5 md:col-span-4 lg:col-span-3 font-bold text-slate-900">Tingkat Struktur</div>
                       <div className="col-span-7 md:col-span-8 lg:col-span-9 text-slate-600 font-medium capitalize">{getLevelLabel(pengurus.level, pengurus)}</div>
                     </div>
+                    {pengurus.kepengurusan && (
+                      <div className="grid grid-cols-12 gap-4">
+                        <div className="col-span-5 md:col-span-4 lg:col-span-3 font-bold text-slate-900">Kepengurusan</div>
+                        <div className="col-span-7 md:col-span-8 lg:col-span-9 text-slate-600 font-medium">{pengurus.kepengurusan}</div>
+                      </div>
+                    )}
+                    {pengurus.periode && (
+                      <div className="grid grid-cols-12 gap-4">
+                        <div className="col-span-5 md:col-span-4 lg:col-span-3 font-bold text-slate-900">Periode</div>
+                        <div className="col-span-7 md:col-span-8 lg:col-span-9 text-slate-600 font-medium">{pengurus.periode}</div>
+                      </div>
+                    )}
+                    {pengurus.department && (
+                      <div className="grid grid-cols-12 gap-4">
+                        <div className="col-span-5 md:col-span-4 lg:col-span-3 font-bold text-slate-900">Departemen</div>
+                        <div className="col-span-7 md:col-span-8 lg:col-span-9 text-slate-600 font-medium">{pengurus.department}</div>
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-12 gap-4">
                       <div className="col-span-5 md:col-span-4 lg:col-span-3 font-bold text-slate-900">Pekerjaan</div>
                       <div className="col-span-7 md:col-span-8 lg:col-span-9 text-slate-600 font-medium">{pengurus.pekerjaan || '-'}</div>
@@ -224,10 +247,10 @@ export default function KepengurusanDetail() {
                     </h3>
                     {pengurus.pendidikan ? (
                       <div className="prose prose-slate max-w-none text-slate-600 leading-relaxed text-sm">
-                        {pengurus.pendidikan.split('\\n').map((item, index) => (
+                        {pengurus.pendidikan.split(/\n\s*\n/).filter(item => item.trim()).map((item, index) => (
                           <div key={index} className="flex items-start gap-3 mb-3">
                             <i className="ph-fill ph-caret-right text-brand-500 mt-1 flex-shrink-0" />
-                            <p className="m-0">{item}</p>
+                            <p className="m-0 whitespace-pre-line">{item.trim()}</p>
                           </div>
                         ))}
                       </div>
@@ -246,10 +269,10 @@ export default function KepengurusanDetail() {
                     </h3>
                     {pengurus.sertifikasi ? (
                       <div className="prose prose-slate max-w-none text-slate-600 leading-relaxed text-sm">
-                        {pengurus.sertifikasi.split('\\n').map((item, index) => (
+                        {pengurus.sertifikasi.split(/\n\s*\n/).filter(item => item.trim()).map((item, index) => (
                           <div key={index} className="flex items-start gap-3 mb-3">
                             <i className="ph-fill ph-star text-amber-400 mt-1 flex-shrink-0" />
-                            <p className="m-0">{item}</p>
+                            <p className="m-0 whitespace-pre-line">{item.trim()}</p>
                           </div>
                         ))}
                       </div>

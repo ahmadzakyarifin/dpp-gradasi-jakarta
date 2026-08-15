@@ -7,6 +7,7 @@ type Pengurus struct {
 	ID           uint
 	Name         string
 	Role         string
+	Kepengurusan string
 	Department   *string
 	Level        string
 	Provinsi     *string
@@ -16,6 +17,7 @@ type Pengurus struct {
 	FacebookURL  *string
 	InstagramURL *string
 	LinkedinURL  *string
+	TwitterURL   *string
 	Whatsapp     *string
 	Email        *string
 	Pekerjaan    *string

@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "idn-area-data": "^4.0.1",
+    "kode-wilayah-id": "^1.2.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.2",

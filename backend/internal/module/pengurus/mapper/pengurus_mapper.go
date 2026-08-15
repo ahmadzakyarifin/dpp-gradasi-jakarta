@@ -40,6 +40,7 @@ func CreateReqToEntity(req *dto.PengurusRequest, imageURL string, isActive bool)
 	return &entity.Pengurus{
 		Name:         req.Name,
 		Role:         req.Role,
+		Kepengurusan: req.Kepengurusan,
 		Department:   StrPtr(req.Department),
 		Level:        req.Level,
 		Provinsi:     StrPtr(req.Provinsi),
@@ -49,6 +50,7 @@ func CreateReqToEntity(req *dto.PengurusRequest, imageURL string, isActive bool)
 		FacebookURL:  StrPtr(req.FacebookURL),
 		InstagramURL: StrPtr(req.InstagramURL),
 		LinkedinURL:  StrPtr(req.LinkedinURL),
+		TwitterURL:   StrPtr(req.TwitterURL),
 		Whatsapp:     StrPtr(req.Whatsapp),
 		Email:        StrPtr(req.Email),
 		Pekerjaan:    StrPtr(req.Pekerjaan),
@@ -68,6 +70,7 @@ func ApplyUpdate(e *entity.Pengurus, req *dto.PengurusRequest) {
 	}
 	e.Name = req.Name
 	e.Role = req.Role
+	e.Kepengurusan = req.Kepengurusan
 	e.Department = StrPtr(req.Department)
 	e.Level = req.Level
 	e.Provinsi = StrPtr(req.Provinsi)
@@ -75,6 +78,7 @@ func ApplyUpdate(e *entity.Pengurus, req *dto.PengurusRequest) {
 	e.FacebookURL = StrPtr(req.FacebookURL)
 	e.InstagramURL = StrPtr(req.InstagramURL)
 	e.LinkedinURL = StrPtr(req.LinkedinURL)
+	e.TwitterURL = StrPtr(req.TwitterURL)
 	e.Whatsapp = StrPtr(req.Whatsapp)
 	e.Email = StrPtr(req.Email)
 	e.Pekerjaan = StrPtr(req.Pekerjaan)
@@ -97,6 +101,7 @@ func EntityToModel(e *entity.Pengurus) *model.Pengurus {
 		ID:           e.ID,
 		Name:         e.Name,
 		Role:         e.Role,
+		Kepengurusan: e.Kepengurusan,
 		Department:   e.Department,
 		Level:        e.Level,
 		Provinsi:     e.Provinsi,
@@ -106,6 +111,7 @@ func EntityToModel(e *entity.Pengurus) *model.Pengurus {
 		FacebookURL:  e.FacebookURL,
 		InstagramURL: e.InstagramURL,
 		LinkedinURL:  e.LinkedinURL,
+		TwitterURL:   e.TwitterURL,
 		Whatsapp:     e.Whatsapp,
 		Email:        e.Email,
 		Pekerjaan:    e.Pekerjaan,
@@ -130,6 +136,7 @@ func ModelToEntity(m *model.Pengurus) *entity.Pengurus {
 		ID:           m.ID,
 		Name:         m.Name,
 		Role:         m.Role,
+		Kepengurusan: m.Kepengurusan,
 		Department:   m.Department,
 		Level:        m.Level,
 		Provinsi:     m.Provinsi,
@@ -139,6 +146,7 @@ func ModelToEntity(m *model.Pengurus) *entity.Pengurus {
 		FacebookURL:  m.FacebookURL,
 		InstagramURL: m.InstagramURL,
 		LinkedinURL:  m.LinkedinURL,
+		TwitterURL:   m.TwitterURL,
 		Whatsapp:     m.Whatsapp,
 		Email:        m.Email,
 		Pekerjaan:    m.Pekerjaan,
@@ -169,10 +177,11 @@ func EntityToResponse(e *entity.Pengurus) dto.PengurusResponse {
 		return dto.PengurusResponse{}
 	}
 	resp := dto.PengurusResponse{
-		ID:        e.ID,
-		Name:      e.Name,
-		Role:      e.Role,
-		Level:     e.Level,
+		ID:           e.ID,
+		Name:         e.Name,
+		Role:         e.Role,
+		Kepengurusan: e.Kepengurusan,
+		Level:        e.Level,
 		ImagePath: e.ImagePath,
 		Periode:   e.Periode,
 		SortOrder: e.SortOrder,
@@ -200,6 +209,9 @@ func EntityToResponse(e *entity.Pengurus) dto.PengurusResponse {
 	}
 	if e.LinkedinURL != nil {
 		resp.LinkedinURL = *e.LinkedinURL
+	}
+	if e.TwitterURL != nil {
+		resp.TwitterURL = *e.TwitterURL
 	}
 	if e.Whatsapp != nil {
 		resp.Whatsapp = *e.Whatsapp

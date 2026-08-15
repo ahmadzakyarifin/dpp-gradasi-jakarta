@@ -26,6 +26,8 @@ type SettingsResponse struct {
 	GreetingImagePath  string   `json:"greeting_image_path"`
 	GreetingSignName   string   `json:"greeting_sign_name"`
 	GreetingSignSubtitle string `json:"greeting_sign_subtitle"`
+	GreetingSignImage1   string `json:"greeting_sign_image_1"`
+	GreetingSignImage2   string `json:"greeting_sign_image_2"`
 	LoginHeroTitle     string   `json:"login_hero_title"`
 	LoginHeroDescription string   `json:"login_hero_description"`
 	LogRetentionDays     int      `json:"log_retention_days"`

@@ -115,7 +115,12 @@ func (r *kontakRepo) FindAnyByID(id uint) (*entity.PesanKontak, error) {
 }
 
 func (r *kontakRepo) Create(p *entity.PesanKontak) error {
-	return r.db.Create(mapper.EntityToModel(p)).Error
+	m := mapper.EntityToModel(p)
+	if err := r.db.Create(m).Error; err != nil {
+		return err
+	}
+	p.ID = m.ID
+	return nil
 }
 
 func (r *kontakRepo) MarkAsRead(id uint) error {

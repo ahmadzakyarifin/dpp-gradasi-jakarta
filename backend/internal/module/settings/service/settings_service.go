@@ -19,7 +19,6 @@ import (
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/settings/dto"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/settings/mapper"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/settings/repository"
-	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -27,21 +26,21 @@ type SettingsService interface {
 	GetSettings(ctx context.Context) (*dto.SettingsResponse, error)
 	UpdateSettings(ctx context.Context, values map[string]interface{}, updatedBy *uint) (*dto.SettingsResponse, error)
 	UploadLogo(ctx context.Context, file *multipart.FileHeader, updatedBy *uint) (*dto.SettingsResponse, error)
+	UploadSign1(ctx context.Context, file *multipart.FileHeader, updatedBy *uint) (*dto.SettingsResponse, error)
+	UploadSign2(ctx context.Context, file *multipart.FileHeader, updatedBy *uint) (*dto.SettingsResponse, error)
+	UploadGreetingImage(ctx context.Context, file *multipart.FileHeader, updatedBy *uint) (*dto.SettingsResponse, error)
 }
 
 type settingsService struct {
-	db         *gorm.DB
-	repo       repository.SettingsRepo
-	audit      activitylogservice.ActivityLogService
-	uploadPath string
+	db             *gorm.DB
+	repo           repository.SettingsRepo
+	audit          activitylogservice.ActivityLogService
+	baseUploadPath string
 }
 
 func NewSettingsService(db *gorm.DB, repo repository.SettingsRepo, audit activitylogservice.ActivityLogService) SettingsService {
-	uploadPath := "public/uploads/settings"
-	if err := os.MkdirAll(uploadPath, 0o755); err != nil {
-		helper.Logger.Error("gagal buat direktori upload settings", zap.Error(err))
-	}
-	return &settingsService{db: db, repo: repo, audit: audit, uploadPath: uploadPath}
+	basePath := "public/uploads/img"
+	return &settingsService{db: db, repo: repo, audit: audit, baseUploadPath: basePath}
 }
 
 func (s *settingsService) log(ctx context.Context, db *gorm.DB, input *activitylogdto.ActivityLogInput) {
@@ -232,37 +231,46 @@ func (s *settingsService) UpdateSettings(ctx context.Context, values map[string]
 
 // UploadLogo menyimpan file logo ke disk lokal dan memperbarui logo_path di DB.
 func (s *settingsService) UploadLogo(ctx context.Context, file *multipart.FileHeader, updatedBy *uint) (*dto.SettingsResponse, error) {
+	url, err := s.uploadFileToSettings(file, "settings/logo")
+	if err != nil {
+		return nil, err
+	}
+	settings, err := s.repo.Get()
+	if err != nil {
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil konfigurasi website.", err)
+	}
+	resp := mapper.EntityToResponse(mapper.ModelToEntity(settings))
+	resp.LogoPath = url
+	return resp, nil
+}
+
+func (s *settingsService) uploadFileToSettings(file *multipart.FileHeader, subDir string) (string, error) {
 	if file == nil {
-		return nil, helper.NewServiceError("VALIDATION_ERROR", "File logo wajib diunggah", nil)
+		return "", helper.NewServiceError("VALIDATION_ERROR", "File wajib diunggah", nil)
 	}
-
-	// Validasi ukuran: maks 2MB
 	if file.Size > 2*1024*1024 {
-		return nil, helper.NewServiceError("VALIDATION_ERROR", "File logo tidak valid. Maksimal 2MB dengan format PNG, JPG, atau WEBP.", nil)
+		return "", helper.NewServiceError("VALIDATION_ERROR", "File tidak valid. Maksimal 2MB dengan format PNG, JPG, atau WEBP.", nil)
 	}
-
-	// Validasi MIME type
 	src, err := file.Open()
 	if err != nil {
-		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal membaca file logo.", err)
+		return "", helper.NewServiceError("SERVER_ERROR", "Gagal membaca file.", err)
 	}
 	defer src.Close()
 
 	header := make([]byte, 512)
 	n, err := src.Read(header)
 	if err != nil && err != io.EOF {
-		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal membaca file logo.", err)
+		return "", helper.NewServiceError("SERVER_ERROR", "Gagal membaca file.", err)
 	}
-	// Reset reader agar bisa dibaca ulang saat copy
 	if _, err := src.Seek(0, io.SeekStart); err != nil {
-		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal membaca file logo.", err)
+		return "", helper.NewServiceError("SERVER_ERROR", "Gagal membaca file.", err)
 	}
 
 	mimeType := http.DetectContentType(header[:n])
 	switch mimeType {
 	case "image/png", "image/jpeg", "image/webp":
 	default:
-		return nil, helper.NewServiceError("VALIDATION_ERROR", "File logo tidak valid. Maksimal 2MB dengan format PNG, JPG, atau WEBP.", nil)
+		return "", helper.NewServiceError("VALIDATION_ERROR", "File tidak valid. Maksimal 2MB dengan format PNG, JPG, atau WEBP.", nil)
 	}
 
 	ext := filepath.Ext(file.Filename)
@@ -277,32 +285,65 @@ func (s *settingsService) UploadLogo(ctx context.Context, file *multipart.FileHe
 		}
 	}
 	filename := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
-
-	// Pastikan direktori upload ada
-	if err := os.MkdirAll(s.uploadPath, 0o755); err != nil {
-		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal menyimpan file logo.", err)
+	
+	dirPath := filepath.Join(s.baseUploadPath, subDir)
+	if err := os.MkdirAll(dirPath, 0o755); err != nil {
+		return "", helper.NewServiceError("SERVER_ERROR", "Gagal menyimpan file.", err)
 	}
 
-	dst := filepath.Join(s.uploadPath, filename)
+	dst := filepath.Join(dirPath, filename)
 	out, err := os.Create(dst)
 	if err != nil {
-		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal menyimpan file logo.", err)
+		return "", helper.NewServiceError("SERVER_ERROR", "Gagal menyimpan file.", err)
 	}
 	defer out.Close()
 
 	if _, err := io.Copy(out, src); err != nil {
-		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal menyimpan file logo.", err)
+		return "", helper.NewServiceError("SERVER_ERROR", "Gagal menyimpan file.", err)
 	}
 
-	logoPath := "/uploads/settings/" + filename
+	return "/uploads/img/" + subDir + "/" + filename, nil
+}
 
+func (s *settingsService) UploadSign1(ctx context.Context, file *multipart.FileHeader, updatedBy *uint) (*dto.SettingsResponse, error) {
+	url, err := s.uploadFileToSettings(file, "settings/logo")
+	if err != nil {
+		return nil, err
+	}
 	settings, err := s.repo.Get()
 	if err != nil {
 		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil konfigurasi website.", err)
 	}
-
 	resp := mapper.EntityToResponse(mapper.ModelToEntity(settings))
-	resp.LogoPath = logoPath
-
+	resp.GreetingSignImage1 = url
 	return resp, nil
 }
+
+func (s *settingsService) UploadSign2(ctx context.Context, file *multipart.FileHeader, updatedBy *uint) (*dto.SettingsResponse, error) {
+	url, err := s.uploadFileToSettings(file, "settings/logo")
+	if err != nil {
+		return nil, err
+	}
+	settings, err := s.repo.Get()
+	if err != nil {
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil konfigurasi website.", err)
+	}
+	resp := mapper.EntityToResponse(mapper.ModelToEntity(settings))
+	resp.GreetingSignImage2 = url
+	return resp, nil
+}
+
+func (s *settingsService) UploadGreetingImage(ctx context.Context, file *multipart.FileHeader, updatedBy *uint) (*dto.SettingsResponse, error) {
+	url, err := s.uploadFileToSettings(file, "sambutan")
+	if err != nil {
+		return nil, err
+	}
+	settings, err := s.repo.Get()
+	if err != nil {
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil konfigurasi website.", err)
+	}
+	resp := mapper.EntityToResponse(mapper.ModelToEntity(settings))
+	resp.GreetingImagePath = url
+	return resp, nil
+}
+

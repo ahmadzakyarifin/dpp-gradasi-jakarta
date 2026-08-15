@@ -20,4 +20,31 @@ export const settingsService = {
       body: formData,
     })
   },
+
+  uploadSign1(file) {
+    const formData = new FormData()
+    formData.append('image', file)
+    return apiRequest('/admin/settings/sign1', {
+      method: 'POST',
+      body: formData,
+    })
+  },
+
+  uploadSign2(file) {
+    const formData = new FormData()
+    formData.append('image', file)
+    return apiRequest('/admin/settings/sign2', {
+      method: 'POST',
+      body: formData,
+    })
+  },
+
+  uploadGreetingImage(file) {
+    const formData = new FormData()
+    formData.append('image', file)
+    return apiRequest('/admin/settings/greeting-image', {
+      method: 'POST',
+      body: formData,
+    })
+  },
 }

@@ -36,7 +36,7 @@ func (Kegiatan) TableName() string { return "kegiatan" }
 type KegiatanTag struct {
 	ID         uint   `gorm:"primaryKey;autoIncrement"`
 	KegiatanID uint   `gorm:"not null;index"`
-	Tag        string `gorm:"size:100;not null"`
+	Tag        string `gorm:"size:200;not null"`
 }
 
 func (KegiatanTag) TableName() string { return "kegiatan_tags" }

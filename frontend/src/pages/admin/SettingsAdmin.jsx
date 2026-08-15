@@ -56,6 +56,16 @@ export default function SettingsAdmin() {
   const { cooldown, isLimited, applyRateLimit } = useRateLimitCooldown()
   const [logoUploading, setLogoUploading] = useState(false)
   const [logoPreview, setLogoPreview] = useState(null)
+
+  const [greetingImageUploading, setGreetingImageUploading] = useState(false)
+  const [greetingImagePreview, setGreetingImagePreview] = useState(null)
+
+  const [sign1Uploading, setSign1Uploading] = useState(false)
+  const [sign1Preview, setSign1Preview] = useState(null)
+
+  const [sign2Uploading, setSign2Uploading] = useState(false)
+  const [sign2Preview, setSign2Preview] = useState(null)
+
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
@@ -124,6 +134,40 @@ export default function SettingsAdmin() {
     }
   }
 
+  const handleGreetingImageUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) {
+      showToast('Ukuran file maksimal 2MB.', true)
+      e.target.value = ''
+      return
+    }
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      showToast('Format foto harus PNG, JPG, atau WEBP.', true)
+      e.target.value = ''
+      return
+    }
+    setGreetingImagePreview(URL.createObjectURL(file))
+    setGreetingImageUploading(true)
+    try {
+      const res = await settingsService.uploadGreetingImage(file)
+      if (res.success && res.data) {
+        setFormData(prev => ({ ...prev, greeting_image_path: res.data.greeting_image_path }))
+        showToast('Foto sambutan terpilih. Klik "Simpan Semua Pengaturan" untuk menerapkan.')
+      } else {
+        showToast(res.message || 'Gagal mengunggah foto.', true)
+      }
+    } catch (err) {
+      const parsed = applyError(err)
+      applyRateLimit(err)
+      if (Object.keys(parsed.fieldErrors).length === 0) {
+        showToast(parsed.message || 'Terjadi kesalahan saat mengunggah foto.', true)
+      }
+    } finally {
+      setGreetingImageUploading(false)
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     const errors = validateForm()
@@ -185,10 +229,10 @@ export default function SettingsAdmin() {
 
   return (
     <AdminLayout title="Pengaturan Website">
-      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 animate-fade-in-up">
+      <div className="grid grid-cols-1 gap-6 mx-auto max-w-5xl md:grid-cols-4 animate-fade-in-up">
 
         {/* Navigation Tabs */}
-        <div className="md:col-span-1 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col gap-1 h-fit">
+        <div className="flex flex-col gap-1 p-4 bg-white rounded-2xl border border-gray-200 shadow-sm md:col-span-1 h-fit">
           <button onClick={() => setCurrentTab('profil')} type="button" className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition-all duration-200 btn-press ${currentTab === 'profil' ? 'bg-brand-50 text-brand-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}>Profil & Sejarah</button>
           <button onClick={() => setCurrentTab('sambutan')} type="button" className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition-all duration-200 btn-press ${currentTab === 'sambutan' ? 'bg-brand-50 text-brand-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}>Sambutan Depan</button>
           <button onClick={() => setCurrentTab('kontak')} type="button" className={`px-4 py-2 text-left text-sm font-semibold rounded-lg transition-all duration-200 btn-press ${currentTab === 'kontak' ? 'bg-brand-50 text-brand-600 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}>Informasi Kontak</button>
@@ -198,27 +242,42 @@ export default function SettingsAdmin() {
         </div>
 
         {/* Form Area */}
-        <div className="md:col-span-3 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+        <div className="p-6 bg-white rounded-2xl border border-gray-200 shadow-sm md:col-span-3">
           <form onSubmit={handleSubmit} className="space-y-6">
 
             {currentTab === 'logo' && (
               <div className="space-y-4">
-                <h3 className="font-heading font-bold text-gray-800 text-base border-b pb-2">Logo Website</h3>
+                <h3 className="pb-2 text-base font-bold text-gray-800 border-b font-heading">Logo Website</h3>
                 <p className="text-xs text-gray-500">Logo tampil di header, footer, dan section Visi & Misi halaman publik. Maksimal 2MB dengan format PNG, JPG, atau WEBP.</p>
-                <div className="flex items-center gap-6">
-                  <div className="w-40 h-40 bg-slate-50 border border-gray-200 rounded-2xl flex items-center justify-center overflow-hidden">
+                <div className="flex gap-6 items-center">
+                  <div className="flex overflow-hidden justify-center items-center w-40 h-40 rounded-2xl border border-gray-200 bg-slate-50">
                     <img
                       src={logoPreview || resolveAssetUrl(formData.logo_path) || 'https://via.placeholder.com/160'}
                       alt="Preview Logo"
-                      className="w-full h-full object-contain p-2"
+                      className="object-contain p-2 w-full h-full"
                     />
                   </div>
                   <div className="flex flex-col gap-3">
-                    <label className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-600 text-white rounded-lg hover:bg-brand-700 text-sm font-semibold cursor-pointer transition">
-                      <i className="ph-bold ph-upload-simple" />
-                      {logoUploading ? 'Mengunggah...' : 'Pilih & Upload Logo Baru'}
-                      <input type="file" accept="image/png,image/jpeg,image/webp" onChange={handleLogoChange} className="hidden" disabled={logoUploading} />
-                    </label>
+                    <div className="flex gap-2">
+                      <label className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-600 text-white rounded-lg hover:bg-brand-700 text-sm font-semibold cursor-pointer transition">
+                        <i className="ph-bold ph-upload-simple" />
+                        {logoUploading ? 'Mengunggah...' : 'Pilih & Upload Logo Baru'}
+                        <input type="file" accept="image/png,image/jpeg,image/webp" onChange={handleLogoChange} className="hidden" disabled={logoUploading} />
+                      </label>
+                      {(logoPreview || formData.logo_path) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLogoPreview(null);
+                            setFormData(prev => ({ ...prev, logo_path: '' }));
+                          }}
+                          className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 text-sm font-semibold cursor-pointer transition"
+                        >
+                          <i className="ph-bold ph-trash" />
+                          Hapus Logo
+                        </button>
+                      )}
+                    </div>
                     <span className="text-[11px] text-gray-400">PNG / JPG / WEBP · maks 2MB</span>
                     {formData.logo_path && (
                       <span className="text-[11px] text-gray-400 break-all">Path saat ini: {formData.logo_path}</span>
@@ -230,10 +289,10 @@ export default function SettingsAdmin() {
 
             {currentTab === 'log' && (
               <div className="space-y-4">
-                <h3 className="font-heading font-bold text-gray-800 text-base border-b pb-2">Auto Clear Log Aktivitas</h3>
-                <p className="text-xs text-gray-500 leading-relaxed">Log aktivitas super admin & admin yang telah melewati jangka waktu di bawah ini akan dihapus secara otomatis secara berkala setiap 24 jam demi menghemat kapasitas penyimpanan database.</p>
+                <h3 className="pb-2 text-base font-bold text-gray-800 border-b font-heading">Auto Clear Log Aktivitas</h3>
+                <p className="text-xs leading-relaxed text-gray-500">Log aktivitas super admin & admin yang telah melewati jangka waktu di bawah ini akan dihapus secara otomatis secara berkala setiap 24 jam demi menghemat kapasitas penyimpanan database.</p>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Masa Simpan / Retensi Log Aktivitas</label>
+                  <label className="block mb-1 text-xs font-semibold text-gray-500">Masa Simpan / Retensi Log Aktivitas</label>
                   <select
                     value={formData.log_retention_days}
                     onChange={e => setFormData({ ...formData, log_retention_days: Number(e.target.value) })}
@@ -252,10 +311,10 @@ export default function SettingsAdmin() {
 
             {currentTab === 'profil' && (
               <div className="space-y-4">
-                <h3 className="font-heading font-bold text-gray-800 text-base border-b pb-2">Profil & Sejarah Organisasi</h3>
+                <h3 className="pb-2 text-base font-bold text-gray-800 border-b font-heading">Profil & Sejarah Organisasi</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Nama Website / Organisasi <span className="text-red-500">*</span></label>
+                    <label className="block mb-1 text-xs font-semibold text-gray-500">Nama Website / Organisasi <span className="text-red-500">*</span></label>
                     <input
                       type="text"
                       value={formData.site_name}
@@ -276,31 +335,31 @@ export default function SettingsAdmin() {
                     />
                     {((touched.site_name && formErrors.site_name) || fieldErrors.site_name) && (
                       <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
-                        <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.site_name || fieldErrors.site_name}
+                        <i className="text-xs ph-bold ph-warning-circle" /> {formErrors.site_name || fieldErrors.site_name}
                       </p>
                     )}
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Tagline</label>
+                    <label className="block mb-1 text-xs font-semibold text-gray-500">Tagline</label>
                     <input type="text" value={formData.tagline} onChange={e => setFormData({ ...formData, tagline: e.target.value })} className={inputCls} />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Tanggal Terbentuk</label>
+                    <label className="block mb-1 text-xs font-semibold text-gray-500">Tanggal Terbentuk</label>
                     <input type="text" value={formData.about_formation_date} onChange={e => setFormData({ ...formData, about_formation_date: e.target.value })} className={inputCls} />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Nomor SK Legalitas</label>
+                    <label className="block mb-1 text-xs font-semibold text-gray-500">Nomor SK Legalitas</label>
                     <input type="text" value={formData.about_no_sk} onChange={e => setFormData({ ...formData, about_no_sk: e.target.value })} className={inputCls} />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Visi Utama</label>
-                  <textarea rows="3" value={formData.about_vision} onChange={e => setFormData({ ...formData, about_vision: e.target.value })} className={`${inputCls} overflow-y-auto resize-y min-h-[80px]`} />
+                  <label className="block mb-1 text-xs font-semibold text-gray-500">Visi Utama</label>
+                  <textarea rows="3" value={formData.about_vision} onChange={e => setFormData({ ...formData, about_vision: e.target.value })} className={`overflow-y-auto resize-y ${inputCls} min-h-[80px]`} />
                 </div>
                 <div>
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex justify-between items-center mb-2">
                     <label className="block text-xs font-semibold text-gray-500">Misi Organisasi</label>
                     <button
                       type="button"
@@ -310,19 +369,19 @@ export default function SettingsAdmin() {
                           about_mission: [...(prev.about_mission || []), '']
                         }))
                       }}
-                      className="inline-flex items-center gap-1 text-xs font-bold text-brand-600 hover:text-brand-700 transition"
+                      className="inline-flex gap-1 items-center text-xs font-bold transition text-brand-600 hover:text-brand-700"
                     >
-                      <i className="ph-bold ph-plus-circle text-sm" /> Tambah Misi
+                      <i className="text-sm ph-bold ph-plus-circle" /> Tambah Misi
                     </button>
                   </div>
 
                   <div className="max-h-56 overflow-y-auto space-y-2.5 pr-2 border border-slate-200/60 rounded-xl p-3 bg-slate-50/50">
                     {(formData.about_mission || []).length === 0 ? (
-                      <p className="text-xs text-gray-400 text-center py-2">Belum ada misi. Klik Tambah Misi.</p>
+                      <p className="py-2 text-xs text-center text-gray-400">Belum ada misi. Klik Tambah Misi.</p>
                     ) : (
                       (formData.about_mission || []).map((misi, index) => (
                         <div key={index} className="flex gap-2 items-center animate-scale-up">
-                          <span className="text-xs font-bold text-gray-400 w-6 text-center">{index + 1}</span>
+                          <span className="w-6 text-xs font-bold text-center text-gray-400">{index + 1}</span>
                           <input
                             type="text"
                             value={misi}
@@ -341,10 +400,10 @@ export default function SettingsAdmin() {
                               const newMissions = formData.about_mission.filter((_, i) => i !== index)
                               setFormData({ ...formData, about_mission: newMissions })
                             }}
-                            className="p-2 text-gray-400 hover:text-red-500 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-red-50 rounded-xl transition"
+                            className="p-2 text-gray-400 rounded-xl transition hover:text-red-500 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-red-50"
                             title="Hapus Misi"
                           >
-                            <i className="ph-bold ph-trash text-base" />
+                            <i className="text-base ph-bold ph-trash" />
                           </button>
                         </div>
                       ))
@@ -352,66 +411,79 @@ export default function SettingsAdmin() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Sejarah / Tentang Kami</label>
-                  <textarea rows="6" value={formData.history} onChange={e => setFormData({ ...formData, history: e.target.value })} className={`${inputCls} overflow-y-auto resize-y min-h-[120px]`} />
+                  <label className="block mb-1 text-xs font-semibold text-gray-500">Sejarah / Tentang Kami</label>
+                  <textarea rows="6" value={formData.history} onChange={e => setFormData({ ...formData, history: e.target.value })} className={`overflow-y-auto resize-y ${inputCls} min-h-[120px]`} />
                 </div>
               </div>
             )}
 
             {currentTab === 'sambutan' && (
               <div className="space-y-4">
-                <h3 className="font-heading font-bold text-gray-800 text-base border-b pb-2">Sambutan Halaman Depan</h3>
+                <h3 className="pb-2 text-base font-bold text-gray-800 border-b font-heading">Sambutan Halaman Depan</h3>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Judul Sambutan</label>
+                  <label className="block mb-1 text-xs font-semibold text-gray-500">Judul Sambutan</label>
                   <input type="text" value={formData.greeting_title} onChange={e => setFormData({ ...formData, greeting_title: e.target.value })} className={inputCls} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Sub Judul</label>
+                  <label className="block mb-1 text-xs font-semibold text-gray-500">Sub Judul</label>
                   <input type="text" value={formData.greeting_subtitle} onChange={e => setFormData({ ...formData, greeting_subtitle: e.target.value })} className={inputCls} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Tanggal Sambutan</label>
+                  <label className="block mb-1 text-xs font-semibold text-gray-500">Tanggal Sambutan</label>
                   <input type="text" value={formData.greeting_date} onChange={e => setFormData({ ...formData, greeting_date: e.target.value })} className={inputCls} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Isi Sambutan</label>
-                  <textarea rows="5" value={formData.greeting_content} onChange={e => setFormData({ ...formData, greeting_content: e.target.value })} className={`${inputCls} overflow-y-auto resize-y min-h-[120px]`} />
+                  <label className="block mb-1 text-xs font-semibold text-gray-500">Isi Sambutan</label>
+                  <textarea rows="5" value={formData.greeting_content} onChange={e => setFormData({ ...formData, greeting_content: e.target.value })} className={`overflow-y-auto resize-y ${inputCls} min-h-[120px]`} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">URL Gambar / Poster Sambutan</label>
-                  <input type="text" value={formData.greeting_image_path} onChange={e => setFormData({ ...formData, greeting_image_path: e.target.value })} className={inputCls} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Nama Organisasi / Pengirim di Tanda Tangan (Signature)</label>
-                    <input
-                      type="text"
-                      placeholder="Contoh: GRADASI (Kosongkan untuk default nama website)"
-                      value={formData.greeting_sign_name || ''}
-                      onChange={e => setFormData({ ...formData, greeting_sign_name: e.target.value })}
-                      className={inputCls}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Nama Penandatangan (Signature)</label>
-                    <input
-                      type="text"
-                      placeholder="Contoh: Upi Asmaradhana & Junaidi, S.Kom (Kosongkan untuk default data pengurus)"
-                      value={formData.greeting_sign_subtitle || ''}
-                      onChange={e => setFormData({ ...formData, greeting_sign_subtitle: e.target.value })}
-                      className={inputCls}
-                    />
+                  <label className="block pt-4 mt-4 mb-1 text-xs font-semibold text-gray-500 border-t">Foto / Poster Sambutan</label>
+                  <p className="text-[11px] text-gray-400 mb-3">Maksimal 2MB dengan format PNG, JPG, atau WEBP.</p>
+                  <div className="flex gap-6 items-center">
+                    <div className="flex overflow-hidden justify-center items-center w-32 h-32 rounded-2xl border border-gray-200 bg-slate-50">
+                      <img
+                        src={greetingImagePreview || resolveAssetUrl(formData.greeting_image_path) || 'https://via.placeholder.com/160'}
+                        alt="Preview Sambutan"
+                        className="object-cover w-full h-full"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      <div className="flex gap-2">
+                        <label className="inline-flex gap-2 items-center px-4 py-2 text-xs font-semibold text-white rounded-lg transition cursor-pointer bg-brand-600 hover:bg-brand-700">
+                          <i className="ph-bold ph-upload-simple" />
+                          {greetingImageUploading ? 'Mengunggah...' : 'Upload Foto Sambutan'}
+                          <input type="file" accept="image/png,image/jpeg,image/webp" onChange={handleGreetingImageUpload} className="hidden" disabled={greetingImageUploading} />
+                        </label>
+                        {(greetingImagePreview || formData.greeting_image_path) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setGreetingImagePreview(null);
+                              setFormData(prev => ({ ...prev, greeting_image_path: '' }));
+                            }}
+                            className="inline-flex gap-2 items-center px-4 py-2 text-xs font-semibold text-red-600 bg-red-50 rounded-lg transition cursor-pointer hover:bg-red-100"
+                          >
+                            <i className="ph-bold ph-trash" />
+                            Hapus Foto
+                          </button>
+                        )}
+                      </div>
+                      {formData.greeting_image_path && (
+                        <span className="text-[10px] text-gray-400 break-all">Path saat ini: {formData.greeting_image_path}</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
             )}
 
+
             {currentTab === 'kontak' && (
               <div className="space-y-4">
-                <h3 className="font-heading font-bold text-gray-800 text-base border-b pb-2">Informasi Kontak & Profil Kantor</h3>
+                <h3 className="pb-2 text-base font-bold text-gray-800 border-b font-heading">Informasi Kontak & Profil Kantor</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Email Resmi <span className="text-gray-400 font-normal">(opsional)</span></label>
+                    <label className="block mb-1 text-xs font-semibold text-gray-500">Email Resmi <span className="font-normal text-gray-400">(opsional)</span></label>
                     <input
                       type="email"
                       value={formData.contact_email}
@@ -432,21 +504,21 @@ export default function SettingsAdmin() {
                     />
                     {((touched.contact_email && formErrors.contact_email) || fieldErrors.contact_email) && (
                       <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1">
-                        <i className="ph-bold ph-warning-circle text-xs" /> {formErrors.contact_email || fieldErrors.contact_email}
+                        <i className="text-xs ph-bold ph-warning-circle" /> {formErrors.contact_email || fieldErrors.contact_email}
                       </p>
                     )}
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 mb-1">Telepon / WhatsApp</label>
+                    <label className="block mb-1 text-xs font-semibold text-gray-500">Telepon / WhatsApp</label>
                     <input type="text" value={formData.contact_phone} onChange={e => setFormData({ ...formData, contact_phone: e.target.value })} className={inputCls} />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Alamat Kantor</label>
+                  <label className="block mb-1 text-xs font-semibold text-gray-500">Alamat Kantor</label>
                   <input type="text" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} className={inputCls} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Google Maps Embed URL</label>
+                  <label className="block mb-1 text-xs font-semibold text-gray-500">Google Maps Embed URL</label>
                   <input type="text" value={formData.maps_embed_url} onChange={e => setFormData({ ...formData, maps_embed_url: e.target.value })} className={inputCls} />
                 </div>
               </div>
@@ -454,21 +526,21 @@ export default function SettingsAdmin() {
 
             {currentTab === 'sosmed' && (
               <div className="space-y-4">
-                <h3 className="font-heading font-bold text-gray-800 text-base border-b pb-2">Social Media & Profil Link</h3>
+                <h3 className="pb-2 text-base font-bold text-gray-800 border-b font-heading">Social Media & Profil Link</h3>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Facebook URL</label>
+                  <label className="block mb-1 text-xs font-semibold text-gray-500">Facebook URL</label>
                   <input type="text" value={formData.facebook_url} onChange={e => setFormData({ ...formData, facebook_url: e.target.value })} className={inputCls} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Instagram URL</label>
+                  <label className="block mb-1 text-xs font-semibold text-gray-500">Instagram URL</label>
                   <input type="text" value={formData.instagram_url} onChange={e => setFormData({ ...formData, instagram_url: e.target.value })} className={inputCls} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">YouTube Channel URL</label>
+                  <label className="block mb-1 text-xs font-semibold text-gray-500">YouTube Channel URL</label>
                   <input type="text" value={formData.youtube_url} onChange={e => setFormData({ ...formData, youtube_url: e.target.value })} className={inputCls} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-1">Video Profile URL (Youtube Embed)</label>
+                  <label className="block mb-1 text-xs font-semibold text-gray-500">Video Profile URL (Youtube Embed)</label>
                   <input type="text" value={formData.video_profile_path} onChange={e => setFormData({ ...formData, video_profile_path: e.target.value })} className={inputCls} />
                 </div>
               </div>

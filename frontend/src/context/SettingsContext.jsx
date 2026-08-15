@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { settingsService } from '../services/settingsService'
 import { SettingsContext } from './settingsContextObject'
+import { resolveAssetUrl } from '../utils/assetUrl'
 
 const DEFAULT_SETTINGS = {
   site_name: '',
@@ -58,6 +59,17 @@ export function SettingsProvider({ children }) {
   useEffect(() => {
     if (settings?.site_name) {
       document.title = `${settings.site_name}${settings.tagline ? ' - ' + settings.tagline : ''}`
+    }
+    
+    if (settings?.logo_path) {
+      const logoUrl = resolveAssetUrl(settings.logo_path);
+      let link = document.querySelector("link[rel~='icon']");
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.getElementsByTagName('head')[0].appendChild(link);
+      }
+      link.href = logoUrl;
     }
   }, [settings])
 

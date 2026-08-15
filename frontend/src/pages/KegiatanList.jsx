@@ -193,6 +193,11 @@ export default function KegiatanList() {
                         alt={item.title} 
                         className="w-full h-full object-cover transform group-hover:scale-105 transition duration-500"
                       />
+                      {isActuallyNew(item) && (
+                        <div className="absolute top-4 right-4 bg-red-500 text-white text-[10px] font-extrabold px-3 py-1.5 rounded animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)] z-10 tracking-wider flex items-center gap-1">
+                          <i className="ph-fill ph-fire" /> TERBARU
+                        </div>
+                      )}
                     </div>
                     <div className="p-5 flex flex-col flex-grow">
                       <div className="flex items-center gap-3 mb-2 flex-wrap">
@@ -200,18 +205,13 @@ export default function KegiatanList() {
                           <i className="ph-bold ph-calendar-blank text-sm" /> {item.event_date || '31 Desember 2025'}
                         </p>
                         {item.location && (
-                          <p className="text-slate-500 text-[10px] font-bold tracking-wider uppercase flex items-center gap-1.5 border-l border-slate-200 pl-3">
-                            <i className="ph-bold ph-map-pin text-sm" /> {item.location}
+                          <p className="text-slate-500 text-[10px] font-bold tracking-wider uppercase flex items-center gap-1.5 border-l border-slate-200 pl-3 min-w-0 flex-1">
+                            <i className="ph-bold ph-map-pin text-sm shrink-0" /> <span className="truncate">{item.location}</span>
                           </p>
                         )}
                       </div>
                       <Link to={`/kegiatan/${item.slug}`} className="font-heading text-lg font-bold text-slate-900 mb-2 group-hover:text-brand-600 transition leading-snug flex items-start gap-2">
-                        <span>{item.title}</span>
-                        {isActuallyNew(item) && (
-                          <span className="shrink-0 bg-amber-100 text-amber-700 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider mt-1">
-                            Terbaru
-                          </span>
-                        )}
+                        <span className="line-clamp-2 break-all">{item.title}</span>
                       </Link>
                       <p className="text-slate-500 text-[13px] flex-grow line-clamp-2 mb-4 leading-relaxed">{item.excerpt}</p>
                       <div className="pt-4 flex justify-between items-center border-t border-slate-100 mt-auto">

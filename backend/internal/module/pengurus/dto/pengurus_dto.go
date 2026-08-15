@@ -2,12 +2,12 @@ package dto
 
 import (
 	"mime/multipart"
-	"strings"
 )
 
 type PengurusRequest struct {
 	Name         string                `form:"name" binding:"required,min=3,max=150"`
 	Role         string                `form:"role" binding:"required,max=200"`
+	Kepengurusan string                `form:"kepengurusan" binding:"required,oneof=Ketua Anggota"`
 	Department   string                `form:"department" binding:"max=100"`
 	Level        string                `form:"level" binding:"required"`
 	Provinsi     string                `form:"provinsi" binding:"max=100"`
@@ -15,13 +15,14 @@ type PengurusRequest struct {
 	FacebookURL  string                `form:"facebook_url" binding:"max=500"`
 	InstagramURL string                `form:"instagram_url" binding:"max=500"`
 	LinkedinURL  string                `form:"linkedin_url" binding:"max=500"`
+	TwitterURL   string                `form:"twitter_url" binding:"max=500"`
 	Whatsapp     string                `form:"whatsapp" binding:"max=20"`
 	Email        string                `form:"email" binding:"omitempty,email,max=150"`
 	Pekerjaan    string                `form:"pekerjaan" binding:"max=150"`
 	Bio          string                `form:"bio"`
 	Pendidikan   string                `form:"pendidikan"`
 	Sertifikasi  string                `form:"sertifikasi"`
-	Periode      string                `form:"periode" binding:"required,max=50"`
+	Periode      string                `form:"periode" binding:"max=50"`
 	SortOrder    int                   `form:"sort_order"`
 	IsActive     *bool                 `form:"is_active"`
 	Image        *multipart.FileHeader `form:"image"`
@@ -44,17 +45,7 @@ func (r *PengurusRequest) ValidateRegionRules() map[string]string {
 		errorsMap["level"] = "Level tidak valid"
 	}
 
-	switch r.Level {
-	case "Pengurus Provinsi", "Pengurus Kab/Kota":
-		if strings.TrimSpace(r.Provinsi) == "" {
-			errorsMap["provinsi"] = "Provinsi wajib diisi untuk level Pengurus Provinsi/Kab/Kota"
-		}
-	}
-	if r.Level == "Pengurus Kab/Kota" {
-		if strings.TrimSpace(r.Kabupaten) == "" {
-			errorsMap["kabupaten"] = "Kabupaten wajib diisi untuk level Pengurus Kab/Kota"
-		}
-	}
+
 	return errorsMap
 }
 
@@ -62,6 +53,7 @@ type PengurusResponse struct {
 	ID           uint   `json:"id"`
 	Name         string `json:"name"`
 	Role         string `json:"role"`
+	Kepengurusan string `json:"kepengurusan"`
 	Department   string `json:"department,omitempty"`
 	Level        string `json:"level"`
 	Provinsi     string `json:"provinsi,omitempty"`
@@ -71,6 +63,7 @@ type PengurusResponse struct {
 	FacebookURL  string `json:"facebook_url,omitempty"`
 	InstagramURL string `json:"instagram_url,omitempty"`
 	LinkedinURL  string `json:"linkedin_url,omitempty"`
+	TwitterURL   string `json:"twitter_url,omitempty"`
 	Whatsapp     string `json:"whatsapp,omitempty"`
 	Email        string `json:"email,omitempty"`
 	Pekerjaan    string `json:"pekerjaan,omitempty"`

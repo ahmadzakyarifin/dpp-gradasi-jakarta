@@ -65,6 +65,11 @@ export default function SlidersAdmin() {
     if (!data.image_path || !data.image_path.trim()) {
       errors.image_path = 'Gambar slider wajib diunggah.'
     }
+    if (data.title && data.title.trim().length > 200) errors.title = 'Judul utama maksimal 200 karakter.'
+    if (data.subtitle && data.subtitle.trim().length > 250) errors.subtitle = 'Sub-judul maksimal 250 karakter.'
+    if (data.tag && data.tag.trim().length > 50) errors.tag = 'Label Tag maksimal 50 karakter.'
+    if (data.event_date && data.event_date.trim().length > 100) errors.event_date = 'Tanggal Event maksimal 100 karakter.'
+    if (data.location && data.location.trim().length > 200) errors.location = 'Lokasi maksimal 200 karakter.'
     return errors
   }, [formData])
 
@@ -680,7 +685,12 @@ export default function SlidersAdmin() {
             <form onSubmit={handleSubmit} noValidate className="p-6 overflow-y-auto max-h-[calc(90vh-120px)] space-y-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 animate-fade-in-up">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Judul Utama <span className="text-red-500">*</span></label>
+                  <label className="flex justify-between items-center text-sm font-medium text-gray-700 mb-1">
+                    <span>Judul Utama <span className="text-red-500">*</span></span>
+                    <span className={(formData.title?.length || 0) > 200 ? 'text-red-500 text-xs' : 'text-slate-400 text-xs'}>
+                      {(formData.title?.length || 0)}/200
+                    </span>
+                  </label>
                   <input
                     type="text"
                     value={formData.title}
@@ -707,7 +717,12 @@ export default function SlidersAdmin() {
                   )}
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Sub-judul <span className="text-gray-400 font-normal">(opsional)</span></label>
+                  <label className="flex justify-between items-center text-sm font-medium text-gray-700 mb-1">
+                    <span>Sub-judul <span className="text-gray-400 font-normal">(opsional)</span></span>
+                    <span className={(formData.subtitle?.length || 0) > 250 ? 'text-red-500 text-xs' : 'text-slate-400 text-xs'}>
+                      {(formData.subtitle?.length || 0)}/250
+                    </span>
+                  </label>
                   <input
                     type="text"
                     value={formData.subtitle}
@@ -717,7 +732,12 @@ export default function SlidersAdmin() {
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Badge Tag <span className="text-gray-400 font-normal">(opsional)</span></label>
+                  <label className="flex justify-between items-center text-sm font-medium text-gray-700 mb-1">
+                    <span>Badge Tag <span className="text-gray-400 font-normal">(opsional)</span></span>
+                    <span className={(formData.tag?.length || 0) > 50 ? 'text-red-500 text-xs' : 'text-slate-400 text-xs'}>
+                      {(formData.tag?.length || 0)}/50
+                    </span>
+                  </label>
                   <input
                     type="text"
                     value={formData.tag}
@@ -772,7 +792,12 @@ export default function SlidersAdmin() {
                   <p className="text-xs text-gray-500 mt-1">Rekomendasi ukuran: 1920x600 px (Rasio lebar)</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Kegiatan <span className="text-gray-400 font-normal">(opsional di slider)</span></label>
+                  <label className="flex justify-between items-center text-sm font-medium text-gray-700 mb-1">
+                    <span>Tanggal Kegiatan <span className="text-gray-400 font-normal">(opsional di slider)</span></span>
+                    <span className={(formData.event_date?.length || 0) > 100 ? 'text-red-500 text-xs' : 'text-slate-400 text-xs'}>
+                      {(formData.event_date?.length || 0)}/100
+                    </span>
+                  </label>
                   <input
                     type="text"
                     value={formData.event_date}
@@ -783,7 +808,12 @@ export default function SlidersAdmin() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Lokasi <span className="text-gray-400 font-normal">(opsional di slider)</span></label>
+                  <label className="flex justify-between items-center text-sm font-medium text-gray-700 mb-1">
+                    <span>Lokasi <span className="text-gray-400 font-normal">(opsional di slider)</span></span>
+                    <span className={(formData.location?.length || 0) > 200 ? 'text-red-500 text-xs' : 'text-slate-400 text-xs'}>
+                      {(formData.location?.length || 0)}/200
+                    </span>
+                  </label>
                   <input
                     type="text"
                     value={formData.location}

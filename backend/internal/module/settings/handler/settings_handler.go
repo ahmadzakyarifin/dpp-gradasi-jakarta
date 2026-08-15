@@ -14,6 +14,9 @@ type SettingsHandler interface {
 	GetSettings(c *gin.Context)
 	UpdateSettings(c *gin.Context)
 	UploadLogo(c *gin.Context)
+	UploadSign1(c *gin.Context)
+	UploadSign2(c *gin.Context)
+	UploadGreetingImage(c *gin.Context)
 }
 
 type settingsHandler struct {
@@ -87,6 +90,54 @@ func (h *settingsHandler) UploadLogo(c *gin.Context) {
 	}
 
 	helper.SuccessResponse(c, http.StatusOK, "SETTINGS_LOGO_UPLOADED", "Logo berhasil diunggah", settings, nil)
+}
+
+func (h *settingsHandler) UploadSign1(c *gin.Context) {
+	file, err := c.FormFile("image")
+	if err != nil {
+		v := helper.NewValidationError()
+		v.Add("image", "File wajib diunggah.")
+		helper.HandleServiceError(c, v)
+		return
+	}
+	settings, err := h.service.UploadSign1(c.Request.Context(), file, h.getUpdatedBy(c))
+	if err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+	helper.SuccessResponse(c, http.StatusOK, "SETTINGS_SIGN1_UPLOADED", "Foto Penandatangan 1 berhasil diunggah", settings, nil)
+}
+
+func (h *settingsHandler) UploadSign2(c *gin.Context) {
+	file, err := c.FormFile("image")
+	if err != nil {
+		v := helper.NewValidationError()
+		v.Add("image", "File wajib diunggah.")
+		helper.HandleServiceError(c, v)
+		return
+	}
+	settings, err := h.service.UploadSign2(c.Request.Context(), file, h.getUpdatedBy(c))
+	if err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+	helper.SuccessResponse(c, http.StatusOK, "SETTINGS_SIGN2_UPLOADED", "Foto Penandatangan 2 berhasil diunggah", settings, nil)
+}
+
+func (h *settingsHandler) UploadGreetingImage(c *gin.Context) {
+	file, err := c.FormFile("image")
+	if err != nil {
+		v := helper.NewValidationError()
+		v.Add("image", "File wajib diunggah.")
+		helper.HandleServiceError(c, v)
+		return
+	}
+	settings, err := h.service.UploadGreetingImage(c.Request.Context(), file, h.getUpdatedBy(c))
+	if err != nil {
+		helper.HandleServiceError(c, err)
+		return
+	}
+	helper.SuccessResponse(c, http.StatusOK, "SETTINGS_GREETING_IMAGE_UPLOADED", "Foto Sambutan berhasil diunggah", settings, nil)
 }
 
 // getUpdatedBy membaca user_id dari context (di-set AuthMiddleware).

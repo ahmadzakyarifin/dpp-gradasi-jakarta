@@ -18,6 +18,9 @@ func RegisterRoutes(api *gin.RouterGroup, handler handler.SettingsHandler, jwtSe
 		{
 			admin.PUT("", handler.UpdateSettings)
 			admin.POST("/logo", handler.UploadLogo)
+			admin.POST("/sign1", handler.UploadSign1)
+			admin.POST("/sign2", handler.UploadSign2)
+			admin.POST("/greeting-image", handler.UploadGreetingImage)
 		}
 	}
 }

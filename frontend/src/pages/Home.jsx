@@ -56,7 +56,7 @@ export default function Home() {
 
   // Contact Form State
   const [contactForm, setContactForm] = useState({ nama: '', email: '', subjek: '', pesan: '' })
-  const [contactSuccess, setContactSuccess] = useState(false)
+
   const [contactLoading, setContactLoading] = useState(false)
   const [contactErrors, setContactErrors] = useState({})
   const [contactTouched, setContactTouched] = useState({})
@@ -235,12 +235,10 @@ export default function Home() {
     setContactLoading(true)
     try {
       await kontakService.submit(contactForm)
-      setContactSuccess(true)
       setContactForm({ nama: '', email: '', subjek: '', pesan: '' })
       setContactTouched({})
       setContactErrors({})
       setToast({ show: true, message: 'Pesan Anda berhasil terkirim!', type: 'success' })
-      setTimeout(() => setContactSuccess(false), 5000)
     } catch (err) {
       const parsed = parseApiError(err)
       if (parsed.fieldErrors && Object.keys(parsed.fieldErrors).length > 0) {
@@ -462,48 +460,29 @@ export default function Home() {
 
             {/* Content Text */}
             <div className="space-y-8 w-full lg:w-7/12">
-              <div>
+              <div className="flex flex-col items-center text-center">
                 <span className="inline-flex gap-2 items-center px-4 py-2 mb-4 text-xs font-bold tracking-widest uppercase rounded-full border bg-brand-50 text-brand-700 border-brand-100">
                   <i className="ph-fill ph-quotes" /> Refleksi Resmi
                 </span>
                 <h2 className="text-4xl font-black tracking-tight leading-tight font-heading lg:text-5xl text-slate-900">
-                  {settings.greeting_title || ''} <span className="text-transparent bg-clip-text bg-gradient-to-r to-amber-500 from-brand-600">{settings.greeting_subtitle || ''}</span>{settings.greeting_title ? ' Bangsa' : ''}
+                  {settings.greeting_title || ''} <span className="block text-transparent bg-clip-text bg-gradient-to-r to-amber-500 from-brand-600">{settings.greeting_subtitle || ''}</span>
                 </h2>
               </div>
 
               {/* Elegant Quote Card */}
               <div className="relative p-8 rounded-2xl border shadow-inner bg-slate-50 border-slate-200/60">
                 <i className="absolute -left-2 -top-4 text-6xl transform -rotate-12 ph-fill ph-quotes text-brand-200/50" />
-                <p className="relative z-10 text-lg italic leading-relaxed text-slate-700 font-quote">
-                  {settings.greeting_content ? `"${settings.greeting_content}"` : ""}
-                </p>
+                <div className="relative z-10 text-sm sm:text-base leading-relaxed text-slate-700 text-center">
+                  {settings.greeting_content
+                    ? settings.greeting_content.split('\n').map((paragraph, index) => (
+                        <p key={index} className="mb-4 last:mb-0">
+                          {paragraph}
+                        </p>
+                      ))
+                    : ""}
+                </div>
               </div>
 
-              {/* Signature */}
-              <div className="flex gap-4 items-center pt-4 border-t border-slate-100">
-                <div className="flex -space-x-4">
-                  {ketuaUmum?.image_path && (
-                    <img src={resolveAssetUrl(ketuaUmum.image_path)} alt={ketuaUmum.name} className="object-cover relative z-20 w-12 h-12 rounded-full border-2 border-white shadow-md" />
-                  )}
-                  {sekjen?.name && !settings.greeting_sign_subtitle && (
-                    <div className="flex relative z-10 justify-center items-center w-12 h-12 text-xs font-bold rounded-full border-2 border-white shadow-md bg-brand-100 text-brand-700">
-                      {sekjen.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm font-bold font-heading text-slate-900">
-                    {settings.greeting_sign_name || settings.site_name || ''}
-                  </p>
-                  <p className="text-xs font-medium text-brand-600">
-                    {settings.greeting_sign_subtitle || (
-                      <>
-                        {ketuaUmum?.name || ''} {sekjen?.name ? `& ${sekjen.name}` : ''}
-                      </>
-                    )}
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -589,8 +568,9 @@ export default function Home() {
                       <i className="ph-fill ph-book-open-text text-brand-500" /> Tujuan Utama
                     </h3>
                     <div className="space-y-4 text-sm leading-relaxed text-slate-600 sm:text-base">
-                      <p>{settings.history || ''}</p>
-                      <p>{settings.about_tutorial || ''}</p>
+                      {(settings.history || '').split('\n').filter(p => p.trim()).map((paragraph, idx) => (
+                        <p key={idx}>{paragraph}</p>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -739,7 +719,7 @@ export default function Home() {
                       alt={item.title}
                       className="object-cover w-full h-full"
                     />
-                    {idx === 0 && (
+                    {isActuallyNew(item) && (
                       <div className="absolute top-4 right-4 bg-red-500 text-white text-[10px] font-extrabold px-3 py-1.5 rounded animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)] z-10 tracking-wider flex items-center gap-1">
                         <i className="ph-fill ph-fire" /> TERBARU
                       </div>
@@ -1033,11 +1013,6 @@ export default function Home() {
                   <p className="text-sm text-slate-500">Gunakan formulir di bawah ini untuk mengirimkan pertanyaan atau permohonan kerjasama secara resmi.</p>
                 </div>
 
-                {contactSuccess && (
-                  <div className="flex gap-2 items-center p-4 mb-4 text-sm font-bold text-emerald-700 bg-emerald-50 rounded-xl border border-emerald-200">
-                    <i className="text-lg ph-bold ph-check-circle" /> Pesan Anda telah berhasil terkirim! Terima kasih.
-                  </div>
-                )}
 
                 <form onSubmit={handleContactSubmit} className="space-y-5">
                   <div className="grid grid-cols-2 gap-5">

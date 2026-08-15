@@ -27,6 +27,8 @@ type Settings struct {
 	GreetingImagePath  string
 	GreetingSignName   string
 	GreetingSignSubtitle string
+	GreetingSignImage1   string
+	GreetingSignImage2   string
 	LoginHeroTitle     string
 	LoginHeroDescription string
 	LogRetentionDays     int

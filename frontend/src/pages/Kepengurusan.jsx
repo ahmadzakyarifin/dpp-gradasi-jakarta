@@ -1,19 +1,47 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import PublicLayout from '../layouts/PublicLayout'
 import { pengurusService } from '../services/pengurusService'
 import { resolveAssetUrl } from '../utils/assetUrl'
+import { getProvinces, getRegencies } from 'kode-wilayah-id'
 
 export default function Kepengurusan() {
   const [searchParams, setSearchParams] = useSearchParams()
   const activeTab = searchParams.get('tab') || 'Ketua Umum'
   
   const [allPengurus, setAllPengurus] = useState([])
+  const [searchInput, setSearchInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedProvinsi, setSelectedProvinsi] = useState('')
   const [selectedKabupaten, setSelectedKabupaten] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 24
+  
+  // Wilayah Data
+  const [indonesiaProvinces, setIndonesiaProvinces] = useState([])
+  const [indonesiaKabupaten, setIndonesiaKabupaten] = useState([])
+
+  const provOptions = useMemo(() => {
+    return [{ value: '', label: 'Semua Provinsi' }, ...indonesiaProvinces.map(p => ({ value: p, label: p }))]
+  }, [indonesiaProvinces])
+
+  const kabOptions = useMemo(() => {
+    return [{ value: '', label: 'Semua Kab/Kota' }, ...indonesiaKabupaten.map(k => ({ value: k, label: k }))]
+  }, [indonesiaKabupaten])
+
+  // Load Regions
+  useEffect(() => {
+    try {
+      const provs = getProvinces()
+      setIndonesiaProvinces(provs.map(p => p.name).sort())
+      const kabs = getRegencies()
+      // Format to Title Case like "Kabupaten Bogor"
+      const formattedKabs = kabs.map(k => k.name.toLowerCase().replace(/\b\w/g, l => l.toUpperCase())).sort()
+      setIndonesiaKabupaten(formattedKabs)
+    } catch (err) {
+      console.error("Failed to load region data", err)
+    }
+  }, [])
 
   useEffect(() => {
     pengurusService.list({ limit: 100 })
@@ -63,6 +91,7 @@ export default function Kepengurusan() {
 
   const handleTabChange = (tab) => {
     setSearchParams({ tab })
+    setSearchInput('')
     setSearchQuery('')
     setSelectedProvinsi('')
     setSelectedKabupaten('')
@@ -122,45 +151,77 @@ export default function Kepengurusan() {
 
           {/* Clean Search & Filter Bar */}
           {activeTab !== 'Ketua Umum' && (
-            <div className="max-w-4xl mx-auto mb-10 bg-white p-3 sm:p-3.5 rounded-2xl border border-slate-200/60 shadow-[0_4px_25px_rgba(0,0,0,0.03)] flex flex-col md:flex-row gap-3 justify-between items-center w-full">
-              <div className="relative w-full md:w-80">
-                <i className="ph-bold ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-base" />
-                <input
-                  type="text"
-                  placeholder="Cari nama atau jabatan pengurus..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200/80 rounded-xl text-xs sm:text-sm text-slate-700 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all outline-none"
-                />
-              </div>
+            <div className={`mx-auto mb-10 bg-white p-2 sm:p-2.5 rounded-2xl border border-slate-200/60 shadow-[0_4px_25px_rgba(0,0,0,0.03)] flex flex-col md:flex-row gap-3 items-center w-full ${activeTab === 'Pengurus Pusat' ? 'max-w-3xl' : 'max-w-5xl'}`}>
+              
+              {/* Inputs Group */}
+              <div className="flex flex-col md:flex-row gap-2 w-full">
+                {/* Text Search */}
+                <div className="relative w-full">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <i className="ph-bold ph-magnifying-glass text-slate-400 text-lg" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Cari nama atau jabatan pengurus..."
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') setSearchQuery(searchInput) }}
+                    className={`w-full pl-10 pr-4 py-2.5 ${activeTab === 'Pengurus Pusat' ? 'bg-transparent shadow-none border-none' : 'bg-slate-50 border border-slate-200/80'} focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 rounded-xl text-xs sm:text-sm text-slate-700 transition-all outline-none`}
+                  />
+                </div>
 
-              {(activeTab === 'Pengurus Provinsi' || activeTab === 'Pengurus Kab/Kota') && (
-                <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                  <select
-                    value={selectedProvinsi}
-                    onChange={(e) => { setSelectedProvinsi(e.target.value); setSelectedKabupaten(''); }}
-                    className="px-4 py-2.5 bg-slate-50 border border-slate-200/80 rounded-xl text-xs sm:text-sm text-slate-600 outline-none cursor-pointer hover:bg-slate-100/60 transition"
-                  >
-                    <option value="">Semua Provinsi</option>
-                    {uniqueProvinsi.map(prov => (
-                      <option key={prov} value={prov}>{prov}</option>
-                    ))}
-                  </select>
+                {/* Dropdowns */}
+                {activeTab === 'Pengurus Provinsi' && (
+                  <div className="w-full md:w-auto flex-shrink-0 z-50">
+                    <select
+                      value={selectedProvinsi}
+                      onChange={(e) => { setSelectedProvinsi(e.target.value); setSelectedKabupaten(''); }}
+                      className="w-full md:w-auto bg-slate-50 border border-slate-200/80 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 rounded-xl text-xs sm:text-sm text-slate-700 transition-all outline-none py-2.5 px-4 pr-10 cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.7rem_auto] bg-no-repeat bg-[position:right_1rem_center]"
+                    >
+                      {provOptions.map(o => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
-                  {activeTab === 'Pengurus Kab/Kota' && (
+                {activeTab === 'Pengurus Kab/Kota' && (
+                  <div className="w-full md:w-auto flex-shrink-0 z-50">
                     <select
                       value={selectedKabupaten}
                       onChange={(e) => setSelectedKabupaten(e.target.value)}
-                      className="px-4 py-2.5 bg-slate-50 border border-slate-200/80 rounded-xl text-xs sm:text-sm text-slate-600 outline-none cursor-pointer hover:bg-slate-100/60 transition"
+                      className="w-full md:w-auto bg-slate-50 border border-slate-200/80 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 rounded-xl text-xs sm:text-sm text-slate-700 transition-all outline-none py-2.5 px-4 pr-10 cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.7rem_auto] bg-no-repeat bg-[position:right_1rem_center]"
                     >
-                      <option value="">Semua Kab/Kota</option>
-                      {uniqueKabupaten.map(kab => (
-                        <option key={kab} value={kab}>{kab}</option>
+                      {kabOptions.map(o => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
                       ))}
                     </select>
-                  )}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 w-full md:w-auto shrink-0">
+                <button 
+                  onClick={() => setSearchQuery(searchInput)} 
+                  className="w-full md:w-auto bg-brand-700 hover:bg-brand-800 text-white px-5 sm:px-6 py-2.5 rounded-xl font-bold text-sm transition-colors shadow-sm whitespace-nowrap"
+                >
+                  Cari
+                </button>
+                {(searchQuery || selectedProvinsi || selectedKabupaten) && (
+                  <button 
+                    onClick={() => { 
+                      setSearchInput(''); 
+                      setSearchQuery(''); 
+                      setSelectedProvinsi(''); 
+                      setSelectedKabupaten(''); 
+                    }} 
+                    className="w-full md:w-auto bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 sm:px-6 py-2.5 rounded-xl font-bold text-sm transition-colors shadow-sm whitespace-nowrap"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -186,11 +247,7 @@ export default function Kepengurusan() {
                     <p className="text-xs text-slate-400 font-semibold mb-6">Masa Bakti {item.periode || '2024 - 2029'}</p>
                     
                     <div className="flex justify-center gap-4 pt-6 border-t border-slate-100 w-full">
-                      {item.cv_path && (
-                        <a href={resolveAssetUrl(item.cv_path)} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:bg-brand-600 hover:text-white flex items-center justify-center transition shadow-xs" title="Download CV">
-                          <i className="ph-fill ph-file-pdf text-xl" />
-                        </a>
-                      )}
+
                       {item.facebook_url && (
                         <a href={item.facebook_url} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:bg-brand-600 hover:text-white flex items-center justify-center transition shadow-xs">
                           <i className="ph-fill ph-facebook-logo text-lg" />
@@ -206,11 +263,12 @@ export default function Kepengurusan() {
                           <i className="ph-fill ph-linkedin-logo text-lg" />
                         </a>
                       )}
-                      {item.email && (
-                        <a href={`mailto:${item.email}`} className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:bg-brand-600 hover:text-white flex items-center justify-center transition shadow-xs">
-                          <i className="ph-fill ph-envelope-simple text-lg" />
+                      {item.twitter_url && (
+                        <a href={item.twitter_url} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:bg-brand-600 hover:text-white flex items-center justify-center transition shadow-xs">
+                          <i className="ph-fill ph-x-logo text-lg" />
                         </a>
                       )}
+
                       {item.whatsapp && (
                         <a href={`https://wa.me/${item.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 hover:bg-brand-600 hover:text-white flex items-center justify-center transition shadow-xs">
                           <i className="ph-fill ph-whatsapp-logo text-lg" />
@@ -232,9 +290,9 @@ export default function Kepengurusan() {
                 <p className="text-xs text-slate-400 mt-1">Data pengurus untuk kategori ini belum tersedia atau tidak cocok dengan filter pencarian.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              <div className="flex flex-wrap justify-center gap-6">
                 {paginatedList.map(item => (
-                  <div key={item.id} className="card-lift bg-white rounded-2xl p-6 border border-slate-100 flex flex-col items-center text-center hover:border-brand-200 hover:shadow-[0_8px_30px_rgba(37,99,235,0.08)] transition-all duration-300 group">
+                  <div key={item.id} className="w-full sm:w-[calc(50%-12px)] md:w-[calc(33.333%-16px)] lg:w-[calc(25%-18px)] max-w-sm card-lift bg-white rounded-2xl p-6 border border-slate-100 flex flex-col items-center text-center hover:border-brand-200 hover:shadow-[0_8px_30px_rgba(37,99,235,0.08)] transition-all duration-300 group">
                     <div className="w-28 h-28 rounded-full overflow-hidden mb-5 border-4 border-slate-50 group-hover:border-brand-100 transition duration-300 shadow-sm">
                       <img src={resolveAssetUrl(item.image_url || item.image_path)} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
                     </div>
@@ -246,11 +304,7 @@ export default function Kepengurusan() {
                       {item.provinsi && <p className="text-[11px] text-slate-400 font-medium mb-4">{item.provinsi} {item.kabupaten ? `• ${item.kabupaten}` : ''}</p>}
                       
                       <div className="flex justify-center gap-3 mt-auto pt-4 border-t border-slate-100">
-                        {item.cv_path && (
-                          <a href={resolveAssetUrl(item.cv_path)} target="_blank" rel="noreferrer" className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:text-brand-600 flex items-center justify-center transition" title="Download CV">
-                            <i className="ph-fill ph-file-pdf text-lg" />
-                          </a>
-                        )}
+
                         {item.facebook_url && (
                           <a href={item.facebook_url} target="_blank" rel="noreferrer" className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:text-brand-600 flex items-center justify-center transition">
                             <i className="ph-fill ph-facebook-logo" />
@@ -266,11 +320,12 @@ export default function Kepengurusan() {
                             <i className="ph-fill ph-linkedin-logo" />
                           </a>
                         )}
-                        {item.email && (
-                          <a href={`mailto:${item.email}`} className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:text-brand-600 flex items-center justify-center transition">
-                            <i className="ph-fill ph-envelope-simple" />
+                        {item.twitter_url && (
+                          <a href={item.twitter_url} target="_blank" rel="noreferrer" className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:text-brand-600 flex items-center justify-center transition">
+                            <i className="ph-fill ph-x-logo" />
                           </a>
                         )}
+
                         {item.whatsapp && (
                           <a href={`https://wa.me/${item.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 hover:text-brand-600 flex items-center justify-center transition">
                             <i className="ph-fill ph-whatsapp-logo" />

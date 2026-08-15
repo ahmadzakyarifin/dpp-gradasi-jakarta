@@ -204,7 +204,7 @@ export default function Login() {
               <div className="flex justify-between items-center mb-1.5">
                 <label className="text-sm font-bold text-slate-700">{authContent.login.passwordLabel} <span className="text-red-500">*</span></label>
                 <button type="button" onClick={switchToForgot} className="text-xs font-bold text-slate-400 hover:text-brand-600 transition">
-                  {authContent.login.forgotLink}
+                  {authContent.login.forgotButton}
                 </button>
               </div>
               <div className="relative group">

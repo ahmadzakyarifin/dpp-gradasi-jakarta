@@ -26,6 +26,8 @@ type Settings struct {
 	GreetingImagePath    string `gorm:"size:500"`
 	GreetingSignName     string `gorm:"size:255"`
 	GreetingSignSubtitle string `gorm:"size:255"`
+	GreetingSignImage1   string `gorm:"size:500"`
+	GreetingSignImage2   string `gorm:"size:500"`
 	LoginHeroTitle       string `gorm:"size:255"`
 	LoginHeroDescription string `gorm:"type:text"`
 	LogRetentionDays     int    `gorm:"column:log_retention_days;default:30"`

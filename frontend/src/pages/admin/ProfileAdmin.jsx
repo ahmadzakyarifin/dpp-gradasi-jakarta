@@ -7,7 +7,7 @@ import { apiRequest } from '../../api'
 const apiBase = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8080/api/v1'
 
 export default function ProfileAdmin() {
-  const { fetchMe, user } = useAuthStore()
+  const { fetchMe, user, logout } = useAuthStore()
   const [searchParams] = useSearchParams()
   const forced = searchParams.get('force') === '1'
   const [name, setName] = useState('')
@@ -153,9 +153,14 @@ export default function ProfileAdmin() {
       })
       setPwdTouched({})
       setPwdErrors({})
-      setMessage({ type: 'success', text: res.message || 'Password berhasil diubah' })
+      setMessage({ type: 'success', text: res.message || 'Password berhasil diubah. Mengeluarkan sesi Anda demi keamanan...' })
       setOldPassword('')
       setNewPassword('')
+      
+      // Auto logout setelah 2.5 detik
+      setTimeout(() => {
+        logout()
+      }, 2500)
     } catch (err) {
       if (err?.data?.errors) {
         const parsedErrors = {}

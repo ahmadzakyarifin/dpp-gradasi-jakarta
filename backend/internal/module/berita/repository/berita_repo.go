@@ -179,7 +179,12 @@ func (r *beritaRepo) FindByID(id uint) (*entity.Berita, error) {
 }
 
 func (r *beritaRepo) Create(berita *entity.Berita) error {
-	return r.db.Create(mapper.EntityToModel(berita)).Error
+	m := mapper.EntityToModel(berita)
+	if err := r.db.Create(m).Error; err != nil {
+		return err
+	}
+	berita.ID = m.ID
+	return nil
 }
 
 func (r *beritaRepo) Update(berita *entity.Berita) error {

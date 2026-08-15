@@ -43,7 +43,7 @@ type pengurusService struct {
 
 func NewPengurusService(db *gorm.DB, repo repository.PengurusRepo, audit activitylogservice.ActivityLogService) PengurusService {
 	// Create upload dir if not exists
-	uploadPath := "public/uploads/pengurus"
+	uploadPath := "public/uploads/img/s-anggota/anggota"
 	_ = os.MkdirAll(uploadPath, 0755)
 	return &pengurusService{db: db, repo: repo, audit: audit, uploadPath: uploadPath}
 }
@@ -172,7 +172,7 @@ func (s *pengurusService) Create(ctx context.Context, req *dto.PengurusRequest) 
 		return nil, helper.NewServiceError("UPLOAD_FAILED", "Gagal mengunggah foto.", err)
 	}
 
-	if req.Image == nil && imageURL == "" {
+	if false && imageURL == "" {
 		return nil, helper.NewServiceError("VALIDATION_ERROR", "Foto (image) wajib diunggah saat menambah pengurus", nil)
 	}
 
@@ -392,5 +392,5 @@ func (s *pengurusService) handleUpload(file *multipart.FileHeader) (string, erro
 	}
 
 	// URL path to be saved in DB
-	return "/uploads/pengurus/" + filename, nil
+	return "/uploads/img/s-anggota/anggota/" + filename, nil
 }

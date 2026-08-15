@@ -431,3 +431,15 @@ td {
   filter: brightness(0.95);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
 }
+
+/* Fix react-select hidden input overridden by global !important */
+main .react-select__input-container,
+main .react-select__input-container input {
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: inherit !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+}

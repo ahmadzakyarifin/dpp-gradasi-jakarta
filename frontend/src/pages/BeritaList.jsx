@@ -213,7 +213,7 @@ export default function BeritaList() {
                   <p className="text-brand-600 text-[10px] font-bold tracking-wider uppercase mb-2 flex items-center gap-1.5">
                     <i className="ph-bold ph-calendar-blank text-sm" /> {formatDate(item.published_date)}
                   </p>
-                  <Link to={`/berita/${item.slug}`} className="font-heading text-lg font-bold text-slate-900 mb-2 group-hover:text-brand-600 transition line-clamp-2">
+                  <Link to={`/berita/${item.slug}`} className="font-heading text-lg font-bold text-slate-900 mb-2 group-hover:text-brand-600 transition line-clamp-2 break-all">
                     {item.title}
                   </Link>
                   <p className="text-slate-500 text-[13px] flex-grow line-clamp-2 mb-4 leading-relaxed">{item.excerpt || '-'}</p>
