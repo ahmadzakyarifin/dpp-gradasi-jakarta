@@ -148,3 +148,6 @@ backend/tmp/
 # Knowledge graph (generated, dirty by design)
 graphify-out/
 **/graphify-out/
+
+# Docs
+docs-final/
