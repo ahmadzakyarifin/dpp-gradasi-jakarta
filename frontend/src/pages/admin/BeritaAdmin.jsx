@@ -126,6 +126,7 @@ export default function BeritaAdmin() {
   // Upload gambar cover berita → set formData.image_path dari path relatif backend
   const handleImageUpload = async (file) => {
     if (!file) return
+
     setImageUploading(true)
     try {
       const res = await beritaService.uploadImage(file)
@@ -985,6 +986,10 @@ export default function BeritaAdmin() {
                           }}
                         />
                       </label>
+                      <p className="text-[11px] text-slate-500 max-w-[200px] leading-snug">
+                        <i className="ph-fill ph-info text-blue-500 mr-1" />
+                        Maksimal <strong className="text-red-500">300 KB</strong> agar gambar muncul di WA.
+                      </p>
                       {formData.image_path && (
                         <button
                           type="button"

@@ -29,6 +29,7 @@ type KegiatanService interface {
 	GetPublished(ctx context.Context, q dto.KegiatanQuery) (*dto.KegiatanListResponse, error)
 	GetAll(ctx context.Context, q dto.KegiatanQuery) (*dto.KegiatanListResponse, error)
 	GetBySlug(ctx context.Context, slug string) (*dto.KegiatanDetailResponse, error)
+	GetBySlugLite(ctx context.Context, slug string) (*dto.KegiatanDetailResponse, error)
 	GetByID(ctx context.Context, id uint) (*dto.KegiatanDetailResponse, error)
 	Create(ctx context.Context, req *dto.KegiatanCreateRequest, authorID uint) (*dto.KegiatanDetailResponse, error)
 	Update(ctx context.Context, id uint, req *dto.KegiatanUpdateRequest) (*dto.KegiatanDetailResponse, error)
@@ -138,6 +139,18 @@ func (s *kegiatanService) GetBySlug(ctx context.Context, slug string) (*dto.Kegi
 	}
 	_ = s.repo.IncrementViews(k.ID)
 	k.Views++
+	resp := mapper.EntityToDetail(k)
+	return &resp, nil
+}
+
+func (s *kegiatanService) GetBySlugLite(ctx context.Context, slug string) (*dto.KegiatanDetailResponse, error) {
+	k, err := s.repo.FindBySlug(slug)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, helper.NewNotFoundError("Kegiatan tidak ditemukan")
+		}
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil kegiatan.", err)
+	}
 	resp := mapper.EntityToDetail(k)
 	return &resp, nil
 }

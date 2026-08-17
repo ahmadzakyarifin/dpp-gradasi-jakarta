@@ -28,6 +28,7 @@ type BeritaService interface {
 	GetPublished(ctx context.Context, query dto.BeritaQuery) (*dto.BeritaListResponse, error)
 	GetAll(ctx context.Context, query dto.BeritaQuery) (*dto.BeritaListResponse, error)
 	GetBySlug(ctx context.Context, slug string) (*dto.BeritaDetailResponse, error)
+	GetBySlugLite(ctx context.Context, slug string) (*dto.BeritaDetailResponse, error)
 	GetByID(ctx context.Context, id uint) (*dto.BeritaDetailResponse, error)
 	Create(ctx context.Context, req *dto.BeritaCreateRequest, authorID uint) (*dto.BeritaDetailResponse, error)
 	Update(ctx context.Context, id uint, req *dto.BeritaUpdateRequest) (*dto.BeritaDetailResponse, error)
@@ -138,6 +139,18 @@ func (s *beritaService) GetBySlug(ctx context.Context, slug string) (*dto.Berita
 	_ = s.repo.IncrementViews(b.ID)
 	b.Views++
 
+	resp := mapper.EntityToDetail(b)
+	return &resp, nil
+}
+
+func (s *beritaService) GetBySlugLite(ctx context.Context, slug string) (*dto.BeritaDetailResponse, error) {
+	b, err := s.repo.FindBySlug(slug)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, helper.NewNotFoundError("Berita tidak ditemukan")
+		}
+		return nil, helper.NewServiceError("SERVER_ERROR", "Gagal mengambil berita.", err)
+	}
 	resp := mapper.EntityToDetail(b)
 	return &resp, nil
 }

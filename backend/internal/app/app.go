@@ -17,6 +17,7 @@ import (
 	kegiatanhandler "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kegiatan/handler"
 	kegiatanrepo "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kegiatan/repository"
 	kegiatanservice "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kegiatan/service"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/shared/seo"
 	kontakhandler "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kontak/handler"
 	kontakrepo "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kontak/repository"
 	kontakservice "github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/kontak/service"
@@ -128,15 +129,24 @@ func NewApp(database *gorm.DB, appConfig *config.Config) *App {
 	slidersSvc := slidersservice.NewSlidersService(database, slidersRepo, activityLogSvc)
 	slidersHandler := slidershandler.NewSlidersHandler(slidersSvc)
 
+	// SEO Config — semua nilai dari env, di-inject ke handler
+	seoCfg := seo.SEOConfig{
+		BaseURL:            appConfig.App.URL,
+		SiteName:           appConfig.App.SEOSiteName,
+		DefaultTitle:       appConfig.App.SEODefaultTitle,
+		DefaultDescription: appConfig.App.SEODefaultDescription,
+		DefaultImage:       appConfig.App.SEODefaultImage,
+	}
+
 	// Berita
 	beritaRepo := beritarepo.NewBeritaRepo(database)
 	beritaSvc := beritaservice.NewBeritaService(database, beritaRepo, activityLogSvc)
-	beritaHandler := beritahandler.NewBeritaHandler(beritaSvc)
+	beritaHandler := beritahandler.NewBeritaHandler(beritaSvc, seoCfg)
 
 	// Kegiatan
 	kegiatanRepo := kegiatanrepo.NewKegiatanRepo(database)
 	kegiatanSvc := kegiatanservice.NewKegiatanService(database, kegiatanRepo, activityLogSvc)
-	kegiatanHandler := kegiatanhandler.NewKegiatanHandler(kegiatanSvc)
+	kegiatanHandler := kegiatanhandler.NewKegiatanHandler(kegiatanSvc, seoCfg)
 
 	// Kontak
 	kontakRepo := kontakrepo.NewKontakRepo(database)

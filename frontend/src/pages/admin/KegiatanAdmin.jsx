@@ -414,6 +414,7 @@ export default function KegiatanAdmin() {
   // Upload satu gambar (cover atau galeri)
   const handleImageUpload = async (file, type) => {
     if (!file) return
+
     if (type === 'cover') setCoverUploading(true)
     else setGalleryUploading(true)
     try {
@@ -1095,6 +1096,10 @@ export default function KegiatanAdmin() {
                           }}
                         />
                       </label>
+                      <p className="text-[11px] text-slate-500 max-w-[200px] leading-snug">
+                        <i className="ph-fill ph-info text-blue-500 mr-1" />
+                        Maksimal <strong className="text-red-500">300 KB</strong> agar gambar muncul di WA.
+                      </p>
                       {formData.image && (
                         <button
                           type="button"

@@ -1,23 +1,30 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/helper"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/middleware"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/berita/dto"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/module/berita/service"
+	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/shared/seo"
 	"github.com/ahmadzakyarifin/dpp-gradasi/backend/internal/validator"
 	"github.com/gin-gonic/gin"
 )
 
 type BeritaHandler struct {
-	svc service.BeritaService
+	svc       service.BeritaService
+	seoConfig seo.SEOConfig
 }
 
-func NewBeritaHandler(svc service.BeritaService) *BeritaHandler {
-	return &BeritaHandler{svc: svc}
+func NewBeritaHandler(svc service.BeritaService, seoCfg seo.SEOConfig) *BeritaHandler {
+	return &BeritaHandler{
+		svc:       svc,
+		seoConfig: seoCfg,
+	}
 }
 
 // GET /api/v1/berita — publik (published only)
@@ -98,7 +105,6 @@ func (h *BeritaHandler) Create(c *gin.Context) {
 }
 
 // POST /api/v1/berita/upload-image — admin (multipart field "image")
-// Upload gambar cover berita → path relatif /uploads/berita/<file>
 func (h *BeritaHandler) UploadImage(c *gin.Context) {
 	file, err := c.FormFile("image")
 	if err != nil {
@@ -107,7 +113,7 @@ func (h *BeritaHandler) UploadImage(c *gin.Context) {
 	}
 
 	userID, _ := middleware.GetUserID(c)
-	_ = userID // upload tidak mencatat audit per-user (hanya simpan file)
+	_ = userID
 	resp, err := h.svc.UploadImage(c.Request.Context(), file)
 	if err != nil {
 		helper.HandleServiceError(c, err)
@@ -218,4 +224,37 @@ func (h *BeritaHandler) DeleteCategory(c *gin.Context) {
 		return
 	}
 	helper.SuccessResponse(c, http.StatusOK, "CATEGORY_DELETED", "Kategori berhasil dihapus.", nil, nil)
+}
+
+// GET /api/v1/seo/berita/:slug — HTML Open Graph preview untuk social media bot
+func (h *BeritaHandler) SeoBySlug(c *gin.Context) {
+	slugParam := c.Param("slug")
+	baseURL := strings.TrimRight(h.seoConfig.BaseURL, "/")
+
+	resp, err := h.svc.GetBySlugLite(c.Request.Context(), slugParam)
+	if err != nil {
+		log.Printf("[SEO] berita slug not found: %s", slugParam)
+		data := seo.DefaultMetaTagData(h.seoConfig, "berita/"+slugParam)
+		seo.RenderMetaHTML(c, data)
+		return
+	}
+
+	descText := resp.Excerpt
+	if strings.TrimSpace(descText) == "" {
+		descText = resp.Content
+	}
+
+	imageURL := seo.ResolveAbsoluteImageURL(baseURL, resp.ImagePath)
+	if imageURL == "" {
+		imageURL = seo.ResolveAbsoluteImageURL(baseURL, h.seoConfig.DefaultImage)
+	}
+
+	data := seo.MetaTagData{
+		Title:       resp.Title,
+		Description: seo.TruncateDescription(descText, 160),
+		ImageURL:    imageURL,
+		PageURL:     baseURL + "/berita/" + resp.Slug,
+		SiteName:    h.seoConfig.SiteName,
+	}
+	seo.RenderMetaHTML(c, data)
 }

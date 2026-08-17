@@ -26,4 +26,12 @@ func registerRoutes(app *App) {
 	settings.RegisterRoutes(api, app.settingsHandler, app.Cfg.JWT.Secret)
 	activitylog.RegisterRoutes(api, app.activityLogHandler, app.Cfg.JWT.Secret)
 	dashboard.RegisterRoutes(api, app.dashboardHandler, app.Cfg.JWT.Secret)
+
+	// SEO Open Graph Preview routes — group terpisah TANPA rate limiter & Turnstile.
+	// Bot crawler social media (WA, FB, Twitter) sering fetch berulang kali.
+	seoGroup := app.Server.Group("/api/v1/seo")
+	seoGroup.GET("/berita/:slug", app.beritaHandler.SeoBySlug)
+	seoGroup.HEAD("/berita/:slug", app.beritaHandler.SeoBySlug)
+	seoGroup.GET("/kegiatan/:slug", app.kegiatanHandler.SeoBySlug)
+	seoGroup.HEAD("/kegiatan/:slug", app.kegiatanHandler.SeoBySlug)
 }
